@@ -77,6 +77,12 @@ class thread
     {
     }
 
+    thread(void (*fun)(const void*), void* arg)
+    {
+        osThreadDef_t threadDefinition = { fun, DEFAULT_PRIORITY, 0, 0 };
+        m_id = osThreadCreate(&threadDefinition, arg);
+    }
+
     ~thread() {}
 
     //! Returns the number of threads which can run concurrently on this
