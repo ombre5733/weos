@@ -2,7 +2,6 @@
 
 void osl_threadInvoker(void* arg)
 {
-    boost:
 }
 
 namespace osl

@@ -1,0 +1,6 @@
+#ifndef OSL_CONFIG_HPP
+#define OSL_CONFIG_HPP
+
+#define OSL_IMPLEMENTATION_CXX11
+
+#endif // OSL_CONFIG_HPP
