@@ -33,6 +33,9 @@
 
 #include "duration.hpp"
 
+// Definition from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
+extern "C" uint32_t rt_time_get(void);
+
 namespace weos
 {
 namespace chrono
