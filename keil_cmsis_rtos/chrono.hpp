@@ -29,7 +29,7 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 #define WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 
-#include "cmsis_os.h"
+#include "../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
 
 #include "duration.hpp"
 
