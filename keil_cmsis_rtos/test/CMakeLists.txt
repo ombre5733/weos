@@ -32,8 +32,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(test C CXX ASM)
 
+#set(BOOST_INCLUDEDIR "/usr/include/boost")
 #find_package(Boost REQUIRED)
-
 
 set(NANO_FLAGS "--specs=nano.specs")
 
@@ -49,24 +49,43 @@ set(CMAKE_C_FLAGS   ${COMMON_FLAGS})
 set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -std=gnu++11")
 set(CMAKE_EXE_LINKER_FLAGS "${NANO_FLAGS} ${NOHOST_FLAGS} -Wl,--gc-sections -Tstm32f4xx.ld ${MAP_FLAGS}")
 
-include_directories(.)
-#include_directories(${Boost_INCLUDE_DIRS})
+include_directories(
+    .
+    /usr/include/boost
+#    ${Boost_INCLUDE_DIRS}
+)
 
 # Add the directory containing the linker script.
 link_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
 
 set(COMMON_SOURCES
-        common/startup_stm32f4xx.S
-        common/newlib_retarget.c
-        common/system_stm32f4xx.c
-        common/test_main.cpp
-        gtest/gtest-all.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/startup_stm32f4xx.S
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/newlib_retarget.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/system_stm32f4xx.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/test_main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/gtest/gtest-all.cc
 )
-add_executable(${PROJECT_NAME} ${COMMON_SOURCES})
 
-add_custom_command(
-    OUTPUT ${PROJECT_NAME}.bin
-    COMMAND /opt/gcc-arm-none-eabi-4_7-2013q2/bin/arm-none-eabi-objcopy -O binary ${PROJECT_NAME} ${PROJECT_NAME}.bin
-    DEPENDS ${PROJECT_NAME}
-)
-add_custom_target(bin DEPENDS ${PROJECT_NAME}.bin)
+# A target to build all test binaries. CMake-files in the subdirectories can
+# add their targets as dependencies to this target. Thus, invoking this target
+# builds all binaries at once.
+add_custom_target(bin)
+
+# This function adds a target to create an executable and a binary file.
+# The target of the binary file is added to the dependency "bin", i.e. when
+# the top-level bin-target is built, all other binaries shall be built, too.
+function(add_executable_and_bin name sources)
+    add_executable(${name} ${sources})
+    add_custom_command(
+        OUTPUT ${name}.bin
+        COMMAND ${OBJCOPY} -O binary ${name} ${name}.bin
+        DEPENDS ${name}
+    )
+    add_custom_target(${name}_bin DEPENDS ${name}.bin)
+    add_dependencies(bin ${name}_bin)
+endfunction()
+
+file(COPY runAllTests.py DESTINATION .)
+
+# Walk into the subdirectories which implement the actual tests.
+add_subdirectory(chrono)

@@ -1,4 +1,6 @@
-/*******************************************************************************
+# -*- coding: utf-8 -*-
+"""
+*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
   Copyright (c) 2013, Manuel Freiberger
@@ -24,39 +26,21 @@
   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+*******************************************************************************
+"""
 
-#ifndef OSL_CONFIG_HPP
-#define OSL_CONFIG_HPP
+from subprocess import call
+import os
+import fnmatch
 
-// ----=====================================================================----
-//     C++11
-// ----=====================================================================----
+STFLASH = "/opt/stlink/st-flash"
 
-#define OSL_IMPLEMENTATION_CXX11
-#if defined(OSL_IMPLEMENTATION_CXX11)
+binaries = []
 
-// The frequency of the high-resolution timer (in Hz).
-#  define OS_CLOCK   12000000
-// The time interval between two sys-ticks (in us).
-#  define OS_TICK    1000
+for root, dirnames, filenames in os.walk('.'):
+  for filename in fnmatch.filter(filenames, '*.bin'):
+      binaries.append(os.path.join(root, filename))
 
-#endif // OSL_IMPLEMENTATION_CXX11
-
-// ----=====================================================================----
-//     Keil CMSIS-RTOS
-// ----=====================================================================----
-
-// #define OSL_IMPLEMENTATION_KEIL_CMSIS
-
-// ----=====================================================================----
-//     Private section
-// ----=====================================================================----
-
-#if defined(OS_IMPLEMENTATION_KEIL_CMSIS)
-#  if osCMSIS_RTX != ((4<<16)|70)
-#    error "The Keil CMSIS version must be 4.70."
-#  endif
-#endif
-
-#endif // OSL_CONFIG_HPP
+for binary in binaries:
+    print("Download {0}".format(binary))
+    call([STFLASH, "write", binary, "0x8000000"])

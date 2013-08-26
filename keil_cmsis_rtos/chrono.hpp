@@ -26,14 +26,14 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef OSL_CMSIS_CHRONO_HPP
-#define OSL_CMSIS_CHRONO_HPP
+#ifndef WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
+#define WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 
 #include "cmsis_os.h"
 
 #include "duration.hpp"
 
-namespace osl
+namespace weos
 {
 namespace chrono
 {
@@ -186,6 +186,6 @@ struct cmsis_wait
 } // namespace detail
 
 } // namespace chrono
-} // namespace osl
+} // namespace weos
 
-#endif // OSL_CMSIS_CHRONO_HPP
+#endif // WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
