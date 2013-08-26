@@ -51,7 +51,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${NANO_FLAGS} ${NOHOST_FLAGS} -Wl,--gc-sections -Tst
 
 include_directories(
     .
-    /usr/include/boost
+    ../../3rdparty
 #    ${Boost_INCLUDE_DIRS}
 )
 
