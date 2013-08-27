@@ -32,9 +32,7 @@
 #include "../config.hpp"
 #include "duration.hpp"
 
-#include "../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
-
-// Definition from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
+// Declaration from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
 extern "C" uint32_t rt_time_get(void);
 
 namespace weos
@@ -160,6 +158,10 @@ public:
 namespace detail
 {
 
+// Keil's CMSIS RTX limits the delay to 0xFFFE ticks (really ticks, not
+// milliseconds, unless the SysTick period is 1 ms). If we want to
+// block longer, we have to issue multiple calls. This helper contains the
+// necessary boilerplate code.
 template <typename RepT, typename PeriodT, typename FunctorT>
 struct cmsis_wait
 {
@@ -169,21 +171,23 @@ struct cmsis_wait
         if (d.count() <= 0)
             return fun(0);
 
-        // Keil's CMSIS RTX limits the delay to 0xFFFE ticks. If we want to
-        // block longer, we have to issue multiple calls.
-
         typedef chrono::milliseconds::rep rep;
-        // A delay time such that numTicks := d.count() * 1000 / OS_TICK is
-        // for sure smaller than or equal to 0xFFFE.
-        const rep maxDelay = 65 * static_cast<rep>(OS_TICK);
+
+        //! \todo The common type needs to be at least int32_t
+        //! \todo If PeriodT != boost::milli, we need a conversion.
+
+        // A delay time (in ms) such that the resultant number of ticks is for
+        // sure smaller than or equal to 0xFFFE.
+        const rep maxMillisecs = 0xFFFE * 1000
+                                 / static_cast<rep>(WEOS_SYSTICK_FREQUENCY);
 
         rep count = d.count();
-        while (count > maxDelay)
+        while (count > maxMillisecs)
         {
-            bool success = fun(maxDelay);
+            bool success = fun(maxMillisecs);
             if (success)
                 return true;
-            count -= maxDelay;
+            count -= maxMillisecs;
         }
         return fun(count);
     }

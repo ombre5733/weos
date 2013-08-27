@@ -44,6 +44,20 @@ TEST(second_time_point, DefaultConstructor)
 
 TEST(second_time_point, Constructor)
 {
-    second_time_point t(weos::chrono::seconds(23));
-    ASSERT_EQ(23, t.time_since_epoch().count());
+    second_time_point t1(weos::chrono::seconds(21));
+    ASSERT_EQ(21, t1.time_since_epoch().count());
+
+    second_time_point t2(weos::chrono::seconds(-42));
+    ASSERT_EQ(-42, t2.time_since_epoch().count());
+}
+
+TEST(second_time_point, Arithmetics)
+{
+    second_time_point t1(weos::chrono::seconds(21));
+    /* second_time_point t2(weos::chrono::seconds(-42)); */
+
+    t1 += weos::chrono::seconds(42);
+    ASSERT_EQ(63, t1.time_since_epoch().count());
+    t1 -= weos::chrono::seconds(100);
+    ASSERT_EQ(-37, t1.time_since_epoch().count());
 }

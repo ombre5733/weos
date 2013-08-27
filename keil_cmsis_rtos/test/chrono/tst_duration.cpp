@@ -78,7 +78,40 @@ TYPED_TEST(PredefinedDurationTest, Max)
     ASSERT_EQ(2147483647, d.count());
 }
 
+TYPED_TEST(PredefinedDurationTest, Arithmetics)
+{
+    TypeParam d1(21);
+    TypeParam d2(-42);
+    ASSERT_EQ( 21, (+d1).count());
+    ASSERT_EQ(-21, (-d1).count());
+    ASSERT_EQ(-42, (+d2).count());
+    ASSERT_EQ( 42, (-d2).count());
 
+    ASSERT_EQ( 21, (d1++).count());
+    ASSERT_EQ( 22, d1.count());
+    ASSERT_EQ( 23, (++d1).count());
+    ASSERT_EQ( 23, d1.count());
+
+    ASSERT_EQ( 23, (d1--).count());
+    ASSERT_EQ( 22, d1.count());
+    ASSERT_EQ( 21, (--d1).count());
+    ASSERT_EQ( 21, d1.count());
+
+    ASSERT_EQ(-42, (d2++).count());
+    ASSERT_EQ(-41, d2.count());
+    ASSERT_EQ(-40, (++d2).count());
+    ASSERT_EQ(-40, d2.count());
+
+    ASSERT_EQ(-40, (d2--).count());
+    ASSERT_EQ(-41, d2.count());
+    ASSERT_EQ(-42, (--d2).count());
+    ASSERT_EQ(-42, d2.count());
+
+    d1 += d2;
+    ASSERT_EQ(-21, d1.count());
+    d1 -= d2;
+    ASSERT_EQ( 21, d1.count());
+}
 
 TEST(duration_cast, s_to_ms)
 {

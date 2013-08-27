@@ -33,36 +33,13 @@
 //#  error "The user config has not been defined."
 #define WEOS_USER_CONFIG "user_config.hpp"
 #endif
-
 #include WEOS_USER_CONFIG
 
-// ----=====================================================================----
-//     C++11
-// ----=====================================================================----
 
-#define OSL_IMPLEMENTATION_CXX11
-#if defined(OSL_IMPLEMENTATION_CXX11)
-
-// The frequency of the high-resolution timer (in Hz).
-#  define OS_CLOCK   12000000
-// The time interval between two sys-ticks (in us).
-#  define OS_TICK    1000
-
-#endif // OSL_IMPLEMENTATION_CXX11
-
-// ----=====================================================================----
-//     Keil CMSIS-RTOS
-// ----=====================================================================----
-
-// #define OSL_IMPLEMENTATION_KEIL_CMSIS
-
-// ----=====================================================================----
-//     Private section
-// ----=====================================================================----
-
-#if defined(OS_IMPLEMENTATION_KEIL_CMSIS)
-#  if osCMSIS_RTX != ((4<<16)|70)
-#    error "The Keil CMSIS version must be 4.70."
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#  include "3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
+#  if osCMSIS_RTX != ((4<<16) | 70)
+#    error "The Keil CMSIS RTOS version must be 4.70."
 #  endif
 #endif
 
