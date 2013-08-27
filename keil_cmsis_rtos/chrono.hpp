@@ -29,9 +29,10 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 #define WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 
-#include "../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
-
+#include "../config.hpp"
 #include "duration.hpp"
+
+#include "../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
 
 // Definition from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
 extern "C" uint32_t rt_time_get(void);
@@ -60,6 +61,8 @@ public:
     }
 
     //! Creates a time point from a duration.
+    //! Creates a time point whose difference to the epoch time is equal
+    //! to the given duration \p d.
     BOOST_CONSTEXPR explicit time_point(const duration& d)
         : m_duration(d)
     {
@@ -112,13 +115,13 @@ private:
 // ----=====================================================================----
 
 //! The system clock.
-//! The system clock's period is equal to the time between two OS ticks. This
-//! period has to be set with the OS_TICK macro (in us).
+//! The system clock's period is equal to the time between two OS ticks. The
+//! corresponding frequency has to be set with the WEOS_SYSTICK_FREQUENCY macro.
 class system_clock
 {
 public:
     typedef int32_t rep;
-    typedef boost::ratio<OS_TICK, 1000000> period;
+    typedef boost::ratio<1, WEOS_SYSTICK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<system_clock> time_point;
 
@@ -137,12 +140,12 @@ public:
 //! The high-resolution clock.
 //! This class provides access to the system's high-resolution clock. The
 //! frequency of this clock is equal to the sys-tick timer, which has to be
-//! set with the OS_CLOCK macro (in Hz).
+//! set with the WEOS_SYSTEM_CLOCK_FREQUENCY macro (in Hz).
 class high_resolution_clock
 {
 public:
     typedef int32_t rep;
-    typedef boost::ratio<1, OS_CLOCK> period;
+    typedef boost::ratio<1, WEOS_SYSTEM_CLOCK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<high_resolution_clock> time_point;
 

@@ -26,30 +26,24 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_USER_CONFIG_HPP
-#define WEOS_USER_CONFIG_HPP
+#include "../../chrono.hpp"
 
-// ----=====================================================================----
-//     C++11
-// ----=====================================================================----
+#include "gtest/gtest.h"
 
-// #define WEOS_WRAP_CXX11
+struct DummyClock
+{
+};
+typedef weos::chrono::time_point<DummyClock, weos::chrono::seconds>
+    second_time_point;
 
-// ----=====================================================================----
-//     Keil CMSIS-RTOS
-// ----=====================================================================----
+TEST(second_time_point, DefaultConstructor)
+{
+    second_time_point t;
+    ASSERT_EQ(0, t.time_since_epoch().count());
+}
 
-#define WEOS_WRAP_KEIL_CMSIS_RTOS
-
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-
-//! The frequency of the system clock (in Hz).
-//! \note In Keil's CMSIS RTOS this is the value of OS_CLOCK.
-#  define WEOS_SYSTEM_CLOCK_FREQUENCY   12000000
-//! The frequency of the SysTick timer (in Hz).
-//! \note In Keil's CMSIS RTOS this is the value of (1000000 / OS_TICK).
-#  define WEOS_SYSTICK_FREQUENCY        1000
-
-#endif // WEOS_WRAP_KEIL_CMSIS_RTOS
-
-#endif // WEOS_USER_CONFIG_HPP
+TEST(second_time_point, Constructor)
+{
+    second_time_point t(weos::chrono::seconds(23));
+    ASSERT_EQ(23, t.time_since_epoch().count());
+}

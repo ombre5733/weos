@@ -26,8 +26,15 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef OSL_CONFIG_HPP
-#define OSL_CONFIG_HPP
+#ifndef WEOS_CONFIG_HPP
+#define WEOS_CONFIG_HPP
+
+#if !defined(WEOS_USER_CONFIG)
+//#  error "The user config has not been defined."
+#define WEOS_USER_CONFIG "user_config.hpp"
+#endif
+
+#include WEOS_USER_CONFIG
 
 // ----=====================================================================----
 //     C++11
@@ -59,4 +66,4 @@
 #  endif
 #endif
 
-#endif // OSL_CONFIG_HPP
+#endif // WEOS_CONFIG_HPP
