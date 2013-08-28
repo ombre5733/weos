@@ -40,7 +40,7 @@
 // ----=====================================================================----
 
 // Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
-// #define WEOS_WRAP_KEIL_CMSIS_RTOS
+#define WEOS_WRAP_KEIL_CMSIS_RTOS
 
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 
@@ -66,7 +66,7 @@
 // If this macro is defined, assertions are enabled in the WEOS library.
 // By default, the assertion is checked using the assert() function from
 // <cassert>.
-// #define WEOS_ENABLE_ASSERT
+#define WEOS_ENABLE_ASSERT
 
 // If this macro is defined, the user has to provide a handler for a failed
 // assertion. The function's signature is

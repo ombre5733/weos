@@ -59,6 +59,8 @@ include_directories(
 link_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
 link_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/keil_cmsis_rtos/LIB/GCC")
 
+# Specify the location of the user_config.hpp file.
+add_definitions("-DWEOS_USER_CONFIG=\"common/user_config.hpp\"")
 
 set(COMMON_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/common/startup_stm32f4xx.S
@@ -91,6 +93,6 @@ endfunction()
 
 file(COPY runAllTests.py DESTINATION .)
 
-# Walk into the subdirectories which implement the actual tests.
+# Walk into the subdirectories which contain the actual tests.
 add_subdirectory(chrono)
 add_subdirectory(mutex)

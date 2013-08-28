@@ -30,8 +30,7 @@
 #define WEOS_CONFIG_HPP
 
 #if !defined(WEOS_USER_CONFIG)
-//#  error "The user config has not been defined."
-#define WEOS_USER_CONFIG "user_config.hpp"
+#  error "The location of the user config has not been defined."
 #endif
 #include WEOS_USER_CONFIG
 
