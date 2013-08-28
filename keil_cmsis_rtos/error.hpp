@@ -26,32 +26,53 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CONFIG_HPP
-#define WEOS_CONFIG_HPP
-
-#if !defined(WEOS_USER_CONFIG)
-//#  error "The user config has not been defined."
-#define WEOS_USER_CONFIG "user_config.hpp"
-#endif
-#include WEOS_USER_CONFIG
-
-
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
-#  if osCMSIS_RTX != ((4<<16) | 70)
-#    error "The Keil CMSIS RTOS version must be 4.70."
-#  endif
-#endif
+#ifndef WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
+#define WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
 
 namespace weos
 {
 
-template <typename ExceptionT>
-/*BOOST_ATTRIBUTE_NORETURN*/ inline void throw_exception(const ExceptionT& e)
+namespace cmsis_error
 {
-    while (1);
+enum cmsis_error_enum
+{
+    Resource,
+    Isr
+};
+} // namespace cmsis_error
+
+class cmsis_category_impl : public boost::error_category
+{
+public:
+    virtual const char* name() const
+    {
+        return "CMSIS";
+    }
+
+    virtual std::string message(int err_val) const;
+};
+
+const boost::error_category& cmsis_category()
+{
+    static cmsis_category_impl categoryInstance;
+    return categoryInstance;
 }
+
+namespace cmsis_error
+{
+boost::error_code make_error_code(cmsis_error_enum e)
+{
+    return boost::error_code(static_cast<int>(e),
+                             cmsis_category());
+}
+
+boost::error_condition make_error_condition(cmsis_error_enum e)
+{
+    return boost::error_condition(static_cast<int>(e),
+                                  cmsis_category());
+}
+} // namespace cmsis_error
 
 } // namespace weos
 
-#endif // WEOS_CONFIG_HPP
+#endif // WEOS_KEIL_CMSIS_RTOS_ERROR_HPP

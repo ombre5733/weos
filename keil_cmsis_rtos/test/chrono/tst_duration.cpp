@@ -31,7 +31,7 @@
 #include "gtest/gtest.h"
 
 template <typename T>
-class PredefinedDurationTest : public ::testing::Test
+class PredefinedDurations : public ::testing::Test
 {
 };
 
@@ -39,46 +39,46 @@ typedef ::testing::Types<weos::chrono::microseconds,
                          weos::chrono::milliseconds,
                          weos::chrono::seconds,
                          weos::chrono::minutes> duration_types;
-TYPED_TEST_CASE(PredefinedDurationTest, duration_types);
+TYPED_TEST_CASE(PredefinedDurations, duration_types);
 
-TYPED_TEST(PredefinedDurationTest, DefaultConstructor)
+TYPED_TEST(PredefinedDurations, DefaultConstructor)
 {
     TypeParam d;
     ASSERT_EQ(0, d.count());
 }
 
-TYPED_TEST(PredefinedDurationTest, ConstructorWithArgument)
+TYPED_TEST(PredefinedDurations, ConstructorWithArgument)
 {
     TypeParam d(42);
     ASSERT_EQ(42, d.count());
 }
 
-TYPED_TEST(PredefinedDurationTest, CopyConstructor)
+TYPED_TEST(PredefinedDurations, CopyConstructor)
 {
     TypeParam d1(42);
     TypeParam d2(d1);
     ASSERT_EQ(42, d2.count());
 }
 
-TYPED_TEST(PredefinedDurationTest, Zero)
+TYPED_TEST(PredefinedDurations, Zero)
 {
     TypeParam d = TypeParam::zero();
     ASSERT_EQ(0, d.count());
 }
 
-TYPED_TEST(PredefinedDurationTest, Min)
+TYPED_TEST(PredefinedDurations, Min)
 {
     TypeParam d = TypeParam::min();
     ASSERT_EQ(-2147483648, d.count());
 }
 
-TYPED_TEST(PredefinedDurationTest, Max)
+TYPED_TEST(PredefinedDurations, Max)
 {
     TypeParam d = TypeParam::max();
     ASSERT_EQ(2147483647, d.count());
 }
 
-TYPED_TEST(PredefinedDurationTest, Arithmetics)
+TYPED_TEST(PredefinedDurations, Arithmetics)
 {
     TypeParam d1(21);
     TypeParam d2(-42);

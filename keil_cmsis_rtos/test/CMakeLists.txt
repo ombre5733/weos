@@ -57,10 +57,13 @@ include_directories(
 
 # Add the directory containing the linker script.
 link_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
+link_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/keil_cmsis_rtos/LIB/GCC")
+
 
 set(COMMON_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/common/startup_stm32f4xx.S
         ${CMAKE_CURRENT_SOURCE_DIR}/common/newlib_retarget.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/RTX_Conf_CM.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/system_stm32f4xx.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/test_main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/gtest/gtest-all.cc
@@ -76,6 +79,7 @@ add_custom_target(bin)
 # the top-level bin-target is built, all other binaries shall be built, too.
 function(add_executable_and_bin name sources)
     add_executable(${name} ${sources})
+    target_link_libraries(${name} RTX_CM4)
     add_custom_command(
         OUTPUT ${name}.bin
         COMMAND ${OBJCOPY} -O binary ${name} ${name}.bin
@@ -89,3 +93,4 @@ file(COPY runAllTests.py DESTINATION .)
 
 # Walk into the subdirectories which implement the actual tests.
 add_subdirectory(chrono)
+add_subdirectory(mutex)

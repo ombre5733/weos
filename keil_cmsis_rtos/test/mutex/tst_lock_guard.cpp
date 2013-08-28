@@ -26,32 +26,69 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CONFIG_HPP
-#define WEOS_CONFIG_HPP
+#include "../../mutex.hpp"
+#include "sparring.hpp"
 
-#if !defined(WEOS_USER_CONFIG)
-//#  error "The user config has not been defined."
-#define WEOS_USER_CONFIG "user_config.hpp"
-#endif
-#include WEOS_USER_CONFIG
+#include "gtest/gtest.h"
 
-
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
-#  if osCMSIS_RTX != ((4<<16) | 70)
-#    error "The Keil CMSIS RTOS version must be 4.70."
-#  endif
-#endif
-
-namespace weos
+TEST(lock_guard, Constructor)
 {
-
-template <typename ExceptionT>
-/*BOOST_ATTRIBUTE_NORETURN*/ inline void throw_exception(const ExceptionT& e)
-{
-    while (1);
+    weos::mutex m;
+    weos::lock_guard<weos::mutex> l(m);
 }
 
-} // namespace weos
+TEST(lock_guard, adpot_lock)
+{
+    weos::mutex m;
+    weos::lock_guard<weos::mutex> l(m, weos::adopt_lock);
+}
 
-#endif // WEOS_CONFIG_HPP
+// ----=====================================================================----
+//     Tests together with a sparring thread
+// ----=====================================================================----
+
+TEST(sparring_lock_guard, lock)
+{
+    SparringData data(SparringData::MutexLock);
+
+    osThreadId sparringId;
+    {
+        weos::lock_guard<weos::mutex> l(data.mutex);
+
+        sparringId = osThreadCreate(&sparringThread, &data);
+        ASSERT_TRUE(sparringId != 0);
+
+        osDelay(10);
+        ASSERT_EQ(true, data.sparringStarted);
+        ASSERT_EQ(false, data.mutexLocked);
+    }
+
+    osDelay(10);
+    ASSERT_EQ(true, data.mutexLocked);
+
+    osStatus result = osThreadTerminate(sparringId);
+    ASSERT_EQ(osOK, result);
+}
+
+TEST(sparring_lock_guard, try_lock)
+{
+    SparringData data(SparringData::MutexTryLock);
+
+    osThreadId sparringId;
+    {
+        weos::lock_guard<weos::mutex> l(data.mutex);
+
+        sparringId = osThreadCreate(&sparringThread, &data);
+        ASSERT_TRUE(sparringId != 0);
+
+        osDelay(10);
+        ASSERT_EQ(true, data.sparringStarted);
+        ASSERT_EQ(false, data.mutexLocked);
+    }
+
+    osDelay(10);
+    ASSERT_EQ(true, data.mutexLocked);
+
+    osStatus result = osThreadTerminate(sparringId);
+    ASSERT_EQ(osOK, result);
+}

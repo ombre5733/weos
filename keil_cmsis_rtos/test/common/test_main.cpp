@@ -29,6 +29,7 @@
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
 
+#include "../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
 #include "gtest/gtest.h"
 
 #include <stdio.h>
@@ -102,10 +103,8 @@ extern "C" void SystemInit(void)
     initUart();
 }
 
-int main()
+extern "C" void runTests(const void* arg)
 {
-    printf("main() started\n");
-
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
     GPIOD->MODER   |= 1 << (2 * GREEN_LED);
     GPIOD->OSPEEDR |= 1 << (2 * GREEN_LED);
@@ -123,5 +122,18 @@ int main()
         GPIOD->BSR = (1 << RED_LED);
 
     printf("Done!\n");
+}
+
+int main()
+{
+    printf("main() started\n");
+
+    osKernelInitialize();
+
+    osThreadDef_t testThread = {runTests, osPriorityNormal, 1, 0};
+    osThreadCreate(&testThread, 0);
+
+    osKernelStart();
+
     while (1);
 }

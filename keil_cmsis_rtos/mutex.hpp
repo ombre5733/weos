@@ -26,19 +26,18 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef OSL_CMSIS_MUTEX_HPP
-#define OSL_CMSIS_MUTEX_HPP
+#ifndef WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
+#define WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
 
+#include "../config.hpp"
 #include "chrono.hpp"
-
-#include "cmsis_os.h"
 
 #include <boost/assert.hpp>
 #include <boost/config.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/utility.hpp>
 
-namespace osl
+namespace weos
 {
 
 struct defer_lock_t {};
@@ -46,11 +45,20 @@ struct try_to_lock_t {};
 struct adopt_lock_t {};
 
 BOOST_CONSTEXPR_OR_CONST defer_lock_t defer_lock = defer_lock_t();
-BOOST_CONSTEXPR_OR_CONST defer_lock_t try_to_lock = try_to_lock_t();
-BOOST_CONSTEXPR_OR_CONST defer_lock_t adopt_lock = adopt_lock_t();
+BOOST_CONSTEXPR_OR_CONST try_to_lock_t try_to_lock = try_to_lock_t();
+BOOST_CONSTEXPR_OR_CONST adopt_lock_t adopt_lock = adopt_lock_t();
 
 namespace detail
 {
+
+// The header (first 32 bits) of the mutex control block. The full definition
+// can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h
+struct MutexControlBlockHeader
+{
+    uint8_t controlBlockType;
+    uint8_t ownerPriority;
+    uint16_t nestingLevel;
+};
 
 template <typename DerivedT>
 class generic_mutex : boost::noncopyable
@@ -63,7 +71,7 @@ public:
         osMutexDef_t mutexDef = { m_cmsisMutexControlBlock };
         m_id = osMutexCreate(&mutexDef);
         if (m_id == 0)
-            ::boost::throw_exception(std::system_error());
+            ::weos::throw_exception(-1);// TODO: std::system_error());
     }
 
     // Destroys the mutex.
@@ -78,8 +86,8 @@ public:
     {
         osStatus status = osMutexWait(m_id, osWaitForever);
         if (status != osOK)
-            ::boost::throw_exception(std::system_error());
-        derived()->post_lock_check();
+            ::weos::throw_exception(-1);// TODO: std::system_error());
+        derived()->post_lock_check(mutexControlBlockHeader());
     }
 
     // Tries to lock the mutex. If successful, returns the result of calling
@@ -89,7 +97,8 @@ public:
         osStatus status = osMutexWait(m_id, 0);
         if (status == osOK)
         {
-            return derived()->post_try_lock_correction();
+            return derived()->post_try_lock_correction(
+                        m_id, mutexControlBlockHeader());
         }
         else
             return false;
@@ -108,9 +117,9 @@ protected:
     uint32_t m_cmsisMutexControlBlock[3];
     osMutexId m_id;
 
-    P_MUCB mutexControlBlock()
+    MutexControlBlockHeader* mutexControlBlockHeader()
     {
-        return (P_MUCB)m_cmsisMutexControlBlock;
+        return (MutexControlBlockHeader*)m_cmsisMutexControlBlock;
     }
 
     DerivedT* derived()
@@ -118,11 +127,12 @@ protected:
         return static_cast<DerivedT*>(this);
     }
 
-    void post_lock_check()
+    void post_lock_check(MutexControlBlockHeader* /*mucb*/)
     {
     }
 
-    bool post_try_lock_correction()
+    bool post_try_lock_correction(osMutexId /*id*/,
+                                  MutexControlBlockHeader* /*mucb*/)
     {
         return true;
     }
@@ -160,29 +170,29 @@ public:
     template <typename RepT, typename PeriodT>
     bool try_lock_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        mutex_try_locker locker(m_id);
+        mutex_try_locker locker(generic_mutex<DerivedT>::m_id);
         return chrono::detail::cmsis_wait<RepT, PeriodT, mutex_try_locker>(
                     d, locker);
     }
 };
 
 template <typename BaseT>
-class nonrecursive_adapter : public BaseT<nonrecursive_adapter>
+class nonrecursive_adapter : public BaseT
 {
-protected:
-    void post_lock_check()
+public:
+    void post_lock_check(MutexControlBlockHeader* mucb)
     {
-        assert(pmucb()->level == 1);
+        //assert(pmucb()->level == 1);
     }
 
-    bool post_try_lock_correction()
+    bool post_try_lock_correction(osMutexId id, MutexControlBlockHeader* mucb)
     {
-        if (pmucb()->level == 1)
+        if (mucb->nestingLevel == 1)
             return true;
 
-        assert(mutexControlBlock()->level == 2);
-        osStatus status = osMutexRelease(m_id);
-        assert(status == OS_OK);
+        //assert(mucb->level == 2);
+        osStatus status = osMutexRelease(id);
+        //assert(status == OS_OK);
         return false;
     }
 };
@@ -190,12 +200,12 @@ protected:
 } // namespace detail
 
 class mutex
-#ifndef OSL_DOXYGEN_RUN
-        : public detail::nonrecursive_adapter<detail::generic_mutex>
-#endif // OSL_DOXYGEN_RUN
+#ifndef WEOS_DOXYGEN_RUN
+        : public detail::nonrecursive_adapter<detail::generic_mutex<mutex> >
+#endif // WEOS_DOXYGEN_RUN
 {
 public:
-#ifdef OSL_DOXYGEN_RUN
+#ifdef WEOS_DOXYGEN_RUN
     //! Creates a mutex.
     mutex();
     //! Destroys the mutex.
@@ -216,16 +226,17 @@ public:
     //! Unlocks this mutex which must have been locked previously by the
     //! calling thread.
     void unlock();
-#endif // OSL_DOXYGEN_RUN
+#endif // WEOS_DOXYGEN_RUN
 };
 
 class timed_mutex
-#ifndef OSL_DOXYGEN_RUN
-        : public detail::nonrecursive_adapter<detail::generic_timed_mutex>
-#endif // OSL_DOXYGEN_RUN
+#ifndef WEOS_DOXYGEN_RUN
+        : public detail::nonrecursive_adapter<
+                     detail::generic_timed_mutex<timed_mutex> >
+#endif // WEOS_DOXYGEN_RUN
 {
 public:
-#ifdef OSL_DOXYGEN_RUN
+#ifdef WEOS_DOXYGEN_RUN
     //! Creates a mutex with support for timeout.
     timed_mutex();
     //! Destroys the mutex.
@@ -246,23 +257,23 @@ public:
     //! Unlocks this mutex which must have been locked previously by the
     //! calling thread.
     void unlock();
-#endif // OSL_DOXYGEN_RUN
+#endif // WEOS_DOXYGEN_RUN
 };
 
 //! A recursive mutex.
 class recursive_mutex
-#ifndef OSL_DOXYGEN_RUN
+#ifndef WEOS_DOXYGEN_RUN
         : public detail::generic_mutex<recursive_mutex>
-#endif // OSL_DOXYGEN_RUN
+#endif // WEOS_DOXYGEN_RUN
 {
 public:
 };
 
 //! A recursive mutex with support for timeout.
 class recursive_timed_mutex
-#ifndef OSL_DOXYGEN_RUN
+#ifndef WEOS_DOXYGEN_RUN
         : public detail::generic_timed_mutex<recursive_timed_mutex>
-#endif // OSL_DOXYGEN_RUN
+#endif // WEOS_DOXYGEN_RUN
 {
 public:
 };
@@ -398,7 +409,7 @@ public:
     bool unlock()
     {
         if (!m_mutex || !m_locked)
-            ::boost::throw_exception(std::system_error);
+            ::weos::throw_exception(-1);//! \todo std::system_error);
         m_mutex->unlock();
         m_locked = false;
     }
@@ -410,6 +421,6 @@ private:
     bool m_locked;
 };
 
-} // namespace osl
+} // namespace weos
 
-#endif // OSL_CMSIS_MUTEX_HPP
+#endif // WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
