@@ -59,4 +59,21 @@ namespace weos
 
 } // namespace weos
 
+#if defined(WEOS_ENABLE_ASSERT)
+#  if defined(WEOS_CUSTOM_ASSERT_HANDLER)
+     namespace weos
+     {
+         void assert_failed(const char* condition, const char* function,
+                            const char* file, int line);
+     } // namespace weos
+#    define WEOS_ASSERT(cond)                                                  \
+         do { if (!(cond)) ::weos::assert_failed(#cond, todo, __FILE__, __LINE__) } while(0)
+#  else
+#    include <cassert>
+#    define WEOS_ASSERT(cond)   assert(cond)
+#  endif // WEOS_CUSTOM_ASSERT_HANDLER
+#else
+#  define WEOS_ASSERT(cond)   ((void)0)
+#endif // WEOS_ENABLE_ASSERT
+
 #endif // WEOS_CONFIG_HPP

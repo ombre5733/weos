@@ -38,7 +38,7 @@ class error_code
 {
 };
 
-class error : public std::exception
+class system_error : public std::exception
 {
 public:
 };

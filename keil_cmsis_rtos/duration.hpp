@@ -29,6 +29,8 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_DURATION_HPP
 #define WEOS_KEIL_CMSIS_RTOS_DURATION_HPP
 
+#include "../config.hpp"
+
 #include <boost/config.hpp>
 #include <boost/ratio.hpp>
 #include <boost/type_traits/common_type.hpp>

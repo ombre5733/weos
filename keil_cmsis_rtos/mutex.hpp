@@ -32,7 +32,6 @@
 #include "../config.hpp"
 #include "chrono.hpp"
 
-#include <boost/assert.hpp>
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
 
@@ -109,7 +108,7 @@ public:
         // Just check the return code but do not throw because unlock is
         // called from the destructor of lock_guard, for example.
         //! \todo I think, we can throw exceptions, too.
-        BOOST_ASSERT(status == osOK);
+        WEOS_ASSERT(status == osOK);
     }
 
 protected:
@@ -181,7 +180,7 @@ class nonrecursive_adapter : public BaseT
 public:
     void post_lock_check(MutexControlBlockHeader* mucb)
     {
-        BOOST_ASSERT(mucb->nestingLevel == 1);
+        WEOS_ASSERT(mucb->nestingLevel == 1);
     }
 
     bool post_try_lock_correction(osMutexId id, MutexControlBlockHeader* mucb)
@@ -189,9 +188,9 @@ public:
         if (mucb->nestingLevel == 1)
             return true;
 
-        BOOST_ASSERT(mucb->nestingLevel == 2);
+        WEOS_ASSERT(mucb->nestingLevel == 2);
         osStatus status = osMutexRelease(id);
-        BOOST_ASSERT(status == osOK);
+        WEOS_ASSERT(status == osOK);
         return false;
     }
 };

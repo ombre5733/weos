@@ -57,10 +57,22 @@
 //     General settings
 // ----=====================================================================----
 
-// If the following macro is defined, the user has to provide the
-// throw_exception() function. The function's signature is
+// If this macro is defined, the user has to provide the throw_exception()
+// function. The function's signature is
 // void ::weos::throw_exception(const std::exception& e);
 // This function must never return.
 // #define WEOS_CUSTOM_THROW_EXCEPTION
+
+// If this macro is defined, assertions are enabled in the WEOS library.
+// By default, the assertion is checked using the assert() function from
+// <cassert>.
+#define WEOS_ENABLE_ASSERT
+
+// If this macro is defined, the user has to provide a handler for a failed
+// assertion. The function's signature is
+// void ::weos::assert_failed(const char* condition, const char* function,
+//                            const char* file, int line);
+// Note: If WEOS_ENABLE_ASSERT is not defined, this macro has no effect.
+// #define WEOS_CUSTOM_ASSERT_HANDLER
 
 #endif // WEOS_USER_CONFIG_HPP
