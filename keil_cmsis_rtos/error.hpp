@@ -29,8 +29,19 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
 #define WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
 
+#include <exception>
+
 namespace weos
 {
+
+class error_code
+{
+};
+
+class error : public std::exception
+{
+public:
+};
 
 namespace cmsis_error
 {

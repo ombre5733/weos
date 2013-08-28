@@ -39,6 +39,7 @@
 //     Keil CMSIS-RTOS
 // ----=====================================================================----
 
+// Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
 #define WEOS_WRAP_KEIL_CMSIS_RTOS
 
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
@@ -51,5 +52,15 @@
 #  define WEOS_SYSTICK_FREQUENCY        1000
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
+
+// ----=====================================================================----
+//     General settings
+// ----=====================================================================----
+
+// If the following macro is defined, the user has to provide the
+// throw_exception() function. The function's signature is
+// void ::weos::throw_exception(const std::exception& e);
+// This function must never return.
+// #define WEOS_CUSTOM_THROW_EXCEPTION
 
 #endif // WEOS_USER_CONFIG_HPP

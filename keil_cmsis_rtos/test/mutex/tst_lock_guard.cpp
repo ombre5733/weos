@@ -37,7 +37,7 @@ TEST(lock_guard, Constructor)
     weos::lock_guard<weos::mutex> l(m);
 }
 
-TEST(lock_guard, adpot_lock)
+TEST(lock_guard, adopt_lock)
 {
     weos::mutex m;
     weos::lock_guard<weos::mutex> l(m, weos::adopt_lock);
@@ -59,12 +59,12 @@ TEST(sparring_lock_guard, lock)
         ASSERT_TRUE(sparringId != 0);
 
         osDelay(10);
-        ASSERT_EQ(true, data.sparringStarted);
-        ASSERT_EQ(false, data.mutexLocked);
+        ASSERT_TRUE(data.sparringStarted);
+        ASSERT_FALSE(data.mutexLocked);
     }
 
     osDelay(10);
-    ASSERT_EQ(true, data.mutexLocked);
+    ASSERT_TRUE(data.mutexLocked);
 
     osStatus result = osThreadTerminate(sparringId);
     ASSERT_EQ(osOK, result);
@@ -82,12 +82,12 @@ TEST(sparring_lock_guard, try_lock)
         ASSERT_TRUE(sparringId != 0);
 
         osDelay(10);
-        ASSERT_EQ(true, data.sparringStarted);
-        ASSERT_EQ(false, data.mutexLocked);
+        ASSERT_TRUE(data.sparringStarted);
+        ASSERT_FALSE(data.mutexLocked);
     }
 
     osDelay(10);
-    ASSERT_EQ(true, data.mutexLocked);
+    ASSERT_TRUE(data.mutexLocked);
 
     osStatus result = osThreadTerminate(sparringId);
     ASSERT_EQ(osOK, result);

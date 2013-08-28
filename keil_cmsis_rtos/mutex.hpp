@@ -34,7 +34,6 @@
 
 #include <boost/assert.hpp>
 #include <boost/config.hpp>
-#include <boost/throw_exception.hpp>
 #include <boost/utility.hpp>
 
 namespace weos
@@ -182,7 +181,7 @@ class nonrecursive_adapter : public BaseT
 public:
     void post_lock_check(MutexControlBlockHeader* mucb)
     {
-        //assert(pmucb()->level == 1);
+        BOOST_ASSERT(mucb->nestingLevel == 1);
     }
 
     bool post_try_lock_correction(osMutexId id, MutexControlBlockHeader* mucb)
@@ -190,9 +189,9 @@ public:
         if (mucb->nestingLevel == 1)
             return true;
 
-        //assert(mucb->level == 2);
+        BOOST_ASSERT(mucb->nestingLevel == 2);
         osStatus status = osMutexRelease(id);
-        //assert(status == OS_OK);
+        BOOST_ASSERT(status == osOK);
         return false;
     }
 };

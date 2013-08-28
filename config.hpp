@@ -46,11 +46,16 @@
 namespace weos
 {
 
-template <typename ExceptionT>
-/*BOOST_ATTRIBUTE_NORETURN*/ inline void throw_exception(const ExceptionT& e)
-{
-    while (1);
-}
+#if !defined(WEOS_CUSTOM_THROW_EXCEPTION)
+  template <typename ExceptionT>
+  /*BOOST_ATTRIBUTE_NORETURN*/ inline void throw_exception(const ExceptionT& e)
+  {
+      while(1); //! \todo throw here
+  }
+#else
+  // This is only a declaration - the definition has to be provided by the user.
+  void throw_exception(const std::exception& e);
+#endif
 
 } // namespace weos
 
