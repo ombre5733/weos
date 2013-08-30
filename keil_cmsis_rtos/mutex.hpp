@@ -117,7 +117,8 @@ protected:
 
     MutexControlBlockHeader* mutexControlBlockHeader()
     {
-        return (MutexControlBlockHeader*)m_cmsisMutexControlBlock;
+        return reinterpret_cast<MutexControlBlockHeader*>(
+                    m_cmsisMutexControlBlock);
     }
 
     DerivedT* derived()
@@ -152,7 +153,7 @@ public:
 
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
-            throw -1;
+            ::weos::throw_exception(-1);// TODO: std::system_error());
 
         return false;
     }
@@ -370,7 +371,7 @@ public:
     //! mutex is unlocked.
     ~unique_lock()
     {
-        if (m_mutex && m_locked)
+        if (m_locked)
             m_mutex.unlock();
     }
 
@@ -385,9 +386,9 @@ public:
     //! Checks if this lock owns a locked mutex.
     //! Returns \p true, if a mutex is tied to this lock and the lock has
     //! ownership of it.
-    bool owns_lock() const
+    bool owns_lock() const BOOST_NOEXCEPT
     {
-        return m_mutex && m_locked;
+        return m_locked;
     }
 
     //! Releases the mutex without unlocking.
@@ -406,7 +407,7 @@ public:
     //! Unlocks the associated mutex.
     bool unlock()
     {
-        if (!m_mutex || !m_locked)
+        if (!m_locked)
             ::weos::throw_exception(-1);//! \todo std::system_error);
         m_mutex->unlock();
         m_locked = false;

@@ -18,17 +18,17 @@
 **
 *****************************************************************************/
 
-#ifndef WEOS_MUTEX_HPP
-#define WEOS_MUTEX_HPP
+#ifndef WEOS_SEMAPHORE_HPP
+#define WEOS_SEMAPHORE_HPP
 
 #include "config.hpp"
 
 #if defined(WEOS_WRAP_CXX11)
-#  include "cxx11/mutex.hpp"
+#  include "cxx11/semaphore.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "keil_cmsis_rtos/mutex.hpp"
+#  include "keil_cmsis_rtos/semaphore.hpp"
 #else
 #  error "The OS wrapper has not been configured."
 #endif
 
-#endif // WEOS_MUTEX_HPP
+#endif // WEOS_SEMAPHORE_HPP

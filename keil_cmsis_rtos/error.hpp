@@ -29,13 +29,47 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
 #define WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
 
+#include "../config.hpp"
+
+#include <boost/config.hpp>
+#include <boost/utility.hpp>
+
 #include <exception>
 
 namespace weos
 {
 
+class error_category : boost::noncopyable
+{
+    BOOST_CONSTEXPR error_category() BOOST_NOEXCEPT;
+
+    virtual ~error_category() BOOST_NOEXCEPT;
+
+    virtual const char* name() const BOOST_NOEXCEPT = 0;
+};
+
 class error_code
 {
+public:
+    error_code(int value, const error_category& category) BOOST_NOEXCEPT
+        : m_value(value),
+          m_category(category)
+    {
+    }
+
+    const error_category& category() const BOOST_NOEXCEPT
+    {
+        return m_category;
+    }
+
+    int value() const BOOST_NOEXCEPT
+    {
+        return m_value;
+    }
+
+private:
+    int m_value;
+    const error_category& m_category;
 };
 
 class system_error : public std::exception
@@ -52,7 +86,7 @@ enum cmsis_error_enum
 };
 } // namespace cmsis_error
 
-class cmsis_category_impl : public boost::error_category
+class cmsis_category_impl : public error_category
 {
 public:
     virtual const char* name() const
@@ -60,10 +94,10 @@ public:
         return "CMSIS";
     }
 
-    virtual std::string message(int err_val) const;
+    //virtual const char* message(int err_val) const;
 };
 
-const boost::error_category& cmsis_category()
+const error_category& cmsis_category()
 {
     static cmsis_category_impl categoryInstance;
     return categoryInstance;

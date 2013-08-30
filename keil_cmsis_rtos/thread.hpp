@@ -26,17 +26,16 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef OSL_CMSIS_THREAD_HPP
-#define OSL_CMSIS_THREAD_HPP
+#ifndef WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
+#define WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
 
+#include "../config.hpp"
 #include "chrono.hpp"
-
-#include "cmsis_os.h"
 
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
 
-namespace osl
+namespace weos
 {
 
 class thread : boost::noncopyable //! \todo Or must it be copyable?
@@ -215,6 +214,6 @@ void yield()
 
 } // namespace this_thread
 
-} // namespace osl
+} // namespace weos
 
-#endif // OSL_CMSIS_THREAD_HPP
+#endif // WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
