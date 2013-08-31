@@ -75,6 +75,8 @@ public:
 //! The error_code is a pair of (error value, error category). Different
 //! modules can return the same error value. The context of the error value
 //! is provided by the error category which has to derive from error_category.
+//!
+//! By definition, an error value of zero is defined as success (i.e. no error).
 class error_code
 {
 public:
@@ -120,6 +122,7 @@ enum cmsis_error_enum
 };
 } // namespace cmsis_error
 
+//! An error category for CMSIS errors.
 class cmsis_category_impl : public error_category
 {
 public:

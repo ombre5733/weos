@@ -31,4 +31,35 @@
 #  error "The OS wrapper has not been configured."
 #endif
 
+#include <boost/utility.hpp>
+
+namespace weos
+{
+
+//! A null-mutex.
+//! The null-mutex is a class which implements the Lockable concept but
+//! does not block a thread. It can be used as a stub for a mutex in
+//! single-threaded applications.
+class null_mutex: boost::noncopyable
+{
+public:
+    //! Locks the null-mutex.
+    void lock()
+    {
+    }
+
+    //! Tries to lock the null-mutex which always succeeds.
+    bool try_lock()
+    {
+        return true;
+    }
+
+    //! Unlocks the null-mutex.
+    void unlock()
+    {
+    }
+};
+
+} // namespace weos
+
 #endif // WEOS_MUTEX_HPP
