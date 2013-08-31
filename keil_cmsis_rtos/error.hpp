@@ -39,15 +39,42 @@
 namespace weos
 {
 
+//! An error category.
+//! The error_category is the base class for all error categories. These
+//! categories are used for grouping error values and error conditions. An
+//! error category provides a context for an error value and allows to
+//! distinguish otherwise ambiguous error values. As an example, imagine that
+//! a stepper motor driver and an external flash both can return an error
+//! value "1". For the stepper driver this value has the meaning
+//! "Overtemperature detected" while for the flash it means
+//! "Wrong CRC". Without a context it would not be possible to map the error
+//! value "1" back to a string.
+//!
+//! A solution is to add two error categories (e.g. a
+//! \p stepper_driver_category and a \p flash_category). Instead of returning
+//! only an error value, every module returns a pair of
+//! (error value, error category), i.e. an error_code, providing the full
+//! context of the error to the caller.
+//!
+//! Every error category is a singleton and categories are passed around by
+//! reference.
 class error_category : boost::noncopyable
 {
-    BOOST_CONSTEXPR error_category() BOOST_NOEXCEPT;
+public:
+    BOOST_CONSTEXPR error_category() BOOST_NOEXCEPT {}
 
-    virtual ~error_category() BOOST_NOEXCEPT;
+    virtual ~error_category() BOOST_NOEXCEPT {}
 
+    virtual const char* message(int condition) const = 0;
+
+    //! Returns the name of this error category.
     virtual const char* name() const BOOST_NOEXCEPT = 0;
 };
 
+//! An error value with context.
+//! The error_code is a pair of (error value, error category). Different
+//! modules can return the same error value. The context of the error value
+//! is provided by the error category which has to derive from error_category.
 class error_code
 {
 public:
@@ -57,11 +84,18 @@ public:
     {
     }
 
+    //! Returns the error category of this error code.
     const error_category& category() const BOOST_NOEXCEPT
     {
         return m_category;
     }
 
+    const char* message() const
+    {
+        return category().message(m_value);
+    }
+
+    //! Returns the error value of this error code.
     int value() const BOOST_NOEXCEPT
     {
         return m_value;
