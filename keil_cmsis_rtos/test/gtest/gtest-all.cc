@@ -1229,65 +1229,6 @@ String String::ShowCStringQuoted(const char* c_str) {
   return c_str ? String::Format("\"%s\"", c_str) : String("(null)");
 }
 
-// Copies at most length characters from str into a newly-allocated
-// piece of memory of size length+1.  The memory is allocated with new[].
-// A terminating null byte is written to the memory, and a pointer to it
-// is returned.  If str is NULL, NULL is returned.
-static char* CloneString(const char* str, size_t length) {
-  if (str == NULL) {
-    return NULL;
-  } else {
-    char* const clone = new char[length + 1];
-    posix::StrNCpy(clone, str, length);
-    clone[length] = '\0';
-    return clone;
-  }
-}
-
-// Clones a 0-terminated C string, allocating memory using new.  The
-// caller is responsible for deleting[] the return value.  Returns the
-// cloned string, or NULL if the input is NULL.
-const char * String::CloneCString(const char* c_str) {
-  return (c_str == NULL) ?
-                    NULL : CloneString(c_str, strlen(c_str));
-}
-
-#if GTEST_OS_WINDOWS_MOBILE
-// Creates a UTF-16 wide string from the given ANSI string, allocating
-// memory using new. The caller is responsible for deleting the return
-// value using delete[]. Returns the wide string, or NULL if the
-// input is NULL.
-LPCWSTR String::AnsiToUtf16(const char* ansi) {
-  if (!ansi) return NULL;
-  const int length = strlen(ansi);
-  const int unicode_length =
-      MultiByteToWideChar(CP_ACP, 0, ansi, length,
-                          NULL, 0);
-  WCHAR* unicode = new WCHAR[unicode_length + 1];
-  MultiByteToWideChar(CP_ACP, 0, ansi, length,
-                      unicode, unicode_length);
-  unicode[unicode_length] = 0;
-  return unicode;
-}
-
-// Creates an ANSI string from the given wide string, allocating
-// memory using new. The caller is responsible for deleting the return
-// value using delete[]. Returns the ANSI string, or NULL if the
-// input is NULL.
-const char* String::Utf16ToAnsi(LPCWSTR utf16_str)  {
-  if (!utf16_str) return NULL;
-  const int ansi_length =
-      WideCharToMultiByte(CP_ACP, 0, utf16_str, -1,
-                          NULL, 0, NULL, NULL);
-  char* ansi = new char[ansi_length + 1];
-  WideCharToMultiByte(CP_ACP, 0, utf16_str, -1,
-                      ansi, ansi_length, NULL, NULL);
-  ansi[ansi_length] = 0;
-  return ansi;
-}
-
-#endif  // GTEST_OS_WINDOWS_MOBILE
-
 // Compares two C strings.  Returns true iff they have the same content.
 //
 // Unlike strcmp(), this function can handle NULL argument(s).  A NULL
@@ -1864,68 +1805,6 @@ String WideStringToUtf8(const wchar_t* str, int num_chars) {
   return StringStreamToString(&stream);
 }
 
-// Converts a wide C string to a String using the UTF-8 encoding.
-// NULL will be converted to "(null)".
-String String::ShowWideCString(const wchar_t * wide_c_str) {
-  if (wide_c_str == NULL) return String("(null)");
-
-  return String(internal::WideStringToUtf8(wide_c_str, -1).c_str());
-}
-
-// Similar to ShowWideCString(), except that this function encloses
-// the converted string in double quotes.
-String String::ShowWideCStringQuoted(const wchar_t* wide_c_str) {
-  if (wide_c_str == NULL) return String("(null)");
-
-  return String::Format("L\"%s\"",
-                        String::ShowWideCString(wide_c_str).c_str());
-}
-
-// Compares two wide C strings.  Returns true iff they have the same
-// content.
-//
-// Unlike wcscmp(), this function can handle NULL argument(s).  A NULL
-// C string is considered different to any non-NULL C string,
-// including the empty string.
-bool String::WideCStringEquals(const wchar_t * lhs, const wchar_t * rhs) {
-  if (lhs == NULL) return rhs == NULL;
-
-  if (rhs == NULL) return false;
-
-  return wcscmp(lhs, rhs) == 0;
-}
-
-// Helper function for *_STREQ on wide strings.
-AssertionResult CmpHelperSTREQ(const char* expected_expression,
-                               const char* actual_expression,
-                               const wchar_t* expected,
-                               const wchar_t* actual) {
-  if (String::WideCStringEquals(expected, actual)) {
-    return AssertionSuccess();
-  }
-
-  return EqFailure(expected_expression,
-                   actual_expression,
-                   String::ShowWideCStringQuoted(expected),
-                   String::ShowWideCStringQuoted(actual),
-                   false);
-}
-
-// Helper function for *_STRNE on wide strings.
-AssertionResult CmpHelperSTRNE(const char* s1_expression,
-                               const char* s2_expression,
-                               const wchar_t* s1,
-                               const wchar_t* s2) {
-  if (!String::WideCStringEquals(s1, s2)) {
-    return AssertionSuccess();
-  }
-
-  return AssertionFailure() << "Expected: (" << s1_expression << ") != ("
-                            << s2_expression << "), actual: "
-                            << String::ShowWideCStringQuoted(s1)
-                            << " vs " << String::ShowWideCStringQuoted(s2);
-}
-
 // Compares two C strings, ignoring case.  Returns true iff they have
 // the same content.
 //
@@ -1938,40 +1817,6 @@ bool String::CaseInsensitiveCStringEquals(const char * lhs, const char * rhs) {
   if (rhs == NULL)
     return false;
   return posix::StrCaseCmp(lhs, rhs) == 0;
-}
-
-  // Compares two wide C strings, ignoring case.  Returns true iff they
-  // have the same content.
-  //
-  // Unlike wcscasecmp(), this function can handle NULL argument(s).
-  // A NULL C string is considered different to any non-NULL wide C string,
-  // including the empty string.
-  // NB: The implementations on different platforms slightly differ.
-  // On windows, this method uses _wcsicmp which compares according to LC_CTYPE
-  // environment variable. On GNU platform this method uses wcscasecmp
-  // which compares according to LC_CTYPE category of the current locale.
-  // On MacOS X, it uses towlower, which also uses LC_CTYPE category of the
-  // current locale.
-bool String::CaseInsensitiveWideCStringEquals(const wchar_t* lhs,
-                                              const wchar_t* rhs) {
-  if (lhs == NULL) return rhs == NULL;
-
-  if (rhs == NULL) return false;
-
-#if GTEST_OS_WINDOWS
-  return _wcsicmp(lhs, rhs) == 0;
-#elif GTEST_OS_LINUX && !GTEST_OS_LINUX_ANDROID
-  return wcscasecmp(lhs, rhs) == 0;
-#else
-  // Android, Mac OS X and Cygwin don't define wcscasecmp.
-  // Other unknown OSes may not define it either.
-  wint_t left, right;
-  do {
-    left = towlower(*lhs++);
-    right = towlower(*rhs++);
-  } while (left && left == right);
-  return left == right;
-#endif  // OS selector
 }
 
 // Compares this with another String.
@@ -2394,7 +2239,6 @@ Result HandleExceptionsInMethodIfSupported(
 void Test::Run() {
   if (!HasSameFixtureClass()) return;
 
-  internal::UnitTestImpl* const impl = internal::GetUnitTestImpl();
   internal::HandleExceptionsInMethodIfSupported(this, &Test::SetUp, "SetUp()");
   // We will run the test only if SetUp() was successful.
   if (!HasFatalFailure()) {
@@ -3715,90 +3559,6 @@ bool AlwaysTrue() {
     throw ClassUniqueToAlwaysTrue();
 #endif  // GTEST_HAS_EXCEPTIONS
   return true;
-}
-
-// If *pstr starts with the given prefix, modifies *pstr to be right
-// past the prefix and returns true; otherwise leaves *pstr unchanged
-// and returns false.  None of pstr, *pstr, and prefix can be NULL.
-bool SkipPrefix(const char* prefix, const char** pstr) {
-  const size_t prefix_len = strlen(prefix);
-  if (strncmp(*pstr, prefix, prefix_len) == 0) {
-    *pstr += prefix_len;
-    return true;
-  }
-  return false;
-}
-
-// Parses a string as a command line flag.  The string should have
-// the format "--flag=value".  When def_optional is true, the "=value"
-// part can be omitted.
-//
-// Returns the value of the flag, or NULL if the parsing failed.
-const char* ParseFlagValue(const char* str,
-                           const char* flag,
-                           bool def_optional) {
-  // str and flag must not be NULL.
-  if (str == NULL || flag == NULL) return NULL;
-
-  // The flag must start with "--" followed by GTEST_FLAG_PREFIX_.
-  const String flag_str = String::Format("--%s%s", GTEST_FLAG_PREFIX_, flag);
-  const size_t flag_len = flag_str.length();
-  if (strncmp(str, flag_str.c_str(), flag_len) != 0) return NULL;
-
-  // Skips the flag name.
-  const char* flag_end = str + flag_len;
-
-  // When def_optional is true, it's OK to not have a "=value" part.
-  if (def_optional && (flag_end[0] == '\0')) {
-    return flag_end;
-  }
-
-  // If def_optional is true and there are more characters after the
-  // flag name, or if def_optional is false, there must be a '=' after
-  // the flag name.
-  if (flag_end[0] != '=') return NULL;
-
-  // Returns the string after "=".
-  return flag_end + 1;
-}
-
-// Parses a string for a bool flag, in the form of either
-// "--flag=value" or "--flag".
-//
-// In the former case, the value is taken as true as long as it does
-// not start with '0', 'f', or 'F'.
-//
-// In the latter case, the value is taken as true.
-//
-// On success, stores the value of the flag in *value, and returns
-// true.  On failure, returns false without changing *value.
-bool ParseBoolFlag(const char* str, const char* flag, bool* value) {
-  // Gets the value of the flag as a string.
-  const char* const value_str = ParseFlagValue(str, flag, true);
-
-  // Aborts if the parsing failed.
-  if (value_str == NULL) return false;
-
-  // Converts the string value to a bool.
-  *value = !(*value_str == '0' || *value_str == 'f' || *value_str == 'F');
-  return true;
-}
-
-// Parses a string for an Int32 flag, in the form of
-// "--flag=value".
-//
-// On success, stores the value of the flag in *value, and returns
-// true.  On failure, returns false without changing *value.
-bool ParseInt32Flag(const char* str, const char* flag, Int32* value) {
-  // Gets the value of the flag as a string.
-  const char* const value_str = ParseFlagValue(str, flag, false);
-
-  // Aborts if the parsing failed.
-  if (value_str == NULL) return false;
-
-  // Sets *value to the value of the flag.
-  return ParseInt32(Message() << "The value of flag --" << flag,
-                    value_str, value);
 }
 
 }  // namespace internal
