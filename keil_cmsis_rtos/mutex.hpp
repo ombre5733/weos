@@ -405,7 +405,7 @@ public:
     }
 
     //! Unlocks the associated mutex.
-    bool unlock()
+    void unlock()
     {
         if (!m_locked)
             ::weos::throw_exception(-1);//! \todo std::system_error);
