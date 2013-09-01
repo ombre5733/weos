@@ -55,14 +55,14 @@
 //   <i> Defines default stack size for threads with osThreadDef stacksz = 0
 //   <i> Default: 200
 #ifndef OS_STKSIZE
- #define OS_STKSIZE     50
+ #define OS_STKSIZE     (2000 / 4)
 #endif
 
 //   <o>Main Thread stack size [bytes] <64-4096:8><#/4>
 //   <i> Defines stack size for main thread.
 //   <i> Default: 200
 #ifndef OS_MAINSTKSIZE
- #define OS_MAINSTKSIZE 50
+ #define OS_MAINSTKSIZE (2000 / 4)
 #endif
 
 //   <o>Number of threads with user-provided stack size <0-250>
@@ -76,7 +76,7 @@
 //   <i> Defines the combined stack size for threads with user-provided stack size.
 //   <i> Default: 0
 #ifndef OS_PRIVSTKSIZE
- #define OS_PRIVSTKSIZE 0
+ #define OS_PRIVSTKSIZE (0 / 4)
 #endif
 
 // <q>Check for stack overflow
@@ -108,7 +108,7 @@
 //   <i> Defines the timer clock value.
 //   <i> Default: 12000000  (12MHz)
 #ifndef OS_CLOCK
- #define OS_CLOCK       12000000
+ #define OS_CLOCK       168000000
 #endif
 
 //   <o>Timer tick value [us] <1-1000000>
@@ -261,6 +261,7 @@ void os_error (uint32_t err_code) {
   /* 'err_code' holds the runtime error code (defined in RTL.H).         */
 
   /* HERE: include optional code to be executed on runtime error. */
+  //printf("os_error: %d\n", err_code);
   for (;;);
 }
 

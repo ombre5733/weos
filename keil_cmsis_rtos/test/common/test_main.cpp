@@ -98,13 +98,16 @@ extern "C" int _gettimeofday(struct timeval *tv, struct timezone *tz)
 extern "C" void SystemInit(void)
 {
     System_InitializeClock();
-    //! \todo FPU settings
-
+    //! \todo FPU settings should go into the peripheral description file.
+    // Enable the FPU coprocessor.
+    *((volatile unsigned long*)0xE000ED88) = 0xF << 20;
     initUart();
 }
 
 extern "C" void runTests(const void* arg)
 {
+    uint32_t led;
+
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
     GPIOD->MODER   |= 1 << (2 * GREEN_LED);
     GPIOD->OSPEEDR |= 1 << (2 * GREEN_LED);
@@ -114,12 +117,23 @@ extern "C" void runTests(const void* arg)
     GPIOD->BRR = (1 << GREEN_LED);
     GPIOD->BRR = (1 << RED_LED);
 
-    testing::InitGoogleTest();
+    //testing::InitGoogleTest();
     printf("Google Test initialized\n");
     if (RUN_ALL_TESTS() == 0)
-        GPIOD->BSR = (1 << GREEN_LED);
+    /*
+    if (1)
+    */
+        led = (1 << GREEN_LED);
     else
-        GPIOD->BSR = (1 << RED_LED);
+        led = (1 << RED_LED);
+
+    while (1)
+    {
+        osDelay(500);
+        GPIOD->BSR = led;
+        osDelay(500);
+        GPIOD->BRR = led;
+    }
 
     printf("Done!\n");
 }
@@ -128,12 +142,12 @@ int main()
 {
     printf("main() started\n");
 
-    osKernelInitialize();
-
-    osThreadDef_t testThread = {runTests, osPriorityNormal, 1, 0};
-    osThreadCreate(&testThread, 0);
-
-    osKernelStart();
+    runTests(0);
+    /*
+    osThreadDef_t testRunnerThread = {runTests, osPriorityNormal, 1, 0};
+    if (osThreadCreate(&testRunnerThread, 0) == NULL)
+        printf("Failed to start the test runner\n");
+    */
 
     while (1);
 }

@@ -46,10 +46,10 @@
 ----========================================================================--*/
 
 /* The size of the stack in bytes. Has to be a multiple of 8. */
-    .set    Stack_Size, 0x00000400
+    .set    Stack_Size, 0x00000800
 
 /* The size of the heap in bytes. Has to be a multiple of 8. */
-    .set    Heap_Size,  0x00004000
+    .set    Heap_Size,  0x00008000
 
 
     .section .stack
@@ -104,7 +104,7 @@ __isr_vector:
     .word    SysTick_Handler                   /* SysTick handler                             */
 
     /* ---- External interrupts ------------------------------------------------------------- */
-    .word    WWDG_IRQHandler                   /* Window WatchDog                             */
+    .word    WWDG_IRQHandler                   /* Window Watch-dog                            */
     .word    PVD_IRQHandler                    /* PVD through EXTI Line detection             */
     .word    TAMP_STAMP_IRQHandler             /* Tamper and TimeStamps through the EXTI line */
     .word    RTC_WKUP_IRQHandler               /* RTC Wakeup through the EXTI line            */
@@ -122,12 +122,12 @@ __isr_vector:
     .word    DMA1_Stream4_IRQHandler           /* DMA1 Stream 4                               */
     .word    DMA1_Stream5_IRQHandler           /* DMA1 Stream 5                               */
     .word    DMA1_Stream6_IRQHandler           /* DMA1 Stream 6                               */
-    .word    ADC_IRQHandler                    /* ADC1, ADC2 and ADC3s                        */
+    .word    ADC_IRQHandler                    /* ADC1, ADC2 and ADC3                         */
     .word    CAN1_TX_IRQHandler                /* CAN1 TX                                     */
     .word    CAN1_RX0_IRQHandler               /* CAN1 RX0                                    */
     .word    CAN1_RX1_IRQHandler               /* CAN1 RX1                                    */
     .word    CAN1_SCE_IRQHandler               /* CAN1 SCE                                    */
-    .word    EXTI9_5_IRQHandler                /* External Line[9:5]s                         */
+    .word    EXTI9_5_IRQHandler                /* External Line[9:5]                          */
     .word    TIM1_BRK_TIM9_IRQHandler          /* TIM1 Break and TIM9                         */
     .word    TIM1_UP_TIM10_IRQHandler          /* TIM1 Update and TIM10                       */
     .word    TIM1_TRG_COM_TIM11_IRQHandler     /* TIM1 Trigger and Commutation and TIM11      */
@@ -144,7 +144,7 @@ __isr_vector:
     .word    USART1_IRQHandler                 /* USART1                                      */
     .word    USART2_IRQHandler                 /* USART2                                      */
     .word    USART3_IRQHandler                 /* USART3                                      */
-    .word    EXTI15_10_IRQHandler              /* External Line[15:10]s                       */
+    .word    EXTI15_10_IRQHandler              /* External Line[15:10]                        */
     .word    RTC_Alarm_IRQHandler              /* RTC Alarm (A and B) through EXTI Line       */
     .word    OTG_FS_WKUP_IRQHandler            /* USB OTG FS Wakeup through EXTI line         */
     .word    TIM8_BRK_TIM12_IRQHandler         /* TIM8 Break and TIM12                        */

@@ -50,6 +50,8 @@ MEMORY
   RAM (rwx)  : ORIGIN = 0x20000000, LENGTH =  128K
 }
 
+GROUP(libgcc.a libc.a libm.a libnosys.a)
+
 /* The entry point. */
 ENTRY(Reset_Handler)
 

@@ -44,7 +44,8 @@ set(NOHOST_FLAGS "-lc -lc -lnosys")
 # Flags for map file creation.
 set(MAP_FLAGS "-Wl,-Map=${PROJECT_NAME}.map")
 
-set(COMMON_FLAGS "-g -O0 -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16")
+set(COMMON_FLAGS "-Wall -g -O2 -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16")
+set(CMAKE_ASM_FLAGS ${COMMON_FLAGS})
 set(CMAKE_C_FLAGS   ${COMMON_FLAGS})
 set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -std=gnu++11")
 set(CMAKE_EXE_LINKER_FLAGS "${NANO_FLAGS} ${NOHOST_FLAGS} -Wl,--gc-sections -Tstm32f4xx.ld ${MAP_FLAGS}")
@@ -52,6 +53,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${NANO_FLAGS} ${NOHOST_FLAGS} -Wl,--gc-sections -Tst
 include_directories(
     .
     ../../3rdparty
+    ../../3rdparty/keil_cmsis_rtos/INC
 #    ${Boost_INCLUDE_DIRS}
 )
 
@@ -94,6 +96,6 @@ endfunction()
 file(COPY runAllTests.py DESTINATION .)
 
 # Walk into the subdirectories which contain the actual tests.
-add_subdirectory(chrono)
+#add_subdirectory(chrono)
 add_subdirectory(mutex)
-add_subdirectory(semaphore)
+#add_subdirectory(semaphore)
