@@ -57,7 +57,7 @@ TEST(mutex, try_lock)
 // ----=====================================================================----
 //     Tests together with a sparring thread
 // ----=====================================================================----
-
+#if 0
 TEST(sparring_mutex, lock)
 {
     SparringData data(SparringData::MutexLock);
@@ -95,3 +95,4 @@ TEST(sparring_mutex, try_lock)
     osStatus result = osThreadTerminate(sparringId);
     ASSERT_EQ(osOK, result);
 }
+#endif
