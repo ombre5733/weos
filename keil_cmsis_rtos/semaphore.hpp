@@ -44,6 +44,8 @@ public:
     explicit semaphore(uint32_t value = 0)
         : m_id(0)
     {
+        // Keil's RTOS wants a zero'ed control block type for initialization.
+        m_cmsisSemaphoreControlBlock[0] = 0;
         osSemaphoreDef_t semaphoreDef = { m_cmsisSemaphoreControlBlock };
         m_id = osSemaphoreCreate(&semaphoreDef, value);
         if (m_id == 0)

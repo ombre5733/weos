@@ -74,10 +74,12 @@ void initUart()
     USART3->CR1 |= USART_CR1_RE | USART_CR1_TE;
     USART3->CR1 |= USART_CR1_UE;
 
+    /*
     // Turn the printf()-buffers off.
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
+    */
 
     printf("\n\nUART initialized\n");
 }
