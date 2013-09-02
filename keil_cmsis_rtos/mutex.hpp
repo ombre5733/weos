@@ -66,6 +66,8 @@ public:
     generic_mutex()
         : m_id(0)
     {
+        // Keil's RTOS wants a zero'ed control block type for initialization.
+        m_cmsisMutexControlBlock[0] = 0;
         osMutexDef_t mutexDef = { m_cmsisMutexControlBlock };
         m_id = osMutexCreate(&mutexDef);
         if (m_id == 0)
@@ -372,7 +374,7 @@ public:
     ~unique_lock()
     {
         if (m_locked)
-            m_mutex.unlock();
+            m_mutex->unlock();
     }
 
     //! Returns a pointer to the associated mutex.
