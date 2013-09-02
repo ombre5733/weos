@@ -26,29 +26,27 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #*******************************************************************************
 
-include("toolchain.cmake")
-
 cmake_minimum_required(VERSION 2.8)
+
+set(TOOLCHAIN "" CACHE STRING "The toolchain for building (GCC, ARMCC).")
+
+if(TOOLCHAIN STREQUAL "GCC")
+    include("toolchain-gcc-arm.cmake")
+else()
+    message(FATAL_ERROR "Unknown toolchain '${TOOLCHAIN}'")
+endif()
 
 project(test C CXX ASM)
 
 #set(BOOST_INCLUDEDIR "/usr/include/boost")
 #find_package(Boost REQUIRED)
 
-set(NANO_FLAGS "--specs=nano.specs")
-
-# Flags for semihosting.
-set(SEMIHOST_FLAGS "--specs=rdimon.specs -lc -lc -lrdimon")
-# Flags is no hosting is requested.
-set(NOHOST_FLAGS "-lc -lc -lnosys")
-# Flags for map file creation.
-set(MAP_FLAGS "-Wl,-Map=${PROJECT_NAME}.map")
-
-set(COMMON_FLAGS "-Wall -g -O2 -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16")
-set(CMAKE_ASM_FLAGS ${COMMON_FLAGS})
-set(CMAKE_C_FLAGS   ${COMMON_FLAGS})
-set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} -std=gnu++11")
-set(CMAKE_EXE_LINKER_FLAGS "${NANO_FLAGS} ${NOHOST_FLAGS} -Wl,--gc-sections -Tstm32f4xx.ld ${MAP_FLAGS}")
+if(TOOLCHAIN STREQUAL "GCC")
+    set(COMMON_FLAGS "-Wall -g -O2")
+    set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${COMMON_FLAGS}")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -std=gnu++11")
+endif()
 
 include_directories(
     .
@@ -57,21 +55,30 @@ include_directories(
 #    ${Boost_INCLUDE_DIRS}
 )
 
-# Add the directory containing the linker script.
-link_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
-link_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/keil_cmsis_rtos/LIB/GCC")
-
 # Specify the location of the user_config.hpp file.
 add_definitions("-DWEOS_USER_CONFIG=\"common/user_config.hpp\"")
 
 set(COMMON_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/common/startup_stm32f4xx.S
-        ${CMAKE_CURRENT_SOURCE_DIR}/common/newlib_retarget.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/RTX_Conf_CM.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/system_stm32f4xx.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/test_main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/gtest/gtest-all.cc
 )
+
+if(TOOLCHAIN STREQUAL "GCC")
+    list(APPEND COMMON_SOURCES
+             ${CMAKE_CURRENT_SOURCE_DIR}/common/gcc/startup_stm32f4xx.S
+             ${CMAKE_CURRENT_SOURCE_DIR}/common/gcc/newlib_retarget.c
+    )
+
+    # Add the linker script.
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Tstm32f4xx.ld")
+    link_directories("${CMAKE_CURRENT_SOURCE_DIR}/common/gcc")
+
+    # Link against the CMSIS RTX.
+    set(CMSIS_RTX_LIB "RTX_CM4")
+    link_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../3rdparty/keil_cmsis_rtos/LIB/GCC")
+endif()
 
 # A target to build all test binaries. CMake-files in the subdirectories can
 # add their targets as dependencies to this target. Thus, invoking this target
@@ -83,12 +90,8 @@ add_custom_target(bin)
 # the top-level bin-target is built, all other binaries shall be built, too.
 function(add_executable_and_bin name sources)
     add_executable(${name} ${sources})
-    target_link_libraries(${name} RTX_CM4)
-    add_custom_command(
-        OUTPUT ${name}.bin
-        COMMAND ${OBJCOPY} -O binary ${name} ${name}.bin
-        DEPENDS ${name}
-    )
+    target_link_libraries(${name} ${CMSIS_RTX_LIB})
+    add_binary_image(${name}.bin ${name})
     add_custom_target(${name}_bin DEPENDS ${name}.bin)
     add_dependencies(bin ${name}_bin)
 endfunction()

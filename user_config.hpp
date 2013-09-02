@@ -75,4 +75,15 @@
 // Note: If WEOS_ENABLE_ASSERT is not defined, this macro has no effect.
 // #define WEOS_CUSTOM_ASSERT_HANDLER
 
+// ----=====================================================================----
+//     Boost
+// ----=====================================================================----
+
+#if defined (__CC_ARM)
+
+// ARM's armcc uses a front-end from EDG.
+#define BOOST_COMPILER_CONFIG   "boost/config/compiler/common_edg.hpp"
+
+#endif
+
 #endif // WEOS_USER_CONFIG_HPP
