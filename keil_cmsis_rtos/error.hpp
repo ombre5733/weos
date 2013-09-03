@@ -31,6 +31,7 @@
 
 #include "../config.hpp"
 
+#include <boost/type_traits/integral_constant.hpp>
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
 
@@ -38,6 +39,10 @@
 
 namespace weos
 {
+
+// ----=====================================================================----
+//     error_category
+// ----=====================================================================----
 
 //! An error category.
 //! The error_category is the base class for all error categories. These
@@ -71,6 +76,10 @@ public:
     virtual const char* name() const BOOST_NOEXCEPT = 0;
 };
 
+// ----=====================================================================----
+//     error_code
+// ----=====================================================================----
+
 //! An error value with context.
 //! The error_code is a pair of (error value, error category). Different
 //! modules can return the same error value. The context of the error value
@@ -82,14 +91,20 @@ class error_code
 public:
     error_code(int value, const error_category& category) BOOST_NOEXCEPT
         : m_value(value),
-          m_category(category)
+          m_category(&category)
     {
+    }
+
+    void assign(int value, const error_category& category) BOOST_NOEXCEPT
+    {
+        m_value = value;
+        m_category = &category;
     }
 
     //! Returns the error category of this error code.
     const error_category& category() const BOOST_NOEXCEPT
     {
-        return m_category;
+        return *m_category;
     }
 
     const char* message() const
@@ -105,13 +120,49 @@ public:
 
 private:
     int m_value;
-    const error_category& m_category;
+    const error_category* m_category;
 };
+
+// ----=====================================================================----
+//     is_error_code_enum
+// ----=====================================================================----
+
+template <typename TType>
+struct is_error_code_enum : public boost::false_type
+{
+};
+
+// ----=====================================================================----
+//     system_error
+// ----=====================================================================----
 
 class system_error : public std::exception
 {
 public:
+    system_error(error_code code)
+        : m_errorCode(code)
+    {
+    }
+
+    system_error(int value, const std::error_category& category)
+        : m_errorCode(value, category)
+    {
+    }
+
+    const error_code& code() const BOOST_NOEXCEPT
+    {
+        return m_errorCode;
+    }
+
+    virtual const char* what() const BOOST_NOEXCEPT
+    {
+        return "";
+    }
+
+private:
+    error_code m_errorCode;
 };
+
 
 namespace cmsis_error
 {
