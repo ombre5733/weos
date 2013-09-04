@@ -32,8 +32,10 @@
 #include "../config.hpp"
 #include "duration.hpp"
 
+#include <cstdint>
+
 // Declaration from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
-extern "C" uint32_t rt_time_get(void);
+extern "C" std::uint32_t rt_time_get(void);
 
 namespace weos
 {

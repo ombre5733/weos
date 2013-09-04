@@ -194,10 +194,10 @@ private:
     rep m_count;
 };
 
-typedef duration<int32_t, boost::micro> microseconds;
-typedef duration<int32_t, boost::milli> milliseconds;
-typedef duration<int32_t> seconds;
-typedef duration<int32_t, boost::ratio<60> > minutes;
+typedef duration<std::int32_t, boost::micro> microseconds;
+typedef duration<std::int32_t, boost::milli> milliseconds;
+typedef duration<std::int32_t> seconds;
+typedef duration<std::int32_t, boost::ratio<60> > minutes;
 
 // ----=====================================================================----
 //     duration_cast
@@ -206,7 +206,7 @@ typedef duration<int32_t, boost::ratio<60> > minutes;
 namespace detail
 {
 
-typedef int32_t cast_least_int_type;
+typedef std::int32_t cast_least_int_type;
 
 // A trait to determine if a type is a duration. We need this for duration_cast.
 template <typename TypeT>

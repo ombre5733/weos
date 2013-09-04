@@ -35,6 +35,8 @@
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
 
+#include <cstdint>
+
 namespace weos
 {
 
@@ -53,9 +55,9 @@ namespace detail
 // can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h
 struct MutexControlBlockHeader
 {
-    uint8_t controlBlockType;
-    uint8_t ownerPriority;
-    uint16_t nestingLevel;
+    std::uint8_t controlBlockType;
+    std::uint8_t ownerPriority;
+    std::uint16_t nestingLevel;
 };
 
 template <typename DerivedT>
@@ -100,8 +102,12 @@ public:
             return derived()->post_try_lock_correction(
                         m_id, mutexControlBlockHeader());
         }
-        else
-            return false;
+
+        if (   status != osErrorTimeoutResource
+            && status != osErrorResource)
+            ::weos::throw_exception(-1);// TODO: std::system_error());
+
+        return false;
     }
 
     void unlock()
@@ -114,7 +120,7 @@ public:
     }
 
 protected:
-    uint32_t m_cmsisMutexControlBlock[3];
+    std::uint32_t m_cmsisMutexControlBlock[3];
     osMutexId m_id;
 
     MutexControlBlockHeader* mutexControlBlockHeader()
@@ -139,17 +145,16 @@ protected:
     }
 };
 
-class mutex_try_locker
+struct mutex_try_locker
 {
-public:
     mutex_try_locker(osMutexId id)
         : m_id(id)
     {
     }
 
-    bool operator() (int32_t timeout)
+    bool operator() (std::int32_t millisec) const
     {
-        osStatus status = osMutexWait(m_id, timeout);
+        osStatus status = osMutexWait(m_id, millisec);
         if (status == osOK)
             return true;
 
