@@ -34,6 +34,8 @@
 
 #include <boost/utility.hpp>
 
+#include <cstdint>
+
 namespace weos
 {
 
@@ -42,7 +44,7 @@ class semaphore : boost::noncopyable
 public:
     //! Creates a semaphore.
     //! Creates a semaphore with an initial number of \p value tokens.
-    explicit semaphore(uint32_t value = 0)
+    explicit semaphore(std::uint32_t value = 0)
         : m_id(0)
     {
         // Keil's RTOS wants a zero'ed control block type for initialization.
@@ -63,17 +65,25 @@ public:
     //! Waits until a semaphore token is available.
     void wait()
     {
-        int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
+        std::int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
         if (numTokens <= 0)
             ::weos::throw_exception(-1);// TODO: std::system_error());
     }
 
-    template <typename RepT, typename PeriodT>
-    bool wait_for(const chrono::duration<RepT, PeriodT>& d)
+    bool try_wait()
     {
-        int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
-        if (numTokens <= 0)
+        std::int32_t numTokens = osSemaphoreWait(m_id, 0);
+        if (numTokens < 0)
             ::weos::throw_exception(-1);// TODO: std::system_error());
+        return numTokens != 0;
+    }
+
+    template <typename RepT, typename PeriodT>
+    bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
+    {
+        semaphore_try_locker locker(m_id);
+        return chrono::detail::cmsis_wait<RepT, PeriodT, mutex_try_locker>(
+                    d, locker);
     }
 
     //! Releases a semaphore token.
@@ -85,22 +95,22 @@ public:
     }
 
     //! Returns the numer of semaphore tokens.
-    uint32_t value() const
+    std::uint32_t value() const
     {
         return semaphoreControlBlockHeader()->numTokens;
     }
 
 private:
-    uint32_t m_cmsisSemaphoreControlBlock[2];
+    std::uint32_t m_cmsisSemaphoreControlBlock[2];
     osSemaphoreId m_id;
 
     // The header (first 32 bits) of the semaphore control block. The full
     // definition can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h
     struct SemaphoreControlBlockHeader
     {
-        uint8_t controlBlockType;
-        uint8_t tokenMask;
-        uint16_t numTokens;
+        std::uint8_t controlBlockType;
+        std::uint8_t tokenMask;
+        std::uint16_t numTokens;
     };
 
     const SemaphoreControlBlockHeader* semaphoreControlBlockHeader() const
@@ -108,6 +118,25 @@ private:
         return reinterpret_cast<const SemaphoreControlBlockHeader*>(
                     m_cmsisSemaphoreControlBlock);
     }
+
+    struct semaphore_try_locker
+    {
+        semaphore_try_locker(osSemaphoreId id)
+            : m_id(id)
+        {
+        }
+
+        bool operator() (std::int32_t millisec) const
+        {
+            std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
+            if (numTokens < 0)
+                ::weos::throw_exception(-1);// TODO: std::system_error());
+            return numTokens != 0;
+        }
+
+    private:
+        osSemaphoreId m_id;
+    };
 };
 
 } // namespace weos
