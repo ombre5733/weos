@@ -30,6 +30,7 @@
 #define WEOS_KEIL_CMSIS_RTOS_SEMAPHORE_HPP
 
 #include "../config.hpp"
+#include "chrono.hpp"
 
 #include <boost/utility.hpp>
 
@@ -61,6 +62,14 @@ public:
 
     //! Waits until a semaphore token is available.
     void wait()
+    {
+        int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
+        if (numTokens <= 0)
+            ::weos::throw_exception(-1);// TODO: std::system_error());
+    }
+
+    template <typename RepT, typename PeriodT>
+    bool wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
         int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
         if (numTokens <= 0)

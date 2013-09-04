@@ -95,6 +95,8 @@ public:
     {
     }
 
+    //! Assigns a new value and category.
+    //! Assigns the error \p value and error \p category to this error code.
     void assign(int value, const error_category& category) BOOST_NOEXCEPT
     {
         m_value = value;
@@ -119,7 +121,9 @@ public:
     }
 
 private:
+    //! Error code's value.
     int m_value;
+    //! The error category.
     const error_category* m_category;
 };
 
@@ -144,7 +148,7 @@ public:
     {
     }
 
-    system_error(int value, const std::error_category& category)
+    system_error(int value, const error_category& category)
         : m_errorCode(value, category)
     {
     }

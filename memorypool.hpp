@@ -29,6 +29,8 @@
 #ifndef WEOS_MEMORYPOOL_HPP
 #define WEOS_MEMORYPOOL_HPP
 
+#include "mutex.hpp"
+
 #include <boost/integer/static_min_max.hpp>
 #include <boost/math/common_factor_ct.hpp>
 #include <boost/type_traits/aligned_storage.hpp>
@@ -49,6 +51,11 @@ public:
     {
         // Make memSize a multiple of chunkSize.
         memSize = (memSize / chunkSize) * chunkSize;
+        if (memSize == 0)
+        {
+            m_first = 0;
+            return;
+        }
 
         // Compute the location of the last chunk and terminate it with a
         // null-pointer.
@@ -64,6 +71,24 @@ public:
         }
     }
 
+    bool empty() const BOOST_NOEXCEPT
+    {
+        return m_first == 0;
+    }
+
+    void* allocate()
+    {
+        void* chunk = m_first;
+        m_first = next(m_first);
+        return chunk;
+    }
+
+    void free(void* const chunk)
+    {
+        next(chunk) = m_first;
+        m_first = chunk;
+    }
+
 private:
     //! Pointer to the first free block.
     void* m_first;
@@ -76,11 +101,15 @@ private:
 
 } // namespace detail
 
-template <typename TElement, unsigned TNumElem>
+template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
 class memory_pool
+#ifndef WEOS_DOXYGEN_RUN
+        : public TMutex
+#endif
 {
 public:
     typedef TElement element_type;
+    typedef TMutex mutex_type;
 
 private:
     // A chunk has to be aligned such that it can contain a void* or an element.
@@ -97,9 +126,44 @@ private:
     static const std::size_t block_size = chunk_size * TNumElem;
 
 public:
+    memory_pool()
+        : m_freeList(m_data.address(), chunk_size, block_size)
+    {
+    }
+
+    bool empty() const
+    {
+        unique_lock<mutex_type> lock(*this);
+        return m_freeList.empty();
+    }
+
+    void* allocate()
+    {
+        unique_lock<mutex_type> lock(*this);
+        if (empty())
+            return 0;
+        else
+            return m_freeList.allocate();
+    }
+
+    void* try_allocate()
+    {
+    }
+
+    template <typename RepT, typename PeriodT>
+    void* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
+    {
+    }
+
+    void free(void* const chunk)
+    {
+        unique_lock<mutex_type> lock(*this);
+        m_freeList.free(chunk);
+    }
 
 private:
     typename ::boost::aligned_storage<block_size, min_align>::type m_data;
+    detail::free_list m_freeList;
 };
 
 } // namespace weos
