@@ -49,46 +49,61 @@ TEST(lock_guard, adopt_lock)
 
 TEST(sparring_lock_guard, lock)
 {
-    SparringData data(SparringData::MutexLock);
+    SparringData data;
+    osThreadId sparringId = osThreadCreate(&sparringThread, &data);
+    ASSERT_TRUE(sparringId != 0);
+    osDelay(10);
+    ASSERT_TRUE(data.sparringStarted);
 
-    osThreadId sparringId;
     {
-        weos::lock_guard<weos::mutex> l(data.mutex);
+        weos::lock_guard<weos::mutex> lock(data.mutex);
 
-        sparringId = osThreadCreate(&sparringThread, &data);
-        ASSERT_TRUE(sparringId != 0);
-
+        data.action = SparringData::MutexLock;
         osDelay(10);
-        ASSERT_TRUE(data.sparringStarted);
+        ASSERT_TRUE(data.busy);
         ASSERT_FALSE(data.mutexLocked);
     }
 
     osDelay(10);
+    ASSERT_FALSE(data.busy);
     ASSERT_TRUE(data.mutexLocked);
 
-    osStatus result = osThreadTerminate(sparringId);
-    ASSERT_EQ(osOK, result);
+    data.action = SparringData::MutexUnlock;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_FALSE(data.mutexLocked);
+
+    data.action = SparringData::Terminate;
+    osDelay(10);
 }
 
 TEST(sparring_lock_guard, try_lock)
 {
-    SparringData data(SparringData::MutexTryLock);
+    SparringData data;
+    osThreadId sparringId = osThreadCreate(&sparringThread, &data);
+    ASSERT_TRUE(sparringId != 0);
+    osDelay(10);
+    ASSERT_TRUE(data.sparringStarted);
 
-    osThreadId sparringId;
     {
-        weos::lock_guard<weos::mutex> l(data.mutex);
+        weos::lock_guard<weos::mutex> lock(data.mutex);
 
-        sparringId = osThreadCreate(&sparringThread, &data);
-        ASSERT_TRUE(sparringId != 0);
-
+        data.action = SparringData::MutexTryLock;
         osDelay(10);
-        ASSERT_TRUE(data.sparringStarted);
+        ASSERT_FALSE(data.busy);
         ASSERT_FALSE(data.mutexLocked);
     }
 
+    data.action = SparringData::MutexTryLock;
     osDelay(10);
+    ASSERT_FALSE(data.busy);
     ASSERT_TRUE(data.mutexLocked);
 
-    osStatus result = osThreadTerminate(sparringId);
-    ASSERT_EQ(osOK, result);
+    data.action = SparringData::MutexUnlock;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_FALSE(data.mutexLocked);
+
+    data.action = SparringData::Terminate;
+    osDelay(10);
 }

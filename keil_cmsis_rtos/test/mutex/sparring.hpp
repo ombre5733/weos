@@ -7,19 +7,24 @@ struct SparringData
 {
     enum Action
     {
+        None,
         MutexLock,
-        MutexTryLock
+        MutexTryLock,
+        MutexUnlock,
+        Terminate
     };
 
-    explicit SparringData(Action a)
-        : action(a),
+    SparringData()
+        : action(None),
+          busy(false),
           mutexLocked(false),
           sparringStarted(false)
     {
     }
 
-    Action action;
     weos::mutex mutex;
+    volatile Action action;
+    volatile bool busy;
     volatile bool mutexLocked;
     volatile bool sparringStarted;
 };
@@ -28,6 +33,38 @@ extern "C" void sparring(const void* arg)
 {
     SparringData* data = static_cast<SparringData*>(const_cast<void*>(arg));
     data->sparringStarted = true;
+
+    while (1)
+    {
+        if (data->action == SparringData::None)
+        {
+            osDelay(1);
+            continue;
+        }
+        else if (data->action == SparringData::Terminate)
+            break;
+
+        data->busy = true;
+        switch (data->action)
+        {
+            case SparringData::MutexLock:
+                data->mutex.lock();
+                data->mutexLocked = true;
+                break;
+            case SparringData::MutexTryLock:
+                data->mutexLocked = data->mutex.try_lock();
+                break;
+            case SparringData::MutexUnlock:
+                data->mutex.unlock();
+                data->mutexLocked = false;
+                break;
+            default:
+                break;
+        }
+        data->busy = false;
+        data->action = SparringData::None;
+    }
+
     if (data->action == SparringData::MutexLock)
     {
         data->mutex.lock();
