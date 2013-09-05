@@ -92,18 +92,6 @@ extern "C" void sparring(const void* arg)
         data->busy = false;
         data->action = SparringData::None;
     }
-
-    if (data->action == SparringData::MutexLock)
-    {
-        data->mutex.lock();
-        data->mutexLocked = true;
-    }
-    else if (data->action == SparringData::MutexTryLock)
-    {
-        while (!data->mutexLocked)
-            data->mutexLocked = data->mutex.try_lock();
-    }
-    while (1);
 }
 osThreadDef_t sparringThread = {sparring, osPriorityHigh, 1, 0};
 
