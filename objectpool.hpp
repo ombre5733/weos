@@ -31,13 +31,15 @@
 
 #include "memorypool.hpp"
 
+#include <boost/move/move.hpp>
+
 namespace weos
 {
 
 //! An object pool with static (compile-time) storage.
-//! The StaticObjectPool is a memory pool for up to \p TNumElem objects of
-//! type \p TType. It does not allocate memory from the heap but uses an
-//! internal array.
+//! The object_pool is a memory pool for (\p TNumElem) objects of
+//! type \p TType. The memory is allocated statically (internally in the
+//! object), i.e. the pool does not access the heap.
 template <typename TType, unsigned TNumElem, typename TMutex = null_mutex>
 class object_pool
 {
@@ -66,7 +68,7 @@ public:
     //! Allocates memory for an object.
     //! Allocates memory for one object and returns a pointer to the allocated
     //! space. The object is not initialized, i.e. the caller has to invoke the
-    //! constructor using a placement-new. The method returns a pointer to
+    //! constructor using placement-new. The method returns a pointer to
     //! the allocated memory or a null-pointer if no more memory was available.
     element_type* allocate()
     {
@@ -123,6 +125,108 @@ public:
 
 private:
     typedef memory_pool<TElement, TNumElem, TMutex> pool_t;
+    pool_t m_memoryPool;
+};
+
+template <typename TElement, unsigned TNumElem>
+class counting_object_pool
+{
+public:
+    typedef TElement element_type;
+
+    counting_object_pool()
+        : m_numElements(TNumElem)
+    {
+    }
+
+    ~counting_object_pool()
+    {
+        //! \todo Sort and delete the objects
+    }
+
+    bool empty() const
+    {
+        return m_memoryPool.empty();
+    }
+
+    element_type* allocate()
+    {
+        return static_cast<element_type*>(m_memoryPool.allocate());
+    }
+
+    //! Tries to allocate a chunk of memory.
+    //! Tries to allocate a chunk of memory and returns a pointer to it. If
+    //! no memory is available, a null-pointer is returned.
+    //!
+    //! \sa allocate(), free(), try_allocate_for()
+    void* try_allocate()
+    {
+        return m_memoryPool.try_allocate();
+    }
+
+    //! Tries to allocate a chunk of memory with timeout.
+    //! Tries to allocate a chunk of memory and returns a pointer to it.
+    //! If no memory is available, the method blocks for a duration up to
+    //! \p d and returns a null-pointer then.
+    //!
+    //! \sa allocate(), free(), try_allocate()
+    template <typename RepT, typename PeriodT>
+    void* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
+    {
+        return m_memoryPool.try_allocate_for(d);
+    }
+
+    //! Frees a chunk of memory.
+    //! Frees a \p chunk of memory which must have been allocated through
+    //! this pool.
+    //!
+    //! \sa allocate(), try_allocate(), try_allocate_for()
+    void free(void* const chunk)
+    {
+        m_memoryPool.free(chunk);
+    }
+
+    //! Allocates and constructs an object.
+    //! Allocates memory for an object and calls its constructor. The method
+    //! returns a pointer to the newly created object or a null-pointer if no
+    //! memory was available.
+    element_type* construct()
+    {
+        void* mem = this->allocate();
+        element_type* element = new (mem) element_type;
+        return element;
+    }
+
+    template <class T1>
+    element_type* construct(BOOST_FWD_REF(T1) x1)
+    {
+        void* mem = this->allocate();
+        element_type* element = new (mem) element_type(
+                                    boost::forward<T1>(x1));
+        return element;
+    }
+
+    template <class T1, class T2>
+    element_type* construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
+    {
+        void* mem = this->allocate();
+        element_type* element = new (mem) element_type(
+                                    boost::forward<T1>(x1),
+                                    boost::forward<T2>(x2));
+        return element;
+    }
+
+    //! Destroys an element.
+    //! Destroys the \p element whose memory must have been allocated via
+    //! this object pool and whose constructor must have been called.
+    void destroy(element_type* const element)
+    {
+        element->~element_type();
+        this->free(element);
+    }
+
+private:
+    typedef counting_memory_pool<TElement, TNumElem, TMutex> pool_t;
     pool_t m_memoryPool;
 };
 

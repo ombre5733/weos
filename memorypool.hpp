@@ -102,6 +102,9 @@ private:
 
 } // namespace detail
 
+//! A memory pool.
+//! The memory_pool allocates statically space for (\p TNumElem) elements of
+//! type \p TElement.
 template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
 class memory_pool
 #ifndef WEOS_DOXYGEN_RUN
@@ -127,6 +130,8 @@ private:
     static const std::size_t block_size = chunk_size * TNumElem;
 
 public:
+    //! Creates a memory pool.
+    //! Creates a memory pool with statically allocated storage.
     memory_pool()
         : m_freeList(m_data.address(), chunk_size, block_size)
     {
@@ -143,6 +148,8 @@ public:
     //! Allocates a chunk from the pool.
     //! Allocates one chunk from the memory pool and returns a pointer to it.
     //! If the pool is already empty, a null-pointer is returned.
+    //!
+    //! \sa free()
     void* allocate()
     {
         lock_guard<mutex_type> lock(*this);
@@ -155,6 +162,8 @@ public:
     //! Frees a previously allocated chunk.
     //! Returns a \p chunk which must have been allocated via allocate() back
     //! to the pool.
+    //!
+    //! \sa allocate()
     void free(void* const chunk)
     {
         lock_guard<mutex_type> lock(*this);
@@ -182,12 +191,22 @@ public:
         return m_memoryPool.empty();
     }
 
+    //! Allocates a chunk of memory.
+    //! Allocates a chunk of memory and returns a pointer to it. The calling
+    //! thread is blocked until a chunk is available.
+    //!
+    //! \sa free(), try_allocate(), try_allocate_for()
     void* allocate()
     {
         m_numElements.wait();
         return m_memoryPool.allocate();
     }
 
+    //! Tries to allocate a chunk of memory.
+    //! Tries to allocate a chunk of memory and returns a pointer to it. If
+    //! no memory is available, a null-pointer is returned.
+    //!
+    //! \sa allocate(), free(), try_allocate_for()
     void* try_allocate()
     {
         if (m_numElements.try_wait())
@@ -196,6 +215,12 @@ public:
             return 0;
     }
 
+    //! Tries to allocate a chunk of memory with timeout.
+    //! Tries to allocate a chunk of memory and returns a pointer to it.
+    //! If no memory is available, the method blocks for a duration up to
+    //! \p d and returns a null-pointer then.
+    //!
+    //! \sa allocate(), free(), try_allocate()
     template <typename RepT, typename PeriodT>
     void* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
     {
@@ -205,6 +230,11 @@ public:
             return 0;
     }
 
+    //! Frees a chunk of memory.
+    //! Frees a \p chunk of memory which must have been allocated through
+    //! this pool.
+    //!
+    //! \sa allocate(), try_allocate(), try_allocate_for()
     void free(void* const chunk)
     {
         m_memoryPool.free(chunk);
