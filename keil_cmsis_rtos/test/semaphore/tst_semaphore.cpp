@@ -27,7 +27,7 @@
 *******************************************************************************/
 
 #include "../../semaphore.hpp"
-//#include "sparring.hpp"
+#include "sparring.hpp"
 
 #include "gtest/gtest.h"
 
@@ -42,6 +42,10 @@ TEST(semaphore, Constructor)
         weos::semaphore s(count);
         ASSERT_EQ(count, s.value());
     }
+    {
+        weos::semaphore s(65535);
+        ASSERT_EQ(65535, s.value());
+    }
 }
 
 TEST(semaphore, post)
@@ -52,6 +56,12 @@ TEST(semaphore, post)
         ASSERT_EQ(count, s.value());
         s.post();
         ASSERT_EQ(count + 1, s.value());
+    }
+    {
+        weos::semaphore s(65534);
+        ASSERT_EQ(65534, s.value());
+        s.post();
+        ASSERT_EQ(65535, s.value());
     }
 }
 
@@ -64,8 +74,53 @@ TEST(semaphore, wait)
         s.wait();
         ASSERT_EQ(count - 1, s.value());
     }
+    {
+        weos::semaphore s(65535);
+        ASSERT_EQ(65535, s.value());
+        s.wait();
+        ASSERT_EQ(65534, s.value());
+    }
 }
 
 // ----=====================================================================----
 //     Tests together with a sparring thread
 // ----=====================================================================----
+
+TEST(sparring_semaphore, post_and_wait)
+{
+    SparringData data;
+    osThreadId sparringId = osThreadCreate(&sparringThread, &data);
+    ASSERT_TRUE(sparringId != 0);
+    osDelay(10);
+    ASSERT_TRUE(data.sparringStarted);
+
+    data.action = SparringData::SemaphoreWait;
+    osDelay(10);
+    ASSERT_TRUE(data.busy);
+    ASSERT_EQ(0, data.semaphore.value());
+
+    data.semaphore.post();
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_EQ(0, data.semaphore.value());
+
+    data.semaphore.post();
+    osDelay(10);
+    ASSERT_EQ(1, data.semaphore.value());
+
+    data.action = SparringData::SemaphoreWait;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_EQ(0, data.semaphore.value());
+
+    data.action = SparringData::SemaphorePost;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_EQ(1, data.semaphore.value());
+
+    data.semaphore.wait();
+    ASSERT_EQ(0, data.semaphore.value());
+
+    data.action = SparringData::Terminate;
+    osDelay(10);
+}
