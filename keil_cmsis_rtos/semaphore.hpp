@@ -82,7 +82,7 @@ public:
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
         semaphore_try_locker locker(m_id);
-        return chrono::detail::cmsis_wait<RepT, PeriodT, mutex_try_locker>(
+        return chrono::detail::cmsis_wait<RepT, PeriodT, semaphore_try_locker>(
                     d, locker);
     }
 

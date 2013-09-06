@@ -37,7 +37,7 @@ TEST(semaphore, Constructor)
         weos::semaphore s;
         ASSERT_EQ(0, s.value());
     }
-    for (uint16_t count = 0; count < 0xFFFF; count += 123)
+    for (std::uint32_t count = 0; count < 0xFFFF; count += 123)
     {
         weos::semaphore s(count);
         ASSERT_EQ(count, s.value());
@@ -50,7 +50,7 @@ TEST(semaphore, Constructor)
 
 TEST(semaphore, post)
 {
-    for (uint16_t count = 0; count < 0xFFFF; count += 123)
+    for (std::uint32_t count = 0; count < 0xFFFF; count += 123)
     {
         weos::semaphore s(count);
         ASSERT_EQ(count, s.value());
@@ -67,7 +67,7 @@ TEST(semaphore, post)
 
 TEST(semaphore, wait)
 {
-    for (uint16_t count = 1; count < 0xFFFF; count += 123)
+    for (std::uint32_t count = 1; count < 0xFFFF; count += 123)
     {
         weos::semaphore s(count);
         ASSERT_EQ(count, s.value());
