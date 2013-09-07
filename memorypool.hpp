@@ -63,7 +63,7 @@ public:
         char* last = static_cast<char*>(memBlock) + memSize - chunkSize;
         next(last) = 0;
 
-        char* iter = memBlock;
+        char* iter = static_cast<char*>(memBlock);
         while (iter != last)
         {
             char* follow = iter + chunkSize;
@@ -103,17 +103,17 @@ private:
 } // namespace detail
 
 //! A memory pool.
-//! The memory_pool allocates statically space for (\p TNumElem) elements of
-//! type \p TElement.
+//! A memory_pool provides storage for (\p TNumElem) elements of
+//! type \p TElement. The storage is allocated statically, i.e. the pool
+//! does not acquire memory from the heap.
 template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
-class memory_pool
-#ifndef WEOS_DOXYGEN_RUN
-        : public TMutex
-#endif
+class memory_pool : private TMutex
 {
 public:
+    //! The type of the elements stored in the pool.
     typedef TElement element_type;
     typedef TMutex mutex_type;
+    typedef memory_pool<TElement, TNumElem, TMutex> pool_t;
 
 private:
     // A chunk has to be aligned such that it can contain a void* or an element.
@@ -141,7 +141,7 @@ public:
     //! Returns \p true, if the memory pool is empty.
     bool empty() const
     {
-        lock_guard<mutex_type> lock(*this);
+        lock_guard<mutex_type> lock(*const_cast<pool_t*>(this));
         return m_freeList.empty();
     }
 
@@ -175,17 +175,25 @@ private:
     detail::free_list m_freeList;
 };
 
+//! A counting memory pool.
+//! A counting memory pool is an extension to memory_pool. It also acquires
+//! storage for (\p TNumElem) elements of type \p TElement. In addition, it
+//! keeps track of the number of elements available in the pool and can thus
+//! block the caller until an element is available.
 template <typename TElement, unsigned TNumElem>
 class counting_memory_pool
 {
 public:
+    //! The type of the elements in this pool.
     typedef TElement element_type;
 
+    //! Constructs a counting memory pool.
     counting_memory_pool()
         : m_numElements(TNumElem)
     {
     }
 
+    //! Checks if the pool is empty.
     bool empty() const
     {
         return m_memoryPool.empty();

@@ -40,7 +40,7 @@ namespace weos
 //! The null-mutex is a class which implements the Lockable concept but
 //! does not block a thread. It can be used as a stub for a mutex in
 //! single-threaded applications.
-class null_mutex: boost::noncopyable
+class null_mutex : boost::noncopyable
 {
 public:
     //! Locks the null-mutex.
