@@ -132,6 +132,79 @@ Result HandleExceptionsInMethodIfSupported(
 } // namespace internal
 
 // ----=====================================================================----
+//     TestResult
+// ----=====================================================================----
+#if 0
+// Creates an empty TestResult.
+TestResult::TestResult()
+    : elapsed_time_(0) {
+}
+
+// D'tor.
+TestResult::~TestResult() {
+}
+
+// Returns the i-th test part result among all the results. i can
+// range from 0 to total_part_count() - 1. If i is not in that range,
+// aborts the program.
+const TestPartResult& TestResult::GetTestPartResult(int i) const {
+  if (i < 0 || i >= total_part_count())
+    internal::posix::Abort();
+  return test_part_results_.at(i);
+}
+
+// Clears the test part results.
+void TestResult::ClearTestPartResults() {
+  test_part_results_.clear();
+}
+
+// Adds a test part result to the list.
+void TestResult::AddTestPartResult(const TestPartResult& test_part_result) {
+  test_part_results_.push_back(test_part_result);
+}
+
+// Clears the object.
+void TestResult::Clear() {
+  test_part_results_.clear();
+  elapsed_time_ = 0;
+}
+
+// Returns true iff the test failed.
+bool TestResult::Failed() const {
+  for (int i = 0; i < total_part_count(); ++i) {
+    if (GetTestPartResult(i).failed())
+      return true;
+  }
+  return false;
+}
+
+// Returns true iff the test part fatally failed.
+static bool TestPartFatallyFailed(const TestPartResult& result) {
+  return result.fatally_failed();
+}
+
+// Returns true iff the test fatally failed.
+bool TestResult::HasFatalFailure() const {
+  return CountIf(test_part_results_, TestPartFatallyFailed) > 0;
+}
+
+// Returns true iff the test part non-fatally failed.
+static bool TestPartNonfatallyFailed(const TestPartResult& result) {
+  return result.nonfatally_failed();
+}
+
+// Returns true iff the test has a non-fatal failure.
+bool TestResult::HasNonfatalFailure() const {
+  return CountIf(test_part_results_, TestPartNonfatallyFailed) > 0;
+}
+
+// Gets the number of all test parts.  This is the sum of the number
+// of successful test parts and the number of failed test parts.
+int TestResult::total_part_count() const {
+  return static_cast<int>(test_part_results_.size());
+}
+#endif
+// ----=====================================================================----
 //     TestInfo
 // ----=====================================================================----
 
@@ -210,11 +283,8 @@ void TestInfo::Run()
 // Runs the test and updates the test result.
 void Test::Run()
 {
-    printf("SetUp\n");
     this->SetUp();
-    printf("Body\n");
     this->TestBody();
-    printf("TearDown\n");
     this->TearDown();
 
     /*

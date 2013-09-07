@@ -94,6 +94,159 @@ private:
 
 } // namespace internal
 
+#if 0
+// A copyable object representing the result of a test part (i.e. an
+// assertion or an explicit FAIL(), ADD_FAILURE(), or SUCCESS()).
+//
+// Don't inherit from TestPartResult as its destructor is not virtual.
+class GTEST_API_ TestPartResult {
+ public:
+  // The possible outcomes of a test part (i.e. an assertion or an
+  // explicit SUCCEED(), FAIL(), or ADD_FAILURE()).
+  enum Type {
+    kSuccess,          // Succeeded.
+    kNonFatalFailure,  // Failed but the test can continue.
+    kFatalFailure      // Failed and the test should be terminated.
+  };
+
+  // C'tor.  TestPartResult does NOT have a default constructor.
+  // Always use this constructor (with parameters) to create a
+  // TestPartResult object.
+  TestPartResult(Type a_type,
+                 const char* a_file_name,
+                 int a_line_number,
+                 const char* a_message)
+      : type_(a_type),
+        file_name_(a_file_name),
+        line_number_(a_line_number),
+        summary_(ExtractSummary(a_message)),
+        message_(a_message) {
+  }
+
+  // Gets the outcome of the test part.
+  Type type() const { return type_; }
+
+  // Gets the name of the source file where the test part took place, or
+  // NULL if it's unknown.
+  const char* file_name() const { return file_name_.c_str(); }
+
+  // Gets the line in the source file where the test part took place,
+  // or -1 if it's unknown.
+  int line_number() const { return line_number_; }
+
+  // Gets the summary of the failure message.
+  const char* summary() const { return summary_.c_str(); }
+
+  // Gets the message associated with the test part.
+  const char* message() const { return message_.c_str(); }
+
+  // Returns true iff the test part passed.
+  bool passed() const { return type_ == kSuccess; }
+
+  // Returns true iff the test part failed.
+  bool failed() const { return type_ != kSuccess; }
+
+  // Returns true iff the test part non-fatally failed.
+  bool nonfatally_failed() const { return type_ == kNonFatalFailure; }
+
+  // Returns true iff the test part fatally failed.
+  bool fatally_failed() const { return type_ == kFatalFailure; }
+ private:
+  Type type_;
+
+  // Gets the summary of the failure message by omitting the stack
+  // trace in it.
+  static internal::String ExtractSummary(const char* message);
+
+  // The name of the source file where the test part took place, or
+  // NULL if the source file is unknown.
+  internal::String file_name_;
+  // The line in the source file where the test part took place, or -1
+  // if the line number is unknown.
+  int line_number_;
+  internal::String summary_;  // The test failure summary.
+  internal::String message_;  // The test failure message.
+};
+
+// The result of a single Test.  This includes a list of
+// TestPartResults, a list of TestProperties, a count of how many
+// death tests there are in the Test, and how much time it took to run
+// the Test.
+//
+// TestResult is not copyable.
+class TestResult {
+ public:
+  // Creates an empty TestResult.
+  TestResult();
+
+  // D'tor.  Do not inherit from TestResult.
+  ~TestResult();
+
+  // Gets the number of all test parts.  This is the sum of the number
+  // of successful test parts and the number of failed test parts.
+  int total_part_count() const;
+
+  // Returns the number of the test properties.
+  int test_property_count() const;
+
+  // Returns true iff the test passed (i.e. no test part failed).
+  bool Passed() const { return !Failed(); }
+
+  // Returns true iff the test failed.
+  bool Failed() const;
+
+  // Returns true iff the test fatally failed.
+  bool HasFatalFailure() const;
+
+  // Returns true iff the test has a non-fatal failure.
+  bool HasNonfatalFailure() const;
+
+  // Returns the elapsed time, in milliseconds.
+  TimeInMillis elapsed_time() const { return elapsed_time_; }
+
+  // Returns the i-th test part result among all the results. i can range
+  // from 0 to test_property_count() - 1. If i is not in that range, aborts
+  // the program.
+  const TestPartResult& GetTestPartResult(int i) const;
+
+ private:
+  friend class TestInfo;
+  friend class UnitTest;
+  friend class internal::DefaultGlobalTestPartResultReporter;
+  friend class internal::TestResultAccessor;
+  friend class internal::UnitTestImpl;
+
+  // Gets the vector of TestPartResults.
+  const std::vector<TestPartResult>& test_part_results() const {
+    return test_part_results_;
+  }
+
+  // Sets the elapsed time.
+  void set_elapsed_time(TimeInMillis elapsed) { elapsed_time_ = elapsed; }
+
+  // Adds a test part result to the list.
+  void AddTestPartResult(const TestPartResult& test_part_result);
+
+  // Clears the test part results.
+  void ClearTestPartResults();
+
+  // Clears the object.
+  void Clear();
+
+  // Protects mutable state of the property vector and of owned
+  // properties, whose values may be updated.
+  internal::Mutex test_properites_mutex_;
+
+  // The vector of TestPartResults
+  std::vector<TestPartResult> test_part_results_;
+  // The elapsed time, in milliseconds.
+  TimeInMillis elapsed_time_;
+
+  // We disallow copying TestResult.
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestResult);
+};  // class TestResult
+#endif
+
 // A TestInfo object stores the following information about a test:
 //
 //   Test case name
@@ -133,10 +286,10 @@ class TestInfo {
       return value_param_->c_str();
     return NULL;
   }
+  */
 
   // Returns the result of the test.
-  const TestResult* result() const { return &result_; }
-  */
+  //const TestResult* result() const { return &result_; }
 
  private:
 
