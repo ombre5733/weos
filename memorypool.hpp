@@ -138,7 +138,7 @@ public:
     }
 
     //! Returns the number of pool elements.
-    //! Returns the number of elements for which the pool provides storage.
+    //! Returns the number of elements for which the pool provides memory.
     std::size_t capacity() const
     {
         return TNumElem;
@@ -160,7 +160,7 @@ public:
     void* allocate()
     {
         lock_guard<mutex_type> lock(*this);
-        if (empty())
+        if (m_freeList.empty())
             return 0;
         else
             return m_freeList.allocate();
@@ -198,6 +198,13 @@ public:
     counting_memory_pool()
         : m_numElements(TNumElem)
     {
+    }
+
+    //! Returns the number of pool elements.
+    //! Returns the number of elements for which the pool provides memory.
+    std::size_t capacity() const
+    {
+        return TNumElem;
     }
 
     //! Checks if the pool is empty.
