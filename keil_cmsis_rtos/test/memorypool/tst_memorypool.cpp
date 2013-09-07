@@ -45,7 +45,7 @@ TEST(memory_pool, Constructor)
 TEST(memory_pool, allocate)
 {
     const int POOL_SIZE = 10;
-    weos::memory_pool<int, 10> p;
+    weos::memory_pool<int, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
     for (int i = 0; i < POOL_SIZE; ++i)

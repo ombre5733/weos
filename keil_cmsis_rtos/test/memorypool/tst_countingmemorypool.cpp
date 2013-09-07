@@ -46,7 +46,7 @@ TEST(counting_memory_pool, Constructor)
 TEST(counting_memory_pool, allocate)
 {
     const int POOL_SIZE = 10;
-    weos::counting_memory_pool<int, 10> p;
+    weos::counting_memory_pool<int, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
     for (int i = 0; i < POOL_SIZE; ++i)
@@ -77,6 +77,24 @@ TEST(counting_memory_pool, allocate)
     }
 
     ASSERT_TRUE(p.empty());
+}
+
+TEST(counting_memory_pool, try_allocate)
+{
+    const int POOL_SIZE = 10;
+    weos::counting_memory_pool<int, POOL_SIZE> p;
+
+    for (int i = 0; i < POOL_SIZE; ++i)
+    {
+        void* c = p.try_allocate();
+        ASSERT_TRUE(c != 0);
+    }
+    ASSERT_TRUE(p.empty());
+
+    for (int i = 0; i < POOL_SIZE; ++i)
+    {
+        ASSERT_TRUE(p.try_allocate() == 0);
+    }
 }
 
 TEST(counting_memory_pool, allocate_and_free)
