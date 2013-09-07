@@ -311,19 +311,22 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
 
 #define ASSERT_EQ(expected, actual) \
     if ((expected) != (actual)) { \
-        printf("Failure in %d", __LINE__); \
+        printf("Failure in file %s, line %d, function: %s\n", \
+            __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         return; \
     }
 
 #define ASSERT_TRUE(expr) \
     if (!(expr)) { \
-        printf("Failure in %d", __LINE__); \
+        printf("Failure in file %s, line %d, function: %s\n", \
+            __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         return; \
     }
 
 #define ASSERT_FALSE(expr) \
     if ((expr)) { \
-        printf("Failure in %d", __LINE__); \
+        printf("Failure in file %s, line %d, function: %s\n", \
+            __FILE__, __LINE__, __PRETTY_FUNCTION__); \
         return; \
     }
 

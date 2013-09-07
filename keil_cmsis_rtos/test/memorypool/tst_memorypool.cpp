@@ -30,6 +30,9 @@
 
 #include "gtest/gtest.h"
 
+#include <boost/random/linear_congruential.hpp>
+#include <boost/random/uniform_smallint.hpp>
+
 #include <set>
 
 TEST(memory_pool, Constructor)
@@ -109,9 +112,29 @@ TEST(memory_pool, random_allocate_and_free)
         uniqueChunks.insert(c);
     }
     ASSERT_TRUE(p.empty());
+    ASSERT_EQ(POOL_SIZE, uniqueChunks.size());
     for (int i = 0; i < POOL_SIZE; ++i)
     {
         p.free(chunks[i]);
         chunks[i] = 0;
+    }
+
+    boost::random::minstd_rand generator;
+    boost::random::uniform_smallint<> dist(0, POOL_SIZE - 1);
+    for (int i = 0; i < 10000; ++i)
+    {
+        int index = dist(generator);
+        if (chunks[index] == 0)
+        {
+            void* c = p.allocate();
+            ASSERT_TRUE(c != 0);
+            ASSERT_TRUE(uniqueChunks.find(c) != uniqueChunks.end());
+            chunks[index] = c;
+        }
+        else
+        {
+            p.free(chunks[index]);
+            chunks[index] = 0;
+        }
     }
 }
