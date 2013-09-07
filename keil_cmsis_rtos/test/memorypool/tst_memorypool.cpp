@@ -36,6 +36,7 @@ TEST(memory_pool, Constructor)
 {
     weos::memory_pool<int, 10> p;
     ASSERT_FALSE(p.empty());
+    ASSERT_EQ(10, p.capacity());
 }
 
 TEST(memory_pool, allocate)

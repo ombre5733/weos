@@ -137,6 +137,13 @@ public:
     {
     }
 
+    //! Returns the number of pool elements.
+    //! Returns the number of elements for which the pool provides storage.
+    std::size_t capacity() const
+    {
+        return TNumElem;
+    }
+
     //! Checks if the memory pool is empty.
     //! Returns \p true, if the memory pool is empty.
     bool empty() const
