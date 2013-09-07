@@ -38,13 +38,13 @@ namespace weos
 
 //! An object pool with static (compile-time) storage.
 //! The object_pool is a memory pool for (\p TNumElem) objects of
-//! type \p TType. The memory is allocated statically (internally in the
+//! type \p TElement. The memory is allocated statically (internally in the
 //! object), i.e. the pool does not access the heap.
-template <typename TType, unsigned TNumElem, typename TMutex = null_mutex>
+template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
 class object_pool
 {
 public:
-    typedef TType element_type;
+    typedef TElement element_type;
     typedef TMutex mutex_type;
 
     ~object_pool()
@@ -141,11 +141,6 @@ class counting_object_pool
 public:
     typedef TElement element_type;
 
-    counting_object_pool()
-        : m_numElements(TNumElem)
-    {
-    }
-
     ~counting_object_pool()
     {
         //! \todo Sort and delete the objects
@@ -161,6 +156,12 @@ public:
     bool empty() const
     {
         return m_memoryPool.empty();
+    }
+
+    //! Returns the number of available elements.
+    std::size_t size() const
+    {
+        return m_memoryPool.size();
     }
 
     element_type* allocate()
@@ -240,7 +241,7 @@ public:
     }
 
 private:
-    typedef counting_memory_pool<TElement, TNumElem, TMutex> pool_t;
+    typedef counting_memory_pool<TElement, TNumElem> pool_t;
     pool_t m_memoryPool;
 };
 

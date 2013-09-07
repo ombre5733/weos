@@ -35,9 +35,11 @@
 
 #include <set>
 
+typedef double typeToTest;
+
 TEST(memory_pool, Constructor)
 {
-    weos::memory_pool<int, 10> p;
+    weos::memory_pool<typeToTest, 10> p;
     ASSERT_FALSE(p.empty());
     ASSERT_EQ(10, p.capacity());
 }
@@ -45,7 +47,7 @@ TEST(memory_pool, Constructor)
 TEST(memory_pool, allocate)
 {
     const int POOL_SIZE = 10;
-    weos::memory_pool<int, POOL_SIZE> p;
+    weos::memory_pool<typeToTest, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
     for (int i = 0; i < POOL_SIZE; ++i)
@@ -57,7 +59,7 @@ TEST(memory_pool, allocate)
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
-                    % boost::alignment_of<int>::value == 0);
+                    % boost::alignment_of<typeToTest>::value == 0);
 
         for (int j = 0; j < i; ++j)
         {
@@ -66,9 +68,9 @@ TEST(memory_pool, allocate)
 
             // Chunks must not overlap.
             if (chunks[j] < addr)
-                ASSERT_TRUE(chunks[j] + sizeof(int) <= addr);
+                ASSERT_TRUE(chunks[j] + sizeof(typeToTest) <= addr);
             if (chunks[j] > addr)
-                ASSERT_TRUE(addr + sizeof(int) <= chunks[j]);
+                ASSERT_TRUE(addr + sizeof(typeToTest) <= chunks[j]);
         }
         chunks[i] = addr;
     }
@@ -79,7 +81,7 @@ TEST(memory_pool, allocate)
 TEST(memory_pool, allocate_and_free)
 {
     const int POOL_SIZE = 10;
-    weos::memory_pool<int, POOL_SIZE> p;
+    weos::memory_pool<typeToTest, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
 
     for (int j = 1; j <= POOL_SIZE; ++j)
@@ -100,7 +102,7 @@ TEST(memory_pool, allocate_and_free)
 TEST(memory_pool, random_allocate_and_free)
 {
     const int POOL_SIZE = 10;
-    weos::memory_pool<int, POOL_SIZE> p;
+    weos::memory_pool<typeToTest, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
     std::set<void*> uniqueChunks;
 

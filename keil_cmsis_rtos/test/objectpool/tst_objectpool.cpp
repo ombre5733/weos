@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "../../memorypool.hpp"
+#include "../../objectpool.hpp"
 
 #include "gtest/gtest.h"
 
@@ -37,27 +37,24 @@
 
 typedef double typeToTest;
 
-TEST(counting_memory_pool, Constructor)
+TEST(object_pool, Constructor)
 {
-    weos::counting_memory_pool<typeToTest, 10> p;
+    weos::object_pool<typeToTest, 10> p;
     ASSERT_FALSE(p.empty());
     ASSERT_EQ(10, p.capacity());
-    ASSERT_EQ(10, p.size());
 }
 
-TEST(counting_memory_pool, allocate)
+TEST(object_pool, allocate)
 {
     const int POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
+    weos::object_pool<typeToTest, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
     for (int i = 0; i < POOL_SIZE; ++i)
     {
-        ASSERT_EQ(10 - i, p.size());
         ASSERT_FALSE(p.empty());
         void* c = p.allocate();
         ASSERT_TRUE(c != 0);
-        ASSERT_EQ(10 - i - 1, p.size());
 
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
@@ -81,60 +78,37 @@ TEST(counting_memory_pool, allocate)
     ASSERT_TRUE(p.empty());
 }
 
-TEST(counting_memory_pool, try_allocate)
+TEST(object_pool, allocate_and_free)
 {
     const int POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
-
-    for (int i = 0; i < POOL_SIZE; ++i)
-    {
-        void* c = p.try_allocate();
-        ASSERT_TRUE(c != 0);
-    }
-    ASSERT_TRUE(p.empty());
-
-    for (int i = 0; i < POOL_SIZE; ++i)
-    {
-        ASSERT_TRUE(p.try_allocate() == 0);
-    }
-}
-
-TEST(counting_memory_pool, allocate_and_free)
-{
-    const int POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
-    void* chunks[POOL_SIZE];
+    weos::object_pool<typeToTest, POOL_SIZE> p;
+    typeToTest* chunks[POOL_SIZE];
 
     for (int j = 1; j <= POOL_SIZE; ++j)
     {
         for (int i = 0; i < j; ++i)
         {
-            ASSERT_EQ(10 - i, p.size());
-            void* c = p.allocate();
+            typeToTest* c = p.allocate();
             ASSERT_TRUE(c != 0);
-            ASSERT_EQ(10 - i - 1, p.size());
             chunks[i] = c;
         }
         for (int i = 0; i < j; ++i)
         {
-            ASSERT_EQ(10 - j + i, p.size());
             p.free(chunks[i]);
-            ASSERT_EQ(10 - j + i + 1, p.size());
         }
     }
 }
 
-TEST(counting_memory_pool, random_allocate_and_free)
+TEST(object_pool, random_allocate_and_free)
 {
     const int POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
-    void* chunks[POOL_SIZE];
-    std::set<void*> uniqueChunks;
-    int numAllocatedChunks = 0;
+    weos::object_pool<typeToTest, POOL_SIZE> p;
+    typeToTest* chunks[POOL_SIZE];
+    std::set<typeToTest*> uniqueChunks;
 
     for (int i = 0; i < POOL_SIZE; ++i)
     {
-        void* c = p.allocate();
+        typeToTest* c = p.allocate();
         ASSERT_TRUE(c != 0);
         chunks[i] = c;
         uniqueChunks.insert(c);
@@ -154,18 +128,15 @@ TEST(counting_memory_pool, random_allocate_and_free)
         int index = dist(generator);
         if (chunks[index] == 0)
         {
-            void* c = p.allocate();
+            typeToTest* c = p.allocate();
             ASSERT_TRUE(c != 0);
             ASSERT_TRUE(uniqueChunks.find(c) != uniqueChunks.end());
             chunks[index] = c;
-            ++numAllocatedChunks;
         }
         else
         {
             p.free(chunks[index]);
             chunks[index] = 0;
-            --numAllocatedChunks;
         }
-        ASSERT_EQ(POOL_SIZE - numAllocatedChunks, p.size());
     }
 }
