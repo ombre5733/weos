@@ -213,6 +213,12 @@ public:
         return m_memoryPool.empty();
     }
 
+    //! Returns the number of available elements.
+    std::size_t size() const
+    {
+        return m_numElements.value();
+    }
+
     //! Allocates a chunk of memory.
     //! Allocates a chunk of memory and returns a pointer to it. The calling
     //! thread is blocked until a chunk is available.

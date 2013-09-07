@@ -54,11 +54,15 @@ TEST(memory_pool, allocate)
         void* c = p.allocate();
         ASSERT_TRUE(c != 0);
 
+        // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
+        ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
+                    % boost::alignment_of<int>::value == 0);
+
         for (int j = 0; j < i; ++j)
         {
             // No chunk can be returned twice from the pool.
-            ASSERT_FALSE(chunks[j] != addr);
+            ASSERT_FALSE(chunks[j] == addr);
 
             // Chunks must not overlap.
             if (chunks[j] < addr)
@@ -84,10 +88,6 @@ TEST(memory_pool, allocate_and_free)
         {
             void* c = p.allocate();
             ASSERT_TRUE(c != 0);
-            // Check the alignment of the allocated chunk.
-            uintptr_t addr = reinterpret_cast<uintptr_t>(c);
-            ASSERT_TRUE(addr % boost::alignment_of<int>::value == 0);
-
             chunks[i] = c;
         }
         for (int i = 0; i < j; ++i)

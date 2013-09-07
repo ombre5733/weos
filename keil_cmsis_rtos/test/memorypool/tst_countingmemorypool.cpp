@@ -40,6 +40,7 @@ TEST(counting_memory_pool, Constructor)
     weos::counting_memory_pool<int, 10> p;
     ASSERT_FALSE(p.empty());
     ASSERT_EQ(10, p.capacity());
+    ASSERT_EQ(10, p.size());
 }
 
 TEST(counting_memory_pool, allocate)
@@ -50,15 +51,21 @@ TEST(counting_memory_pool, allocate)
 
     for (int i = 0; i < POOL_SIZE; ++i)
     {
+        ASSERT_EQ(10 - i, p.size());
         ASSERT_FALSE(p.empty());
         void* c = p.allocate();
         ASSERT_TRUE(c != 0);
+        ASSERT_EQ(10 - i - 1, p.size());
 
+        // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
+        ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
+                    % boost::alignment_of<int>::value == 0);
+
         for (int j = 0; j < i; ++j)
         {
             // No chunk can be returned twice from the pool.
-            ASSERT_FALSE(chunks[j] != addr);
+            ASSERT_FALSE(chunks[j] == addr);
 
             // Chunks must not overlap.
             if (chunks[j] < addr)
@@ -82,17 +89,17 @@ TEST(counting_memory_pool, allocate_and_free)
     {
         for (int i = 0; i < j; ++i)
         {
+            ASSERT_EQ(10 - i, p.size());
             void* c = p.allocate();
             ASSERT_TRUE(c != 0);
-            // Check the alignment of the allocated chunk.
-            uintptr_t addr = reinterpret_cast<uintptr_t>(c);
-            ASSERT_TRUE(addr % boost::alignment_of<int>::value == 0);
-
+            ASSERT_EQ(10 - i - 1, p.size());
             chunks[i] = c;
         }
         for (int i = 0; i < j; ++i)
         {
+            ASSERT_EQ(10 - j + i, p.size());
             p.free(chunks[i]);
+            ASSERT_EQ(10 - j + i + 1, p.size());
         }
     }
 }
@@ -103,6 +110,7 @@ TEST(counting_memory_pool, random_allocate_and_free)
     weos::counting_memory_pool<int, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
     std::set<void*> uniqueChunks;
+    int numAllocatedChunks = 0;
 
     for (int i = 0; i < POOL_SIZE; ++i)
     {
@@ -130,11 +138,14 @@ TEST(counting_memory_pool, random_allocate_and_free)
             ASSERT_TRUE(c != 0);
             ASSERT_TRUE(uniqueChunks.find(c) != uniqueChunks.end());
             chunks[index] = c;
+            ++numAllocatedChunks;
         }
         else
         {
             p.free(chunks[index]);
             chunks[index] = 0;
+            --numAllocatedChunks;
         }
+        ASSERT_EQ(POOL_SIZE - numAllocatedChunks, p.size());
     }
 }
