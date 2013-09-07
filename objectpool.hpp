@@ -57,6 +57,13 @@ public:
         //!          called
     }
 
+    //! Returns the pool's capacity.
+    //! Returns the number of elements for which the pool provides memory.
+    std::size_t capacity() const
+    {
+        return TNumElem;
+    }
+
     //! Checks if the pool is empty.
     //! Returns \p true, if the pool is empty and no more object can be
     //! allocated.
@@ -142,6 +149,13 @@ public:
     ~counting_object_pool()
     {
         //! \todo Sort and delete the objects
+    }
+
+    //! Returns the pool's capacity.
+    //! Returns the number of elements for which the pool provides memory.
+    std::size_t capacity() const
+    {
+        return TNumElem;
     }
 
     bool empty() const
