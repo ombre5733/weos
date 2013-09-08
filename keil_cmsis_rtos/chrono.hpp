@@ -161,9 +161,10 @@ namespace detail
 {
 
 // Keil's CMSIS RTX limits the delay to 0xFFFE ticks (really ticks, not
-// milliseconds, unless the SysTick period is 1 ms). If we want to
-// block longer, we have to issue multiple calls. This helper contains the
-// necessary boilerplate code.
+// milliseconds, unless the SysTick period is 1 ms, in which case the number of
+// ticks is equal to the number of milliseconds).
+// If we want to block longer, we have to call the wait function multiple
+// times. This helper contains the necessary boilerplate code.
 template <typename RepT, typename PeriodT, typename FunctorT>
 struct cmsis_wait
 {

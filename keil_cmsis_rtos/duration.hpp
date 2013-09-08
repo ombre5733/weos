@@ -331,9 +331,11 @@ struct duration_caster
 //! Cast from a <tt>duration<RepT, PeriodT></tt> given in \p d to another
 //! duration templated by \p ToDuration. The call
 //! <tt>duration_cast<T>(d)</tt> is equivalent to
-//! <tt>d.count() * d::period / T::period</tt>. All values are casted to
-//! at least weos::detail::cast_least_int_type before performing the
-//! computation.
+//! <tt>d.count() * d::period / T::period</tt>. If the destination period is
+//! coarser than the source period, a truncation occurs if the destination
+//! representation is not a floating point type.
+//! All values are cast to at least weos::detail::cast_least_int_type before
+//! performing the computation.
 template <typename ToDurationT, typename RepT, typename PeriodT>
 BOOST_CONSTEXPR
 typename boost::enable_if<detail::is_duration<ToDurationT>, ToDurationT>::type

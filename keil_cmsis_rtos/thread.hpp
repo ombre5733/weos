@@ -49,6 +49,7 @@ class thread;
 
 namespace detail
 {
+//! Data which is shared between the thread and its handle.
 struct ThreadData : boost::noncopyable
 {
     typedef object_pool<ThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS,
@@ -56,7 +57,10 @@ struct ThreadData : boost::noncopyable
 
     ThreadData();
 
+    //! Decreases the reference counter by one. If the reference counter reaches
+    //! zero, this ThreadData is returned to the pool.
     void deref();
+    //! Increases the reference counter by one.
     void ref();
 
     static pool_t& pool();
@@ -127,6 +131,9 @@ public:
         std::uint32_t stackSize;
     };
 
+    //! Creates a thread handle without a thread.
+    //! Creates a thread handle which is not associated with any thread. The
+    //! resultant thread handle is not joinable.
     thread() BOOST_NOEXCEPT
         : m_data(0)
     {
@@ -140,6 +147,10 @@ public:
     thread(void (*fun)(void*), void* arg);
 
     //! Destroys the thread handle.
+    //! Destroys this thread handle.
+    //! \note If the thread handle is still associated with a joinable thread,
+    //! its destruction will call std::terminate(). It is mandatory to either
+    //! call join() or detach().
     ~thread()
     {
         if (joinable())
@@ -176,6 +187,8 @@ public:
 
     //! Checks if the thread is joinable.
     //! Returns \p true, if the thread is joinable.
+    //! \note If a thread is joinable, either join() or detach() must be
+    //! called before the destructor is executed.
     bool joinable() BOOST_NOEXCEPT
     {
         return m_data != 0;
