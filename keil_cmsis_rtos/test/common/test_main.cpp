@@ -29,6 +29,8 @@
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
 
+#include "../config.hpp"
+
 #include "../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
 #include "gtest/gtest.h"
 
@@ -105,6 +107,15 @@ extern "C" void SystemInit(void)
     *((volatile unsigned long*)0xE000ED88) = 0xF << 20;
     initUart();
 }
+
+namespace weos
+{
+void throw_exception(const std::exception& e)
+{
+    printf("Throw exception %s\n", e.what());
+    while (1);
+}
+} // namespace weos
 
 extern "C" void runTests(const void* arg)
 {

@@ -28,3 +28,6 @@
 
 set(test_SOURCES tst_objectpool.cpp)
 add_executable_and_bin(tst_objectpool "${COMMON_SOURCES};${test_SOURCES}")
+
+set(test_SOURCES tst_countingobjectpool.cpp)
+add_executable_and_bin(tst_countingobjectpool "${COMMON_SOURCES};${test_SOURCES}")

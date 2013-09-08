@@ -31,6 +31,7 @@
 
 #include "../config.hpp"
 #include "chrono.hpp"
+#include "error.hpp"
 
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
@@ -73,7 +74,7 @@ public:
         osMutexDef_t mutexDef = { m_cmsisMutexControlBlock };
         m_id = osMutexCreate(&mutexDef);
         if (m_id == 0)
-            ::weos::throw_exception(-1);// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
     }
 
     // Destroys the mutex.
@@ -88,7 +89,7 @@ public:
     {
         osStatus status = osMutexWait(m_id, osWaitForever);
         if (status != osOK)
-            ::weos::throw_exception(-1);// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
         derived()->post_lock_check(mutexControlBlockHeader());
     }
 
@@ -105,7 +106,7 @@ public:
 
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
-            ::weos::throw_exception(-1);// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
 
         return false;
     }
@@ -160,7 +161,7 @@ struct mutex_try_locker
 
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
-            ::weos::throw_exception(-1);// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
 
         return false;
     }
@@ -415,7 +416,7 @@ public:
     void unlock()
     {
         if (!m_locked)
-            ::weos::throw_exception(-1);//! \todo std::system_error);
+            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
         m_mutex->unlock();
         m_locked = false;
     }

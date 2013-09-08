@@ -59,6 +59,9 @@ include_directories(
 add_definitions("-DWEOS_USER_CONFIG=\"common/user_config.hpp\"")
 
 set(COMMON_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/../thread.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../error.cpp
+
         ${CMAKE_CURRENT_SOURCE_DIR}/common/RTX_Conf_CM.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/system_stm32f4xx.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/test_main.cpp
@@ -104,3 +107,4 @@ add_subdirectory(memorypool)
 add_subdirectory(mutex)
 add_subdirectory(objectpool)
 add_subdirectory(semaphore)
+add_subdirectory(thread)

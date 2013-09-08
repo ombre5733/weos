@@ -31,38 +31,86 @@
 
 #include "../config.hpp"
 #include "chrono.hpp"
+#include "error.hpp"
+#include "../objectpool.hpp"
+#include "semaphore.hpp"
 
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
 
+#include <cstdint>
+#include <exception>
+
+extern "C" void weos_threadInvoker(const void* arg);
+
 namespace weos
 {
+class thread;
 
-class thread : boost::noncopyable //! \todo Or must it be copyable?
+namespace detail
 {
+struct ThreadData : boost::noncopyable
+{
+    typedef object_pool<ThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS,
+                        mutex> pool_t;
+
+    ThreadData();
+
+    void deref();
+    void ref();
+
+    static pool_t& pool();
+
+private:
+    void (*function)(void*);
+    void* arg;
+
+    // This semaphore is increased by the thread when it's execution finishes.
+    semaphore m_finished;
+    volatile int m_referenceCount;
+    // The system-specific thread id.
+    osThreadId m_threadId;
+
+    friend class ::weos::thread;
+    friend void ::weos_threadInvoker(const void* arg);
+};
+
+} // namespace detail
+
+class thread : boost::noncopyable
+{
+public:
     //! A representation of a thread identifier.
     //! This class is a wrapper around a thread identifier. It has a small
-    //! memory footprint such that copied can be passed around.
+    //! memory footprint such that it is inexpensive to pass copies around.
     class id
     {
     public:
-        id() : m_id(0) {}
+        id() BOOST_NOEXCEPT
+            : m_id(0)
+        {
+        }
 
-        id(osThreadId _id) : m_id(_id) {}
+        explicit id(osThreadId _id) BOOST_NOEXCEPT
+            : m_id(_id)
+        {
+        }
 
     private:
-        friend bool operator== (id lhs, id rhs);
-        friend bool operator!= (id lhs, id rhs);
-        friend bool operator< (id lhs, id rhs);
-        friend bool operator<= (id lhs, id rhs);
-        friend bool operator> (id lhs, id rhs);
-        friend bool operator>= (id lhs, id rhs);
+        friend bool operator== (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator!= (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator< (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator<= (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator> (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator>= (id lhs, id rhs) BOOST_NOEXCEPT;
 
         osThreadId m_id;
     };
 
+    //! Thread attributs.
     class attributes
     {
+    public:
         enum Priority
         {
             Idle = osPriorityIdle,
@@ -76,34 +124,61 @@ class thread : boost::noncopyable //! \todo Or must it be copyable?
         };
 
         Priority priority;
-        uint32_t stackSize;
+        std::uint32_t stackSize;
     };
 
-    thread()
+    thread() BOOST_NOEXCEPT
+        : m_data(0)
     {
     }
 
     thread(const attributes& attrs)
+        : m_data(0)
     {
     }
 
-    thread(void (*fun)(void*), void* arg)
-    {
-        osThreadDef_t threadDef = { fun, DEFAULT_PRIORITY, 0, 0 };
-        m_id = osThreadCreate(&threadDef, arg);
-    }
+    thread(void (*fun)(void*), void* arg);
 
+    //! Destroys the thread handle.
     ~thread()
     {
-        //! \todo Check if the thread is still running. If so, call
-        //! std::terminate(). The C++11 standard does not allow to invoke
-        //! the destructor when the thread is joinable()
+        if (joinable())
+            std::terminate();
+    }
+
+    //! Separates the executing thread from this thread handle.
+    void detach()
+    {
+        //! \todo if (!joinable()) throw std::system_error();
+        m_data->deref();
+        m_data = 0;
     }
 
     //! Returns the id of the thread.
     id get_id() const BOOST_NOEXCEPT
     {
-        return m_id;
+        if (m_data)
+            return id(m_data->m_threadId);
+        else
+            return id();
+    }
+
+    //! Blocks until this thread finishes.
+    //! Blocks the calling thread until this thread finishes.
+    void join()
+    {
+        //! \todo if (!joinable()) throw std::system_error();
+        m_data->m_finished.wait();
+        // The thread data is not needed any longer.
+        m_data->deref();
+        m_data = 0;
+    }
+
+    //! Checks if the thread is joinable.
+    //! Returns \p true, if the thread is joinable.
+    bool joinable() BOOST_NOEXCEPT
+    {
+        return m_data != 0;
     }
 
     //! Returns the number of threads which can run concurrently on this
@@ -114,7 +189,7 @@ class thread : boost::noncopyable //! \todo Or must it be copyable?
     }
 
 private:
-    id m_id;
+    detail::ThreadData* m_data;
 };
 
 //! Compares two thread ids for equality.
@@ -170,9 +245,9 @@ namespace this_thread
 
 //! Returns the id of the current thread.
 inline
-osl::thread::id get_id()
+weos::thread::id get_id()
 {
-    return osl::thread::id(osThreadGetId());
+    return weos::thread::id(osThreadGetId());
 }
 
 namespace detail
@@ -181,10 +256,10 @@ namespace detail
 class thread_sleeper
 {
 public:
-    bool operator() (int32_t timeout)
+    bool operator() (std::int32_t millisec) const
     {
-        status = osDelay(timeout);
-        OSL_ASSERT(status == osEventTimeout);
+        osStatus status = osDelay(millisec);
+        WEOS_ASSERT(status == osEventTimeout);
     }
 };
 
@@ -208,8 +283,7 @@ inline
 void yield()
 {
     osStatus status = osThreadYield();
-    OSL_ASSERT(status == osOK);
-    OSL_UNUSED(status);
+    WEOS_ASSERT(status == osOK);
 }
 
 } // namespace this_thread

@@ -26,57 +26,15 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CONFIG_HPP
-#define WEOS_CONFIG_HPP
+#include "error.hpp"
 
-#if !defined(WEOS_USER_CONFIG)
-#  error "The location of the user config has not been defined."
-#endif
-#include WEOS_USER_CONFIG
-
-
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
-#  if osCMSIS_RTX != ((4<<16) | 70)
-#    error "The Keil CMSIS RTOS version must be 4.70."
-#  endif
-#endif
-
-
-#if !defined(WEOS_CUSTOM_THROW_EXCEPTION)
-    namespace weos
-    {
-        template <typename ExceptionT>
-        /*BOOST_ATTRIBUTE_NORETURN*/ inline void throw_exception(const ExceptionT& e)
-        {
-            throw e;
-        }
-    } // namespace weos
-#else
-#include <exception>
 namespace weos
 {
-  // This is only a declaration - the definition has to be provided by the user.
-  void throw_exception(const std::exception& e);
+
+const error_category& cmsis_category()
+{
+    static cmsis_category_impl categoryInstance;
+    return categoryInstance;
+}
+
 } // namespace weos
-#endif
-
-
-#if defined(WEOS_ENABLE_ASSERT)
-#  if defined(WEOS_CUSTOM_ASSERT_HANDLER)
-     namespace weos
-     {
-         void assert_failed(const char* condition, const char* function,
-                            const char* file, int line);
-     } // namespace weos
-#    define WEOS_ASSERT(cond)                                                  \
-         do { if (!(cond)) ::weos::assert_failed(#cond, todo, __FILE__, __LINE__) } while(0)
-#  else
-#    include <cassert>
-#    define WEOS_ASSERT(cond)   assert(cond)
-#  endif // WEOS_CUSTOM_ASSERT_HANDLER
-#else
-#  define WEOS_ASSERT(cond)   ((void)0)
-#endif // WEOS_ENABLE_ASSERT
-
-#endif // WEOS_CONFIG_HPP

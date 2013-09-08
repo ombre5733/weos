@@ -66,7 +66,7 @@ namespace weos
 class error_category : boost::noncopyable
 {
 public:
-    BOOST_CONSTEXPR error_category() BOOST_NOEXCEPT {}
+    /*BOOST_CONSTEXPR*/ error_category() BOOST_NOEXCEPT {}
 
     virtual ~error_category() BOOST_NOEXCEPT {}
 
@@ -160,7 +160,7 @@ public:
 
     virtual const char* what() const BOOST_NOEXCEPT
     {
-        return "";
+        return "system_error";
     }
 
 private:
@@ -181,20 +181,43 @@ enum cmsis_error_enum
 class cmsis_category_impl : public error_category
 {
 public:
-    virtual const char* name() const
+    virtual const char* name() const BOOST_NOEXCEPT
     {
         return "CMSIS";
     }
 
-    //virtual const char* message(int err_val) const;
+    virtual const char* message(int err_val) const
+    {
+        switch (err_val)
+        {
+            default:
+                // Not an error.
+                return "";
+            case osErrorParameter:
+                return "A parameter was incorrect.";
+            case osErrorResource:
+                return "A resource was not available.";
+            case osErrorTimeoutResource:
+                return "A resource was not available before the timeout.";
+            case osErrorISR:
+            case osErrorISRRecursive:
+                return "The function cannot be called from an interrupt.";
+            case osErrorPriority:
+                return "The priority is illegal.";
+            case osErrorNoMemory:
+                return "Could not reserve memory.";
+            case osErrorValue:
+                return "A parameter is out of range.";
+            case osErrorOS:
+                return "Unspecified error.";
+        }
+    }
 };
 
-const error_category& cmsis_category()
-{
-    static cmsis_category_impl categoryInstance;
-    return categoryInstance;
-}
+//! Returns the category for CMSIS errors.
+const error_category& cmsis_category();
 
+#if 0
 namespace cmsis_error
 {
 boost::error_code make_error_code(cmsis_error_enum e)
@@ -209,6 +232,7 @@ boost::error_condition make_error_condition(cmsis_error_enum e)
                                   cmsis_category());
 }
 } // namespace cmsis_error
+#endif
 
 } // namespace weos
 
