@@ -53,12 +53,12 @@
         }
     } // namespace weos
 #else
-#include <exception>
-namespace weos
-{
-  // This is only a declaration - the definition has to be provided by the user.
-  void throw_exception(const std::exception& e);
-} // namespace weos
+#   include <exception>
+    namespace weos
+    {
+        // This is only a declaration - the definition has to be provided by the user.
+        void throw_exception(const std::exception& e);
+     } // namespace weos
 #endif
 
 
@@ -70,7 +70,7 @@ namespace weos
                             const char* file, int line);
      } // namespace weos
 #    define WEOS_ASSERT(cond)                                                  \
-         do { if (!(cond)) ::weos::assert_failed(#cond, todo, __FILE__, __LINE__) } while(0)
+         do { if (!(cond)) ::weos::assert_failed(#cond, __PRETTY_FUNCTION__, __FILE__, __LINE__) } while(0)
 #  else
 #    include <cassert>
 #    define WEOS_ASSERT(cond)   assert(cond)
