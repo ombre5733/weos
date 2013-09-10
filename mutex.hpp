@@ -54,6 +54,12 @@ public:
         return true;
     }
 
+    template <typename RepT, typename PeriodT>
+    bool try_lock_for(const chrono::duration<RepT, PeriodT>& d)
+    {
+        return true;
+    }
+
     //! Unlocks the null-mutex.
     void unlock()
     {

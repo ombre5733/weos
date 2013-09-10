@@ -34,13 +34,24 @@
 TEST(lock_guard, Constructor)
 {
     weos::mutex m;
-    weos::lock_guard<weos::mutex> l(m);
+    {
+        weos::lock_guard<weos::mutex> l(m);
+        ASSERT_FALSE(m.try_lock());
+    }
+    ASSERT_TRUE(m.try_lock());
+    m.unlock();
 }
 
 TEST(lock_guard, adopt_lock)
 {
     weos::mutex m;
-    weos::lock_guard<weos::mutex> l(m, weos::adopt_lock);
+    m.lock();
+    {
+        weos::lock_guard<weos::mutex> l(m, weos::adopt_lock);
+        ASSERT_FALSE(m.try_lock());
+    }
+    ASSERT_TRUE(m.try_lock());
+    m.unlock();
 }
 
 // ----=====================================================================----
