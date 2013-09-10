@@ -30,12 +30,17 @@
 
 #include "gtest/gtest.h"
 
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/uniform_smallint.hpp>
-
 #include <set>
 
 typedef double typeToTest;
+
+std::uint32_t random()
+{
+    // Produce a pseudo-random number in the range [1, 2147483646].
+    static std::uint32_t x = 1;
+    x = ((std::uint64_t)x * 16807UL) % 2147483647UL;
+    return x - 1;
+}
 
 TEST(counting_object_pool, Constructor)
 {
@@ -147,11 +152,9 @@ TEST(counting_object_pool, random_allocate_and_free)
         chunks[i] = 0;
     }
 
-    boost::random::minstd_rand generator;
-    boost::random::uniform_smallint<> dist(0, POOL_SIZE - 1);
     for (int i = 0; i < 10000; ++i)
     {
-        int index = dist(generator);
+        int index = random() % POOL_SIZE;
         if (chunks[index] == 0)
         {
             void* c = p.allocate();
