@@ -82,9 +82,9 @@ public:
     template <typename RepT, typename PeriodT>
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        semaphore_try_waiter locker(m_id);
-        return chrono::detail::cmsis_wait<RepT, PeriodT, semaphore_try_waiter>(
-                    d, locker);
+        semaphore_try_waiter waiter(m_id);
+        return chrono::detail::cmsis_wait<
+                RepT, PeriodT, semaphore_try_waiter>::wait(d, waiter);
     }
 
     //! Releases a semaphore token.

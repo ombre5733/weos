@@ -58,11 +58,11 @@ TEST(counting_memory_pool, allocate)
 
     for (int i = 0; i < POOL_SIZE; ++i)
     {
-        ASSERT_EQ(10 - i, p.size());
+        ASSERT_EQ(POOL_SIZE - i, p.size());
         ASSERT_FALSE(p.empty());
         void* c = p.allocate();
         ASSERT_TRUE(c != 0);
-        ASSERT_EQ(10 - i - 1, p.size());
+        ASSERT_EQ(POOL_SIZE - i - 1, p.size());
 
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
@@ -114,17 +114,17 @@ TEST(counting_memory_pool, allocate_and_free)
     {
         for (int i = 0; i < j; ++i)
         {
-            ASSERT_EQ(10 - i, p.size());
+            ASSERT_EQ(POOL_SIZE - i, p.size());
             void* c = p.allocate();
             ASSERT_TRUE(c != 0);
-            ASSERT_EQ(10 - i - 1, p.size());
+            ASSERT_EQ(POOL_SIZE - i - 1, p.size());
             chunks[i] = c;
         }
         for (int i = 0; i < j; ++i)
         {
-            ASSERT_EQ(10 - j + i, p.size());
+            ASSERT_EQ(POOL_SIZE - j + i, p.size());
             p.free(chunks[i]);
-            ASSERT_EQ(10 - j + i + 1, p.size());
+            ASSERT_EQ(POOL_SIZE - j + i + 1, p.size());
         }
     }
 }
