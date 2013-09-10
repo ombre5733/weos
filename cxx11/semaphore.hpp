@@ -40,8 +40,8 @@ namespace weos
 class semaphore
 {
 public:
-    semaphore()
-        : m_value(0)
+    semaphore(std::uint32_t value = 0)
+        : m_value(value)
     {
     }
 
