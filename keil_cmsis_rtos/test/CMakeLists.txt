@@ -36,7 +36,7 @@ else()
     message(FATAL_ERROR "Unknown toolchain '${TOOLCHAIN}'")
 endif()
 
-project(test C CXX ASM)
+project(unitTest C CXX ASM)
 
 #set(BOOST_INCLUDEDIR "/usr/include/boost")
 #find_package(Boost REQUIRED)

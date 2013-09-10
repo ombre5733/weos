@@ -84,7 +84,7 @@
 #if defined (__CC_ARM)
 
 // ARM's armcc uses a front-end from EDG.
-#define BOOST_COMPILER_CONFIG   "boost/config/compiler/common_edg.hpp"
+#  define BOOST_COMPILER_CONFIG   "boost/config/compiler/common_edg.hpp"
 
 #endif
 
