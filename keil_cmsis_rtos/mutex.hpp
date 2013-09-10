@@ -62,11 +62,11 @@ struct MutexControlBlockHeader
 };
 
 template <typename DerivedT>
-class generic_mutex : boost::noncopyable
+class basic_mutex : boost::noncopyable
 {
 public:
     // Create a generic mutex.
-    generic_mutex()
+    basic_mutex()
         : m_id(0)
     {
         // Keil's RTOS wants a zero'ed control block type for initialization.
@@ -78,7 +78,7 @@ public:
     }
 
     // Destroys the mutex.
-    ~generic_mutex()
+    ~basic_mutex()
     {
         if (m_id)
             osMutexDelete(m_id);
@@ -146,6 +146,7 @@ protected:
     }
 };
 
+// A helper to lock a mutex.
 struct mutex_try_locker
 {
     mutex_try_locker(osMutexId id)
@@ -171,13 +172,13 @@ private:
 };
 
 template <typename DerivedT>
-class generic_timed_mutex : public generic_mutex<DerivedT>
+class basic_timed_mutex : public basic_mutex<DerivedT>
 {
 public:
     template <typename RepT, typename PeriodT>
     bool try_lock_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        mutex_try_locker locker(generic_mutex<DerivedT>::m_id);
+        mutex_try_locker locker(basic_mutex<DerivedT>::m_id);
         return chrono::detail::cmsis_wait<RepT, PeriodT, mutex_try_locker>(
                     d, locker);
     }
@@ -208,7 +209,7 @@ public:
 
 class mutex
 #ifndef WEOS_DOXYGEN_RUN
-        : public detail::nonrecursive_adapter<detail::generic_mutex<mutex> >
+        : public detail::nonrecursive_adapter<detail::basic_mutex<mutex> >
 #endif // WEOS_DOXYGEN_RUN
 {
 public:
@@ -239,7 +240,7 @@ public:
 class timed_mutex
 #ifndef WEOS_DOXYGEN_RUN
         : public detail::nonrecursive_adapter<
-                     detail::generic_timed_mutex<timed_mutex> >
+                     detail::basic_timed_mutex<timed_mutex> >
 #endif // WEOS_DOXYGEN_RUN
 {
 public:
@@ -270,7 +271,7 @@ public:
 //! A recursive mutex.
 class recursive_mutex
 #ifndef WEOS_DOXYGEN_RUN
-        : public detail::generic_mutex<recursive_mutex>
+        : public detail::basic_mutex<recursive_mutex>
 #endif // WEOS_DOXYGEN_RUN
 {
 public:
@@ -279,7 +280,7 @@ public:
 //! A recursive mutex with support for timeout.
 class recursive_timed_mutex
 #ifndef WEOS_DOXYGEN_RUN
-        : public detail::generic_timed_mutex<recursive_timed_mutex>
+        : public detail::basic_timed_mutex<recursive_timed_mutex>
 #endif // WEOS_DOXYGEN_RUN
 {
 public:

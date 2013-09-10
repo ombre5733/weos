@@ -54,3 +54,8 @@ TEST(thread, FailingConstructorWithFunction)
     ASSERT_TRUE(t.joinable());
 }
 #endif
+
+TEST(thread, sleep_for)
+{
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(1));
+}

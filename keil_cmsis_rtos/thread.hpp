@@ -273,6 +273,7 @@ public:
     {
         osStatus status = osDelay(millisec);
         WEOS_ASSERT(status == osEventTimeout);
+        return false;
     }
 };
 
@@ -284,7 +285,7 @@ template <typename RepT, typename PeriodT>
 void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
 {
     detail::thread_sleeper sleeper;
-    chrono::detail::cmsis_wait<RepT, PeriodT, detail::thread_sleeper>(
+    chrono::detail::cmsis_wait<RepT, PeriodT, detail::thread_sleeper>::wait(
                 d, sleeper);
 }
 

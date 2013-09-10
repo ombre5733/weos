@@ -168,23 +168,29 @@ namespace detail
 template <typename RepT, typename PeriodT, typename FunctorT>
 struct cmsis_wait
 {
+
+    typedef typename boost::ratio_divide<PeriodT, boost::milli>::type ratio;
+    typedef typename boost::common_type<RepT, cast_least_int_type>::type
+        common_type;
+
+    // Compute the maximum number of milliseconds which correspond to a SysTick
+    // value of less than 0xFFFF.
+    static const common_type maxMillisecs =
+            static_cast<common_type>(0xFFFE * 1000)
+            / static_cast<common_type>(WEOS_SYSTICK_FREQUENCY);
+
     static bool wait(const chrono::duration<RepT, PeriodT>& d,
                      const FunctorT& fun)
     {
         if (d.count() <= 0)
             return fun(0);
 
-        typedef chrono::milliseconds::rep rep;
-
-        //! \todo The common type needs to be at least int32_t
-        //! \todo If PeriodT != boost::milli, we need a conversion.
-
-        // A delay time (in ms) such that the resultant number of ticks is for
-        // sure smaller than or equal to 0xFFFE.
-        const rep maxMillisecs = 0xFFFE * 1000
-                                 / static_cast<rep>(WEOS_SYSTICK_FREQUENCY);
-
-        rep count = d.count();
+        // Convert the count to millisecs (the conversion ceils the ratio).
+        common_type count
+                = (static_cast<common_type>(d.count())
+                   * static_cast<common_type>(ratio::num)
+                   + static_cast<common_type>(ratio::den - 1))
+                  / static_cast<common_type>(ratio::den);
         while (count > maxMillisecs)
         {
             bool success = fun(maxMillisecs);

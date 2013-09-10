@@ -197,10 +197,11 @@ private:
     rep m_count;
 };
 
-typedef duration<std::int32_t, boost::micro> microseconds;
-typedef duration<std::int32_t, boost::milli> milliseconds;
-typedef duration<std::int32_t> seconds;
-typedef duration<std::int32_t, boost::ratio<60> > minutes;
+typedef duration<std::int32_t, boost::micro>          microseconds;
+typedef duration<std::int32_t, boost::milli>          milliseconds;
+typedef duration<std::int32_t>                        seconds;
+typedef duration<std::int32_t, boost::ratio<60> >     minutes;
+typedef duration<std::int32_t, boost::ratio<3600> >   hours;
 
 // ----=====================================================================----
 //     duration_cast
