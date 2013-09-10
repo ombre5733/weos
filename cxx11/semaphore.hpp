@@ -60,8 +60,8 @@ public:
     template <typename RepT, typename PeriodT>
     bool try_wait_for(const std::chrono::duration<RepT, PeriodT>& d)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_conditionVariable.wait_for(lock, d, [](){return m_value != 0;}))
+        std::unique_lock<std::mutex> lock(m_mutex);
+        if (m_conditionVariable.wait_for(lock, d, [this](){return m_value != 0;}))
         {
             --m_value;
             return true;
@@ -71,7 +71,7 @@ public:
 
     void wait()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         while (m_value == 0)
             m_conditionVariable.wait(lock);
         --m_value;

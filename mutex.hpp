@@ -31,6 +31,7 @@
 #  error "The OS wrapper has not been configured."
 #endif
 
+#include "chrono.hpp"
 #include <boost/utility.hpp>
 
 namespace weos

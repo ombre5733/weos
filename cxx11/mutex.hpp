@@ -37,6 +37,10 @@ using std::mutex;
 using std::timed_mutex;
 using std::recursive_mutex;
 using std::recursive_timed_mutex;
+
+using std::lock_guard;
+using std::unique_lock;
+
 } // namespace weos
 
 #endif // WEOS_CXX11_MUTEX_HPP
