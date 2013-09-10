@@ -29,6 +29,9 @@
 set(test_SOURCES tst_mutex.cpp)
 add_executable_and_bin(tst_mutex "${COMMON_SOURCES};${test_SOURCES}")
 
+set(test_SOURCES tst_timed_mutex.cpp)
+add_executable_and_bin(tst_timed_mutex "${COMMON_SOURCES};${test_SOURCES}")
+
 set(test_SOURCES tst_recursive_mutex.cpp)
 add_executable_and_bin(tst_recursive_mutex "${COMMON_SOURCES};${test_SOURCES}")
 

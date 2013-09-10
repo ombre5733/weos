@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_RECURSIVE_HPP
-#define WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_RECURSIVE_HPP
+#ifndef WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_TIMED_HPP
+#define WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_TIMED_HPP
 
 #include "../mutex.hpp"
 
@@ -38,6 +38,7 @@ struct SparringData
         None,
         MutexLock,
         MutexTryLock,
+        MutexTryLockFor,
         MutexUnlock,
         Terminate
     };
@@ -45,15 +46,15 @@ struct SparringData
     SparringData()
         : action(None),
           busy(false),
-          numLocks(0),
+          mutexLocked(false),
           sparringStarted(false)
     {
     }
 
-    weos::recursive_mutex mutex;
+    weos::timed_mutex mutex;
     volatile Action action;
     volatile bool busy;
-    volatile int numLocks;
+    volatile bool mutexLocked;
     volatile bool sparringStarted;
 };
 
@@ -77,15 +78,18 @@ extern "C" void sparring(const void* arg)
         {
             case SparringData::MutexLock:
                 data->mutex.lock();
-                ++data->numLocks;
+                data->mutexLocked = true;
                 break;
             case SparringData::MutexTryLock:
-                if (data->mutex.try_lock())
-                    ++data->numLocks;
+                data->mutexLocked = data->mutex.try_lock();
+                break;
+            case SparringData::MutexTryLockFor:
+                data->mutexLocked = data->mutex.try_lock_for(
+                                        weos::chrono::milliseconds(5));
                 break;
             case SparringData::MutexUnlock:
                 data->mutex.unlock();
-                --data->numLocks;
+                data->mutexLocked = false;
                 break;
             default:
                 break;
@@ -96,4 +100,4 @@ extern "C" void sparring(const void* arg)
 }
 osThreadDef_t sparringThread = {sparring, osPriorityHigh, 1, 0};
 
-#endif // WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_RECURSIVE_HPP
+#endif // WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_TIMED_HPP

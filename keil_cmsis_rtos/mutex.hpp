@@ -179,8 +179,8 @@ public:
     bool try_lock_for(const chrono::duration<RepT, PeriodT>& d)
     {
         mutex_try_locker locker(basic_mutex<DerivedT>::m_id);
-        return chrono::detail::cmsis_wait<RepT, PeriodT, mutex_try_locker>(
-                    d, locker);
+        return chrono::detail::cmsis_wait<
+                RepT, PeriodT, mutex_try_locker>::wait(d, locker);
     }
 };
 

@@ -27,25 +27,25 @@
 *******************************************************************************/
 
 #include "../../mutex.hpp"
-#include "sparring.hpp"
+#include "sparring_timed.hpp"
 
 #include "gtest/gtest.h"
 
-TEST(mutex, Constructor)
+TEST(timed_mutex, Constructor)
 {
-    weos::mutex m;
+    weos::timed_mutex m;
 }
 
-TEST(mutex, lock)
+TEST(timed_mutex, lock)
 {
-    weos::mutex m;
+    weos::timed_mutex m;
     m.lock();
     m.unlock();
 }
 
-TEST(mutex, try_lock)
+TEST(timed_mutex, try_lock)
 {
-    weos::mutex m;
+    weos::timed_mutex m;
     bool result;
     result = m.try_lock();
     ASSERT_TRUE(result);
@@ -59,11 +59,27 @@ TEST(mutex, try_lock)
     m.unlock();
 }
 
+TEST(timed_mutex, try_lock_for)
+{
+    weos::timed_mutex m;
+    bool result;
+    result = m.try_lock_for(weos::chrono::milliseconds(1));
+    ASSERT_TRUE(result);
+    result = m.try_lock_for(weos::chrono::milliseconds(1));
+    ASSERT_FALSE(result);
+    m.unlock();
+
+    m.lock();
+    result = m.try_lock_for(weos::chrono::milliseconds(1));
+    ASSERT_FALSE(result);
+    m.unlock();
+}
+
 // ----=====================================================================----
 //     Tests together with a sparring thread
 // ----=====================================================================----
 
-TEST(sparring_mutex, lock)
+TEST(sparring_timed_mutex, lock)
 {
     SparringData data;
     osThreadId sparringId = osThreadCreate(&sparringThread, &data);
@@ -82,8 +98,6 @@ TEST(sparring_mutex, lock)
     ASSERT_FALSE(data.busy);
     ASSERT_TRUE(data.mutexLocked);
 
-    ASSERT_FALSE(data.mutex.try_lock());
-
     data.action = SparringData::MutexUnlock;
     osDelay(10);
     ASSERT_FALSE(data.busy);
@@ -93,7 +107,7 @@ TEST(sparring_mutex, lock)
     osDelay(10);
 }
 
-TEST(sparring_mutex, try_lock)
+TEST(sparring_timed_mutex, try_lock)
 {
     SparringData data;
     osThreadId sparringId = osThreadCreate(&sparringThread, &data);
@@ -113,7 +127,55 @@ TEST(sparring_mutex, try_lock)
     ASSERT_FALSE(data.busy);
     ASSERT_TRUE(data.mutexLocked);
 
+    data.action = SparringData::MutexUnlock;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_FALSE(data.mutexLocked);
+
+    data.action = SparringData::Terminate;
+    osDelay(10);
+}
+
+TEST(sparring_timed_mutex, try_lock_for)
+{
+    SparringData data;
+    osThreadId sparringId = osThreadCreate(&sparringThread, &data);
+    ASSERT_TRUE(sparringId != 0);
+    osDelay(10);
+    ASSERT_TRUE(data.sparringStarted);
+
+    data.mutex.lock();
+    data.action = SparringData::MutexTryLockFor;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_FALSE(data.mutexLocked);
+
+    data.mutex.unlock();
+    data.action = SparringData::MutexTryLockFor;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_TRUE(data.mutexLocked);
+
     ASSERT_FALSE(data.mutex.try_lock());
+    ASSERT_FALSE(data.mutex.try_lock_for(weos::chrono::milliseconds(5)));
+
+    data.action = SparringData::MutexUnlock;
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_FALSE(data.mutexLocked);
+
+    data.mutex.lock();
+    data.action = SparringData::MutexTryLockFor;
+    osDelay(1);
+    ASSERT_TRUE(data.busy);
+    ASSERT_FALSE(data.mutexLocked);
+    data.mutex.unlock();
+    osDelay(10);
+    ASSERT_FALSE(data.busy);
+    ASSERT_TRUE(data.mutexLocked);
+
+    ASSERT_FALSE(data.mutex.try_lock());
+    ASSERT_FALSE(data.mutex.try_lock_for(weos::chrono::milliseconds(5)));
 
     data.action = SparringData::MutexUnlock;
     osDelay(10);
