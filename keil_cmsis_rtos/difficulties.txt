@@ -1,0 +1,18 @@
+Difficulties with Keil's CMSIS implementation
+=============================================
+
+* Whenever a mutex, a semaphore etc. is initialized, the implementation checks
+  if the control block is zero. This is problematic, especially when the
+  control block is allocated on the stack.
+
+* The CMSIS-OS API specifies the delay function as
+      osStatus osDelay(uint32_t millisec).
+  This suggests a maximum delay time of approximately 4e9 ms. However, the
+  CMSIS-RTX internals are still 16 bit code. This limits the maximum wait time
+  to 65534 ticks (not milliseconds - ticks!).
+
+* The implementation uses ticks internally to store when to wakeup a waiting
+  thread. A delay of 1 wakes a thread at the beginning of the next tick period.
+  As time has already passed in the current period, the sleep time is less
+  than 1 tick. In other words, the tick delay is an upper bound and the sleep
+  time might be up to one tick less than specified.
