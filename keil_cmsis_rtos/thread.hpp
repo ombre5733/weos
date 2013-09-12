@@ -128,6 +128,13 @@ public:
             Error = osPriorityError
         };
 
+        attributes()
+            : priority(Normal),
+              stackSize(0)
+        {
+        }
+
+    private:
         Priority priority;
         std::uint32_t stackSize;
     };
