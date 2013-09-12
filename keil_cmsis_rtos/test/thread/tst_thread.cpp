@@ -102,6 +102,7 @@ TEST(thread, create_and_destroy_randomly)
         }
         else
         {
+            ASSERT_TRUE(threads[i]->joinable());
             threads[index]->join();
             delete threads[index];
             threads[index] = 0;

@@ -74,7 +74,7 @@ public:
         osMutexDef_t mutexDef = { m_cmsisMutexControlBlock };
         m_id = osMutexCreate(&mutexDef);
         if (m_id == 0)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));// TODO: std::system_error());
     }
 
     // Destroys the mutex.
@@ -89,7 +89,7 @@ public:
     {
         osStatus status = osMutexWait(m_id, osWaitForever);
         if (status != osOK)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(status, cmsis_category()));// TODO: std::system_error());
         derived()->post_lock_check(mutexControlBlockHeader());
     }
 

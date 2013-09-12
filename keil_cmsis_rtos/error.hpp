@@ -170,12 +170,29 @@ private:
 
 namespace cmsis_error
 {
-enum cmsis_error_enum
+enum cmsis_error_t
 {
-    Resource,
-    Isr
+    osOK                   =    0,
+    osEventSignal          = 0x08,
+    osEventMessage         = 0x10,
+    osEventMail            = 0x20,
+    osEventTimeout         = 0x40,
+    osErrorParameter       = 0x80,
+    osErrorResource        = 0x81,
+    osErrorTimeoutResource = 0xC1,
+    osErrorISR             = 0x82,
+    osErrorISRRecursive    = 0x83,
+    osErrorPriority        = 0x84,
+    osErrorNoMemory        = 0x85,
+    osErrorValue           = 0x86,
+    osErrorOS              = 0xFF
 };
 } // namespace cmsis_error
+
+template <>
+struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
+{
+};
 
 //! An error category for CMSIS errors.
 class cmsis_category_impl : public error_category
@@ -217,22 +234,24 @@ public:
 //! Returns the category for CMSIS errors.
 const error_category& cmsis_category();
 
-#if 0
 namespace cmsis_error
 {
-boost::error_code make_error_code(cmsis_error_enum e)
+
+inline
+weos::error_code make_error_code(cmsis_error_t err)
 {
-    return boost::error_code(static_cast<int>(e),
-                             cmsis_category());
+    return error_code(err, cmsis_category());
 }
 
-boost::error_condition make_error_condition(cmsis_error_enum e)
+/*
+inline
+weos::error_code make_error_condition(cmsis_error_t err)
 {
-    return boost::error_condition(static_cast<int>(e),
-                                  cmsis_category());
+    return error_condition(err, cmsis_category());
 }
+*/
+
 } // namespace cmsis_error
-#endif
 
 } // namespace weos
 
