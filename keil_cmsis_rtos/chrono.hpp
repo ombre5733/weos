@@ -191,6 +191,11 @@ struct cmsis_wait
                    * static_cast<common_type>(ratio::num)
                    + static_cast<common_type>(ratio::den - 1))
                   / static_cast<common_type>(ratio::den);
+        // Note: A tick of 1 will wake the thread at the beginning of the next
+        // period. However, some time has already passed in the current period.
+        // Thus, we increase the count by 1 ms to ensure that our delay time
+        // is a lower bound.
+        count += common_type(1);
         while (count > maxMillisecs)
         {
             bool success = fun(maxMillisecs);
