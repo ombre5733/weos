@@ -52,11 +52,11 @@ TEST(counting_memory_pool, Constructor)
 
 TEST(counting_memory_pool, allocate)
 {
-    const int POOL_SIZE = 10;
+    const unsigned POOL_SIZE = 10;
     weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         ASSERT_EQ(POOL_SIZE - i, p.size());
         ASSERT_FALSE(p.empty());
@@ -69,7 +69,7 @@ TEST(counting_memory_pool, allocate)
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
                     % boost::alignment_of<typeToTest>::value == 0);
 
-        for (int j = 0; j < i; ++j)
+        for (unsigned j = 0; j < i; ++j)
         {
             // No chunk can be returned twice from the pool.
             ASSERT_FALSE(chunks[j] == addr);
@@ -88,17 +88,17 @@ TEST(counting_memory_pool, allocate)
 
 TEST(counting_memory_pool, try_allocate)
 {
-    const int POOL_SIZE = 10;
+    const unsigned POOL_SIZE = 10;
     weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
 
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         void* c = p.try_allocate();
         ASSERT_TRUE(c != 0);
     }
     ASSERT_TRUE(p.empty());
 
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         ASSERT_TRUE(p.try_allocate() == 0);
     }
@@ -106,13 +106,13 @@ TEST(counting_memory_pool, try_allocate)
 
 TEST(counting_memory_pool, allocate_and_free)
 {
-    const int POOL_SIZE = 10;
+    const unsigned POOL_SIZE = 10;
     weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
 
-    for (int j = 1; j <= POOL_SIZE; ++j)
+    for (unsigned j = 1; j <= POOL_SIZE; ++j)
     {
-        for (int i = 0; i < j; ++i)
+        for (unsigned i = 0; i < j; ++i)
         {
             ASSERT_EQ(POOL_SIZE - i, p.size());
             void* c = p.allocate();
@@ -120,7 +120,7 @@ TEST(counting_memory_pool, allocate_and_free)
             ASSERT_EQ(POOL_SIZE - i - 1, p.size());
             chunks[i] = c;
         }
-        for (int i = 0; i < j; ++i)
+        for (unsigned i = 0; i < j; ++i)
         {
             ASSERT_EQ(POOL_SIZE - j + i, p.size());
             p.free(chunks[i]);
@@ -131,13 +131,13 @@ TEST(counting_memory_pool, allocate_and_free)
 
 TEST(counting_memory_pool, random_allocate_and_free)
 {
-    const int POOL_SIZE = 10;
+    const unsigned POOL_SIZE = 10;
     weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
     std::set<void*> uniqueChunks;
     int numAllocatedChunks = 0;
 
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         void* c = p.allocate();
         ASSERT_TRUE(c != 0);
@@ -146,15 +146,15 @@ TEST(counting_memory_pool, random_allocate_and_free)
     }
     ASSERT_TRUE(p.empty());
     ASSERT_EQ(POOL_SIZE, uniqueChunks.size());
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         p.free(chunks[i]);
         chunks[i] = 0;
     }
 
-    for (int i = 0; i < 10000; ++i)
+    for (unsigned i = 0; i < 10000; ++i)
     {
-        int index = random() % POOL_SIZE;
+        unsigned index = random() % POOL_SIZE;
         if (chunks[index] == 0)
         {
             void* c = p.allocate();

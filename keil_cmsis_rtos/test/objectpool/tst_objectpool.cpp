@@ -30,12 +30,17 @@
 
 #include "gtest/gtest.h"
 
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/uniform_smallint.hpp>
-
 #include <set>
 
 typedef double typeToTest;
+
+std::uint32_t random()
+{
+    // Produce a pseudo-random number in the range [1, 2147483646].
+    static std::uint32_t x = 1;
+    x = ((std::uint64_t)x * 16807UL) % 2147483647UL;
+    return x - 1;
+}
 
 TEST(object_pool, Constructor)
 {
@@ -46,11 +51,11 @@ TEST(object_pool, Constructor)
 
 TEST(object_pool, allocate)
 {
-    const int POOL_SIZE = 10;
+    const unsigned POOL_SIZE = 10;
     weos::object_pool<typeToTest, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         ASSERT_FALSE(p.empty());
         void* c = p.allocate();
@@ -61,7 +66,7 @@ TEST(object_pool, allocate)
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
                     % boost::alignment_of<typeToTest>::value == 0);
 
-        for (int j = 0; j < i; ++j)
+        for (unsigned j = 0; j < i; ++j)
         {
             // No chunk can be returned twice from the pool.
             ASSERT_FALSE(chunks[j] == addr);
@@ -80,19 +85,19 @@ TEST(object_pool, allocate)
 
 TEST(object_pool, allocate_and_free)
 {
-    const int POOL_SIZE = 10;
+    const unsigned POOL_SIZE = 10;
     weos::object_pool<typeToTest, POOL_SIZE> p;
     typeToTest* chunks[POOL_SIZE];
 
-    for (int j = 1; j <= POOL_SIZE; ++j)
+    for (unsigned j = 1; j <= POOL_SIZE; ++j)
     {
-        for (int i = 0; i < j; ++i)
+        for (unsigned i = 0; i < j; ++i)
         {
             typeToTest* c = p.allocate();
             ASSERT_TRUE(c != 0);
             chunks[i] = c;
         }
-        for (int i = 0; i < j; ++i)
+        for (unsigned i = 0; i < j; ++i)
         {
             p.free(chunks[i]);
         }
@@ -101,12 +106,12 @@ TEST(object_pool, allocate_and_free)
 
 TEST(object_pool, random_allocate_and_free)
 {
-    const int POOL_SIZE = 10;
+    const unsigned POOL_SIZE = 10;
     weos::object_pool<typeToTest, POOL_SIZE> p;
     typeToTest* chunks[POOL_SIZE];
     std::set<typeToTest*> uniqueChunks;
 
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         typeToTest* c = p.allocate();
         ASSERT_TRUE(c != 0);
@@ -115,17 +120,15 @@ TEST(object_pool, random_allocate_and_free)
     }
     ASSERT_TRUE(p.empty());
     ASSERT_EQ(POOL_SIZE, uniqueChunks.size());
-    for (int i = 0; i < POOL_SIZE; ++i)
+    for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         p.free(chunks[i]);
         chunks[i] = 0;
     }
 
-    boost::random::minstd_rand generator;
-    boost::random::uniform_smallint<> dist(0, POOL_SIZE - 1);
-    for (int i = 0; i < 10000; ++i)
+    for (unsigned i = 0; i < 10000; ++i)
     {
-        int index = dist(generator);
+        unsigned index = random() % POOL_SIZE;
         if (chunks[index] == 0)
         {
             typeToTest* c = p.allocate();
