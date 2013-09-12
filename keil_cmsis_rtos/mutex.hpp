@@ -174,13 +174,33 @@ private:
 template <typename DerivedT>
 class basic_timed_mutex : public basic_mutex<DerivedT>
 {
+    typedef basic_mutex<DerivedT> base;
+
 public:
+    //! Tries to lock the mutex.
+    //! Tries to lock the mutex and returns either when it has been locked or
+    //! the duration \p d has expired. The method returns \p true, if the
+    //! mutex has been locked.
     template <typename RepT, typename PeriodT>
     bool try_lock_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        mutex_try_locker locker(basic_mutex<DerivedT>::m_id);
-        return chrono::detail::cmsis_wait<
-                RepT, PeriodT, mutex_try_locker>::wait(d, locker);
+        mutex_try_locker locker(base::m_id);
+        if (chrono::detail::cmsis_wait<
+                RepT, PeriodT, mutex_try_locker>::wait(d, locker))
+        {
+            return base::derived()->post_try_lock_correction(
+                        base::m_id, base::mutexControlBlockHeader());
+        }
+
+        return false;
+    }
+
+    template <typename ClockT, typename DurationT>
+    bool try_lock_until(const chrono::time_point<ClockT, DurationT>& timePoint)
+    {
+        // Not implemented, yet.
+        WEOS_ASSERT(false);
+        return false;
     }
 };
 
