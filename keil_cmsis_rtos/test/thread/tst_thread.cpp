@@ -28,7 +28,18 @@
 
 #include "../../thread.hpp"
 
+#include "../common/testutils.hpp"
 #include "gtest/gtest.h"
+
+void empty_thread(void* arg)
+{
+}
+
+void delay_thread(void* arg)
+{
+    std::uint32_t delayTime = reinterpret_cast<std::uint32_t>(arg);
+    osDelay(delayTime);
+}
 
 TEST(thread, DefaultConstructor)
 {
@@ -36,13 +47,9 @@ TEST(thread, DefaultConstructor)
     ASSERT_FALSE(t.joinable());
 }
 
-void sparring(void* arg)
-{
-}
-
 TEST(thread, ConstructorWithFunction)
 {
-    weos::thread t(sparring, 0);
+    weos::thread t(empty_thread, 0);
     ASSERT_TRUE(t.joinable());
     t.join();
 }
@@ -50,12 +57,82 @@ TEST(thread, ConstructorWithFunction)
 #if 0
 TEST(thread, FailingConstructorWithFunction)
 {
-    weos::thread t(sparring, 0);
+    weos::thread t(empty_thread, 0);
     ASSERT_TRUE(t.joinable());
 }
 #endif
 
+TEST(thread, start_one_thread_very_often)
+{
+    for (unsigned i = 0; i < 10000; ++i)
+    {
+        weos::thread t(empty_thread, 0);
+        ASSERT_TRUE(t.joinable());
+        t.join();
+    }
+}
+
+TEST(thread, start_all_in_parallel)
+{
+    weos::thread* threads[WEOS_MAX_NUM_CONCURRENT_THREADS];
+    for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
+    {
+        threads[i] = new weos::thread(delay_thread, (void*)5);
+        ASSERT_TRUE(threads[i]->joinable());
+    }
+    for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
+    {
+        threads[i]->join();
+        delete threads[i];
+    }
+}
+
+TEST(thread, create_and_destroy_randomly)
+{
+    weos::thread* threads[WEOS_MAX_NUM_CONCURRENT_THREADS] = {0};
+
+    for (unsigned i = 0; i < 1000; ++i)
+    {
+        int delayTime = 1 + random() % 3;
+        int index = random() % WEOS_MAX_NUM_CONCURRENT_THREADS;
+        if (threads[index] == 0)
+        {
+            threads[index] = new weos::thread(delay_thread, (void*)delayTime);
+            ASSERT_TRUE(threads[index]->joinable());
+        }
+        else
+        {
+            threads[index]->join();
+            delete threads[index];
+            threads[index] = 0;
+        }
+    }
+
+    for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
+    {
+        if (threads[i])
+        {
+            ASSERT_TRUE(threads[i]->joinable());
+            threads[i]->join();
+            delete threads[i];
+        }
+    }
+}
+
 TEST(thread, sleep_for)
 {
-    weos::this_thread::sleep_for(weos::chrono::milliseconds(1));
+    std::uint32_t delays[] = { 0,   1,   2,   3,   4,   5,
+                                   10,  20,  30,  40,  50,
+                                  100, 200, 300, 400, 500};
+    for (unsigned i = 0; i < sizeof(delays) / sizeof(delays[0]); ++i)
+    {
+        std::uint32_t start = osKernelSysTick();
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(1));
+        // Compute the time which has passed in us.
+        std::uint32_t paused = static_cast<std::uint64_t>(osKernelSysTick() - start)
+                               * static_cast<std::uint64_t>(1000000)
+                               / static_cast<std::uint64_t>(osKernelSysTickFrequency);
+        ASSERT_TRUE(paused > delays[i] * 1000);
+        ASSERT_TRUE(paused < (delays[i] + 1) * 1000);
+    }
 }
