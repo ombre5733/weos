@@ -50,11 +50,12 @@ class thread;
 namespace detail
 {
 //! Data which is shared between the thread and its handle.
-struct ThreadData : boost::noncopyable
+class ThreadData : boost::noncopyable
 {
     typedef object_pool<ThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS,
                         mutex> pool_t;
 
+public:
     ThreadData();
 
     //! Decreases the reference counter by one. If the reference counter reaches
@@ -272,7 +273,8 @@ public:
     bool operator() (std::int32_t millisec) const
     {
         osStatus status = osDelay(millisec);
-        WEOS_ASSERT(status == osEventTimeout);
+        WEOS_ASSERT(   (millisec == 0 && status == osOK)
+                    || (millisec != 0 && status == osEventTimeout));
         return false;
     }
 };
