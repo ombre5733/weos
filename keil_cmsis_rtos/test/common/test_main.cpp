@@ -29,9 +29,9 @@
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
 
-#include "../config.hpp"
+#include "../../../config.hpp"
 
-#include "../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
+#include "../../../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
 #include "gtest/gtest.h"
 
 #include <stdio.h>
@@ -147,8 +147,6 @@ extern "C" void runTests(const void* arg)
         osDelay(500);
         GPIOD->BRR = led;
     }
-
-    printf("Done!\n");
 }
 
 int main()

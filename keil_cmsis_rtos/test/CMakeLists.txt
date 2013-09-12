@@ -65,6 +65,7 @@ set(COMMON_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/common/RTX_Conf_CM.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/system_stm32f4xx.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/test_main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/common/testutils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/gtest/gtest-all.cc
 )
 

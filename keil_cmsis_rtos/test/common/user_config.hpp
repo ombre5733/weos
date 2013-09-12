@@ -51,7 +51,7 @@
 // \note In Keil's CMSIS RTOS this is the value of (1000000 / OS_TICK).
 #  define WEOS_SYSTICK_FREQUENCY          1000
 // The maximum number of threads which can be active concurrently.
-#define WEOS_MAX_NUM_CONCURRENT_THREADS   3
+#define WEOS_MAX_NUM_CONCURRENT_THREADS   5
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 

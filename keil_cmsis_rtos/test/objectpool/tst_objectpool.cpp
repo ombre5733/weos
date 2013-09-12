@@ -28,19 +28,12 @@
 
 #include "../../objectpool.hpp"
 
+#include "../common/testutils.hpp"
 #include "gtest/gtest.h"
 
 #include <set>
 
 typedef double typeToTest;
-
-std::uint32_t random()
-{
-    // Produce a pseudo-random number in the range [1, 2147483646].
-    static std::uint32_t x = 1;
-    x = ((std::uint64_t)x * 16807UL) % 2147483647UL;
-    return x - 1;
-}
 
 TEST(object_pool, Constructor)
 {

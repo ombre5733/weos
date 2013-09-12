@@ -204,6 +204,7 @@ public:
     }
 };
 
+//! This adapter turns a recursive mutey into a non-recursive one.
 template <typename BaseT>
 class nonrecursive_adapter : public BaseT
 {
