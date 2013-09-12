@@ -53,7 +53,7 @@ public:
         osSemaphoreDef_t semaphoreDef = { m_cmsisSemaphoreControlBlock };
         m_id = osSemaphoreCreate(&semaphoreDef, value);
         if (m_id == 0)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
     }
 
     //! Destroys the semaphore.
@@ -68,14 +68,14 @@ public:
     {
         std::int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
         if (numTokens <= 0)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
     }
 
     bool try_wait()
     {
         std::int32_t numTokens = osSemaphoreWait(m_id, 0);
         if (numTokens < 0)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
         return numTokens != 0;
     }
 
@@ -92,7 +92,7 @@ public:
     {
         osStatus status = osSemaphoreRelease(m_id);
         if (status != osOK)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
+            ::weos::throw_exception(::weos::system_error(status, cmsis_category()));
     }
 
     //! Returns the numer of semaphore tokens.
@@ -132,7 +132,7 @@ private:
         {
             std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
             if (numTokens < 0)
-                ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));// TODO: std::system_error());
+                ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
             return numTokens != 0;
         }
 
