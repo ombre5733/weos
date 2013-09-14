@@ -102,7 +102,7 @@ TEST(thread, create_and_destroy_randomly)
         }
         else
         {
-            ASSERT_TRUE(threads[i]->joinable());
+            ASSERT_TRUE(threads[index]->joinable());
             threads[index]->join();
             delete threads[index];
             threads[index] = 0;
@@ -128,12 +128,16 @@ TEST(thread, sleep_for)
     for (unsigned i = 0; i < sizeof(delays) / sizeof(delays[0]); ++i)
     {
         std::uint32_t start = osKernelSysTick();
-        weos::this_thread::sleep_for(weos::chrono::milliseconds(1));
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(delays[i]));
         // Compute the time which has passed in us.
         std::uint32_t paused = static_cast<std::uint64_t>(osKernelSysTick() - start)
                                * static_cast<std::uint64_t>(1000000)
                                / static_cast<std::uint64_t>(osKernelSysTickFrequency);
-        ASSERT_TRUE(paused > delays[i] * 1000);
-        ASSERT_TRUE(paused < (delays[i] + 1) * 1000);
+
+        // The duration passed to this_thread::sleep_for() is a lower bound
+        // of the actual delay.
+        ASSERT_TRUE(paused >= delays[i] * 1000);
+        // As no other thread is running, we should wake up within 1 ms.
+        ASSERT_TRUE(paused <= (delays[i] + 1) * 1000);
     }
 }
