@@ -40,7 +40,7 @@ namespace weos
 
 namespace detail
 {
-
+//! A helper class for temporarily releasing a lock.
 template <typename LockT>
 class lock_releaser
 {
@@ -64,6 +64,13 @@ private:
 
 } // namespace detail
 
+enum cv_status
+{
+    no_timeout,
+    timeout
+};
+
+//! A condition variable.
 class condition_variable : boost::noncopyable
 {
 public:
@@ -79,78 +86,67 @@ public:
 
     void notify_one() BOOST_NOEXCEPT
     {
-        lock_guard<recursive_timed_mutex> locker(m_mutex);
+        lock_guard<mutex> locker(m_mutex);
 
         Waiter* head = m_waiters;
         if (head != 0)
         {
             m_waiters = head->next;
             head->dequeued = true;
-            head->signal.release();
+            head->signal.post();
         }
     }
 
     void notify_all() BOOST_NOEXCEPT
     {
-        lock_guard<recursive_timed_mutex> locker(m_mutex);
+        lock_guard<mutex> locker(m_mutex);
 
         for (Waiter* head = m_waiters; head != 0; head = head->next)
         {
             head->dequeued = true;
-            head->signal.release();
+            head->signal.post();
         }
+        m_waiters = 0;
     }
 
     void wait(unique_lock<mutex>& lock)
     {
         // First enqueue ourselfs in the list of waiters.
         Waiter w;
-        {
-            lock_guard<recursive_timed_mutex> locker(m_mutex);
+        enqueueWaiter(w);
 
-            //! \todo enqueue using priorities and change to a FIFO
-            w.next = m_waiters;
-            m_waiters = &w;
-        }
-
-        // We can only unlock the lock when we are sure that a signal will
+        // We can only release the lock when we are sure that a signal will
         // reach our thread.
         {
-            detail::lock_releaser releaser(lock);
+            detail::lock_releaser<unique_lock<mutex> > releaser(lock);
             // Wait until we receive a signal, then re-lock the lock.
             w.signal.wait();
         }
     }
 
     template <typename RepT, typename PeriodT>
-    void wait_for(unique_lock<recursive_timed_mutex>& lock,
-                  const chrono::duration<RepT, PeriodT>& timeout)
+    cv_status wait_for(unique_lock<mutex>& lock,
+                       const chrono::duration<RepT, PeriodT>& d)
     {
         // First enqueue ourselfs in the list of waiters.
         Waiter w;
-        {
-            lock_guard<recursive_timed_mutex> locker(m_mutex);
-
-            //! \todo enqueue using priorities and change to a FIFO
-            w.next = m_waiters;
-            m_waiters = &w;
-        }
+        enqueueWaiter(w);
 
         // We can only unlock the lock when we are sure that a signal will
         // reach our thread.
         {
-            detail::lock_releaser releaser(lock);
+            detail::lock_releaser<unique_lock<mutex> > releaser(lock);
             // Wait until we receive a signal, then re-lock the lock.
-            w.signal.wait_for(timeout);
-            if (timedout)
+            bool gotSignal = w.signal.try_wait_for(d);
+            if (!gotSignal)
             {
-                lock_guard<recursive_timed_mutex> locker(m_mutex);
+                lock_guard<mutex> locker(m_mutex);
                 if (!w.dequeued)
-                {
-                    remove_w_from_queue();
-                }
+                    dequeueWaiter(w);
+                return timeout;
             }
         }
+        return no_timeout;
     }
 
 private:
@@ -167,7 +163,37 @@ private:
         bool dequeued;
     };
 
-    recursive_timed_mutex m_mutex;
+    void enqueueWaiter(Waiter& w)
+    {
+        lock_guard<mutex> locker(m_mutex);
+
+        //! \todo enqueue using priorities
+        if (m_waiters)
+        {
+            Waiter* iter = m_waiters;
+            while (iter->next)
+                iter = iter->next;
+            iter->next = &w;
+        }
+        else
+        {
+            m_waiters = &w;
+        }
+    }
+
+    void dequeueWaiter(Waiter& w)
+    {
+        if (m_waiters == &w)
+            m_waiters = w.next;
+        else
+        {
+            Waiter* iter = m_waiters;
+            if (iter->next == &w)
+                iter->next = w.next;
+        }
+    }
+
+    mutex m_mutex;
     Waiter* m_waiters;
 };
 

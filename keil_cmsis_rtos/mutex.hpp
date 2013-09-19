@@ -411,6 +411,14 @@ public:
             m_mutex->unlock();
     }
 
+    //! Locks the associated mutex.
+    void lock()
+    {
+        if (!m_mutex)
+            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
+        m_mutex->lock();
+    }
+
     //! Returns a pointer to the associated mutex.
     //! Returns a pointer to the mutex to which this lock is tied. This may
     //! be a null-pointer, if no mutex has been supplied so far.

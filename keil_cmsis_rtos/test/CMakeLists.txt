@@ -104,6 +104,7 @@ file(COPY runAllTests.py DESTINATION .)
 
 # Walk into the subdirectories which contain the actual tests.
 #add_subdirectory(chrono)
+add_subdirectory(conditionvariable)
 add_subdirectory(memorypool)
 add_subdirectory(mutex)
 add_subdirectory(objectpool)
