@@ -163,6 +163,7 @@ private:
         bool dequeued;
     };
 
+    //! Adds the waiter \p w to the queue.
     void enqueueWaiter(Waiter& w)
     {
         lock_guard<mutex> locker(m_mutex);
@@ -181,6 +182,7 @@ private:
         }
     }
 
+    //! Removes the waiter \p w from the queue.
     void dequeueWaiter(Waiter& w)
     {
         if (m_waiters == &w)
