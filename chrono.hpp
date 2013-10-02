@@ -35,7 +35,7 @@
 #  include <chrono>
    namespace weos
    {
-       using namespace std::chrono;
+       namespace chrono = std::chrono;
    }
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 #  include "keil_cmsis_rtos/chrono.hpp"
