@@ -153,6 +153,8 @@ public:
         return TNumElem;
     }
 
+    //! Checks if the pool is empty.
+    //! Returns \p true if the pool is empty.
     bool empty() const
     {
         return m_memoryPool.empty();
@@ -164,6 +166,11 @@ public:
         return m_memoryPool.size();
     }
 
+    //! Allocates an element from the pool.
+    //! Allocates an element from the pool and returns a pointer to it. The
+    //! calling thread is blocked until an element is available.
+    //!
+    //! \sa free(), try_allocate(), try_allocate_for()
     element_type* allocate()
     {
         return static_cast<element_type*>(m_memoryPool.allocate());
@@ -201,10 +208,10 @@ public:
         m_memoryPool.free(chunk);
     }
 
-    //! Allocates and constructs an object.
+    //! Constructs an object.
     //! Allocates memory for an object and calls its constructor. The method
-    //! returns a pointer to the newly created object or a null-pointer if no
-    //! memory was available.
+    //! returns a pointer to the newly created object. If the pool is empty,
+    //! the calling thread is blocked until an element has been returned.
     element_type* construct()
     {
         void* mem = this->allocate();
@@ -231,9 +238,47 @@ public:
         return element;
     }
 
+    //! Tries to construct an object.
+    //! Tries to allocate memory for an object, calls its constructor and
+    //! returns a pointer to the new object. If no memory is available in the
+    //! pool, a null-pointer is returned.
+    element_type* try_construct()
+    {
+        void* mem = this->try_allocate();
+        if (!mem)
+            return 0;
+        element_type* element = new (mem) element_type;
+        return element;
+    }
+
+    template <class T1>
+    element_type* try_construct(BOOST_FWD_REF(T1) x1)
+    {
+        void* mem = this->try_allocate();
+        if (!mem)
+            return 0;
+        element_type* element = new (mem) element_type(
+                                    boost::forward<T1>(x1));
+        return element;
+    }
+
+    template <class T1, class T2>
+    element_type* try_construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
+    {
+        void* mem = this->try_allocate();
+        if (!mem)
+            return 0;
+        element_type* element = new (mem) element_type(
+                                    boost::forward<T1>(x1),
+                                    boost::forward<T2>(x2));
+        return element;
+    }
+
     //! Destroys an element.
     //! Destroys the \p element whose memory must have been allocated via
     //! this object pool and whose constructor must have been called.
+    //!
+    //! \sa construct()
     void destroy(element_type* const element)
     {
         element->~element_type();
