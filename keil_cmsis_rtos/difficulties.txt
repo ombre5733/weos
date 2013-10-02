@@ -2,17 +2,60 @@ Difficulties with Keil's CMSIS implementation
 =============================================
 
 * Whenever a mutex, a semaphore etc. is initialized, the implementation checks
-  if the control block is zero. This is problematic, especially when the
-  control block is allocated on the stack.
+  if the control block type is zero. This is problematic, especially when the
+  object is allocated on the stack.
 
 * The CMSIS-OS API specifies the delay function as
       osStatus osDelay(uint32_t millisec).
   This suggests a maximum delay time of approximately 4e9 ms. However, the
   CMSIS-RTX internals are still 16 bit code. This limits the maximum wait time
-  to 65534 ticks (not milliseconds - ticks!).
+  to 65534 ticks (not milliseconds - ticks!), which is especially painful if
+  the tick periods are short.
 
-* The implementation uses ticks internally to store when to wakeup a waiting
+* The implementation uses ticks internally to store when to wake up a waiting
   thread. A delay of 1 wakes a thread at the beginning of the next tick period.
   As time has already passed in the current period, the sleep time is less
   than 1 tick. In other words, the tick delay is an upper bound and the sleep
-  time might be up to one tick less than specified.
+  time might be up to one tick less than specified. As a thread might sleep
+  longer than the specified delay (because another thread with higher priority
+  is still running), the delay time is neither a lower nor an upper bound.
+  This is solved by increasing any non-zero delay time by 1 ms internally
+  before calling the CMSIS wait functions (osDelay(), osMutexWait(), etc).
+
+  As an example, if thread_sleep() is called with a duration of 1 ms, the
+  implementation invokes osDelay(2). Let's assume that a tick period equals
+  1 ms and that we are currently in the i-th period. The kernel will wake
+  up the thread not before the tick period (i+2). Even if thread_sleep() was
+  invoked at the very end of tick period i, the delay would be _at_ _least_
+  1 ms and the duration is a lower bound, thus.
+
+
+
+Accessing the guts
+==================
+
+Sometimes the wrapper has to access internal data in order to implement
+features which are not accessible otherwise.
+
+* mutex.hpp
+  - The mutex control block (the actual mutex data) must be a std::uint32_t[3].
+  - The first word must have the following layout:
+        struct MutexControlBlockHeader
+        {
+            std::uint8_t controlBlockType;
+            std::uint8_t ownerPriority;
+            std::uint16_t nestingLevel;
+        };
+    See also ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
+
+* semaphore.hpp
+  - The semaphore control block (the actual semaphore data) must be a
+    std::uint32_t[2].
+  - The first word must have the following layout:
+        struct SemaphoreControlBlockHeader
+        {
+            std::uint8_t controlBlockType;
+            std::uint8_t tokenMask;
+            std::uint16_t numTokens;
+        };
+    See also ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
