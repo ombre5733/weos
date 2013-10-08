@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
-#define WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
+#ifndef WEOS_KEIL_RL_RTX_MUTEX_HPP
+#define WEOS_KEIL_RL_RTX_MUTEX_HPP
 
 #include "../config.hpp"
 #include "chrono.hpp"
@@ -67,30 +67,17 @@ class basic_mutex : boost::noncopyable
 public:
     // Create a generic mutex.
     basic_mutex()
-        : m_id(0)
     {
-        // Keil's RTOS wants a zero'ed control block type for initialization.
-        m_cmsisMutexControlBlock[0] = 0;
-        osMutexDef_t mutexDef = { m_cmsisMutexControlBlock };
-        m_id = osMutexCreate(&mutexDef);
-        if (m_id == 0)
-            ::weos::throw_exception(weos::system_error(osErrorOS, cmsis_category()));
-    }
-
-    // Destroys the mutex.
-    ~basic_mutex()
-    {
-        if (m_id)
-            osMutexDelete(m_id);
+        os_mut_init(&m_mutex);
     }
 
     // Locks the mutex. Calls post_lock_check() after a successful lock.
     void lock()
     {
-        osStatus status = osMutexWait(m_id, osWaitForever);
-        if (status != osOK)
+        OS_RESULT result = os_mut_wait(&m_mutex, 0xFFFF);
+        if (result == OS_R_TMO)
         {
-            ::weos::throw_exception(weos::system_error(status, cmsis_category()));
+            ::weos::throw_exception(weos::system_error(result, rl_rtx_category()));
         }
         derived()->post_lock_check(mutexControlBlockHeader());
     }
@@ -99,17 +86,11 @@ public:
     // post_try_lock_correction().
     bool try_lock()
     {
-        osStatus status = osMutexWait(m_id, 0);
-        if (status == osOK)
+        OS_RESULT result = os_mut_wait(&m_mutex, 0);
+        if (result == OS_R_OK)
         {
             return derived()->post_try_lock_correction(
                         m_id, mutexControlBlockHeader());
-        }
-
-        if (   status != osErrorTimeoutResource
-            && status != osErrorResource)
-        {
-            ::weos::throw_exception(weos::system_error(status, cmsis_category()));
         }
 
         return false;
@@ -117,19 +98,24 @@ public:
 
     void unlock()
     {
-        osStatus status = osMutexRelease(m_id);
+        OS_RESULT result = os_mut_release(&m_mutex);
         // Just check the return code but do not throw because unlock is
         // called from the destructor of lock_guard, for example.
         //! \todo I think, we can throw exceptions, too.
-        WEOS_ASSERT(status == osOK);
+        TODO:
+        WEOS_ASSERT(result == OS_R_OK);
+        if (result != OS_R_OK)
+        {
+            throw;
+        }
     }
 
 protected:
-    std::uint32_t m_cmsisMutexControlBlock[3];
-    osMutexId m_id;
+    OS_MUT m_mutex;
 
     MutexControlBlockHeader* mutexControlBlockHeader()
     {
+        TODO: check this
         return reinterpret_cast<MutexControlBlockHeader*>(
                     m_cmsisMutexControlBlock);
     }
@@ -143,7 +129,7 @@ protected:
     {
     }
 
-    bool post_try_lock_correction(osMutexId /*id*/,
+    bool post_try_lock_correction(OS_MUT& /*mutex*/,
                                   MutexControlBlockHeader* /*mucb*/)
     {
         return true;
@@ -153,8 +139,8 @@ protected:
 // A helper to lock a mutex.
 struct mutex_try_locker
 {
-    mutex_try_locker(osMutexId id)
-        : m_id(id)
+    mutex_try_locker(OS_MUT& mutex)
+        : m_mutex(mutex)
     {
     }
 
@@ -163,21 +149,12 @@ struct mutex_try_locker
     // waiting is necessary.
     bool operator() (std::int32_t millisec) const
     {
-        osStatus status = osMutexWait(m_id, millisec);
-        if (status == osOK)
-            return true;
-
-        if (   status != osErrorTimeoutResource
-            && status != osErrorResource)
-        {
-            ::weos::throw_exception(weos::system_error(status, cmsis_category()));
-        }
-
-        return false;
+        OS_RESULT result = os_mut_wait(&m_mutex, millisec);
+        return result != OS_R_TMO;
     }
 
 private:
-    osMutexId m_id;
+    OS_MUT& m_mutex;
 };
 
 template <typename DerivedT>
@@ -198,7 +175,7 @@ public:
                 RepT, PeriodT, mutex_try_locker>::wait(d, locker))
         {
             return base::derived()->post_try_lock_correction(
-                        base::m_id, base::mutexControlBlockHeader());
+                        base::m_mutex, base::mutexControlBlockHeader());
         }
 
         return false;
@@ -223,14 +200,14 @@ public:
         WEOS_ASSERT(mucb->nestingLevel == 1);
     }
 
-    bool post_try_lock_correction(osMutexId id, MutexControlBlockHeader* mucb)
+    bool post_try_lock_correction(OS_MUT& mutex, MutexControlBlockHeader* mucb)
     {
         if (mucb->nestingLevel == 1)
             return true;
 
         WEOS_ASSERT(mucb->nestingLevel == 2);
-        osStatus status = osMutexRelease(id);
-        WEOS_ASSERT(status == osOK);
+        OS_RESULT result = os_mut_release(&mutex);
+        WEOS_ASSERT(result == OS_R_OK);
         return false;
     }
 };
@@ -469,4 +446,4 @@ private:
 
 } // namespace weos
 
-#endif // WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
+#endif // WEOS_KEIL_RL_RTX_MUTEX_HPP

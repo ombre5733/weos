@@ -48,7 +48,7 @@ public:
     explicit semaphore(std::uint32_t value = 0)
     {
         WEOS_ASSERT(value <= 0xFFFF);
-        os_sem_init(&m_id, value);
+        os_sem_init(&m_semaphore, value);
     }
 
     //! Destroys the semaphore.
@@ -59,21 +59,23 @@ public:
     //! Waits until a semaphore token is available.
     void wait()
     {
-        OS_RESULT result = os_sem_wait(&m_id, 0xFFFF);
+        OS_RESULT result = os_sem_wait(&m_semaphore, 0xFFFF);
         if (result == OS_R_TMO)
-            ::weos::throw_exception(::weos::system_error(osErrorOS, keil_rl_rtx_category()));
+        {
+            ::weos::throw_exception(::weos::system_error(result, keil_rl_rtx_category()));
+        }
     }
 
     bool try_wait()
     {
-        OS_RESULT result = os_sem_wait(&m_id, 0xFFFF);
+        OS_RESULT result = os_sem_wait(&m_semaphore, 0);
         return result != OS_R_TMO; TODO: check this!
     }
 
     template <typename RepT, typename PeriodT>
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        semaphore_try_waiter waiter(m_id);
+        semaphore_try_waiter waiter(m_semaphore);
         return chrono::detail::cmsis_wait<
                 RepT, PeriodT, semaphore_try_waiter>::wait(d, waiter);
     }
@@ -81,7 +83,7 @@ public:
     //! Releases a semaphore token.
     void post()
     {
-        os_sem_send(&m_id);
+        os_sem_send(&m_semaphore);
     }
 
     //! Returns the numer of semaphore tokens.
@@ -91,8 +93,7 @@ public:
     }
 
 private:
-    std::uint32_t m_cmsisSemaphoreControlBlock[2];
-    osSemaphoreId m_id;
+    OS_SEM m_semaphore;
 
     // The header (first 32 bits) of the semaphore control block. The full
     // definition can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h
@@ -105,28 +106,30 @@ private:
 
     const SemaphoreControlBlockHeader* semaphoreControlBlockHeader() const
     {
+        TODO: check this
         return reinterpret_cast<const SemaphoreControlBlockHeader*>(
-                    m_cmsisSemaphoreControlBlock);
+                    m_semaphore);
     }
 
     // A helper to wait for a semaphore.
     struct semaphore_try_waiter
     {
-        semaphore_try_waiter(osSemaphoreId id)
-            : m_id(id)
+        semaphore_try_waiter(OS_SEM& semaphore)
+            : m_semaphore(semaphore)
         {
         }
 
+        // Waits up to \p millisec milliseconds for a semaphore token. Returns
+        // \p true, if a token has been acquired and no further waiting is
+        // necessary.
         bool operator() (std::int32_t millisec) const
         {
-            std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
-            if (numTokens < 0)
-                ::weos::throw_exception(::weos::system_error(osErrorOS, keil_rl_rtx_category()));
-            return numTokens != 0;
+            OS_RESULT result = os_sem_wait(&m_semaphore, millisec);
+            return result != OS_R_TMO;
         }
 
     private:
-        OS_SEM m_id;
+        OS_SEM& m_semaphore;
     };
 };
 
