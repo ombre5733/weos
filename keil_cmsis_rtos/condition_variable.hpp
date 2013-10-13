@@ -41,6 +41,10 @@ namespace weos
 namespace detail
 {
 //! A helper class for temporarily releasing a lock.
+//! The lock_releaser is a helper class to release a lock until the object
+//! goes out of scope. The constructor calls unlock() and the destructor
+//! calls lock(). It is somehow the dual to the lock_guard which calls lock()
+//! in the constructor and unlock() in the destructor.
 template <typename LockT>
 class lock_releaser
 {
@@ -64,10 +68,13 @@ private:
 
 } // namespace detail
 
-enum cv_status
+struct cv_status
 {
-    no_timeout,
-    timeout
+    enum cv_status
+    {
+        no_timeout,
+        timeout
+    };
 };
 
 //! A condition variable.
@@ -79,11 +86,17 @@ public:
     {
     }
 
+    //! Destroys the condition variable.
+    //!
+    //! \note The condition variable must not be destroyed if a thread is
+    //! waiting on it.
     ~condition_variable()
     {
-        assert(m_waiters == 0);
+        WEOS_ASSERT(m_waiters == 0);
     }
 
+    //! Notifies a thread waiting on this condition variable.
+    //! Notifies one thread which is waiting on this condition variable.
     void notify_one() BOOST_NOEXCEPT
     {
         lock_guard<mutex> locker(m_mutex);
@@ -97,6 +110,8 @@ public:
         }
     }
 
+    //! Notifies all threads waiting on this condition variable.
+    //! Notifies all threads which are waiting on this condition variable.
     void notify_all() BOOST_NOEXCEPT
     {
         lock_guard<mutex> locker(m_mutex);
@@ -109,6 +124,11 @@ public:
         m_waiters = 0;
     }
 
+    //! Waits on this condition variable.
+    //! The given \p lock is released and the current thread is added to a
+    //! list of threads waiting for a notification. The calling thread is
+    //! blocked until a notification is sent via notify() or notify_all()
+    //! or a spurious wakeup occurs.
     void wait(unique_lock<mutex>& lock)
     {
         // First enqueue ourselfs in the list of waiters.
@@ -125,8 +145,8 @@ public:
     }
 
     template <typename RepT, typename PeriodT>
-    cv_status wait_for(unique_lock<mutex>& lock,
-                       const chrono::duration<RepT, PeriodT>& d)
+    cv_status::cv_status wait_for(unique_lock<mutex>& lock,
+                                  const chrono::duration<RepT, PeriodT>& d)
     {
         // First enqueue ourselfs in the list of waiters.
         Waiter w;
@@ -143,13 +163,16 @@ public:
                 lock_guard<mutex> locker(m_mutex);
                 if (!w.dequeued)
                     dequeueWaiter(w);
-                return timeout;
+                return cv_status::timeout;
             }
         }
-        return no_timeout;
+        return cv_status::no_timeout;
     }
 
 private:
+    //! An object to wait on a signal.
+    //! A Waiter can be enqueued in a list of waiters. The condition variable
+    //! can either notify the first waiter or all waiters in the list.
     struct Waiter
     {
         Waiter()
@@ -195,7 +218,9 @@ private:
         }
     }
 
+    //! A mutex to protect the list of waiters from concurrent modifications.
     mutex m_mutex;
+    //! A pointer to the first waiter.
     Waiter* m_waiters;
 };
 
