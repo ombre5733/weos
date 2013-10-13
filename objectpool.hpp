@@ -98,6 +98,8 @@ public:
     element_type* construct()
     {
         void* mem = this->allocate();
+        if (!mem)
+            return 0;
         element_type* element = new (mem) element_type;
         return element;
     }
@@ -106,6 +108,8 @@ public:
     element_type* construct(BOOST_FWD_REF(T1) x1)
     {
         void* mem = this->allocate();
+        if (!mem)
+            return 0;
         element_type* element = new (mem) element_type(
                                     boost::forward<T1>(x1));
         return element;
@@ -115,6 +119,8 @@ public:
     element_type* construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
     {
         void* mem = this->allocate();
+        if (!mem)
+            return 0;
         element_type* element = new (mem) element_type(
                                     boost::forward<T1>(x1),
                                     boost::forward<T2>(x2));
