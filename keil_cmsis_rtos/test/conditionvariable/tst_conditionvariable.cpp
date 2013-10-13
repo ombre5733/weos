@@ -40,8 +40,9 @@ TEST(condition_variable, try_wait_for)
     weos::condition_variable cv;
     weos::mutex m;
     weos::unique_lock<weos::mutex> lock(m);
-    weos::cv_status status = cv.wait_for(lock, weos::chrono::milliseconds(1));
-    ASSERT_EQ(weos::timeout, status);
+    weos::cv_status::cv_status status
+            = cv.wait_for(lock, weos::chrono::milliseconds(1));
+    ASSERT_EQ(weos::cv_status::timeout, status);
 }
 
 // ----=====================================================================----

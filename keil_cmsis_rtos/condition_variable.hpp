@@ -68,21 +68,21 @@ private:
 
 } // namespace detail
 
-struct cv_status
+namespace cv_status
 {
     enum cv_status
     {
         no_timeout,
         timeout
     };
-};
+} // namespace cv_status
 
 //! A condition variable.
 class condition_variable : boost::noncopyable
 {
 public:
     condition_variable()
-        : m_waiters(0)
+        : m_waitingThreads(0)
     {
     }
 
@@ -92,7 +92,7 @@ public:
     //! waiting on it.
     ~condition_variable()
     {
-        WEOS_ASSERT(m_waiters == 0);
+        WEOS_ASSERT(m_waitingThreads == 0);
     }
 
     //! Notifies a thread waiting on this condition variable.
@@ -101,10 +101,10 @@ public:
     {
         lock_guard<mutex> locker(m_mutex);
 
-        Waiter* head = m_waiters;
+        WaitingThread* head = m_waitingThreads;
         if (head != 0)
         {
-            m_waiters = head->next;
+            m_waitingThreads = head->next;
             head->dequeued = true;
             head->signal.post();
         }
@@ -116,24 +116,26 @@ public:
     {
         lock_guard<mutex> locker(m_mutex);
 
-        for (Waiter* head = m_waiters; head != 0; head = head->next)
+        for (WaitingThread* head = m_waitingThreads; head != 0;
+             head = head->next)
         {
             head->dequeued = true;
             head->signal.post();
         }
-        m_waiters = 0;
+        m_waitingThreads = 0;
     }
 
     //! Waits on this condition variable.
     //! The given \p lock is released and the current thread is added to a
     //! list of threads waiting for a notification. The calling thread is
     //! blocked until a notification is sent via notify() or notify_all()
-    //! or a spurious wakeup occurs.
+    //! or a spurious wakeup occurs. The \p lock is reacquired when the
+    //! function exits (either due to a notification or due to an exception).
     void wait(unique_lock<mutex>& lock)
     {
         // First enqueue ourselfs in the list of waiters.
-        Waiter w;
-        enqueueWaiter(w);
+        WaitingThread w;
+        enqueueWaitingThread(w);
 
         // We can only release the lock when we are sure that a signal will
         // reach our thread.
@@ -144,13 +146,19 @@ public:
         }
     }
 
+    //! Waits on this condition variable with a timeout.
+    //! Releases the given \p lock and adds the calling thread to a list
+    //! of threads waiting for a notification. The thread is blocked until
+    //! a notification is sent, a spurious wakeup occurs or the timeout
+    //! period \p d expires. When the function returns, the \p lock is
+    //! reacquired no matter what has caused the wakeup.
     template <typename RepT, typename PeriodT>
     cv_status::cv_status wait_for(unique_lock<mutex>& lock,
                                   const chrono::duration<RepT, PeriodT>& d)
     {
         // First enqueue ourselfs in the list of waiters.
-        Waiter w;
-        enqueueWaiter(w);
+        WaitingThread w;
+        enqueueWaitingThread(w);
 
         // We can only unlock the lock when we are sure that a signal will
         // reach our thread.
@@ -162,7 +170,7 @@ public:
             {
                 lock_guard<mutex> locker(m_mutex);
                 if (!w.dequeued)
-                    dequeueWaiter(w);
+                    dequeueWaitingThread(w);
                 return cv_status::timeout;
             }
         }
@@ -171,48 +179,49 @@ public:
 
 private:
     //! An object to wait on a signal.
-    //! A Waiter can be enqueued in a list of waiters. The condition variable
-    //! can either notify the first waiter or all waiters in the list.
-    struct Waiter
+    //! A WaitingThread can be enqueued in a list of waiters. The condition
+    //! variable can either notify the first waiter or all waiters in the list.
+    struct WaitingThread
     {
-        Waiter()
+        WaitingThread()
             : next(0),
               dequeued(false)
         {
         }
 
-        Waiter* next;
+        WaitingThread* next;
+        // A semaphore to send a signal to this waiting thread.
         semaphore signal;
         bool dequeued;
     };
 
     //! Adds the waiter \p w to the queue.
-    void enqueueWaiter(Waiter& w)
+    void enqueueWaitingThread(WaitingThread& w)
     {
         lock_guard<mutex> locker(m_mutex);
 
         //! \todo enqueue using priorities
-        if (m_waiters)
+        if (m_waitingThreads)
         {
-            Waiter* iter = m_waiters;
+            WaitingThread* iter = m_waitingThreads;
             while (iter->next)
                 iter = iter->next;
             iter->next = &w;
         }
         else
         {
-            m_waiters = &w;
+            m_waitingThreads = &w;
         }
     }
 
     //! Removes the waiter \p w from the queue.
-    void dequeueWaiter(Waiter& w)
+    void dequeueWaitingThread(WaitingThread& w)
     {
-        if (m_waiters == &w)
-            m_waiters = w.next;
+        if (m_waitingThreads == &w)
+            m_waitingThreads = w.next;
         else
         {
-            Waiter* iter = m_waiters;
+            WaitingThread* iter = m_waitingThreads;
             if (iter->next == &w)
                 iter->next = w.next;
         }
@@ -221,7 +230,7 @@ private:
     //! A mutex to protect the list of waiters from concurrent modifications.
     mutex m_mutex;
     //! A pointer to the first waiter.
-    Waiter* m_waiters;
+    WaitingThread* m_waitingThreads;
 };
 
 } // namespace weos
