@@ -187,6 +187,9 @@ private:
 //! storage for (\p TNumElem) elements of type \p TElement. In addition, it
 //! keeps track of the number of elements available in the pool and can thus
 //! block the caller until an element is available.
+//!
+//! The counting_memory_pool is always thread safe. Multiple threads can
+//! concurrently use it to allocate and free memory chunks.
 template <typename TElement, unsigned TNumElem>
 class counting_memory_pool
 {

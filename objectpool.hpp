@@ -141,6 +141,8 @@ private:
     pool_t m_memoryPool;
 };
 
+//! The counting_memory_pool is always thread safe. Multiple threads can
+//! concurrently use it for the creation and destruction of elements.
 template <typename TElement, unsigned TNumElem>
 class counting_object_pool
 {
