@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_DURATION_HPP
-#define WEOS_KEIL_CMSIS_RTOS_DURATION_HPP
+#ifndef WEOS_COMMON_DURATION_HPP
+#define WEOS_COMMON_DURATION_HPP
 
 #include "../config.hpp"
 
@@ -104,8 +104,8 @@ public:
 
     template <typename Rep2>
     /*BOOST_CONSTEXPR*/ explicit duration(const Rep2& count,
-                                      //! \todo Conversion between RepT and Rep2 is missing
-                                      typename boost::enable_if_c<false>* = 0)
+                                          //! \todo Conversion between RepT and Rep2 is missing
+                                          typename boost::enable_if_c<false>* = 0)
     {
         m_count = count;
     }
@@ -349,4 +349,4 @@ duration_cast(const duration<RepT, PeriodT>& d)
 } // namespace chrono
 } // namespace weos
 
-#endif // WEOS_KEIL_CMSIS_RTOS_DURATION_HPP
+#endif // WEOS_COMMON_DURATION_HPP

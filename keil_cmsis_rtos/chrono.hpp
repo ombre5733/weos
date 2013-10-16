@@ -30,7 +30,7 @@
 #define WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 
 #include "../config.hpp"
-#include "duration.hpp"
+#include "../common/duration.hpp"
 
 #include <cstdint>
 
