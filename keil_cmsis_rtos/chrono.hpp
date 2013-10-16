@@ -101,7 +101,6 @@ namespace detail
 template <typename RepT, typename PeriodT, typename FunctorT>
 struct cmsis_wait
 {
-
     typedef typename boost::ratio_divide<PeriodT, boost::milli>::type ratio;
     typedef typename boost::common_type<RepT, cast_least_int_type>::type
         common_type;
@@ -118,25 +117,26 @@ struct cmsis_wait
         if (d.count() <= 0)
             return fun(0);
 
-        // Convert the count to millisecs (the conversion ceils the ratio).
-        common_type count
+        // Convert the duration d to millisecs (the conversion ceils the ratio).
+        common_type delay
                 = (static_cast<common_type>(d.count())
                    * static_cast<common_type>(ratio::num)
                    + static_cast<common_type>(ratio::den - 1))
                   / static_cast<common_type>(ratio::den);
         // Note: A tick of 1 will wake the thread at the beginning of the next
-        // period. However, some time has already passed in the current period.
-        // Thus, we increase the count by 1 ms to ensure that our delay time
+        // period. However, some time has already passed in the current period,
+        // so the actual delay is less than a tick.
+        // Thus, we increase the delay by 1 ms to ensure that our delay time
         // is a lower bound.
-        count += common_type(1);
-        while (count > maxMillisecs)
+        delay += common_type(1);
+        while (delay > maxMillisecs)
         {
             bool success = fun(maxMillisecs);
             if (success)
                 return true;
-            count -= maxMillisecs;
+            delay -= maxMillisecs;
         }
-        return fun(count);
+        return fun(delay);
     }
 };
 
