@@ -31,6 +31,7 @@
 
 #include "../config.hpp"
 #include "../common/duration.hpp"
+#include "../common/timepoint.hpp"
 
 #include <cstdint>
 
@@ -43,74 +44,6 @@ namespace chrono
 {
 
 // ----=====================================================================----
-//     time_point
-// ----=====================================================================----
-
-//! A time point.
-template <typename ClockT, typename DurationT = typename ClockT::duration>
-class time_point
-{
-public:
-    typedef ClockT clock;
-    typedef DurationT duration;
-    typedef typename duration::rep rep;
-    typedef typename duration::period period;
-
-    BOOST_CONSTEXPR time_point()
-    {
-    }
-
-    //! Creates a time point from a duration.
-    //! Creates a time point whose difference to the epoch time is equal
-    //! to the given duration \p d.
-    BOOST_CONSTEXPR explicit time_point(const duration& d)
-        : m_duration(d)
-    {
-    }
-
-    //! Returns the time point relative to the clock's epoch.
-    //! Returns the time point as a duration since the clock's epoch.
-    duration time_since_epoch() const
-    {
-        return m_duration;
-    }
-
-    // Arithmetic operators.
-
-    //! Adds a duration.
-    //! Adds the duration \p d to this time point and returns the time point.
-    time_point& operator+= (const duration& d)
-    {
-        m_duration += d;
-        return *this;
-    }
-
-    //! Subtracts a duration.
-    //! Subtracts the duration \p d from this time point and returns the time
-    //! point.
-    time_point& operator-= (const duration& d)
-    {
-        m_duration -= d;
-        return *this;
-    }
-
-    // Special values.
-
-    static BOOST_CONSTEXPR time_point max()
-    {
-        return time_point(duration::max());
-    }
-
-    static BOOST_CONSTEXPR time_point min()
-    {
-        return time_point(duration::min());
-    }
-
-private:
-    duration m_duration;
-};
-
-// ----=====================================================================----
 //     system_clock
 // ----=====================================================================----
 
@@ -120,7 +53,7 @@ private:
 class system_clock
 {
 public:
-    typedef int32_t rep;
+    typedef std::int32_t rep;
     typedef boost::ratio<1, WEOS_SYSTICK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<system_clock> time_point;
@@ -144,7 +77,7 @@ public:
 class high_resolution_clock
 {
 public:
-    typedef int32_t rep;
+    typedef std::int32_t rep;
     typedef boost::ratio<1, WEOS_SYSTEM_CLOCK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<high_resolution_clock> time_point;
