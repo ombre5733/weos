@@ -167,6 +167,8 @@ private:
     error_code m_errorCode;
 };
 
+//! Returns the category for CMSIS errors.
+const error_category& cmsis_category();
 
 namespace cmsis_error
 {
@@ -187,55 +189,6 @@ enum cmsis_error_t
     osErrorValue           = 0x86,
     osErrorOS              = 0xFF
 };
-} // namespace cmsis_error
-
-template <>
-struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
-{
-};
-
-//! An error category for CMSIS errors.
-class cmsis_category_impl : public error_category
-{
-public:
-    virtual const char* name() const BOOST_NOEXCEPT
-    {
-        return "CMSIS";
-    }
-
-    virtual const char* message(int err_val) const
-    {
-        switch (err_val)
-        {
-            default:
-                // Not an error.
-                return "";
-            case osErrorParameter:
-                return "A parameter was incorrect.";
-            case osErrorResource:
-                return "A resource was not available.";
-            case osErrorTimeoutResource:
-                return "A resource was not available before the timeout.";
-            case osErrorISR:
-            case osErrorISRRecursive:
-                return "The function cannot be called from an interrupt.";
-            case osErrorPriority:
-                return "The priority is illegal.";
-            case osErrorNoMemory:
-                return "Could not reserve memory.";
-            case osErrorValue:
-                return "A parameter is out of range.";
-            case osErrorOS:
-                return "Unspecified error.";
-        }
-    }
-};
-
-//! Returns the category for CMSIS errors.
-const error_category& cmsis_category();
-
-namespace cmsis_error
-{
 
 inline
 weos::error_code make_error_code(cmsis_error_t err)
@@ -252,6 +205,11 @@ weos::error_code make_error_condition(cmsis_error_t err)
 */
 
 } // namespace cmsis_error
+
+template <>
+struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
+{
+};
 
 } // namespace weos
 

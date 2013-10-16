@@ -31,6 +31,43 @@
 namespace weos
 {
 
+//! An error category for CMSIS errors.
+class cmsis_category_impl : public error_category
+{
+public:
+    virtual const char* name() const BOOST_NOEXCEPT
+    {
+        return "CMSIS";
+    }
+
+    virtual const char* message(int err_val) const
+    {
+        switch (err_val)
+        {
+            default:
+                // Not an error.
+                return "";
+            case osErrorParameter:
+                return "A parameter was incorrect.";
+            case osErrorResource:
+                return "A resource was not available.";
+            case osErrorTimeoutResource:
+                return "A resource was not available before the timeout.";
+            case osErrorISR:
+            case osErrorISRRecursive:
+                return "The function cannot be called from an interrupt.";
+            case osErrorPriority:
+                return "The priority is illegal.";
+            case osErrorNoMemory:
+                return "Could not reserve memory.";
+            case osErrorValue:
+                return "A parameter is out of range.";
+            case osErrorOS:
+                return "Unspecified error.";
+        }
+    }
+};
+
 const error_category& cmsis_category()
 {
     static cmsis_category_impl categoryInstance;
