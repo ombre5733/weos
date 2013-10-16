@@ -29,6 +29,7 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_CONDITIONVARIABLE_HPP
 #define WEOS_KEIL_CMSIS_RTOS_CONDITIONVARIABLE_HPP
 
+#include "../config.hpp"
 #include "chrono.hpp"
 #include "mutex.hpp"
 #include "semaphore.hpp"
