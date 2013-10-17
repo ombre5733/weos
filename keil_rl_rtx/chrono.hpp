@@ -26,17 +26,14 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
-#define WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
+#ifndef WEOS_KEIL_RL_RTX_CHRONO_HPP
+#define WEOS_KEIL_RL_RTX_CHRONO_HPP
 
 #include "../config.hpp"
 #include "../common/duration.hpp"
 #include "../common/timepoint.hpp"
 
 #include <cstdint>
-
-// Declaration from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
-extern "C" std::uint32_t rt_time_get(void);
 
 namespace weos
 {
@@ -62,7 +59,7 @@ public:
 
     static time_point now()
     {
-        return time_point(duration(rt_time_get()));
+        return time_point(duration(os_time_get()));
     }
 };
 
@@ -93,25 +90,20 @@ public:
 namespace detail
 {
 
-// Keil's CMSIS RTX limits the delay to 0xFFFE ticks (really ticks, not
-// milliseconds, unless the SysTick period is 1 ms, in which case the number of
-// ticks is equal to the number of milliseconds).
+// Keil's RL RTX specifies delay times in ticks but we want to have a
+// duration in the API. Furthermore, the delay is limited to 0xFFFE ticks.
 // If we want to block longer, we have to call the wait function multiple
 // times. This helper contains the necessary boilerplate code.
 template <typename RepT, typename PeriodT, typename FunctorT>
-struct cmsis_wait
+struct rl_rtx_wait
 {
-    // Create the ratio for converting from a duration d to another duration
-    // t which is in milliseconds (t = d / 1e-3).
-    typedef typename boost::ratio_divide<PeriodT, boost::milli>::type ratio;
+    // Create the ratio for converting from a duration d to a tick-count c via
+    // the systick frequency f (c = d * f).
+    typedef typename boost::ratio_multiply<
+                         PeriodT,
+                         boost::ratio<WEOS_SYSTICK_FREQUENCY> >::type ratio;
     typedef typename boost::common_type<RepT, cast_least_int_type>::type
         common_type;
-
-    // Compute the maximum number of milliseconds which correspond to a SysTick
-    // value of less than 0xFFFF.
-    static const common_type maxMillisecs =
-            static_cast<common_type>(0xFFFE * 1000)
-            / static_cast<common_type>(WEOS_SYSTICK_FREQUENCY);
 
     static bool wait(const chrono::duration<RepT, PeriodT>& d,
                      const FunctorT& fun)
@@ -119,26 +111,25 @@ struct cmsis_wait
         if (d.count() <= 0)
             return fun(0);
 
-        // Convert the duration d to millisecs (the conversion ceils the ratio).
-        common_type delay
+        // Convert the duration d to counts (the conversion ceils the ratio).
+        common_type counts
                 = (static_cast<common_type>(d.count())
                    * static_cast<common_type>(ratio::num)
                    + static_cast<common_type>(ratio::den - 1))
                   / static_cast<common_type>(ratio::den);
         // Note: A tick of 1 will wake the thread at the beginning of the next
         // period. However, some time has already passed in the current period,
-        // so the actual delay is less than a tick.
-        // Thus, we increase the delay by 1 ms to ensure that our delay time
-        // is a lower bound.
-        delay += common_type(1);
-        while (delay > maxMillisecs)
+        // so the actual delay is less than a tick. Thus we increase the
+        // count by 1 to have a strict lower bound.
+        counts += common_type(1);
+        while (counts > 0xFFFE)
         {
-            bool success = fun(maxMillisecs);
+            bool success = fun(0xFFFE);
             if (success)
                 return true;
-            delay -= maxMillisecs;
+            counts -= 0xFFFE;
         }
-        return fun(delay);
+        return fun(counts);
     }
 };
 
@@ -147,4 +138,4 @@ struct cmsis_wait
 } // namespace chrono
 } // namespace weos
 
-#endif // WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
+#endif // WEOS_KEIL_RL_RTX_CHRONO_HPP
