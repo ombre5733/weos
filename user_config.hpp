@@ -46,14 +46,34 @@
 
 // The frequency of the system clock (in Hz).
 // \note In Keil's CMSIS RTOS this is the value of OS_CLOCK.
-#  define WEOS_SYSTEM_CLOCK_FREQUENCY     12000000
+#  define WEOS_SYSTEM_CLOCK_FREQUENCY       12000000
 // The frequency of the SysTick timer (in Hz).
 // \note In Keil's CMSIS RTOS this is the value of (1000000 / OS_TICK).
-#  define WEOS_SYSTICK_FREQUENCY          1000
+#  define WEOS_SYSTICK_FREQUENCY            1000
 // The maximum number of threads which can be active concurrently.
-#define WEOS_MAX_NUM_CONCURRENT_THREADS   3
+#  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
+
+// ----=====================================================================----
+//     Keil RL-RTX
+// ----=====================================================================----
+
+// Set this macro to make WEOS wrap Keil's RL-RTX.
+// #define WEOS_WRAP_KEIL_RL_RTX
+
+#if defined(WEOS_WRAP_KEIL_RL_RTX)
+
+// The frequency of the system clock (in Hz).
+// \note In Keil's RL RTX this is the value of OS_CLOCK.
+#  define WEOS_SYSTEM_CLOCK_FREQUENCY       12000000
+// The frequency of the SysTick timer (in Hz).
+// \note In Keil's RL RTX this is the value of (1000000 / OS_TICK).
+#  define WEOS_SYSTICK_FREQUENCY            1000
+// The maximum number of threads which can be active concurrently.
+#  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
+
+#endif // WEOS_WRAP_KEIL_RL_RTX
 
 // ----=====================================================================----
 //     General settings

@@ -34,13 +34,21 @@
 #endif
 #include WEOS_USER_CONFIG
 
-
+// Include the CMSIS header file if necessary.
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 #  include "3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
 #  if osCMSIS_RTX != ((4<<16) | 70)
 #    error "The Keil CMSIS RTOS version must be 4.70."
 #  endif
-#endif
+#endif // WEOS_WRAP_KEIL_CMSIS_RTOS
+
+// Include the RL RTX header file if necessary.
+#if defined(WEOS_WRAP_KEIL_RL_RTX)
+#  include "3rdparty/keil_rl_rtx/INC/RTL.h"
+#  if __RL_ARM_VER != 472
+#    error "The Keil RL RTX version must be 4.72."
+#  endif
+#endif // WEOS_WRAP_KEIL_RL_RTX
 
 
 #if !defined(WEOS_CUSTOM_THROW_EXCEPTION)
@@ -59,7 +67,7 @@
         // This is only a declaration - the definition has to be provided by the user.
         void throw_exception(const std::exception& e);
      } // namespace weos
-#endif
+#endif // WEOS_CUSTOM_THROW_EXCEPTION
 
 
 #if defined(WEOS_ENABLE_ASSERT)
