@@ -39,6 +39,8 @@
    }
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 #  include "keil_cmsis_rtos/chrono.hpp"
+#elif defined(WEOS_WRAP_KEIL_RL_RTX)
+#  include "keil_rl_rtx/chrono.hpp"
 #else
 #  error "The OS wrapper has not been configured."
 #endif
