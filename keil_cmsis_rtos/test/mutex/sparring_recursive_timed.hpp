@@ -29,7 +29,7 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_RECURSIVE_TIMED_HPP
 #define WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_RECURSIVE_TIMED_HPP
 
-#include "../mutex.hpp"
+#include "../../mutex.hpp"
 
 struct SparringData
 {
