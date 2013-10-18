@@ -42,7 +42,7 @@ struct SparringData
     };
 
     SparringData(weos::mutex& _m, weos::condition_variable& _cv)
-        : m(_m),
+        : mutex(_m),
           cv(_cv),
           action(None),
           busy(false),
@@ -51,7 +51,7 @@ struct SparringData
     {
     }
 
-    weos::mutex& m;
+    weos::mutex& mutex;
     weos::condition_variable& cv;
     volatile Action action;
     volatile bool busy;

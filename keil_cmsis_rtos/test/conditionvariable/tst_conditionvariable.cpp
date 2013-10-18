@@ -52,14 +52,14 @@ TEST(condition_variable, try_wait_for)
 
 TEST(condition_variable, notify)
 {
-#define clearNotifications() \
-    do { \
-    data1.notified = false; \
-    data2.notified = false; \
-    data3.notified = false; \
-} while (0)
+#define clearNotifications()                                                   \
+    do {                                                                       \
+        data1.notified = false;                                                \
+        data2.notified = false;                                                \
+        data3.notified = false;                                                \
+    } while (0)
 
-#define numNotifications()
+#define numNotifications()                                                     \
     (int(data1.notified) + int(data2.notified) + int(data3.notified))
 
     weos::mutex m;
