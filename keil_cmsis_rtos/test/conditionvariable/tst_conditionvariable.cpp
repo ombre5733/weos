@@ -27,6 +27,7 @@
 *******************************************************************************/
 
 #include "../../condition_variable.hpp"
+#include "sparring.hpp"
 
 #include "gtest/gtest.h"
 
@@ -48,3 +49,84 @@ TEST(condition_variable, try_wait_for)
 // ----=====================================================================----
 //     Tests together with a sparring thread
 // ----=====================================================================----
+
+TEST(condition_variable, notify)
+{
+#define clearNotifications() \
+    do { \
+    data1.notified = false; \
+    data2.notified = false; \
+    data3.notified = false; \
+} while (0)
+
+#define numNotifications()
+    (int(data1.notified) + int(data2.notified) + int(data3.notified))
+
+    weos::mutex m;
+    weos::condition_variable cv;
+    SparringData data1(m, cv);
+    osThreadId id1 = osThreadCreate(&sparringThread, &data1);
+    ASSERT_TRUE(id1 != 0);
+    SparringData data2(m, cv);
+    osThreadId id2 = osThreadCreate(&sparringThread, &data2);
+    ASSERT_TRUE(id2 != 0);
+    SparringData data3(m, cv);
+    osThreadId id3 = osThreadCreate(&sparringThread, &data3);
+    ASSERT_TRUE(id3 != 0);
+
+    osDelay(10);
+    ASSERT_TRUE(data1.sparringStarted);
+    ASSERT_TRUE(data2.sparringStarted);
+    ASSERT_TRUE(data3.sparringStarted);
+
+    clearNotifications();
+    ASSERT_EQ(0, numNotifications());
+
+    data1.action = SparringData::ConditionVariableWait;
+    data2.action = SparringData::ConditionVariableWait;
+    data3.action = SparringData::ConditionVariableWait;
+    osDelay(10);
+    ASSERT_TRUE(data1.busy);
+    ASSERT_TRUE(data2.busy);
+    ASSERT_TRUE(data3.busy);
+
+    cv.notify_one();
+    osDelay(10);
+    ASSERT_EQ(1, numNotifications());
+
+    cv.notify_one();
+    osDelay(10);
+    ASSERT_EQ(2, numNotifications());
+
+    cv.notify_one();
+    osDelay(10);
+    ASSERT_EQ(3, numNotifications());
+
+    ASSERT_FALSE(data1.busy);
+    ASSERT_FALSE(data2.busy);
+    ASSERT_FALSE(data3.busy);
+
+    clearNotifications();
+    ASSERT_EQ(0, numNotifications());
+
+    data1.action = SparringData::ConditionVariableWait;
+    data2.action = SparringData::ConditionVariableWait;
+    data3.action = SparringData::ConditionVariableWait;
+    osDelay(10);
+    ASSERT_TRUE(data1.busy);
+    ASSERT_TRUE(data2.busy);
+    ASSERT_TRUE(data3.busy);
+
+    cv.notify_all();
+    osDelay(10);
+    ASSERT_EQ(3, numNotifications());
+
+    ASSERT_FALSE(data1.busy);
+    ASSERT_FALSE(data2.busy);
+    ASSERT_FALSE(data3.busy);
+
+    data1.action = SparringData::Terminate;
+    data2.action = SparringData::Terminate;
+    data3.action = SparringData::Terminate;
+    osDelay(10);
+}

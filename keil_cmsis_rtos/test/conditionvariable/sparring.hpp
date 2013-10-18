@@ -29,31 +29,33 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_HPP
 #define WEOS_KEIL_CMSIS_RTOS_TEST_SPARRING_HPP
 
-#include "../mutex.hpp"
+#include "../../condition_variable.hpp"
 
 struct SparringData
 {
     enum Action
     {
         None,
-        MutexLock,
-        MutexTryLock,
-        MutexUnlock,
+        ConditionVariableWait,
+        ConditionVariableTryWait,
         Terminate
     };
 
-    SparringData()
-        : action(None),
+    SparringData(weos::mutex& _m, weos::condition_variable& _cv)
+        : m(_m),
+          cv(_cv),
+          action(None),
           busy(false),
-          mutexLocked(false),
+          notified(false),
           sparringStarted(false)
     {
     }
 
-    weos::mutex mutex;
+    weos::mutex& m;
+    weos::condition_variable& cv;
     volatile Action action;
     volatile bool busy;
-    volatile bool mutexLocked;
+    volatile bool notified;
     volatile bool sparringStarted;
 };
 
@@ -75,17 +77,22 @@ extern "C" void sparring(const void* arg)
         data->busy = true;
         switch (data->action)
         {
-            case SparringData::MutexLock:
-                data->mutex.lock();
-                data->mutexLocked = true;
-                break;
-            case SparringData::MutexTryLock:
-                data->mutexLocked = data->mutex.try_lock();
-                break;
-            case SparringData::MutexUnlock:
-                data->mutex.unlock();
-                data->mutexLocked = false;
-                break;
+            case SparringData::ConditionVariableWait:
+            {
+                weos::unique_lock<weos::mutex> l(data->mutex);
+                data->cv.wait(l);
+                data->notified = true;
+            } break;
+            case SparringData::ConditionVariableTryWait:
+            {
+                weos::unique_lock<weos::mutex> l(data->mutex);
+                if (data->cv.wait_for(l, weos::chrono::milliseconds(100))
+                    == weos::cv_status::no_timeout)
+                {
+                    data->notified = true;
+                }
+
+            } break;
             default:
                 break;
         }
