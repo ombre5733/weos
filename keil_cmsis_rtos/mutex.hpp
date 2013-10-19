@@ -45,7 +45,7 @@ namespace detail
 {
 
 // The header (first 32 bits) of the mutex control block. The full definition
-// can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h
+// can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
 struct MutexControlBlockHeader
 {
     std::uint8_t controlBlockType;
@@ -123,7 +123,7 @@ protected:
     MutexControlBlockHeader* mutexControlBlockHeader()
     {
         return reinterpret_cast<MutexControlBlockHeader*>(
-                    m_cmsisMutexControlBlock);
+                    &m_cmsisMutexControlBlock);
     }
 
     DerivedT* derived()
@@ -162,7 +162,8 @@ struct mutex_try_locker
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
         {
-            ::weos::throw_exception(weos::system_error(status, cmsis_category()));
+            ::weos::throw_exception(weos::system_error(
+                                        status, cmsis_category()));
         }
 
         return false;

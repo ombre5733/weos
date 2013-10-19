@@ -54,7 +54,8 @@ public:
         m_id = osSemaphoreCreate(&semaphoreDef, value);
         if (m_id == 0)
         {
-            ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
+            ::weos::throw_exception(::weos::system_error(
+                                        osErrorOS, cmsis_category()));
         }
     }
 
@@ -71,7 +72,8 @@ public:
         std::int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
         if (numTokens <= 0)
         {
-            ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
+            ::weos::throw_exception(::weos::system_error(
+                                        osErrorOS, cmsis_category()));
         }
     }
 
@@ -80,7 +82,8 @@ public:
         std::int32_t numTokens = osSemaphoreWait(m_id, 0);
         if (numTokens < 0)
         {
-            ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
+            ::weos::throw_exception(::weos::system_error(
+                                        osErrorOS, cmsis_category()));
         }
         return numTokens != 0;
     }
@@ -99,7 +102,8 @@ public:
         osStatus status = osSemaphoreRelease(m_id);
         if (status != osOK)
         {
-            ::weos::throw_exception(::weos::system_error(status, cmsis_category()));
+            ::weos::throw_exception(::weos::system_error(
+                                        status, cmsis_category()));
         }
     }
 
@@ -114,7 +118,7 @@ private:
     osSemaphoreId m_id;
 
     // The header (first 32 bits) of the semaphore control block. The full
-    // definition can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h
+    // definition can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
     struct SemaphoreControlBlockHeader
     {
         std::uint8_t controlBlockType;
@@ -125,7 +129,7 @@ private:
     const SemaphoreControlBlockHeader* semaphoreControlBlockHeader() const
     {
         return reinterpret_cast<const SemaphoreControlBlockHeader*>(
-                    m_cmsisSemaphoreControlBlock);
+                    &m_cmsisSemaphoreControlBlock);
     }
 
     // A helper to wait for a semaphore.
@@ -144,7 +148,8 @@ private:
             std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
             if (numTokens < 0)
             {
-                ::weos::throw_exception(::weos::system_error(osErrorOS, cmsis_category()));
+                ::weos::throw_exception(::weos::system_error(
+                                            osErrorOS, cmsis_category()));
             }
 
             return numTokens != 0;

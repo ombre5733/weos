@@ -45,7 +45,7 @@ namespace detail
 {
 
 // The header (first 32 bits) of the mutex control block. The full definition
-// can be found in $/RL/RTX/SRC/rt_TypeDef.h
+// can be found in $/RL/RTX/SRC/rt_TypeDef.h.
 struct MutexControlBlockHeader
 {
     std::uint8_t controlBlockType;
@@ -102,7 +102,7 @@ protected:
 
     MutexControlBlockHeader* mutexControlBlockHeader()
     {
-        return reinterpret_cast<MutexControlBlockHeader*>(m_mutex);
+        return reinterpret_cast<MutexControlBlockHeader*>(&m_mutex);
     }
 
     DerivedT* derived()

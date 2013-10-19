@@ -96,19 +96,18 @@ private:
     OS_SEM m_semaphore;
 
     // The header (first 32 bits) of the semaphore control block. The full
-    // definition can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h
+    // definition can be found in $/RL/RTX/SRC/rt_TypeDef.h.
     struct SemaphoreControlBlockHeader
     {
         std::uint8_t controlBlockType;
-        std::uint8_t tokenMask;
         std::uint16_t numTokens;
+        std::uint8_t unused;
     };
 
     const SemaphoreControlBlockHeader* semaphoreControlBlockHeader() const
     {
-        TODO: check this
         return reinterpret_cast<const SemaphoreControlBlockHeader*>(
-                    m_semaphore);
+                    &m_semaphore);
     }
 
     // A helper to wait for a semaphore.
