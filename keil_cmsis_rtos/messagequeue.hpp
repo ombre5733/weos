@@ -58,12 +58,16 @@ public:
     message_queue()
         : m_id(0)
     {
-        // Keil's RTOS wants a zero'ed control block type for initialization.
+        // Keil's CMSIS RTOS wants a zero'ed control block type for
+        // initialization.
         m_queueData[0] = 0;
         osMessageQDef_t queueDef = { QueueSizeT, m_queueData };
         m_id = osMessageCreate(&queueDef, NULL);
         if (m_id == 0)
-            ::weos::throw_exception(weos::system_error(osErrorOS, cmsis_category()));
+        {
+            ::weos::throw_exception(weos::system_error(
+                                        osErrorOS, cmsis_category()));
+        }
     }
 
     //! Gets an element from the queue.
@@ -74,7 +78,8 @@ public:
         osEvent result = osMessageGet(m_id, osWaitForever);
         if (result.status != osOK)
         {
-            ::weos::throw_exception(weos::system_error(result.status, cmsis_category()));
+            ::weos::throw_exception(weos::system_error(
+                                        result.status, cmsis_category()));
         }
         element_type element;
         std::memcpy(&element, &result.value.p, sizeof(element_type));
@@ -98,7 +103,8 @@ public:
         osStatus status = osMessagePut(m_id, datum, osWaitForever);
         if (status != osOK)
         {
-            ::weos::throw_exception(weos::system_error(status, cmsis_category()));
+            ::weos::throw_exception(weos::system_error(
+                                        status, cmsis_category()));
         }
     }
 

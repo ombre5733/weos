@@ -32,8 +32,9 @@
 #include "../config.hpp"
 #include "chrono.hpp"
 #include "error.hpp"
-#include "../objectpool.hpp"
+#include "mutex.hpp"
 #include "semaphore.hpp"
+#include "../objectpool.hpp"
 
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
@@ -41,6 +42,11 @@
 #include <cstdint>
 #include <exception>
 
+//! A helper function to invoke a thread.
+//! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
+//! helper function adhers to this specification. The \p arg is a pointer to
+//! a weos::ThreadData object which contains thread-specifica data such as
+//! the actual function to start.
 extern "C" void weos_threadInvoker(const void* arg);
 
 namespace weos
@@ -129,19 +135,21 @@ public:
         };
 
         attributes()
-            : priority(Normal),
-              stackSize(0)
+            : m_priority(Normal),
+              m_customStackSize(0),
+              m_customStack(0)
         {
         }
 
     private:
-        Priority priority;
-        std::uint32_t stackSize;
+        Priority m_priority;
+        std::uint32_t m_customStackSize;
+        void* m_customStack;
     };
 
     //! Creates a thread handle without a thread.
     //! Creates a thread handle which is not associated with any thread. The
-    //! resultant thread handle is not joinable.
+    //! new thread handle is not joinable.
     thread() BOOST_NOEXCEPT
         : m_data(0)
     {
@@ -273,10 +281,12 @@ weos::thread::id get_id()
 
 namespace detail
 {
-
+// A helper to put a thread to sleep.
 class thread_sleeper
 {
 public:
+    // Waits for millisec milliseconds. The method always returns false because
+    // we cannot shortcut a delay.
     bool operator() (std::int32_t millisec) const
     {
         osStatus status = osDelay(millisec);

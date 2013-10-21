@@ -52,14 +52,14 @@ namespace weos
 //! a stepper motor driver and an external flash both can return an error
 //! value "1". For the stepper driver this value has the meaning
 //! "Overtemperature detected" while for the flash it means
-//! "Wrong CRC". Without a context it would not be possible to map the error
-//! value "1" back to a string.
+//! "Wrong CRC". Without a context it would not be possible to associate a
+//! meaning to the error value "1".
 //!
 //! A solution is to add two error categories (e.g. a
 //! \p stepper_driver_category and a \p flash_category). Instead of returning
-//! only an error value, every module returns a pair of
-//! (error value, error category), i.e. an error_code, providing the full
-//! context of the error to the caller.
+//! only an error value, every object returns a pair of
+//! (error value, error category), which is called an error code. The error
+//! code provides the full context to the caller.
 //!
 //! Every error category is a singleton and categories are passed around by
 //! reference.
@@ -70,6 +70,7 @@ public:
 
     virtual ~error_category() BOOST_NOEXCEPT {}
 
+    //! Returns a string representation of an error condition.
     virtual const char* message(int condition) const = 0;
 
     //! Returns the name of this error category.
@@ -82,13 +83,16 @@ public:
 
 //! An error value with context.
 //! The error_code is a pair of (error value, error category). Different
-//! modules can return the same error value. The context of the error value
+//! objects can return the same error value. The context of the error value
 //! is provided by the error category which has to derive from error_category.
 //!
 //! By definition, an error value of zero is defined as success (i.e. no error).
 class error_code
 {
 public:
+    //! Creates an error code.
+    //! Creates an error code which is defined by the error \p value and the
+    //! error \p category.
     error_code(int value, const error_category& category) BOOST_NOEXCEPT
         : m_value(value),
           m_category(&category)
@@ -109,6 +113,12 @@ public:
         return *m_category;
     }
 
+    //! Returns an explanatory message.
+    //! Returns an explanatory message. This is a convenience method which
+    //! is equivalend to
+    //! \code
+    //! category().message(value())
+    //! \endcode
     const char* message() const
     {
         return category().message(m_value);
@@ -143,27 +153,35 @@ struct is_error_code_enum : public boost::false_type
 class system_error : public std::exception
 {
 public:
+    //! Creates a system error from an error code.
+    //! Creates a system error which wraps the error \p code.
     system_error(error_code code)
         : m_errorCode(code)
     {
     }
 
+    //! Creates a system error from a (value, category) pair.
+    //! Creates a system error which wraps the error code defined by the
+    //! error \p value and the error \p category.
     system_error(int value, const error_category& category)
         : m_errorCode(value, category)
     {
     }
 
+    //! Returns the error code.
     const error_code& code() const BOOST_NOEXCEPT
     {
         return m_errorCode;
     }
 
+    //! Returns an explanatory message.
     virtual const char* what() const BOOST_NOEXCEPT
     {
-        return "system_error";
+        return m_errorCode.message();
     }
 
 private:
+    //! The error code wrapped by the system error.
     error_code m_errorCode;
 };
 
