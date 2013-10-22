@@ -115,6 +115,11 @@ thread::thread(void (*fun)(void*), void* arg)
 thread::thread(const attributes& attrs, void (*fun)(void*), void* arg)
     : m_data(0)
 {
+    invoke(attrs, fun, arg);
+}
+
+void thread::invoke(const attributes& attrs, void (*fun)(void*), void* arg)
+{
     //! \todo Check that customStack has at least 14*4 bytes
 
     m_data = detail::ThreadData::pool().construct();

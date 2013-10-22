@@ -125,10 +125,11 @@ public:
         osThreadId m_id;
     };
 
-    //! Thread attributs.
+    //! Thread attributes.
     class attributes
     {
     public:
+        //! An enumeration of thread priorities.
         enum Priority
         {
             Idle = osPriorityIdle,
@@ -148,6 +149,22 @@ public:
         {
         }
 
+        //! Provides a custom stack.
+        //! Makes the thread use the memory pointed to by \p stack whose size
+        //! in bytes is passed in \p stackSize rather than the default stack.
+        void setCustomStack(void* stack, std::uint32_t stackSize)
+        {
+            m_customStack = stack;
+            m_customStackSize = stackSize;
+        }
+
+        //! Sets the priority.
+        //! Sets the thread priority to \p priority.
+        void setPriority(Priority priority)
+        {
+            m_priority = priority;
+        }
+
     private:
         Priority m_priority;
         std::uint32_t m_customStackSize;
@@ -164,9 +181,14 @@ public:
     {
     }
 
-    thread(const attributes& attrs, void (*fun)(void*), void* arg);
-
+    //! Creates a thread.
+    //! Starts the function \p fun with the argument \p arg in a new thread.
     thread(void (*fun)(void*), void* arg);
+
+    //! Creates a thread.
+    //! Starts the function \p fun with the argument \p arg in a new thread.
+    //! The thread attributes are passed in \p attrs.
+    thread(const attributes& attrs, void (*fun)(void*), void* arg);
 
     //! Destroys the thread handle.
     //! Destroys this thread handle.
@@ -223,19 +245,34 @@ public:
         return 1;
     }
 
+protected:
+    //! Invokes the function \p fun with the argument \p arg. The thread
+    //! attributes are passed in \p attrs.
+    void invoke(const attributes& attrs, void (*fun)(void*), void* arg);
+
 private:
     detail::ThreadData* m_data;
 };
 
+//! A thread with a custom stack.
+//! The custom_stack_thread is a thread with a custom stack. The stack is
+//! held statically by the object. Its size in bytes is determined by the
+//! template parameter \p TStackSize.
 template <unsigned TStackSize>
 class custom_stack_thread : public thread
 {
 public:
+    //! Creates a stack with a custom stack.
+    //! Starts the function \p fun with the argument \p arg in a new thread.
     custom_stack_thread(void (*fun)(void*), void* arg)
     {
+        thread::attributes attrs;
+        attrs.setCustomStack(m_stack.address(), TStackSize);
+        thread::invoke(attrs, fun, arg);
     }
 
 private:
+    //! The custom stack.
     typename ::boost::aligned_storage<TStackSize>::type m_stack;
 };
 
