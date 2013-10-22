@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
-#define WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
+#ifndef WEOS_KEIL_RL_RTX_ERROR_HPP
+#define WEOS_KEIL_RL_RTX_ERROR_HPP
 
 #include "../config.hpp"
 #include "../common/error.hpp"
@@ -35,13 +35,12 @@
 namespace weos
 {
 
-//! Returns the category for CMSIS errors.
-const error_category& cmsis_category();
+//! Returns the category for RL RTX errors.
+const error_category& rl_rtx_category();
 
-namespace cmsis_error
+namespace rl_rtx_error
 {
-//! An enumeration of CMSIS error codes.
-enum cmsis_error_t
+enum rl_rtx_error_t
 {
     osOK                   =    0,
     osEventSignal          = 0x08,
@@ -59,31 +58,31 @@ enum cmsis_error_t
     osErrorOS              = 0xFF
 };
 
-//! Creates a CMSIS error code.
-//! Creates a CMSIS error code whose error value will be set to \p err. The
-//! category is the one returned by cmsis_category().
+//! Creates a RL RTX error code.
+//! Creates a RL RTX error code whose error value will be set to \p err. The
+//! category is the one returned by rl_rtx_category().
 inline
-weos::error_code make_error_code(cmsis_error_t err)
+weos::error_code make_error_code(rl_rtx_error_t err)
 {
-    return error_code(err, cmsis_category());
+    return error_code(err, rl_rtx_category());
 }
 
 /*
 inline
-weos::error_code make_error_condition(cmsis_error_t err)
+weos::error_code make_error_condition(rl_rtx_error_t err)
 {
-    return error_condition(err, cmsis_category());
+    return error_condition(err, rl_rtx_category());
 }
 */
 
-} // namespace cmsis_error
+} // namespace rl_rtx_error
 
-// Specialization for CMSIS error enum.
+// Specialization for RL RTX error enum.
 template <>
-struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
+struct is_error_code_enum<rl_rtx_error::rl_rtx_error_t> : public boost::true_type
 {
 };
 
 } // namespace weos
 
-#endif // WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
+#endif // WEOS_KEIL_RL_RTX_ERROR_HPP

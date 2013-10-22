@@ -26,64 +26,46 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
-#define WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
-
-#include "../config.hpp"
-#include "../common/error.hpp"
+#include "error.hpp"
 
 namespace weos
 {
 
-//! Returns the category for CMSIS errors.
-const error_category& cmsis_category();
-
-namespace cmsis_error
+//! An error category for RL RTX errors.
+class rl_rtx_error_category_impl : public error_category
 {
-//! An enumeration of CMSIS error codes.
-enum cmsis_error_t
-{
-    osOK                   =    0,
-    osEventSignal          = 0x08,
-    osEventMessage         = 0x10,
-    osEventMail            = 0x20,
-    osEventTimeout         = 0x40,
-    osErrorParameter       = 0x80,
-    osErrorResource        = 0x81,
-    osErrorTimeoutResource = 0xC1,
-    osErrorISR             = 0x82,
-    osErrorISRRecursive    = 0x83,
-    osErrorPriority        = 0x84,
-    osErrorNoMemory        = 0x85,
-    osErrorValue           = 0x86,
-    osErrorOS              = 0xFF
-};
+public:
+    virtual const char* name() const BOOST_NOEXCEPT
+    {
+        return "RL RTX";
+    }
 
-//! Creates a CMSIS error code.
-//! Creates a CMSIS error code whose error value will be set to \p err. The
-//! category is the one returned by cmsis_category().
-inline
-weos::error_code make_error_code(cmsis_error_t err)
-{
-    return error_code(err, cmsis_category());
-}
-
-/*
-inline
-weos::error_code make_error_condition(cmsis_error_t err)
-{
-    return error_condition(err, cmsis_category());
-}
-*/
-
-} // namespace cmsis_error
-
-// Specialization for CMSIS error enum.
-template <>
-struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
-{
+    virtual const char* message(int err_val) const
+    {
+        switch (err_val)
+        {
+            default:
+                // Not an error.
+                return "";
+            case osErrorParameter:
+                return "A parameter was incorrect.";
+            case osErrorResource:
+                return "A resource was not available.";
+            case osErrorTimeoutResource:
+                return "A resource was not available before the timeout.";
+            case osErrorISR:
+            case osErrorISRRecursive:
+                return "The function cannot be called from an interrupt.";
+            case osErrorPriority:
+                return "The priority is illegal.";
+            case osErrorNoMemory:
+                return "Could not reserve memory.";
+            case osErrorValue:
+                return "A parameter is out of range.";
+            case osErrorOS:
+                return "Unspecified error.";
+        }
+    }
 };
 
 } // namespace weos
-
-#endif // WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
