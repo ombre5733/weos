@@ -261,8 +261,11 @@ private:
 template <unsigned TStackSize>
 class custom_stack_thread : public thread
 {
+    // The stack must be able to hold the registers R0-R13.
+    BOOST_STATIC_ASSERT(TStackSize >= 14*4);
+
 public:
-    //! Creates a stack with a custom stack.
+    //! Creates a thread with a custom stack.
     //! Starts the function \p fun with the argument \p arg in a new thread.
     custom_stack_thread(void (*fun)(void*), void* arg)
     {

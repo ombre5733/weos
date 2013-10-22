@@ -120,7 +120,8 @@ thread::thread(const attributes& attrs, void (*fun)(void*), void* arg)
 
 void thread::invoke(const attributes& attrs, void (*fun)(void*), void* arg)
 {
-    //! \todo Check that customStack has at least 14*4 bytes
+    WEOS_ASSERT(attrs.m_customStack != 0);
+    WEOS_ASSERT(attrs.m_customStackSize >= 14*4);
 
     m_data = detail::ThreadData::pool().construct();
     WEOS_ASSERT(m_data != 0);
