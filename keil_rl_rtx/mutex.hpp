@@ -129,17 +129,18 @@ struct mutex_try_locker
     {
     }
 
-    // Tries to lock a mutex up to \p millisec milliseconds. If a mutex
+    // Tries to lock a mutex up to \p ticks system ticks. If a mutex
     // has been locked, the method returns \p true to signal that no further
     // waiting is necessary.
-    bool operator() (std::int32_t millisec) const
+    bool operator() (std::int32_t ticks) const
     {
-        WEOS_ASSERT(millisec < 0xFFFF);
-        OS_RESULT result = os_mut_wait(&m_mutex, millisec);
+        WEOS_ASSERT(ticks < 0xFFFF);
+        OS_RESULT result = os_mut_wait(&m_mutex, ticks);
         return result != OS_R_TMO;
     }
 
 private:
+    // The RL RTX mutex which should be locked.
     OS_MUT& m_mutex;
 };
 

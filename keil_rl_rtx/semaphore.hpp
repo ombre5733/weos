@@ -62,22 +62,23 @@ public:
         OS_RESULT result = os_sem_wait(&m_semaphore, 0xFFFF);
         if (result == OS_R_TMO)
         {
-            ::weos::throw_exception(::weos::system_error(result, keil_rl_rtx_category()));
+            ::weos::throw_exception(::weos::system_error(
+                                        result, keil_rl_rtx_category()));
         }
     }
 
     bool try_wait()
     {
         OS_RESULT result = os_sem_wait(&m_semaphore, 0);
-        return result != OS_R_TMO; TODO: check this!
+        return result != OS_R_TMO;
     }
 
     template <typename RepT, typename PeriodT>
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        semaphore_try_waiter waiter(m_semaphore);
+        try_waiter waiter(m_semaphore);
         return chrono::detail::cmsis_wait<
-                RepT, PeriodT, semaphore_try_waiter>::wait(d, waiter);
+                RepT, PeriodT, try_waiter>::wait(d, waiter);
     }
 
     //! Releases a semaphore token.
@@ -111,19 +112,20 @@ private:
     }
 
     // A helper to wait for a semaphore.
-    struct semaphore_try_waiter
+    struct try_waiter
     {
-        semaphore_try_waiter(OS_SEM& semaphore)
+        try_waiter(OS_SEM& semaphore)
             : m_semaphore(semaphore)
         {
         }
 
-        // Waits up to \p millisec milliseconds for a semaphore token. Returns
+        // Waits up to \p ticks system ticks for a semaphore token. Returns
         // \p true, if a token has been acquired and no further waiting is
         // necessary.
-        bool operator() (std::int32_t millisec) const
+        bool operator() (std::int32_t ticks) const
         {
-            OS_RESULT result = os_sem_wait(&m_semaphore, millisec);
+            WEOS_ASSERT(ticks < 0xFFFF);
+            OS_RESULT result = os_sem_wait(&m_semaphore, ticks);
             return result != OS_R_TMO;
         }
 
