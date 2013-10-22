@@ -42,20 +42,9 @@ namespace rl_rtx_error
 {
 enum rl_rtx_error_t
 {
-    osOK                   =    0,
-    osEventSignal          = 0x08,
-    osEventMessage         = 0x10,
-    osEventMail            = 0x20,
-    osEventTimeout         = 0x40,
-    osErrorParameter       = 0x80,
-    osErrorResource        = 0x81,
-    osErrorTimeoutResource = 0xC1,
-    osErrorISR             = 0x82,
-    osErrorISRRecursive    = 0x83,
-    osErrorPriority        = 0x84,
-    osErrorNoMemory        = 0x85,
-    osErrorValue           = 0x86,
-    osErrorOS              = 0xFF
+    None  = OS_R_OK,
+    Timeout = OS_R_TMO,
+    Error = OS_R_NOK
 };
 
 //! Creates a RL RTX error code.

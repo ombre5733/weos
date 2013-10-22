@@ -44,25 +44,12 @@ public:
     {
         switch (err_val)
         {
+            case rl_rtx_error::None:
+                return ""; // Not an error.
+            case rl_rtx_error::Timeout:
+                return "A timeout ocurred.";
+            case rl_rtx_error::Error:
             default:
-                // Not an error.
-                return "";
-            case osErrorParameter:
-                return "A parameter was incorrect.";
-            case osErrorResource:
-                return "A resource was not available.";
-            case osErrorTimeoutResource:
-                return "A resource was not available before the timeout.";
-            case osErrorISR:
-            case osErrorISRRecursive:
-                return "The function cannot be called from an interrupt.";
-            case osErrorPriority:
-                return "The priority is illegal.";
-            case osErrorNoMemory:
-                return "Could not reserve memory.";
-            case osErrorValue:
-                return "A parameter is out of range.";
-            case osErrorOS:
                 return "Unspecified error.";
         }
     }
