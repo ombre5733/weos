@@ -91,9 +91,9 @@ public:
     template <typename RepT, typename PeriodT>
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        semaphore_try_waiter waiter(m_id);
+        try_waiter waiter(m_id);
         return chrono::detail::cmsis_wait<
-                RepT, PeriodT, semaphore_try_waiter>::wait(d, waiter);
+                RepT, PeriodT, try_waiter>::wait(d, waiter);
     }
 
     //! Releases a semaphore token.
@@ -133,9 +133,9 @@ private:
     }
 
     // A helper to wait for a semaphore.
-    struct semaphore_try_waiter
+    struct try_waiter
     {
-        semaphore_try_waiter(osSemaphoreId& id)
+        try_waiter(osSemaphoreId& id)
             : m_id(id)
         {
         }
@@ -156,6 +156,7 @@ private:
         }
 
     private:
+        // The semaphore for which is waited.
         osSemaphoreId& m_id;
     };
 };

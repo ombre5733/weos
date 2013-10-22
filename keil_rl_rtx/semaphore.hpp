@@ -51,11 +51,6 @@ public:
         os_sem_init(&m_semaphore, value);
     }
 
-    //! Destroys the semaphore.
-    ~semaphore()
-    {
-    }
-
     //! Waits until a semaphore token is available.
     void wait()
     {
@@ -94,6 +89,7 @@ public:
     }
 
 private:
+    //! The underlying RL RTX semaphore.
     OS_SEM m_semaphore;
 
     // The header (first 32 bits) of the semaphore control block. The full
