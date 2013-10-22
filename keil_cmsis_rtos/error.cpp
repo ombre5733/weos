@@ -44,26 +44,25 @@ public:
     {
         switch (err_val)
         {
-            default:
-            case osOK:
-                // Not an error.
-                return "";
-            case osErrorParameter:
+            case cmsis_error::osOK:
+                return ""; // Not an error.
+            case cmsis_error::osErrorParameter:
                 return "A parameter was incorrect.";
-            case osErrorResource:
+            case cmsis_error::osErrorResource:
                 return "A resource was not available.";
-            case osErrorTimeoutResource:
+            case cmsis_error::osErrorTimeoutResource:
                 return "A resource was not available before the timeout.";
-            case osErrorISR:
-            case osErrorISRRecursive:
+            case cmsis_error::osErrorISR:
+            case cmsis_error::osErrorISRRecursive:
                 return "The function cannot be called from an interrupt.";
-            case osErrorPriority:
+            case cmsis_error::osErrorPriority:
                 return "The priority is illegal.";
-            case osErrorNoMemory:
+            case cmsis_error::osErrorNoMemory:
                 return "Could not reserve memory.";
-            case osErrorValue:
+            case cmsis_error::osErrorValue:
                 return "A parameter is out of range.";
-            case osErrorOS:
+            default:
+            case cmsis_error::osErrorOS:
                 return "Unspecified error.";
         }
     }
