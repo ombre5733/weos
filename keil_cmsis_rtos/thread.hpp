@@ -36,6 +36,13 @@
 #include "semaphore.hpp"
 #include "../objectpool.hpp"
 
+#if 0
+extern "C" {
+#include "../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h"
+}
+#include "../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h"
+#endif
+
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
 
@@ -145,6 +152,8 @@ public:
         Priority m_priority;
         std::uint32_t m_customStackSize;
         void* m_customStack;
+
+        friend class thread;
     };
 
     //! Creates a thread handle without a thread.
@@ -155,10 +164,7 @@ public:
     {
     }
 
-    thread(const attributes& attrs)
-        : m_data(0)
-    {
-    }
+    thread(const attributes& attrs, void (*fun)(void*), void* arg);
 
     thread(void (*fun)(void*), void* arg);
 
@@ -219,6 +225,18 @@ public:
 
 private:
     detail::ThreadData* m_data;
+};
+
+template <unsigned TStackSize>
+class custom_stack_thread : public thread
+{
+public:
+    custom_stack_thread(void (*fun)(void*), void* arg)
+    {
+    }
+
+private:
+    typename ::boost::aligned_storage<TStackSize>::type m_stack;
 };
 
 //! Compares two thread ids for equality.

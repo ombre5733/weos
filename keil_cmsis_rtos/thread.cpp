@@ -28,6 +28,18 @@
 
 #include "thread.hpp"
 
+// The function which actually creates a thread. The signature can be found
+// in ../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h.
+extern "C" std::uint32_t rt_tsk_create(void(*task)(void),
+                                       std::uint32_t prio_stksz,
+                                       void* stk, void* argv);
+
+extern "C" void osThreadExit(void);
+
+// An array of pointers to task/thread control blocks. The declaration is
+// from ../3rdparty/keil_cmsis_rtos/INC/RTX_Config.h.
+extern void* os_active_TCB[];
+
 extern "C" void weos_threadInvoker(const void* arg)
 {
     weos::detail::ThreadData* data
@@ -78,19 +90,60 @@ ThreadData::pool_t& ThreadData::pool()
 // ----=====================================================================----
 
 thread::thread(void (*fun)(void*), void* arg)
+    : m_data(0)
 {
     m_data = detail::ThreadData::pool().construct();
     WEOS_ASSERT(m_data != 0);
-
     m_data->function = fun;
     m_data->arg = arg;
 
     // Increase the reference count before creating the new thread.
     m_data->ref();
+
+    // Start the new thread.
     osThreadDef_t threadDef = { weos_threadInvoker, osPriorityNormal, 1, 0 };
     m_data->m_threadId = osThreadCreate(&threadDef, m_data);
     if (!m_data->m_threadId)
     {
+        // Destroy the thread-data.
+        m_data->deref();
+        m_data->deref();
+        m_data = 0;
+    }
+}
+
+thread::thread(const attributes& attrs, void (*fun)(void*), void* arg)
+    : m_data(0)
+{
+    //! \todo Check that customStack has at least 14*4 bytes
+
+    m_data = detail::ThreadData::pool().construct();
+    WEOS_ASSERT(m_data != 0);
+    m_data->function = fun;
+    m_data->arg = arg;
+
+    // Increase the reference count before creating the new thread.
+    m_data->ref();
+
+    // Start the new thread with a custom stack.
+    std::uint32_t taskId = rt_tsk_create(
+                               (void (*)(void))weos_threadInvoker,
+                               (attrs.m_priority - osPriorityIdle + 1)
+                               | (attrs.m_customStackSize << 8),
+                               attrs.m_customStack,
+                               arg);
+    if (taskId)
+    {
+        // Set R13 to the address of osThreadExit, which has to be invoked
+        // when the thread exits.
+        *((std::uint32_t*)attrs.m_customStack + 13)
+                = (std::uint32_t)osThreadExit;
+        m_data->m_threadId = (osThreadId)os_active_TCB[taskId - 1];
+    }
+
+    if (!m_data->m_threadId)
+    {
+        // Destroy the thread-data.
         m_data->deref();
         m_data->deref();
         m_data = 0;
