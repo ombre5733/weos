@@ -45,6 +45,7 @@ public:
         switch (err_val)
         {
             default:
+            case osOK:
                 // Not an error.
                 return "";
             case osErrorParameter:
