@@ -66,7 +66,10 @@ public:
         osMutexDef_t mutexDef = { m_cmsisMutexControlBlock };
         m_id = osMutexCreate(&mutexDef);
         if (m_id == 0)
-            ::weos::throw_exception(weos::system_error(osErrorOS, cmsis_category()));
+        {
+            ::weos::throw_exception(weos::system_error(
+                                        osErrorOS, cmsis_category()));
+        }
     }
 
     // Destroys the mutex.
@@ -82,7 +85,8 @@ public:
         osStatus status = osMutexWait(m_id, osWaitForever);
         if (status != osOK)
         {
-            ::weos::throw_exception(weos::system_error(status, cmsis_category()));
+            ::weos::throw_exception(weos::system_error(
+                                        status, cmsis_category()));
         }
         derived()->post_lock_check(mutexControlBlockHeader());
     }
@@ -101,7 +105,8 @@ public:
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
         {
-            ::weos::throw_exception(weos::system_error(status, cmsis_category()));
+            ::weos::throw_exception(weos::system_error(
+                                        status, cmsis_category()));
         }
 
         return false;
@@ -170,6 +175,7 @@ struct mutex_try_locker
     }
 
 private:
+    // A pointer to the mutex which shall be locked.
     osMutexId m_id;
 };
 

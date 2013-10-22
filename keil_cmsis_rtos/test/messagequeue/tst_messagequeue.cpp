@@ -30,34 +30,42 @@
 
 #include "gtest/gtest.h"
 
-TEST(messageqeue, Constructor)
+TEST(message_queue, Constructor)
+{
+    weos::message_queue<std::int32_t, 1> q1;
+    ASSERT_EQ(1, q1.capacity());
+
+    weos::message_queue<std::int32_t, 13> q13;
+    ASSERT_EQ(13, q13.capacity());
+}
+
+TEST(message_queue, try_get)
 {
     weos::message_queue<std::int32_t, 1> q;
+    std::pair<bool, std::int32_t> result = q.try_get();
+    ASSERT_FALSE(result.first);
+}
+
+TEST(message_queue, put)
+{
+    std::pair<bool, std::int32_t> result;
+
+    weos::message_queue<std::int32_t, 1> q;
+    q.put(0x12345678);
+    ASSERT_EQ(0x12345678, q.get());
+
+    q.put(0x23456789);
+    result = q.try_get();
+    ASSERT_TRUE(result.first);
+    ASSERT_EQ(0x23456789, result.second);
+
+    q.put(0x34567890);
+    result = q.try_get_for(weos::chrono::milliseconds(1));
+    ASSERT_TRUE(result.first);
+    ASSERT_EQ(0x34567890, result.second);
 }
 
 #if 0
-TEST(mutex, lock)
-{
-    weos::mutex m;
-    m.lock();
-    m.unlock();
-}
-
-TEST(mutex, try_lock)
-{
-    weos::mutex m;
-    bool result;
-    result = m.try_lock();
-    ASSERT_TRUE(result);
-    result = m.try_lock();
-    ASSERT_FALSE(result);
-    m.unlock();
-
-    m.lock();
-    result = m.try_lock();
-    ASSERT_FALSE(result);
-    m.unlock();
-}
 
 // ----=====================================================================----
 //     Tests together with a sparring thread
