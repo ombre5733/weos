@@ -98,17 +98,19 @@ void thread::invokeWithCustomStack(const attributes& attrs,
 {
     if (   attrs.m_customStack == 0
         || attrs.m_customStackSize < 14*4
-        || attrs.m_customStackSize >= (std::uint32_t(2) << 24))
+        || attrs.m_customStackSize >= (std::uint32_t(1) << 24))
     {
-        ::weos::throw_exception(system_error(cmsis_error::osErrorParameter,
-                                             cmsis_category()));
+        ::weos::throw_exception(weos::system_error(
+                                    cmsis_error::osErrorParameter,
+                                    cmsis_category()));
     }
 
     m_data = detail::ThreadData::pool().construct();
     if (m_data == 0)
     {
-        ::weos::throw_exception(system_error(cmsis_error::osErrorResource,
-                                             cmsis_category()));
+        ::weos::throw_exception(weos::system_error(
+                                    cmsis_error::osErrorResource,
+                                    cmsis_category()));
     }
     m_data->m_function = fun;
     m_data->m_arg = arg;
@@ -148,8 +150,9 @@ void thread::invokeWithDefaultStack(const attributes& attrs,
     m_data = detail::ThreadData::pool().construct();
     if (m_data == 0)
     {
-        ::weos::throw_exception(system_error(cmsis_error::osErrorResource,
-                                             cmsis_category()));
+        ::weos::throw_exception(weos::system_error(
+                                    cmsis_error::osErrorResource,
+                                    cmsis_category()));
     }
     m_data->m_function = fun;
     m_data->m_arg = arg;

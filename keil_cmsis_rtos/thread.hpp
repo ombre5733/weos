@@ -48,6 +48,7 @@ extern "C" {
 
 #include <cstdint>
 #include <exception>
+#include <utility>
 
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
@@ -59,6 +60,10 @@ extern "C" void weos_threadInvoker(const void* arg);
 namespace weos
 {
 class thread;
+
+struct any_signal_t {};
+
+BOOST_CONSTEXPR_OR_CONST any_signal_t any_signal = any_signal_t();
 
 namespace detail
 {
@@ -97,6 +102,55 @@ private:
 };
 
 } // namespace detail
+
+class signal
+{
+public:
+    signal(std::uint32_t mask)
+        : m_value(mask)
+    {
+        WEOS_ASSERT(mask < (std::uint32_t(1) << (osFeature_Signals)));
+    }
+
+    signal(any_signal_t)
+        : m_value(0)
+    {
+    }
+
+    signal(const signal& other)
+        : m_value(other.m_value)
+    {
+    }
+
+    signal& operator= (const signal& other)
+    {
+        m_value = other.m_value;
+        return *this;
+    }
+
+    bool operator== (std::uint32_t x) const
+    {
+        return m_value == x;
+    }
+
+    bool operator!= (std::uint32_t x) const
+    {
+        return m_value != x;
+    }
+
+    std::uint32_t value() const
+    {
+        return m_value;
+    }
+
+    operator std::uint32_t() const
+    {
+        return m_value;
+    }
+
+private:
+    std::uint32_t m_value;
+};
 
 //! A thread.
 class thread : boost::noncopyable
@@ -268,6 +322,20 @@ public:
         return m_data != 0;
     }
 
+    void clear_signal(std::uint32_t mask)
+    {
+        WEOS_ASSERT(m_data);
+        std::int32_t result = osSignalClear(m_data->m_threadId, mask);
+        WEOS_ASSERT(result >= 0);
+    }
+
+    void set_signal(std::uint32_t mask)
+    {
+        WEOS_ASSERT(m_data);
+        std::int32_t result = osSignalSet(m_data->m_threadId, mask);
+        WEOS_ASSERT(result >= 0);
+    }
+
     //! Returns the number of threads which can run concurrently on this
     //! hardware.
     static unsigned hardware_concurrency() BOOST_NOEXCEPT
@@ -393,9 +461,8 @@ weos::thread::id get_id()
 namespace detail
 {
 // A helper to put a thread to sleep.
-class thread_sleeper
+struct thread_sleeper
 {
-public:
     // Waits for millisec milliseconds. The method always returns false because
     // we cannot shortcut a delay.
     bool operator() (std::int32_t millisec) const
@@ -405,6 +472,45 @@ public:
                     || (millisec != 0 && status == osEventTimeout));
         return false;
     }
+};
+
+// A helper to wait for a signal.
+struct signal_waiter
+{
+    // Creates an object which waits for a signal specified by the \p mask.
+    signal_waiter(std::uint32_t mask)
+        : m_mask(mask)
+    {
+    }
+
+    // Waits up to \p millisec milliseconds for a signal. Returns \p true,
+    // if a signal has arrived and no further waiting is necessary.
+    bool operator() (std::int32_t millisec) const
+    {
+        osEvent result = osSignalWait(m_mask, millisec);
+        if (result.status == osEventSignal)
+        {
+            m_mask = result.value.signals;
+            return true;
+        }
+
+        if (   result.status != osOK
+            && result.status != osEventTimeout)
+        {
+            ::weos::throw_exception(weos::system_error(
+                                        result.status, cmsis_category()));
+        }
+
+        return false;
+    }
+
+    std::uint32_t mask() const
+    {
+        return m_mask;
+    }
+
+private:
+    mutable std::uint32_t m_mask;
 };
 
 } // namespace detail
@@ -421,6 +527,47 @@ void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
 
 template <typename ClockT, typename DurationT>
 void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
+
+inline
+signal wait_for_signal(signal mask)
+{
+    osEvent result = osSignalWait(std::uint32_t(mask), osWaitForever);
+    if (result.status != osEventSignal)
+    {
+        ::weos::throw_exception(system_error(result.status, cmsis_category()));
+    }
+    return result.value.signals;
+}
+
+inline
+std::pair<bool, signal> try_wait_for_signal(signal mask)
+{
+    osEvent result = osSignalWait(std::uint32_t(mask), 0);
+    if (result.status == osOK)
+    {
+        return std::pair<bool, signal>(false, 0);
+    }
+    else if (result.status != osEventSignal)
+    {
+        ::weos::throw_exception(weos::system_error(
+                                    result.status, cmsis_category()));
+    }
+    return std::pair<bool, signal>(true, result.value.signals);
+}
+
+template <typename RepT, typename PeriodT>
+std::pair<bool, signal> wait_for_signal_for(
+        signal mask, const chrono::duration<RepT, PeriodT>& d)
+{
+    detail::signal_waiter waiter(mask);
+    if (chrono::detail::cmsis_wait<
+            RepT, PeriodT, detail::signal_waiter>::wait(d, waiter))
+    {
+        return std::pair<bool, signal>(true, waiter.mask());
+    }
+
+    return std::pair<bool, signal>(false, 0);
+}
 
 //! Triggers a rescheduling of the executing threads.
 inline

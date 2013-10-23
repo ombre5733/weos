@@ -77,6 +77,10 @@ public:
         }
     }
 
+    //! Tries to acquire a semaphore token.
+    //! Tries to acquire a semaphore token and returns \p true upon success.
+    //! If no token is available, the calling thread returns immediately
+    //! without being blocked.
     bool try_wait()
     {
         std::int32_t numTokens = osSemaphoreWait(m_id, 0);

@@ -28,3 +28,6 @@
 
 set(test_SOURCES tst_thread.cpp)
 add_executable_and_bin(tst_thread "${COMMON_SOURCES};${test_SOURCES}")
+
+set(test_SOURCES tst_signal.cpp)
+add_executable_and_bin(tst_signal "${COMMON_SOURCES};${test_SOURCES}")
