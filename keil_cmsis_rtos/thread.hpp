@@ -36,13 +36,6 @@
 #include "semaphore.hpp"
 #include "../objectpool.hpp"
 
-#if 0
-extern "C" {
-#include "../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h"
-}
-#include "../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h"
-#endif
-
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
 
@@ -269,15 +262,23 @@ public:
         return m_data != 0;
     }
 
+    //! Clears a signal or a set of signals.
+    //! Clears the signals which are specified by the \p mask.
     void clear_signal(std::uint32_t mask)
     {
+        WEOS_ASSERT(mask > 0
+                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
         WEOS_ASSERT(m_data);
         std::int32_t result = osSignalClear(m_data->m_threadId, mask);
         WEOS_ASSERT(result >= 0);
     }
 
+    //! Sets a signal or a set of signals.
+    //! Sets the signals which are specified by the \p mask.
     void set_signal(std::uint32_t mask)
     {
+        WEOS_ASSERT(mask > 0
+                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
         WEOS_ASSERT(m_data);
         std::int32_t result = osSignalSet(m_data->m_threadId, mask);
         WEOS_ASSERT(result >= 0);
@@ -522,12 +523,19 @@ std::pair<bool, std::uint32_t> wait_for_signal_for(
 
 } // namespace detail
 
+//! Waits for a signal.
+//! Blocks the current thread until it receives any signal(s) and returns the
+//! signals.
 inline
 std::uint32_t wait_for_signal()
 {
     return detail::wait_for_signal(0);
 }
 
+//! Checks if a signal has arrived.
+//! Checks if any signal has reached the current thread. If so, the boolean
+//! in the returned pair is set to \p true and the second member contains
+//! the signal flags. Otherwise, the boolean is set to \p false.
 inline
 std::pair<bool, std::uint32_t> try_wait_for_signal()
 {
@@ -541,6 +549,9 @@ std::pair<bool, std::uint32_t> wait_for_signal_for(
     return detail::wait_for_signal_for(0, d);
 }
 
+//! Waits for a signal or a set of signals.
+//! Blocks the current thread until the signals specified by the \p mask have
+//! arrived. Then the signal flags are returned.
 inline
 std::uint32_t wait_for_signal(std::uint32_t mask)
 {
