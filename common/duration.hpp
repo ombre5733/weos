@@ -97,6 +97,9 @@ public:
     {
     }
 
+    //! Creates a duration from another one.
+    //! Creates a duration which copies the number of periods from the
+    //! \p other duration.
     duration(const duration& other) /*= default*/
         : m_count(other.m_count)
     {
@@ -194,6 +197,7 @@ public:
     }
 
 private:
+    //! The number of periods of which this duration consists.
     rep m_count;
 };
 

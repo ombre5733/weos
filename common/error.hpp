@@ -150,6 +150,8 @@ struct is_error_code_enum : public boost::false_type
 //     system_error
 // ----=====================================================================----
 
+//! A system error.
+//! A system_error is an exception which wraps an error_code.
 class system_error : public std::exception
 {
 public:

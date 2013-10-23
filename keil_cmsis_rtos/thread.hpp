@@ -77,24 +77,28 @@ public:
     //! Increases the reference counter by one.
     void ref();
 
+    //! Returns the global pool from which thread-data objects are allocated.
     static pool_t& pool();
 
 private:
-    void (*function)(void*);
-    void* arg;
+    //! The function to execute in the new thread.
+    void (*m_function)(void*);
+    //! The argument which is supplied to the threaded function.
+    void* m_arg;
 
-    // This semaphore is increased by the thread when it's execution finishes.
+    //! This semaphore is increased by the thread when it's execution finishes.
     semaphore m_finished;
     volatile int m_referenceCount;
-    // The system-specific thread id.
+    //! The system-specific thread id.
     osThreadId m_threadId;
 
     friend class ::weos::thread;
-    friend void ::weos_threadInvoker(const void* arg);
+    friend void ::weos_threadInvoker(const void* m_arg);
 };
 
 } // namespace detail
 
+//! A thread.
 class thread : boost::noncopyable
 {
 public:
@@ -142,6 +146,7 @@ public:
             Error = osPriorityError
         };
 
+        //! Creates stack attributes.
         attributes()
             : m_priority(Normal),
               m_customStackSize(0),
@@ -152,6 +157,8 @@ public:
         //! Provides a custom stack.
         //! Makes the thread use the memory pointed to by \p stack whose size
         //! in bytes is passed in \p stackSize rather than the default stack.
+        //!
+        //! The default is a null-pointer for the stack and zero for its size.
         void setCustomStack(void* stack, std::uint32_t stackSize)
         {
             m_customStack = stack;
@@ -160,14 +167,19 @@ public:
 
         //! Sets the priority.
         //! Sets the thread priority to \p priority.
+        //!
+        //! The default value is Priority::Normal.
         void setPriority(Priority priority)
         {
             m_priority = priority;
         }
 
     private:
+        //! The thread's priority.
         Priority m_priority;
+        //! The size of the custom stack.
         std::uint32_t m_customStackSize;
+        //! A pointer to the custom stack.
         void* m_customStack;
 
         friend class thread;
@@ -283,9 +295,10 @@ private:
 };
 
 //! A thread with a custom stack.
-//! The custom_stack_thread is a thread with a custom stack. The stack is
-//! held statically by the object. Its size in bytes is determined by the
-//! template parameter \p TStackSize.
+//! The custom_stack_thread is a convenience class for creating a thread with a
+//! custom stack. The memory for the stack is held statically by the object.
+//! Its size in bytes is determined at compile-time by the template
+//! parameter \p TStackSize.
 template <unsigned TStackSize>
 class custom_stack_thread : public thread
 {
@@ -302,6 +315,9 @@ public:
         this->invokeWithCustomStack(attrs, fun, arg);
     }
 
+    //! Creates a thread with a custom stack and a custom priority.
+    //! Runs the function \p fun with the argument \p arg in a new thread,
+    //! which has a custom stack and a user-defined priority of \p priority.
     custom_stack_thread(thread::attributes::Priority priority,
                         void (*fun)(void*), void* arg)
     {

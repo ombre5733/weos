@@ -48,7 +48,7 @@ extern "C" void weos_threadInvoker(const void* arg)
             = static_cast<weos::detail::ThreadData*>(const_cast<void*>(arg));
 
     // Call the threaded function.
-    data->function(data->arg);
+    data->m_function(data->m_arg);
     // Increase the semaphore to signal that the thread has been completed.
     data->m_finished.post();
     data->deref();
@@ -110,8 +110,8 @@ void thread::invokeWithCustomStack(const attributes& attrs,
         ::weos::throw_exception(system_error(cmsis_error::osErrorResource,
                                              cmsis_category()));
     }
-    m_data->function = fun;
-    m_data->arg = arg;
+    m_data->m_function = fun;
+    m_data->m_arg = arg;
     // Increase the reference count before creating the new thread.
     m_data->ref();
 
@@ -151,8 +151,8 @@ void thread::invokeWithDefaultStack(const attributes& attrs,
         ::weos::throw_exception(system_error(cmsis_error::osErrorResource,
                                              cmsis_category()));
     }
-    m_data->function = fun;
-    m_data->arg = arg;
+    m_data->m_function = fun;
+    m_data->m_arg = arg;
     // Increase the reference count before creating the new thread.
     m_data->ref();
 
