@@ -43,32 +43,32 @@ TEST(signal, wait_for_any)
     {
         unsigned mask = 1 << i;
 
-        data.caughtMask = 0;
+        data.caughtSignals = 0;
         data.action = SparringData::WaitForAnySignal;
         osDelay(10);
         ASSERT_TRUE(data.busy);
-        ASSERT_EQ(0, data.caughtMask);
+        ASSERT_EQ(0, data.caughtSignals);
 
         t.set_signal(mask);
         osDelay(10);
         ASSERT_FALSE(data.busy);
-        ASSERT_EQ(mask, data.caughtMask);
+        ASSERT_EQ(mask, data.caughtSignals);
     }
 
     for (unsigned i = 0; i < 100; ++i)
     {
         unsigned mask = (random() % 0xFFFF) + 1;
 
-        data.caughtMask = 0;
+        data.caughtSignals = 0;
         data.action = SparringData::WaitForAnySignal;
         osDelay(10);
         ASSERT_TRUE(data.busy);
-        ASSERT_EQ(0, data.caughtMask);
+        ASSERT_EQ(0, data.caughtSignals);
 
         t.set_signal(mask);
         osDelay(10);
         ASSERT_FALSE(data.busy);
-        ASSERT_EQ(mask, data.caughtMask);
+        ASSERT_EQ(mask, data.caughtSignals);
     }
 
     data.action = SparringData::Terminate;
@@ -87,12 +87,12 @@ TEST(signal, wait_for_mask)
     {
         unsigned mask = 1 << i;
 
-        data.caughtMask = 0;
+        data.caughtSignals = 0;
         data.waitMask = mask;
         data.action = SparringData::WaitForSignalMask;
         osDelay(10);
         ASSERT_TRUE(data.busy);
-        ASSERT_EQ(0, data.caughtMask);
+        ASSERT_EQ(0, data.caughtSignals);
 
         for (unsigned j = 0; j < 16; ++j)
         {
@@ -102,25 +102,25 @@ TEST(signal, wait_for_mask)
             t.set_signal(1 << j);
             osDelay(10);
             ASSERT_TRUE(data.busy);
-            ASSERT_EQ(0, data.caughtMask);
+            ASSERT_EQ(0, data.caughtSignals);
         }
 
         t.set_signal(mask);
         osDelay(10);
         ASSERT_FALSE(data.busy);
-        ASSERT_TRUE(data.caughtMask != 0);
+        ASSERT_TRUE(data.caughtSignals != 0);
     }
 
     for (unsigned i = 0; i < 100; ++i)
     {
         unsigned mask = (random() % 0xFFFF) + 1;
 
-        data.caughtMask = 0;
+        data.caughtSignals = 0;
         data.waitMask = mask;
         data.action = SparringData::WaitForSignalMask;
         osDelay(10);
         ASSERT_TRUE(data.busy);
-        ASSERT_TRUE(data.caughtMask == 0);
+        ASSERT_TRUE(data.caughtSignals == 0);
 
         for (unsigned j = 0; j < 16; ++j)
         {
@@ -130,12 +130,12 @@ TEST(signal, wait_for_mask)
             if (mask != 0)
             {
                 ASSERT_TRUE(data.busy);
-                ASSERT_EQ(0, data.caughtMask);
+                ASSERT_EQ(0, data.caughtSignals);
             }
             else
             {
                 ASSERT_FALSE(data.busy);
-                ASSERT_TRUE(data.caughtMask != 0);
+                ASSERT_TRUE(data.caughtSignals != 0);
             }
         }
     }

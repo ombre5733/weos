@@ -61,10 +61,6 @@ namespace weos
 {
 class thread;
 
-struct any_signal_t {};
-
-BOOST_CONSTEXPR_OR_CONST any_signal_t any_signal = any_signal_t();
-
 namespace detail
 {
 //! Data which is shared between the thread and its handle.
@@ -102,55 +98,6 @@ private:
 };
 
 } // namespace detail
-
-class signal
-{
-public:
-    signal(std::uint32_t mask)
-        : m_value(mask)
-    {
-        WEOS_ASSERT(mask < (std::uint32_t(1) << (osFeature_Signals)));
-    }
-
-    signal(any_signal_t)
-        : m_value(0)
-    {
-    }
-
-    signal(const signal& other)
-        : m_value(other.m_value)
-    {
-    }
-
-    signal& operator= (const signal& other)
-    {
-        m_value = other.m_value;
-        return *this;
-    }
-
-    bool operator== (std::uint32_t x) const
-    {
-        return m_value == x;
-    }
-
-    bool operator!= (std::uint32_t x) const
-    {
-        return m_value != x;
-    }
-
-    std::uint32_t value() const
-    {
-        return m_value;
-    }
-
-    operator std::uint32_t() const
-    {
-        return m_value;
-    }
-
-private:
-    std::uint32_t m_value;
-};
 
 //! A thread.
 class thread : boost::noncopyable
@@ -528,45 +475,100 @@ void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
 template <typename ClockT, typename DurationT>
 void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
 
-inline
-signal wait_for_signal(signal mask)
+namespace detail
 {
-    osEvent result = osSignalWait(std::uint32_t(mask), osWaitForever);
+
+inline
+std::uint32_t wait_for_signal(std::uint32_t mask)
+{
+    osEvent result = osSignalWait(mask, osWaitForever);
     if (result.status != osEventSignal)
     {
-        ::weos::throw_exception(system_error(result.status, cmsis_category()));
+        ::weos::throw_exception(weos::system_error(
+                                    result.status, cmsis_category()));
     }
     return result.value.signals;
 }
 
 inline
-std::pair<bool, signal> try_wait_for_signal(signal mask)
+std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
 {
-    osEvent result = osSignalWait(std::uint32_t(mask), 0);
+    osEvent result = osSignalWait(mask, 0);
     if (result.status == osOK)
     {
-        return std::pair<bool, signal>(false, 0);
+        return std::pair<bool, std::uint32_t>(false, 0);
     }
     else if (result.status != osEventSignal)
     {
         ::weos::throw_exception(weos::system_error(
                                     result.status, cmsis_category()));
     }
-    return std::pair<bool, signal>(true, result.value.signals);
+    return std::pair<bool, std::uint32_t>(true, result.value.signals);
 }
 
 template <typename RepT, typename PeriodT>
-std::pair<bool, signal> wait_for_signal_for(
-        signal mask, const chrono::duration<RepT, PeriodT>& d)
+std::pair<bool, std::uint32_t> wait_for_signal_for(
+        std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
 {
+    signal_waiter waiter(mask);
+    if (chrono::detail::cmsis_wait<
+            RepT, PeriodT, signal_waiter>::wait(d, waiter))
+    {
+        return std::pair<bool, std::uint32_t>(true, waiter.mask());
+    }
+
+    return std::pair<bool, std::uint32_t>(false, 0);
+}
+
+} // namespace detail
+
+inline
+std::uint32_t wait_for_signal()
+{
+    return detail::wait_for_signal(0);
+}
+
+inline
+std::pair<bool, std::uint32_t> try_wait_for_signal()
+{
+    return detail::try_wait_for_signal(0);
+}
+
+template <typename RepT, typename PeriodT>
+std::pair<bool, std::uint32_t> wait_for_signal_for(
+        const chrono::duration<RepT, PeriodT>& d)
+{
+    return detail::wait_for_signal_for(0, d);
+}
+
+inline
+std::uint32_t wait_for_signal(std::uint32_t mask)
+{
+    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::wait_for_signal(mask);
+}
+
+inline
+std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
+{
+    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::try_wait_for_signal(mask);
+}
+
+template <typename RepT, typename PeriodT>
+std::pair<bool, std::uint32_t> wait_for_signal_for(
+        std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
+{
+    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::wait_for_signal_for(mask, d);
     detail::signal_waiter waiter(mask);
     if (chrono::detail::cmsis_wait<
             RepT, PeriodT, detail::signal_waiter>::wait(d, waiter))
     {
-        return std::pair<bool, signal>(true, waiter.mask());
+        return std::pair<bool, std::uint32_t>(true, waiter.mask());
     }
 
-    return std::pair<bool, signal>(false, 0);
+    return std::pair<bool, std::uint32_t>(false, 0);
 }
 
 //! Triggers a rescheduling of the executing threads.
