@@ -83,14 +83,6 @@ void sparring(void* arg)
             case SparringData::WaitForSignalMask:
                 data->caughtMask = weos::this_thread::wait_for_signal(data->waitMask);
                 break;
-
-            /*case SparringData::MutexTryLock:
-                data->mutexLocked = data->mutex.try_lock();
-                break;
-            case SparringData::MutexUnlock:
-                data->mutex.unlock();
-                data->mutexLocked = false;
-                break;*/
             default:
                 break;
         }

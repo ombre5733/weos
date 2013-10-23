@@ -31,10 +31,12 @@
 #include "../common/testutils.hpp"
 #include "gtest/gtest.h"
 
-void empty_thread(void* arg)
+//! An empty thread which does nothing.
+void empty_thread(void* /*arg*/)
 {
 }
 
+//! A thread which sleeps for \p arg milliseconds and returns afterwards.
 void delay_thread(void* arg)
 {
     std::uint32_t delayTime = reinterpret_cast<std::uint32_t>(arg);
