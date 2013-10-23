@@ -36,7 +36,8 @@ struct SparringData
     enum Action
     {
         None,
-        WaitForSignal,
+        WaitForAnySignal,
+        WaitForSignalMask,
         TryWaitForSignal,
         TryWaitForSignalFor,
         Terminate
@@ -45,14 +46,16 @@ struct SparringData
     SparringData()
         : action(None),
           busy(false),
-          mask(0),
+          caughtMask(0),
+          waitMask(0),
           sparringStarted(false)
     {
     }
 
     volatile Action action;
     volatile bool busy;
-    volatile std::uint32_t mask;
+    volatile std::uint32_t caughtMask;
+    volatile std::uint32_t waitMask;
     volatile bool sparringStarted;
 };
 
@@ -74,9 +77,13 @@ void sparring(void* arg)
         data->busy = true;
         switch (data->action)
         {
-            case SparringData::WaitForSignal:
-                data->mask = weos::this_thread::wait_for_signal(weos::any_signal);
+            case SparringData::WaitForAnySignal:
+                data->caughtMask = weos::this_thread::wait_for_signal(weos::any_signal);
                 break;
+            case SparringData::WaitForSignalMask:
+                data->caughtMask = weos::this_thread::wait_for_signal(data->waitMask);
+                break;
+
             /*case SparringData::MutexTryLock:
                 data->mutexLocked = data->mutex.try_lock();
                 break;
