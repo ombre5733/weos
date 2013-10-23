@@ -34,6 +34,8 @@ extern "C" std::uint32_t rt_tsk_create(void(*task)(void),
                                        std::uint32_t prio_stksz,
                                        void* stk, void* argv);
 
+// The function which is called when a thread exits. This function has to
+// be set as return address for every new thread.
 extern "C" void osThreadExit(void);
 
 // An array of pointers to task/thread control blocks. The declaration is
@@ -45,7 +47,9 @@ extern "C" void weos_threadInvoker(const void* arg)
     weos::detail::ThreadData* data
             = static_cast<weos::detail::ThreadData*>(const_cast<void*>(arg));
 
+    // Call the threaded function.
     data->function(data->arg);
+    // Increase the semaphore to signal that the thread has been completed.
     data->m_finished.post();
     data->deref();
 }
@@ -89,45 +93,25 @@ ThreadData::pool_t& ThreadData::pool()
 //     thread
 // ----=====================================================================----
 
-thread::thread(void (*fun)(void*), void* arg)
-    : m_data(0)
+void thread::invokeWithCustomStack(const attributes& attrs,
+                                   void (*fun)(void*), void* arg)
 {
-    m_data = detail::ThreadData::pool().construct();
-    WEOS_ASSERT(m_data != 0);
-    m_data->function = fun;
-    m_data->arg = arg;
-
-    // Increase the reference count before creating the new thread.
-    m_data->ref();
-
-    // Start the new thread.
-    osThreadDef_t threadDef = { weos_threadInvoker, osPriorityNormal, 1, 0 };
-    m_data->m_threadId = osThreadCreate(&threadDef, m_data);
-    if (!m_data->m_threadId)
+    if (   attrs.m_customStack == 0
+        || attrs.m_customStackSize < 14*4
+        || attrs.m_customStackSize >= (std::uint32_t(2) << 24))
     {
-        // Destroy the thread-data.
-        m_data->deref();
-        m_data->deref();
-        m_data = 0;
+        ::weos::throw_exception(system_error(cmsis_error::osErrorParameter,
+                                             cmsis_category()));
     }
-}
-
-thread::thread(const attributes& attrs, void (*fun)(void*), void* arg)
-    : m_data(0)
-{
-    invoke(attrs, fun, arg);
-}
-
-void thread::invoke(const attributes& attrs, void (*fun)(void*), void* arg)
-{
-    WEOS_ASSERT(attrs.m_customStack != 0);
-    WEOS_ASSERT(attrs.m_customStackSize >= 14*4);
 
     m_data = detail::ThreadData::pool().construct();
-    WEOS_ASSERT(m_data != 0);
+    if (m_data == 0)
+    {
+        ::weos::throw_exception(system_error(cmsis_error::osErrorResource,
+                                             cmsis_category()));
+    }
     m_data->function = fun;
     m_data->arg = arg;
-
     // Increase the reference count before creating the new thread.
     m_data->ref();
 
@@ -146,6 +130,37 @@ void thread::invoke(const attributes& attrs, void (*fun)(void*), void* arg)
                 = (std::uint32_t)osThreadExit;
         m_data->m_threadId = (osThreadId)os_active_TCB[taskId - 1];
     }
+
+    if (!m_data->m_threadId)
+    {
+        // Destroy the thread-data.
+        m_data->deref();
+        m_data->deref();
+        m_data = 0;
+    }
+}
+
+void thread::invokeWithDefaultStack(const attributes& attrs,
+                                    void (*fun)(void*), void* arg)
+{
+    WEOS_ASSERT(attrs.m_customStack == 0 && attrs.m_customStackSize == 0);
+
+    m_data = detail::ThreadData::pool().construct();
+    if (m_data == 0)
+    {
+        ::weos::throw_exception(system_error(cmsis_error::osErrorResource,
+                                             cmsis_category()));
+    }
+    m_data->function = fun;
+    m_data->arg = arg;
+    // Increase the reference count before creating the new thread.
+    m_data->ref();
+
+    // Start the new thread.
+    osThreadDef_t threadDef = { weos_threadInvoker,
+                                static_cast<osPriority>(attrs.m_priority),
+                                1, 0 };
+    m_data->m_threadId = osThreadCreate(&threadDef, m_data);
 
     if (!m_data->m_threadId)
     {

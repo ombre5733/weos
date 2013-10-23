@@ -183,12 +183,24 @@ public:
 
     //! Creates a thread.
     //! Starts the function \p fun with the argument \p arg in a new thread.
-    thread(void (*fun)(void*), void* arg);
+    thread(void (*fun)(void*), void* arg)
+        : m_data(0)
+    {
+        attributes attrs;
+        invokeWithDefaultStack(attrs, fun, arg);
+    }
 
     //! Creates a thread.
     //! Starts the function \p fun with the argument \p arg in a new thread.
     //! The thread attributes are passed in \p attrs.
-    thread(const attributes& attrs, void (*fun)(void*), void* arg);
+    thread(const attributes& attrs, void (*fun)(void*), void* arg)
+        : m_data(0)
+    {
+        if (attrs.m_customStack || attrs.m_customStackSize)
+            invokeWithCustomStack(attrs, fun, arg);
+        else
+            invokeWithDefaultStack(attrs, fun, arg);
+    }
 
     //! Destroys the thread handle.
     //! Destroys this thread handle.
@@ -204,7 +216,10 @@ public:
     //! Separates the executing thread from this thread handle.
     void detach()
     {
-        //! \todo if (!joinable()) throw std::system_error();
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
         m_data->deref();
         m_data = 0;
     }
@@ -222,7 +237,10 @@ public:
     //! Blocks the calling thread until this thread finishes.
     void join()
     {
-        //! \todo if (!joinable()) throw std::system_error();
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
         m_data->m_finished.wait();
         // The thread data is not needed any longer.
         m_data->deref();
@@ -247,10 +265,20 @@ public:
 
 protected:
     //! Invokes the function \p fun with the argument \p arg. The thread
-    //! attributes are passed in \p attrs.
-    void invoke(const attributes& attrs, void (*fun)(void*), void* arg);
+    //! attributes are passed in \p attrs. This method may only be called
+    //! if \p attrs contains a valid custom stack configuration.
+    void invokeWithCustomStack(const attributes& attrs,
+                               void (*fun)(void*), void* arg);
+
+    //! Invokes the function \p fun with the argument \p arg. The thread
+    //! attributes are passed in \p attrs. This method may only be called
+    //! if \p attrs does not contain a custom stack configuration.
+    void invokeWithDefaultStack(const attributes& attrs,
+                                void (*fun)(void*), void* arg);
 
 private:
+    //! The thread-data which is shared by this class and the invoker
+    //! function.
     detail::ThreadData* m_data;
 };
 
@@ -271,7 +299,16 @@ public:
     {
         thread::attributes attrs;
         attrs.setCustomStack(m_stack.address(), TStackSize);
-        thread::invoke(attrs, fun, arg);
+        this->invokeWithCustomStack(attrs, fun, arg);
+    }
+
+    custom_stack_thread(thread::attributes::Priority priority,
+                        void (*fun)(void*), void* arg)
+    {
+        thread::attributes attrs;
+        attrs.setCustomStack(m_stack.address(), TStackSize);
+        attrs.setPriority(priority);
+        this->invokeWithCustomStack(attrs, fun, arg);
     }
 
 private:
