@@ -44,9 +44,19 @@ namespace weos
 namespace detail
 {
 
+//! A free list.
+//! The free_list keeps a list of memory chunks which can be allocated by
+//! a memory pool.
 class free_list : boost::noncopyable
 {
 public:
+    //! Creates a free list.
+    //! Creates a free list in the memory pointed to by \p memBlock. The size
+    //! of one chunk is \p chunkSize and the size of the memory block is
+    //! passed in \p memSize.
+    //! The memory \p memBlock must be suitable aligned to hold a \p void
+    //! pointer and the \p chunkSize must be a multiple of
+    //! <tt>sizeof(void*)</tt> to ensure correct alignment.
     free_list(void* memBlock, std::size_t chunkSize, std::size_t memSize)
         : m_first(memBlock)
     {
@@ -72,11 +82,15 @@ public:
         }
     }
 
+    //! Checks if the free list is empty.
+    //! Returns \p true if the free list is empty and no further chunk can
+    //! be allocated.
     bool empty() const BOOST_NOEXCEPT
     {
         return m_first == 0;
     }
 
+    //! Allocates a memory chunk.
     void* allocate()
     {
         void* chunk = m_first;
@@ -84,6 +98,7 @@ public:
         return chunk;
     }
 
+    //! Returns a memory \p chunk back to the list.
     void free(void* const chunk)
     {
         next(chunk) = m_first;
@@ -94,6 +109,7 @@ private:
     //! Pointer to the first free block.
     void* m_first;
 
+    //! Returns a reference to the next pointer.
     static void*& next(void* const p)
     {
         return *static_cast<void**>(p);
@@ -106,13 +122,16 @@ private:
 //! A memory_pool provides storage for (\p TNumElem) elements of
 //! type \p TElement. The storage is allocated statically, i.e. the pool
 //! does not acquire memory from the heap.
-template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
+template <typename TElement, std::size_t TNumElem, typename TMutex = null_mutex>
 class memory_pool : private TMutex
 {
 public:
     //! The type of the elements stored in the pool.
     typedef TElement element_type;
+    //! The type of the mutex which protects the internal data from concurrent
+    //! modifications.
     typedef TMutex mutex_type;
+    //! The type of the pool.
     typedef memory_pool<TElement, TNumElem, TMutex> pool_t;
 
 private:
@@ -178,7 +197,9 @@ public:
     }
 
 private:
+    //! The aligned data block for the memory chunks.
     typename ::boost::aligned_storage<block_size, min_align>::type m_data;
+    //! A list of free (i.e. not allocated) memory chunks.
     detail::free_list m_freeList;
 };
 
@@ -190,7 +211,7 @@ private:
 //!
 //! The counting_memory_pool is always thread safe. Multiple threads can
 //! concurrently use it to allocate and free memory chunks.
-template <typename TElement, unsigned TNumElem>
+template <typename TElement, std::size_t TNumElem>
 class counting_memory_pool
 {
 public:
@@ -274,7 +295,9 @@ public:
 
 private:
     typedef memory_pool<TElement, TNumElem, mutex> pool_t;
+    //! The pool from which the memory for the element is allocated.
     pool_t m_memoryPool;
+    //! The number of available elements.
     semaphore m_numElements;
 };
 
