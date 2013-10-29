@@ -30,6 +30,7 @@
 #define WEOS_KEIL_RL_RTX_CHRONO_HPP
 
 #include "../config.hpp"
+#include "hal.hpp"
 #include "../common/duration.hpp"
 #include "../common/timepoint.hpp"
 
@@ -83,7 +84,7 @@ public:
 
     static time_point now()
     {
-        return time_point(duration(osKernelSysTick()));
+        return time_point(duration(hal::getSysTickValue()));
     }
 };
 
