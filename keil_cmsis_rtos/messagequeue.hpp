@@ -210,7 +210,7 @@ private:
         }
 
         // Returns the datum which has been read from the queue.
-        const std::uint32_t& datum() const
+        std::uint32_t& datum()
         {
             return m_datum;
         }
@@ -218,7 +218,7 @@ private:
         // Waits up to \p millisec milliseconds for getting an element from
         // the message queue. Returns \p true, if an element has been acquired
         // and no further waiting is necessary.
-        bool operator() (std::int32_t millisec) const
+        bool operator() (std::int32_t millisec)
         {
             osEvent result = osMessageGet(m_id, millisec);
             if (result.status == osEventMessage)
@@ -242,7 +242,7 @@ private:
         // fetched.
         osMessageQId m_id;
         // The element which has been taken from the queue.
-        mutable element_type m_datum;
+        std::uint32_t m_datum;
     };
 
     // A helper to put an element into the message queue.

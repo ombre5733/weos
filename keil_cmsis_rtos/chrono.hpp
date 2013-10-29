@@ -113,8 +113,7 @@ struct cmsis_wait
             static_cast<common_type>(0xFFFE * 1000)
             / static_cast<common_type>(WEOS_SYSTICK_FREQUENCY);
 
-    static bool wait(const chrono::duration<RepT, PeriodT>& d,
-                     const FunctorT& fun)
+    static bool wait(const chrono::duration<RepT, PeriodT>& d, FunctorT& fun)
     {
         if (d.count() <= 0)
             return fun(0);
