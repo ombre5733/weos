@@ -34,6 +34,10 @@
 #endif
 #include WEOS_USER_CONFIG
 
+// -----------------------------------------------------------------------------
+// Compatibility checks
+// -----------------------------------------------------------------------------
+
 // Include the CMSIS header file if necessary.
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 #  include "3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
@@ -50,6 +54,9 @@
 #  endif
 #endif // WEOS_WRAP_KEIL_RL_RTX
 
+// -----------------------------------------------------------------------------
+// Exception handling
+// -----------------------------------------------------------------------------
 
 #if !defined(WEOS_CUSTOM_THROW_EXCEPTION)
     namespace weos
@@ -69,6 +76,9 @@
      } // namespace weos
 #endif // WEOS_CUSTOM_THROW_EXCEPTION
 
+// -----------------------------------------------------------------------------
+// Assertion handling
+// -----------------------------------------------------------------------------
 
 #if defined(WEOS_ENABLE_ASSERT)
 #  if defined(WEOS_CUSTOM_ASSERT_HANDLER)
