@@ -461,24 +461,6 @@ private:
     mutable std::uint32_t m_mask;
 };
 
-} // namespace detail
-
-//! Puts the current thread to sleep.
-//! Blocks the execution of the current thread for the given duration \p d.
-template <typename RepT, typename PeriodT>
-void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
-{
-    detail::thread_sleeper sleeper;
-    chrono::detail::cmsis_wait<RepT, PeriodT, detail::thread_sleeper>::wait(
-                d, sleeper);
-}
-
-template <typename ClockT, typename DurationT>
-void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
-
-namespace detail
-{
-
 inline
 std::uint32_t wait_for_signal(std::uint32_t mask)
 {
@@ -508,7 +490,7 @@ std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
 }
 
 template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> wait_for_signal_for(
+std::pair<bool, std::uint32_t> try_wait_for_signal_for(
         std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
 {
     signal_waiter waiter(mask);
@@ -522,6 +504,19 @@ std::pair<bool, std::uint32_t> wait_for_signal_for(
 }
 
 } // namespace detail
+
+//! Puts the current thread to sleep.
+//! Blocks the execution of the current thread for the given duration \p d.
+template <typename RepT, typename PeriodT>
+void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
+{
+    detail::thread_sleeper sleeper;
+    chrono::detail::cmsis_wait<RepT, PeriodT, detail::thread_sleeper>::wait(
+                d, sleeper);
+}
+
+template <typename ClockT, typename DurationT>
+void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
 
 //! Waits for a signal.
 //! Blocks the current thread until it receives any signal(s) and returns the
@@ -543,10 +538,10 @@ std::pair<bool, std::uint32_t> try_wait_for_signal()
 }
 
 template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> wait_for_signal_for(
+std::pair<bool, std::uint32_t> try_wait_for_signal_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
-    return detail::wait_for_signal_for(0, d);
+    return detail::try_wait_for_signal_for(0, d);
 }
 
 //! Waits for a signal or a set of signals.
@@ -567,19 +562,11 @@ std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
 }
 
 template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> wait_for_signal_for(
+std::pair<bool, std::uint32_t> try_wait_for_signal_for(
         std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
 {
     WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::wait_for_signal_for(mask, d);
-    detail::signal_waiter waiter(mask);
-    if (chrono::detail::cmsis_wait<
-            RepT, PeriodT, detail::signal_waiter>::wait(d, waiter))
-    {
-        return std::pair<bool, std::uint32_t>(true, waiter.mask());
-    }
-
-    return std::pair<bool, std::uint32_t>(false, 0);
+    return detail::try_wait_for_signal_for(mask, d);
 }
 
 //! Triggers a rescheduling of the executing threads.
