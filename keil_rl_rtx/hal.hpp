@@ -42,7 +42,8 @@ namespace weos
 namespace hal
 {
 
-//! Returns the current value of the SysTick timer.
+//! Returns the current value of the SysTick timer. When the SysTick timer
+//! reaches zero, it triggers the RL RTX kernel.
 inline std::uint32_t getSysTickValue()
 {
     return os_trv - NVIC_ST_CURRENT;

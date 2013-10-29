@@ -190,9 +190,11 @@ private:
         {
         }
 
+        // The next waiting thread in the list.
         WaitingThread* next;
         // A semaphore to send a signal to this waiting thread.
         semaphore signal;
+        // A flag which is set when the thread has been removed from the list.
         bool dequeued;
     };
 
