@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
-#define WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
+#ifndef WEOS_KEIL_RL_RTX_THREAD_HPP
+#define WEOS_KEIL_RL_RTX_THREAD_HPP
 
 #include "../config.hpp"
 #include "chrono.hpp"
@@ -40,14 +40,15 @@
 #include <boost/utility.hpp>
 
 #include <cstdint>
+#include <exception>
 #include <utility>
 
 //! A helper function to invoke a thread.
-//! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
+//! A RL RTX thread is a C function taking a <tt>void*</tt> argument. This
 //! helper function adhers to this specification. The \p arg is a pointer to
 //! a weos::ThreadData object which contains thread-specifica data such as
 //! the actual function to start.
-extern "C" void weos_threadInvoker(const void* arg);
+extern "C" void weos_threadInvoker(void* arg);
 
 namespace weos
 {
@@ -59,16 +60,54 @@ namespace detail
 struct native_thread_traits
 {
     // The native type for a thread ID.
-    typedef osThreadId thread_id_type;
+    typedef OS_TID thread_id_type;
 
     // The stack must be able to hold the registers R0-R13.
-    static const std::size_t minimum_custom_stack_size = 14 * 4;
+    const std::size_t minimum_custom_stack_size = 14 * 4;
 };
 
 } // namespace detail
 } // namespace weos
 
-#define WEOS_THREAD_INVOKER_ARGUMENT_QUALIFIER   const
+
+//! Data which is shared between the thread and its handle.
+class ThreadData : boost::noncopyable
+{
+    typedef object_pool<ThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS,
+                        mutex> pool_t;
+
+public:
+    ThreadData();
+
+    //! Decreases the reference counter by one. If the reference counter reaches
+    //! zero, this ThreadData is returned to the pool.
+    void deref();
+    //! Increases the reference counter by one.
+    void ref();
+
+    //! Returns the global pool from which thread-data objects are allocated.
+    static pool_t& pool();
+
+private:
+    //! The function to execute in the new thread.
+    void (*m_function)(void*);
+    //! The argument which is supplied to the threaded function.
+    void* m_arg;
+
+    //! This semaphore is increased by the thread when it's execution finishes.
+    //! It is needed to implement thread::join().
+    semaphore m_finished;
+    volatile int m_referenceCount;
+    //! The system-specific thread id.
+    OS_TID m_threadId;
+
+    friend class ::weos::thread;
+    friend void ::weos_threadInvoker(void* m_arg);
+};
+
+} // namespace detail
+
+#define WEOS_THREAD_INVOKER_ARGUMENT_QUALIFIER
 
 #include "../common/thread.hpp"
 
@@ -81,13 +120,13 @@ namespace this_thread
 inline
 weos::thread::id get_id()
 {
-    return weos::thread::id(osThreadGetId());
+    return weos::thread::id(os_tsk_self());
 }
 
 namespace detail
 {
 // A helper to put a thread to sleep.
-struct thread_sleeper : boost::noncopyable
+struct thread_sleeper
 {
     // Waits for millisec milliseconds. The method always returns false because
     // we cannot shortcut a delay.
@@ -101,7 +140,7 @@ struct thread_sleeper : boost::noncopyable
 };
 
 // A helper to wait for a signal.
-struct signal_waiter : boost::noncopyable
+struct signal_waiter
 {
     // Creates an object which waits for a signal specified by the \p mask.
     explicit signal_waiter(std::uint32_t mask)
@@ -111,7 +150,7 @@ struct signal_waiter : boost::noncopyable
 
     // Waits up to \p millisec milliseconds for a signal. Returns \p true,
     // if a signal has arrived and no further waiting is necessary.
-    bool operator() (std::int32_t millisec)
+    bool operator() (std::int32_t ticks)
     {
         osEvent result = osSignalWait(m_mask, millisec);
         if (result.status == osEventSignal)
@@ -256,11 +295,11 @@ std::pair<bool, std::uint32_t> try_wait_for_signal_for(
 inline
 void yield()
 {
-    osStatus status = osThreadYield();
-    WEOS_ASSERT(status == osOK);
+    os_tsk_pass();
 }
 
 } // namespace this_thread
+
 } // namespace weos
 
-#endif // WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
+#endif // WEOS_KEIL_RL_RTX_THREAD_HPP
