@@ -39,7 +39,7 @@ namespace weos
 //! An object pool with static (compile-time) storage.
 //! The object_pool is a memory pool for (\p TNumElem) objects of
 //! type \p TElement. The memory is allocated statically (internally in the
-//! object), i.e. the pool does not access the heap.
+//! object), i.e. the pool does not allocate memory from the heap.
 template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
 class object_pool
 {
@@ -142,7 +142,14 @@ private:
     pool_t m_memoryPool;
 };
 
-//! The counting_memory_pool is always thread safe. Multiple threads can
+//! An object pool which counts the available elements.
+//! The counting_object_pool is a pool for the creation of elements of type
+//! \p TElement. The necessary memory for up to (\p TNumElem) elements is
+//! held internally, i.e. no memory is allocated dynamically. As the pool
+//! counts the number of available elements, it provides methods which
+//! block the calling thread when no memory is available.
+//!
+//! The counting_object_pool is always thread safe and so multiple threads can
 //! concurrently use it for the creation and destruction of elements.
 template <typename TElement, unsigned TNumElem>
 class counting_object_pool

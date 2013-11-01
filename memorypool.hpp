@@ -204,10 +204,10 @@ private:
 };
 
 //! A counting memory pool.
-//! A counting memory pool is an extension to memory_pool. It also acquires
-//! storage for (\p TNumElem) elements of type \p TElement. In addition, it
+//! A counting memory pool is an extension to memory_pool. Internally it holds
+//! memory for (\p TNumElem) elements of type \p TElement. In addition, it
 //! keeps track of the number of elements available in the pool and can thus
-//! block the caller until an element is available.
+//! block the calling thread until an element becomes available.
 //!
 //! The counting_memory_pool is always thread safe. Multiple threads can
 //! concurrently use it to allocate and free memory chunks.
