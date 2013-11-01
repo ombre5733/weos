@@ -138,6 +138,7 @@ public:
 
 private:
     typedef memory_pool<TElement, TNumElem, TMutex> pool_t;
+    //! The pool from which the memory for the elements is allocated.
     pool_t m_memoryPool;
 };
 
@@ -349,6 +350,7 @@ public:
 
 private:
     typedef counting_memory_pool<TElement, TNumElem> pool_t;
+    //! The pool from which the memory for the elements is allocated.
     pool_t m_memoryPool;
 };
 
