@@ -174,9 +174,12 @@ public:
         return m_memoryPool.size();
     }
 
-    //! Allocates an element from the pool.
-    //! Allocates an element from the pool and returns a pointer to it. The
-    //! calling thread is blocked until an element is available.
+    //! Allocates memory for an element.
+    //! Allocates memory for an element from the pool and returns a pointer to
+    //! it. The calling thread is blocked until an element is available.
+    //!
+    //! \note The returned element is not constructed, i.e. only the memory for
+    //! it has been allocated.
     //!
     //! \sa free(), try_allocate(), try_allocate_for()
     element_type* allocate()
@@ -184,41 +187,49 @@ public:
         return static_cast<element_type*>(m_memoryPool.allocate());
     }
 
-    //! Tries to allocate a chunk of memory.
-    //! Tries to allocate a chunk of memory and returns a pointer to it. If
-    //! no memory is available, a null-pointer is returned.
+    //! Tries to allocate memory for an element.
+    //! Tries to allocate memory for an element from the pool and returns a
+    //! pointer to it. If no memory is available, a null-pointer is returned.
+    //!
+    //! \note The returned element is not constructed, i.e. only the memory for
+    //! it has been allocated.
     //!
     //! \sa allocate(), free(), try_allocate_for()
-    void* try_allocate()
+    element_type* try_allocate()
     {
-        return m_memoryPool.try_allocate();
+        return static_cast<element_type*>(m_memoryPool.try_allocate());
     }
 
-    //! Tries to allocate a chunk of memory with timeout.
-    //! Tries to allocate a chunk of memory and returns a pointer to it.
-    //! If no memory is available, the method blocks for a duration up to
-    //! \p d and returns a null-pointer then.
+    //! Tries to allocate memory for an element with timeout.
+    //! Tries to allocate memory for an element and returns a pointer to it.
+    //! If no memory is available, the method blocks the calling thread until
+    //! either an element becomes available or the timeout duration \p d
+    //! expires. In the latter case, a null-pointer is returned.
+    //!
+    //! \note The returned element is not constructed, i.e. only the memory for
+    //! it has been allocated.
     //!
     //! \sa allocate(), free(), try_allocate()
     template <typename RepT, typename PeriodT>
-    void* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
+    element_type* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        return m_memoryPool.try_allocate_for(d);
+        return static_cast<element_type*>(m_memoryPool.try_allocate_for(d));
     }
 
-    //! Frees a chunk of memory.
-    //! Frees a \p chunk of memory which must have been allocated through
-    //! this pool.
+    //! Returns an element back to the pool.
+    //! Returns the \p element, which must have been allocated from this
+    //! pool, back to the pool. The destructor of the element will not be
+    //! called---this is the responsibility of the caller.
     //!
     //! \sa allocate(), try_allocate(), try_allocate_for()
-    void free(void* const chunk)
+    void free(element_type* const element)
     {
         m_memoryPool.free(chunk);
     }
 
     //! Constructs an object.
-    //! Allocates memory for an object and calls its constructor. The method
-    //! returns a pointer to the newly created object. If the pool is empty,
+    //! Allocates memory and constructs an element in it. The method
+    //! returns a pointer to the newly constructed object. If the pool is empty,
     //! the calling thread is blocked until an element has been returned.
     element_type* construct()
     {
@@ -247,9 +258,9 @@ public:
     }
 
     //! Tries to construct an object.
-    //! Tries to allocate memory for an object, calls its constructor and
-    //! returns a pointer to the new object. If no memory is available in the
-    //! pool, a null-pointer is returned.
+    //! Tries to allocate memory and constructs an element in it. Then
+    //! a pointer to the newly constructed element is returned. If no memory
+    //! is available in the pool, a null-pointer is returned.
     element_type* try_construct()
     {
         void* mem = this->try_allocate();
@@ -282,9 +293,52 @@ public:
         return element;
     }
 
+    //! Tries to construct an object with timeout.
+    //! Tries to allocate memory and constructs an element in it. Then
+    //! a pointer to the newly constructed element is returned. If no memory
+    //! is available in the pool, the calling thread is blocked until either
+    //! a memory block becomes available or the timeout duration \p d
+    //! expires. In the latter case, a null-pointer is returned.
+    template <typename RepT, typename PeriodT>
+    element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d)
+    {
+        void* mem = this->try_allocate_for(d);
+        if (!mem)
+            return 0;
+        element_type* element = new (mem) element_type;
+        return element;
+    }
+
+    template <typename RepT, typename PeriodT, class T1>
+    element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d,
+                                    BOOST_FWD_REF(T1) x1)
+    {
+        void* mem = this->try_allocate_for(d);
+        if (!mem)
+            return 0;
+        element_type* element = new (mem) element_type(
+                                    boost::forward<T1>(x1));
+        return element;
+    }
+
+    template <typename RepT, typename PeriodT, class T1, class T2>
+    element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d,
+                                    BOOST_FWD_REF(T1) x1,
+                                    BOOST_FWD_REF(T2) x2)
+    {
+        void* mem = this->try_allocate_for(d);
+        if (!mem)
+            return 0;
+        element_type* element = new (mem) element_type(
+                                    boost::forward<T1>(x1),
+                                    boost::forward<T2>(x2));
+        return element;
+    }
+
     //! Destroys an element.
     //! Destroys the \p element whose memory must have been allocated via
-    //! this object pool and whose constructor must have been called.
+    //! this object pool. The destructor of \p element is called before
+    //! its memory is returned.
     //!
     //! \sa construct()
     void destroy(element_type* const element)
