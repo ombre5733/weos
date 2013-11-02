@@ -44,6 +44,7 @@ template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
 class object_pool
 {
 public:
+    //! The type of the elements which can be allocated via this pool.
     typedef TElement element_type;
     typedef TMutex mutex_type;
 
@@ -155,6 +156,7 @@ template <typename TElement, unsigned TNumElem>
 class counting_object_pool
 {
 public:
+    //! The type of the elements which can be allocated via this pool.
     typedef TElement element_type;
 
     ~counting_object_pool()
@@ -232,7 +234,7 @@ public:
     //! \sa allocate(), try_allocate(), try_allocate_for()
     void free(element_type* const element)
     {
-        m_memoryPool.free(chunk);
+        m_memoryPool.free(element);
     }
 
     //! Constructs an object.

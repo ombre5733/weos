@@ -101,14 +101,14 @@ TEST(counting_object_pool, allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
     weos::counting_object_pool<typeToTest, POOL_SIZE> p;
-    void* chunks[POOL_SIZE];
+    typeToTest* chunks[POOL_SIZE];
 
     for (unsigned j = 1; j <= POOL_SIZE; ++j)
     {
         for (unsigned i = 0; i < j; ++i)
         {
             ASSERT_EQ(POOL_SIZE - i, p.size());
-            void* c = p.allocate();
+            typeToTest* c = p.allocate();
             ASSERT_TRUE(c != 0);
             ASSERT_EQ(POOL_SIZE - i - 1, p.size());
             chunks[i] = c;
@@ -126,13 +126,13 @@ TEST(counting_object_pool, random_allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
     weos::counting_object_pool<typeToTest, POOL_SIZE> p;
-    void* chunks[POOL_SIZE];
+    typeToTest* chunks[POOL_SIZE];
     std::set<void*> uniqueChunks;
     int numAllocatedChunks = 0;
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
-        void* c = p.allocate();
+        typeToTest* c = p.allocate();
         ASSERT_TRUE(c != 0);
         chunks[i] = c;
         uniqueChunks.insert(c);
@@ -150,7 +150,7 @@ TEST(counting_object_pool, random_allocate_and_free)
         unsigned index = random() % POOL_SIZE;
         if (chunks[index] == 0)
         {
-            void* c = p.allocate();
+            typeToTest* c = p.allocate();
             ASSERT_TRUE(c != 0);
             ASSERT_TRUE(uniqueChunks.find(c) != uniqueChunks.end());
             chunks[index] = c;
