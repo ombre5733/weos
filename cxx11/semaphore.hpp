@@ -26,19 +26,68 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CHRONO_HPP
-#define WEOS_CHRONO_HPP
+#ifndef WEOS_CXX11_SEMAPHORE_HPP
+#define WEOS_CXX11_SEMAPHORE_HPP
 
-#include "config.hpp"
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
 
-#if defined(WEOS_WRAP_CXX11)
-#  include "cxx11/chrono.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "keil_cmsis_rtos/chrono.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-#  include "keil_rl_rtx/chrono.hpp"
-#else
-#  error "The OS wrapper has not been configured."
-#endif
+namespace weos
+{
 
-#endif // WEOS_CHRONO_HPP
+
+class semaphore
+{
+public:
+    semaphore(std::uint32_t value = 0)
+        : m_value(value)
+    {
+    }
+
+    void post()
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        ++m_value;
+        m_conditionVariable.notify_one();
+    }
+
+    bool try_wait()
+    {
+        return try_wait_for(std::chrono::seconds(0));
+    }
+
+    template <typename RepT, typename PeriodT>
+    bool try_wait_for(const std::chrono::duration<RepT, PeriodT>& d)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        if (m_conditionVariable.wait_for(lock, d, [this](){return m_value != 0;}))
+        {
+            --m_value;
+            return true;
+        }
+        return false;
+    }
+
+    void wait()
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        while (m_value == 0)
+            m_conditionVariable.wait(lock);
+        --m_value;
+    }
+
+    std::uint32_t value() const
+    {
+        return m_value;
+    }
+
+private:
+    std::mutex m_mutex;
+    std::condition_variable m_conditionVariable;
+    std::uint32_t m_value;
+};
+
+} // namespace weos
+
+#endif // WEOS_CXX11_SEMAPHORE_HPP

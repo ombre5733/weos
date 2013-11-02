@@ -54,7 +54,7 @@ class message_queue
     BOOST_STATIC_ASSERT(QueueSizeT > 0);
 
 public:
-    //! The type of the elements stored in this message queue.
+    //! The type of the elements transfered via this message queue.
     typedef TypeT element_type;
 
     //! Creates a message queue.
@@ -81,10 +81,10 @@ public:
         return QueueSizeT;
     }
 
-    //! Gets an element from the queue.
+    //! Receives an element from the queue.
     //! Returns the first element from the message queue. If the queue is
     //! empty, the calling thread is blocked until an element is added.
-    element_type get()
+    element_type receive()
     {
         osEvent result = osMessageGet(m_id, osWaitForever);
         if (result.status != osEventMessage)
@@ -97,12 +97,12 @@ public:
         return element;
     }
 
-    //! Tries to get an element from the queue.
-    //! Tries to get an element from the message queue.
+    //! Tries to receive an element from the queue.
+    //! Tries to receive an element from the message queue.
     //! The element is returned together with a boolean, which is set if the
     //! queue was non-empty. If the queue was empty, the boolean is reset and
     //! the returned element is default-constructed.
-    std::pair<bool, element_type> try_get()
+    std::pair<bool, element_type> try_receive()
     {
         osEvent result = osMessageGet(m_id, 0);
         if (result.status == osOK)
@@ -119,33 +119,33 @@ public:
         return std::pair<bool, element_type>(true, element);
     }
 
-    //! Tries to get an element from the queue.
-    //! Tries to get an element from the message queue within the timeout
+    //! Tries to receive an element from the queue.
+    //! Tries to receive an element from the message queue within the timeout
     //! duration \p d.
     //! The element is returned together with a boolean, which is set if the
     //! queue was non-empty. If the queue was empty, the boolean is reset and
     //! the returned element is default-constructed.
     template <typename RepT, typename PeriodT>
-    std::pair<bool, element_type> try_get_for(
+    std::pair<bool, element_type> try_receive_for(
             const chrono::duration<RepT, PeriodT>& d)
     {
-        try_getter getter(m_id);
+        try_receiver receiver(m_id);
         if (chrono::detail::cmsis_wait<
-                RepT, PeriodT, try_getter>::wait(d, getter))
+                RepT, PeriodT, try_receiver>::wait(d, receiver))
         {
             element_type element;
-            std::memcpy(&element, &getter.datum(), sizeof(element_type));
+            std::memcpy(&element, &receiver.datum(), sizeof(element_type));
             return std::pair<bool, element_type>(true, element);
         }
 
         return std::pair<bool, element_type>(false, element_type());
     }
 
-    //! Puts an element into the queue.
-    //! Puts the \p element at the end of the message queue. If the queue
-    //! is full, the calling thread is blocked until an element is taken
-    //! away from it.
-    void put(element_type element)
+    //! Sends an element via the queue.
+    //! Sends the \p element by appending it at the end of the message queue.
+    //! If the queue is full, the calling thread is blocked until space becomes
+    //! available.
+    void send(element_type element)
     {
         std::uint32_t datum = 0;
         std::memcpy(&datum, &element, sizeof(element_type));
@@ -157,11 +157,11 @@ public:
         }
     }
 
-    //! Tries to put an element into the queue.
-    //! Tries to put the \p element into the queue and returns immediately
-    //! even if no slot was available. The method returns \p true, if the
-    //! element has been enqueued successfully.
-    bool try_put(element_type element)
+    //! Tries to send an element via the queue.
+    //! Tries to send the \p element via the queue. If no space was available,
+    //! \p false is returned. Otherwise the method returns \p true. The
+    //! calling thread is never blocked.
+    bool try_send(element_type element)
     {
         std::uint32_t datum = 0;
         std::memcpy(&datum, &element, sizeof(element_type));
@@ -179,19 +179,19 @@ public:
         return false;
     }
 
-    //! Tries to put an element into the queue.
-    //! Tries to put the given \p element into the queue and returns \p true
-    //! if successful. If there is no empty slot in the queue within the
+    //! Tries to send an element via the queue.
+    //! Tries to send the given \p element via the queue and returns \p true
+    //! if successful. If there is no space available within the
     //! duration \p d, the operation is aborted an \p false is returned.
     template <typename RepT, typename PeriodT>
-    bool try_put_for(element_type element,
-                     const chrono::duration<RepT, PeriodT>& d)
+    bool try_send_for(element_type element,
+                      const chrono::duration<RepT, PeriodT>& d)
     {
         std::uint32_t datum = 0;
         std::memcpy(&datum, &element, sizeof(element_type));
-        try_putter putter(m_id, datum);
+        try_sender sender(m_id, datum);
         return chrono::detail::cmsis_wait<
-                RepT, PeriodT, try_putter>::wait(d, putter);
+                RepT, PeriodT, try_sender>::wait(d, sender);
     }
 
 private:
@@ -201,9 +201,9 @@ private:
     osMessageQId m_id;
 
     // A helper to wait for an element in the message queue.
-    struct try_getter
+    struct try_receiver
     {
-        try_getter(osMessageQId id)
+        try_receiver(osMessageQId id)
             : m_id(id),
               m_datum(0)
         {
@@ -246,9 +246,9 @@ private:
     };
 
     // A helper to put an element into the message queue.
-    struct try_putter
+    struct try_sender
     {
-        try_putter(osMessageQId id, std::uint32_t datum)
+        try_sender(osMessageQId id, std::uint32_t datum)
             : m_id(id),
               m_datum(datum)
         {

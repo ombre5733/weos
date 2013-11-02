@@ -42,7 +42,7 @@ TEST(message_queue, Constructor)
 TEST(message_queue, try_get)
 {
     weos::message_queue<std::int32_t, 1> q;
-    std::pair<bool, std::int32_t> result = q.try_get();
+    std::pair<bool, std::int32_t> result = q.try_receive();
     ASSERT_FALSE(result.first);
 }
 
@@ -51,16 +51,16 @@ TEST(message_queue, put)
     std::pair<bool, std::int32_t> result;
 
     weos::message_queue<std::int32_t, 1> q;
-    q.put(0x12345678);
-    ASSERT_EQ(0x12345678, q.get());
+    q.send(0x12345678);
+    ASSERT_EQ(0x12345678, q.receive());
 
-    q.put(0x23456789);
-    result = q.try_get();
+    q.send(0x23456789);
+    result = q.try_receive();
     ASSERT_TRUE(result.first);
     ASSERT_EQ(0x23456789, result.second);
 
-    q.put(0x34567890);
-    result = q.try_get_for(weos::chrono::milliseconds(1));
+    q.send(0x34567890);
+    result = q.try_receive_for(weos::chrono::milliseconds(1));
     ASSERT_TRUE(result.first);
     ASSERT_EQ(0x34567890, result.second);
 }

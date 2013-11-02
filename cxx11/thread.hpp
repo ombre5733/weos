@@ -26,19 +26,14 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CHRONO_HPP
-#define WEOS_CHRONO_HPP
+#ifndef WEOS_CXX11_THREAD_HPP
+#define WEOS_CXX11_THREAD_HPP
 
-#include "config.hpp"
+#include <thread>
 
-#if defined(WEOS_WRAP_CXX11)
-#  include "cxx11/chrono.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "keil_cmsis_rtos/chrono.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-#  include "keil_rl_rtx/chrono.hpp"
-#else
-#  error "The OS wrapper has not been configured."
-#endif
+namespace weos
+{
+using std::thread;
+} // namespace weos
 
-#endif // WEOS_CHRONO_HPP
+#endif // WEOS_CXX11_THREAD_HPP
