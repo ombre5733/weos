@@ -41,6 +41,18 @@ namespace weos
 {
 
 // ----=====================================================================----
+//     is_error_code_enum
+// ----=====================================================================----
+
+//! A trait to mark an enum as error code.
+//! This struct has to be specialized if an enum shall be treated as error
+//! code. The overload has to be placed in the weos namespace.
+template <typename TType>
+struct is_error_code_enum : public boost::false_type
+{
+};
+
+// ----=====================================================================----
 //     error_category
 // ----=====================================================================----
 
@@ -103,6 +115,23 @@ public:
     {
     }
 
+    //! Constructs an error code from an enum.
+    //! Constructs an error code from the enum value \p value. This is
+    //! equivalent to
+    //! \code
+    //! errorCode = make_error_code(error);
+    //! \endcode
+    //!
+    //! \note This constructor is only available, if
+    //! <tt>weos::is_error_code_enum<ErrorCodeEnumT>::value == true</tt>.
+    template <typename ErrorCodeEnumT>
+    error_code(ErrorCodeEnumT value,
+               typename boost::enable_if_c<weos::is_error_code_enum<ErrorCodeEnumT>::value>::type* = 0) BOOST_NOEXCEPT
+        : m_value(value),
+          m_category(&make_error_code(value).category())
+    {
+    }
+
     //! Assigns a new value and category.
     //! Assigns the error \p value and error \p category to this error code.
     void assign(int value, const error_category& category) BOOST_NOEXCEPT
@@ -139,15 +168,6 @@ private:
     int m_value;
     //! The error category.
     const error_category* m_category;
-};
-
-// ----=====================================================================----
-//     is_error_code_enum
-// ----=====================================================================----
-
-template <typename TType>
-struct is_error_code_enum : public boost::false_type
-{
 };
 
 // ----=====================================================================----
