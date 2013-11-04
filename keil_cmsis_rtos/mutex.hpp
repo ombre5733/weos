@@ -31,7 +31,7 @@
 
 #include "../config.hpp"
 #include "chrono.hpp"
-#include "error.hpp"
+#include "system_error.hpp"
 #include "../common/mutexlocks.hpp"
 
 #include <boost/config.hpp>

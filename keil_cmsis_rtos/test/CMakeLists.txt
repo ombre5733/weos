@@ -60,7 +60,7 @@ add_definitions("-DWEOS_USER_CONFIG=\"common/user_config.hpp\"")
 
 set(COMMON_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../thread.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../error.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../system_error.cpp
 
         ${CMAKE_CURRENT_SOURCE_DIR}/common/RTX_Conf_CM.c
         ${CMAKE_CURRENT_SOURCE_DIR}/common/system_stm32f4xx.c

@@ -30,7 +30,7 @@
 #define WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
 
 #include "../config.hpp"
-#include "../common/error.hpp"
+#include "../common/system_error.hpp"
 
 namespace weos
 {

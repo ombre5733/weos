@@ -97,7 +97,7 @@ private:
 //     error_code
 // ----=====================================================================----
 
-//! An error value with context.
+//! A platform dependent error value with context.
 //! The error_code is a pair of (error value, error category). Different
 //! objects can return the same error value. The context of the error value
 //! is provided by the error category which has to derive from error_category.
