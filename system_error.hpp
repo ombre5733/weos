@@ -32,9 +32,9 @@
 #include "config.hpp"
 
 #if defined(WEOS_WRAP_CXX11)
-#  include "cxx11/error.hpp"
+#  include "cxx11/system_error.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "keil_cmsis_rtos/error.hpp"
+#  include "keil_cmsis_rtos/system_error.hpp"
 #else
 #  error "The OS wrapper has not been configured."
 #endif
