@@ -63,7 +63,7 @@ namespace weos
 //!
 //! Every error category is a singleton and categories are passed around by
 //! reference.
-class error_category : boost::noncopyable
+class error_category
 {
 public:
     BOOST_CONSTEXPR error_category() BOOST_NOEXCEPT {}
@@ -75,6 +75,10 @@ public:
 
     //! Returns the name of this error category.
     virtual const char* name() const BOOST_NOEXCEPT = 0;
+
+private:
+    error_category(const error_category&);
+    const error_category& operator= (const error_category&);
 };
 
 // ----=====================================================================----
