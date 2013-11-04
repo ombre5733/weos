@@ -31,7 +31,7 @@
 
 #include "../config.hpp"
 #include "chrono.hpp"
-#include "error.hpp"
+#include "system_error.hpp"
 
 #include <boost/utility.hpp>
 

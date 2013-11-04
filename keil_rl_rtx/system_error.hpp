@@ -26,11 +26,11 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_RL_RTX_ERROR_HPP
-#define WEOS_KEIL_RL_RTX_ERROR_HPP
+#ifndef WEOS_KEIL_RL_RTX_SYSTEM_ERROR_HPP
+#define WEOS_KEIL_RL_RTX_SYSTEM_ERROR_HPP
 
 #include "../config.hpp"
-#include "../common/error.hpp"
+#include "../common/system_error.hpp"
 
 namespace weos
 {
@@ -74,4 +74,4 @@ struct is_error_code_enum<rl_rtx_error::rl_rtx_error_t> : public boost::true_typ
 
 } // namespace weos
 
-#endif // WEOS_KEIL_RL_RTX_ERROR_HPP
+#endif // WEOS_KEIL_RL_RTX_SYSTEM_ERROR_HPP

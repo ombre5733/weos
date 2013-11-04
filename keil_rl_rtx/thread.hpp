@@ -31,9 +31,9 @@
 
 #include "../config.hpp"
 #include "chrono.hpp"
-#include "error.hpp"
 #include "mutex.hpp"
 #include "semaphore.hpp"
+#include "system_error.hpp"
 #include "../objectpool.hpp"
 
 #include <boost/config.hpp>

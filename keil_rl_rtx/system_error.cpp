@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "error.hpp"
+#include "system_error.hpp"
 
 namespace weos
 {

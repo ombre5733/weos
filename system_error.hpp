@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_ERROR_HPP
-#define WEOS_ERROR_HPP
+#ifndef WEOS_SYSTEM_ERROR_HPP
+#define WEOS_SYSTEM_ERROR_HPP
 
 #include "config.hpp"
 
@@ -39,4 +39,4 @@
 #  error "The OS wrapper has not been configured."
 #endif
 
-#endif // WEOS_ERROR_HPP
+#endif // WEOS_SYSTEM_ERROR_HPP

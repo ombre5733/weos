@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
-#define WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
+#ifndef WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#define WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
 
 #include "../config.hpp"
 #include "../common/system_error.hpp"
@@ -86,4 +86,4 @@ struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
 
 } // namespace weos
 
-#endif // WEOS_KEIL_CMSIS_RTOS_ERROR_HPP
+#endif // WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP

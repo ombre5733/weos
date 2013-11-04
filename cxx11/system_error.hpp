@@ -26,10 +26,10 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CXX11_ERROR_HPP
-#define WEOS_KEIL_CXX11_ERROR_HPP
+#ifndef WEOS_KEIL_CXX11_SYSTEM_ERROR_HPP
+#define WEOS_KEIL_CXX11_SYSTEM_ERROR_HPP
 
 #include "../config.hpp"
-#include "../common/error.hpp"
+#include "../common/system_error.hpp"
 
-#endif // WEOS_KEIL_CXX11_ERROR_HPP
+#endif // WEOS_KEIL_CXX11_SYSTEM_ERROR_HPP
