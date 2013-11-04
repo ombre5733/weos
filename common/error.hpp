@@ -31,9 +31,9 @@
 
 #include "../config.hpp"
 
-#include <boost/type_traits/integral_constant.hpp>
 #include <boost/config.hpp>
 #include <boost/utility.hpp>
+#include <boost/type_traits/integral_constant.hpp>
 
 #include <exception>
 
@@ -66,7 +66,7 @@ namespace weos
 class error_category : boost::noncopyable
 {
 public:
-    /*BOOST_CONSTEXPR*/ error_category() BOOST_NOEXCEPT {}
+    BOOST_CONSTEXPR error_category() BOOST_NOEXCEPT {}
 
     virtual ~error_category() BOOST_NOEXCEPT {}
 
