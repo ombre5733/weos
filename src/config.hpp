@@ -29,10 +29,19 @@
 #ifndef WEOS_CONFIG_HPP
 #define WEOS_CONFIG_HPP
 
-#if !defined(WEOS_USER_CONFIG)
-#  error "The location of the user config has not been defined."
-#endif
-#include WEOS_USER_CONFIG
+// If the compile switch WEOS_USER_CONFIG is set, it points to the user's
+// configuration file. If the switch is not set, we assume that the
+// user configuration is somewhere in the path.
+#if defined(WEOS_USER_CONFIG)
+#  include WEOS_USER_CONFIG
+#else
+#  include "weos_user_config.hpp"
+#endif // WEOS_USER_CONFIG
+
+// Check the version of the user configuration file.
+#if WEOS_USER_CONFIG_VERSION != 1
+#  error "Version 1 of the WEOS user configuration is required."
+#endif // WEOS_USER_CONFIG_VERSION
 
 // -----------------------------------------------------------------------------
 // Compatibility checks

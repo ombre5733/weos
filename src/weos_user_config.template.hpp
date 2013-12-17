@@ -109,4 +109,17 @@
 
 #endif
 
+
+
+// ----=====================================================================----
+//     Private section.
+//     Do not modify the code below.
+// ----=====================================================================----
+
+// The version of the WEOS user configuration file. The WEOS library can
+// check this version to guarantee the compatibility of the configuration file.
+#define WEOS_USER_CONFIG_VERSION   1
+
+
 #endif // WEOS_USER_CONFIG_HPP
+
