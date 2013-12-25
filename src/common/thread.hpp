@@ -266,6 +266,7 @@ public:
         WEOS_ASSERT(m_data);
         std::int32_t result = osSignalSet(m_data->m_threadId, mask);
         WEOS_ASSERT(result >= 0);
+        (void)result;
     }
 
     //! Returns the number of threads which can run concurrently on this

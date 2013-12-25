@@ -96,6 +96,7 @@ struct thread_sleeper : boost::noncopyable
         osStatus status = osDelay(millisec);
         WEOS_ASSERT(   (millisec == 0 && status == osOK)
                     || (millisec != 0 && status == osEventTimeout));
+        (void)status;
         return false;
     }
 };
@@ -258,6 +259,7 @@ void yield()
 {
     osStatus status = osThreadYield();
     WEOS_ASSERT(status == osOK);
+    (void)status;
 }
 
 } // namespace this_thread
