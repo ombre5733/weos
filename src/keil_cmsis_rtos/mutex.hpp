@@ -119,6 +119,7 @@ public:
         // called from the destructor of lock_guard, for example.
         //! \todo I think, we can throw exceptions, too.
         WEOS_ASSERT(status == osOK);
+        (void)status;
     }
 
 protected:
@@ -230,6 +231,7 @@ public:
         WEOS_ASSERT(mucb->nestingLevel == 2);
         osStatus status = osMutexRelease(id);
         WEOS_ASSERT(status == osOK);
+        (void)status;
         return false;
     }
 };

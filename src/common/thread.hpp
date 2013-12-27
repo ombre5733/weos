@@ -255,6 +255,7 @@ public:
         WEOS_ASSERT(m_data);
         std::int32_t result = osSignalClear(m_data->m_threadId, mask);
         WEOS_ASSERT(result >= 0);
+        (void)result;
     }
 
     //! Sets a signal or a set of signals.

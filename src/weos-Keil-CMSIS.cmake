@@ -26,44 +26,30 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #*******************************************************************************
 
-if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/config.hpp")
-    file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/config.hpp" _weos_string
-                 REGEX ".*#ifndef.*WEOS_CONFIG_HPP.*")
-    if(NOT "${_weos_string}" STREQUAL "")
-        set(WEOS_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}")
-        set(WEOS_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}")
-    endif()
+include(CMakeParseArguments)
+
+cmake_parse_arguments(_args "" "TARGET;SOURCE_LIST" "" ${SUBMODULE_OPTIONS})
+
+if (NOT "${_args_UNPARSED_ARGUMENTS}" STREQUAL "")
+    message(FATAL_ERROR "WEOS Keil-CMSIS: Unknown arguments '${_args_UNPARSED_ARGUMENTS}'.")
 endif()
 
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(WEOS DEFAULT_MSG WEOS_ROOT_DIR)
+# The source files which are necessary for this wrapper.
+set(_sources
+        "${WEOS_ROOT_DIR}/keil_cmsis_rtos/system_error.cpp"
+        "${WEOS_ROOT_DIR}/keil_cmsis_rtos/thread.cpp")
 
+# If a TARGET is specified, we create a static library from the wrapper's
+# sources and link with it.
+if(_args_TARGET)
+    set(_library_name "weos-Keil-CMSIS-${_args_TARGET}")
+    add_library(${_library_name} STATIC ${_sources})
+    target_link_libraries(${_args_TARGET} ${_library_name})
+endif()
 
-function(weos_use_wrapper _wrapper)
-    # Generate a list of all possible WEOS wrappers.
-    file(GLOB cmake_files
-              RELATIVE "${WEOS_INCLUDE_DIRS}"
-              "${WEOS_INCLUDE_DIRS}/weos-*.cmake")
-    foreach(_iter ${cmake_files})
-        STRING(REPLACE "weos-" "" _temp ${_iter})
-        STRING(REPLACE ".cmake" "" _temp ${_temp})
-        list(APPEND _all_wrappers ${_temp})
-    endforeach()
-
-    # Now check if the requested wrapper is available.
-    list(FIND _all_wrappers ${_wrapper} _index)
-    if(_index EQUAL -1)
-        set(_wrapper_hint "")
-        foreach(_iter ${_all_wrappers})
-            if(NOT "${_wrapper_hint}" STREQUAL "")
-                set(_wrapper_hint "${_wrapper_hint}, ")
-            endif()
-            set(_wrapper_hint "${_wrapper_hint}'${_iter}'")
-        endforeach()
-        message(FATAL_ERROR "There is no WEOS wrapper '${_wrapper}'. Possible values are: ${_wrapper_hint}.")
-    endif()
-
-    # Finally load the wrapper.
-    set(SUBMODULE_OPTIONS ${ARGN})
-    include("${WEOS_INCLUDE_DIRS}/weos-${_wrapper}.cmake")
-endfunction()
+# If a SOURCE_LIST is specified, the wrapper's sources are added to it.
+if(_args_SOURCE_LIST)
+    set(_new_list ${${_args_SOURCE_LIST}})
+    list(APPEND _new_list ${_sources})
+    set(${_args_SOURCE_LIST} ${_new_list} PARENT_SCOPE)
+endif()
