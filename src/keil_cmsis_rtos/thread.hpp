@@ -34,20 +34,11 @@
 #include "mutex.hpp"
 #include "semaphore.hpp"
 #include "system_error.hpp"
-#include "../objectpool.hpp"
 
 #include <boost/config.hpp>
-#include <boost/utility.hpp>
 
 #include <cstdint>
 #include <utility>
-
-//! A helper function to invoke a thread.
-//! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
-//! helper function adhers to this specification. The \p arg is a pointer to
-//! a weos::ThreadData object which contains thread-specifica data such as
-//! the actual function to start.
-extern "C" void weos_threadInvoker(const void* arg);
 
 namespace weos
 {
@@ -56,19 +47,18 @@ class thread;
 namespace detail
 {
 
+//! Traits for native threads.
 struct native_thread_traits
 {
     // The native type for a thread ID.
     typedef osThreadId thread_id_type;
 
-    // The stack must be able to hold the registers R0-R13.
-    static const std::size_t minimum_custom_stack_size = 14 * 4;
+    // The stack must be able to hold the registers R0-R15.
+    static const std::size_t minimum_custom_stack_size = 64;
 };
 
 } // namespace detail
 } // namespace weos
-
-#define WEOS_THREAD_INVOKER_ARGUMENT_QUALIFIER   const
 
 #include "../common/thread.hpp"
 
@@ -87,8 +77,12 @@ weos::thread::id get_id()
 namespace detail
 {
 // A helper to put a thread to sleep.
-struct thread_sleeper : boost::noncopyable
+struct thread_sleeper
 {
+    thread_sleeper()
+    {
+    }
+
     // Waits for millisec milliseconds. The method always returns false because
     // we cannot shortcut a delay.
     bool operator() (std::int32_t millisec) const
@@ -99,10 +93,14 @@ struct thread_sleeper : boost::noncopyable
         (void)status;
         return false;
     }
+
+private:
+    thread_sleeper(const thread_sleeper&);
+    const thread_sleeper& operator= (const thread_sleeper&);
 };
 
 // A helper to wait for a signal.
-struct signal_waiter : boost::noncopyable
+struct signal_waiter
 {
     // Creates an object which waits for a signal specified by the \p mask.
     explicit signal_waiter(std::uint32_t mask)
@@ -138,6 +136,9 @@ struct signal_waiter : boost::noncopyable
 
 private:
     std::uint32_t m_mask;
+
+   signal_waiter(const signal_waiter&);
+    const signal_waiter& operator= (const signal_waiter&);
 };
 
 inline

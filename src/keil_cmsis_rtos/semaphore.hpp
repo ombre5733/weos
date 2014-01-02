@@ -118,11 +118,13 @@ public:
     }
 
 private:
+    // Just enough memory to hold a CMSIS semaphore. The typedef can be found
+    // in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
     std::uint32_t m_cmsisSemaphoreControlBlock[2];
     osSemaphoreId m_id;
 
     // The header (first 32 bits) of the semaphore control block. The full
-    // definition can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
+    // definition can be found in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
     struct SemaphoreControlBlockHeader
     {
         std::uint8_t controlBlockType;

@@ -41,20 +41,20 @@
 // ----=====================================================================----
 
 // Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
-// #define WEOS_WRAP_KEIL_CMSIS_RTOS
+#define WEOS_WRAP_KEIL_CMSIS_RTOS
 
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 
 // The frequency of the system clock (in Hz).
 // \note In Keil's CMSIS RTOS this is the value of OS_CLOCK.
-#  define WEOS_SYSTEM_CLOCK_FREQUENCY       12000000
+#  define WEOS_SYSTEM_CLOCK_FREQUENCY       168000000
 // The frequency of the SysTick timer (in Hz).
 // \note In Keil's CMSIS RTOS this is the value of (1000000 / OS_TICK).
 #  define WEOS_SYSTICK_FREQUENCY            1000
 // The maximum number of threads which can be active concurrently.
-#  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
+#  define WEOS_MAX_NUM_CONCURRENT_THREADS   10
 // The maximum size of all arguments passed to a thread().
-#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     4 * sizeof(void*)
+#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     5 * sizeof(void*)
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 
@@ -76,7 +76,7 @@
 // The maximum number of threads which can be active concurrently.
 #  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
 // The maximum size of all arguments passed to a thread().
-#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     4 * sizeof(void*)
+#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     4*sizeof(void*)
 
 #endif // WEOS_WRAP_KEIL_RL_RTX
 
@@ -88,7 +88,7 @@
 // function. The function's signature is
 // void ::weos::throw_exception(const std::exception& e);
 // This function must never return.
-// #define WEOS_CUSTOM_THROW_EXCEPTION
+ #define WEOS_CUSTOM_THROW_EXCEPTION
 
 // If this macro is defined, assertions are enabled in the WEOS library.
 // By default, the assertion is checked using the assert() function from

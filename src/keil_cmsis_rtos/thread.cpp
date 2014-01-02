@@ -42,17 +42,27 @@ extern "C" void osThreadExit(void);
 // from ../3rdparty/keil_cmsis_rtos/INC/RTX_Config.h.
 extern void* os_active_TCB[];
 
+namespace
+{
+
+//! A helper function to invoke a thread.
+//! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
+//! helper function adhers to this specification. The \p arg is a pointer to
+//! a weos::ThreadDataBase object which contains thread-specific data such as
+//! the actual function to start.
 extern "C" void weos_threadInvoker(const void* arg)
 {
-    weos::detail::ThreadData* data
-            = static_cast<weos::detail::ThreadData*>(const_cast<void*>(arg));
+    weos::detail::ThreadDataBase* data
+            = static_cast<weos::detail::ThreadDataBase*>(const_cast<void*>(arg));
 
     // Call the threaded function.
-    data->m_function(data->m_arg);
-    // Increase the semaphore to signal that the thread has been completed.
+    data->invoke();
+    // Use the semaphore to signal that the thread has been completed.
     data->m_finished.post();
     data->deref();
 }
+
+} // anonymous namespace
 
 namespace weos
 {
@@ -63,28 +73,56 @@ namespace detail
 //     ThreadData
 // ----=====================================================================----
 
-ThreadData::ThreadData()
-    : m_referenceCount(1),
-      m_threadId(0)
+namespace
 {
+typedef memory_pool<LargestThreadData,
+                    WEOS_MAX_NUM_CONCURRENT_THREADS,
+                    mutex> ThreadDataBasePool;
+
+ThreadDataBasePool& threadDataBasePool()
+{
+    static ThreadDataBasePool pool;
+    return pool;
 }
 
-void ThreadData::deref()
+} // anonymous namespace
+
+ThreadDataBase::ThreadDataBase()
+    : m_threadId(0)
 {
-    --m_referenceCount;
-    if (m_referenceCount == 0)
-        pool().destroy(this);
+    m_referenceCount.value = 1;
 }
 
-void ThreadData::ref()
+void ThreadDataBase::deref()
 {
-    ++m_referenceCount;
+    int newValue;
+    {
+        lock_guard<mutex> lock(m_referenceCount.mtx);
+        --m_referenceCount.value;
+        newValue = m_referenceCount.value;
+    }
+    if (newValue == 0)
+    {
+        this->~ThreadDataBase();
+        threadDataBasePool().free(this);
+    }
 }
 
-ThreadData::pool_t& ThreadData::pool()
+void ThreadDataBase::ref()
 {
-    static pool_t instance;
-    return instance;
+    lock_guard<mutex> lock(m_referenceCount.mtx);
+    ++m_referenceCount.value;
+}
+
+ThreadDataBase* ThreadDataBase::allocate()
+{
+    void* mem = threadDataBasePool().allocate();
+    if (!mem)
+    {
+        ::weos::throw_exception(system_error(cmsis_error::osErrorResource, cmsis_category())); //! \todo Use correct value
+    }
+
+    return static_cast<ThreadDataBase*>(mem);
 }
 
 } // namespace detail
@@ -105,18 +143,8 @@ void thread::invokeWithCustomStack(const attributes& attrs,
                                     cmsis_category()));
     }
 
-    m_data = detail::ThreadData::pool().construct();
-    if (m_data == 0)
-    {
-        ::weos::throw_exception(weos::system_error(
-                                    cmsis_error::osErrorResource,
-                                    cmsis_category()));
-    }
-    m_data->m_function = fun;
-    m_data->m_arg = arg;
     // Increase the reference count before creating the new thread.
     m_data->ref();
-
     // Start the new thread with a custom stack.
     std::uint32_t taskId = rt_tsk_create(
                                (void (*)(void))weos_threadInvoker,
@@ -128,7 +156,7 @@ void thread::invokeWithCustomStack(const attributes& attrs,
     {
         // Set R13 to the address of osThreadExit, which has to be invoked
         // when the thread exits.
-        *((std::uint32_t*)attrs.m_customStack + 13)
+        *(static_cast<std::uint32_t*>(attrs.m_customStack) + 13)
                 = (std::uint32_t)osThreadExit;
         m_data->m_threadId = (osThreadId)os_active_TCB[taskId - 1];
     }
@@ -139,26 +167,20 @@ void thread::invokeWithCustomStack(const attributes& attrs,
         m_data->deref();
         m_data->deref();
         m_data = 0;
-    }
-}
 
-void thread::invokeWithDefaultStack(const attributes& attrs,
-                                    void (*fun)(void*), void* arg)
-{
-    WEOS_ASSERT(attrs.m_customStack == 0 && attrs.m_customStackSize == 0);
-
-    m_data = detail::ThreadData::pool().construct();
-    if (m_data == 0)
-    {
+        //! \todo Use correct error code
         ::weos::throw_exception(weos::system_error(
                                     cmsis_error::osErrorResource,
                                     cmsis_category()));
     }
-    m_data->m_function = fun;
-    m_data->m_arg = arg;
+}
+
+void thread::invokeWithDefaultStack(const attributes& attrs)
+{
+    WEOS_ASSERT(attrs.m_customStack == 0 && attrs.m_customStackSize == 0);
+
     // Increase the reference count before creating the new thread.
     m_data->ref();
-
     // Start the new thread.
     osThreadDef_t threadDef = { weos_threadInvoker,
                                 static_cast<osPriority>(attrs.m_priority),
@@ -171,6 +193,11 @@ void thread::invokeWithDefaultStack(const attributes& attrs,
         m_data->deref();
         m_data->deref();
         m_data = 0;
+
+        //! \todo Use correct error code
+        ::weos::throw_exception(weos::system_error(
+                                    cmsis_error::osErrorResource,
+                                    cmsis_category()));
     }
 }
 

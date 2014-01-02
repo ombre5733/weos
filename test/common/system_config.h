@@ -26,69 +26,44 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
-#define WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#ifndef SYSTEM_CONFIG_H
+#define SYSTEM_CONFIG_H
 
-#include "../config.hpp"
-#include "../common/system_error.hpp"
+//! The frequency of the high-speed external (HSE) clock in Hz.
+#define SYSTEM_EXTERNAL_CLOCK_FREQUENCY   8000000
 
-namespace weos
-{
+//! The timeout until which the high-speed external (HSE) clock has to be
+//! stable. After enabling the HSE clock, a counter is incremented in a
+//! tight loop until either the HSERDY flag is set or the counter exceeds this
+//! timeout value.
+#define SYSTEM_HSE_READY_TIMEOUT   0x0600
 
-//! Returns the category for CMSIS errors.
-const error_category& cmsis_category();
+//! The system clock frequency in Hz.
+#define SYSTEM_CLOCK_FREQUENCY   168000000
 
-namespace cmsis_error
-{
-//! An enumeration of CMSIS error codes.
-enum cmsis_error_t
-{
-    osOK                   =    0,
-    osEventSignal          = 0x08,
-    osEventMessage         = 0x10,
-    osEventMail            = 0x20,
-    osEventTimeout         = 0x40,
-    osErrorParameter       = 0x80,
-    osErrorResource        = 0x81,
-    osErrorTimeoutResource = 0xC1,
-    osErrorISR             = 0x82,
-    osErrorISRRecursive    = 0x83,
-    osErrorPriority        = 0x84,
-    osErrorNoMemory        = 0x85,
-    osErrorValue           = 0x86,
-    osErrorOS              = 0xFF
-};
+//! The number of waitstates for the flash. Allowed values are 0-7.
+#define SYSTEM_FLASH_WAITSTATES   5
 
-} // namespace cmsis_error
+#if   SYSTEM_CLOCK_FREQUENCY <= 42000000
+#  define SYSTEM_SLOW_PERIPHERAL_DIVIDER   1
+#elif SYSTEM_CLOCK_FREQUENCY <= 84000000
+#  define SYSTEM_SLOW_PERIPHERAL_DIVIDER   2
+#else
+#  define SYSTEM_SLOW_PERIPHERAL_DIVIDER   4
+#endif
 
-// Specialization for CMSIS error enum.
-template <>
-struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
-{
-};
+#if SYSTEM_CLOCK_FREQUENCY <= 84000000
+#  define SYSTEM_FAST_PERIPHERAL_DIVIDER   1
+#else
+#  define SYSTEM_FAST_PERIPHERAL_DIVIDER   2
+#endif
 
-namespace cmsis_error
-{
+//! The frequency of the (slow) APB1 bus in Hz.
+#define SYSTEM_SLOW_PERIPHERAL_CLOCK                                           \
+    (SYSTEM_CLOCK_FREQUENCY / SYSTEM_SLOW_PERIPHERAL_DIVIDER)
 
-//! Creates a CMSIS error code.
-//! Creates a CMSIS error code whose error value will be set to \p err. The
-//! category is the one returned by cmsis_category().
-inline
-weos::error_code make_error_code(cmsis_error_t err)
-{
-    return error_code(err, cmsis_category());
-}
+//! The frequency of the (fast) APB2 bus in Hz.
+#define SYSTEM_FAST_PERIPHERAL_CLOCK                                           \
+    (SYSTEM_CLOCK_FREQUENCY / SYSTEM_FAST_PERIPHERAL_DIVIDER)
 
-/*
-inline
-weos::error_code make_error_condition(cmsis_error_t err)
-{
-    return error_condition(err, cmsis_category());
-}
-*/
-
-} // namespace cmsis_error
-
-} // namespace weos
-
-#endif // WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#endif // SYSTEM_CONFIG_H

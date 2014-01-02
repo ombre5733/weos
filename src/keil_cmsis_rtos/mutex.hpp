@@ -45,16 +45,15 @@ namespace detail
 {
 
 // The header (first 32 bits) of the mutex control block. The full definition
-// can be found in ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
+// can be found in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
 struct MutexControlBlockHeader
 {
     std::uint8_t controlBlockType;
-    std::uint8_t ownerPriority;
     std::uint16_t nestingLevel;
 };
 
 template <typename DerivedT>
-class basic_mutex : boost::noncopyable
+class basic_mutex
 {
 public:
     // Create a generic mutex.
@@ -123,7 +122,9 @@ public:
     }
 
 protected:
-    std::uint32_t m_cmsisMutexControlBlock[3];
+    // Just enough memory to hold a CMSIS mutex. The typedef can be found in
+    // ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
+    std::uint32_t m_cmsisMutexControlBlock[4];
     osMutexId m_id;
 
     MutexControlBlockHeader* mutexControlBlockHeader()
@@ -146,6 +147,10 @@ protected:
     {
         return true;
     }
+
+private:
+    basic_mutex(const basic_mutex&);
+    const basic_mutex& operator= (const basic_mutex&);
 };
 
 // A helper to lock a mutex.

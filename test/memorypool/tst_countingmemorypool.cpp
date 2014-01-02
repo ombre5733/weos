@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "../../memorypool.hpp"
+#include <memorypool.hpp>
 
 #include "../common/testutils.hpp"
 #include "gtest/gtest.h"

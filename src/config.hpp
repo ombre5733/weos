@@ -49,9 +49,9 @@
 
 // Include the CMSIS header file if necessary.
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
-#  if osCMSIS_RTX != ((4<<16) | 70)
-#    error "The Keil CMSIS RTOS version must be 4.70."
+#  include "cmsis_os.h"
+#  if osCMSIS_RTX < ((4<<16) | 70) || osCMSIS_RTX > ((4<<16) | 74)
+#    error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.74."
 #  endif
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 

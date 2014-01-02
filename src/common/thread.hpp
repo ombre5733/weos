@@ -29,55 +29,17 @@
 #ifndef WEOS_COMMON_THREAD_HPP
 #define WEOS_COMMON_THREAD_HPP
 
+#include "thread_detail.hpp"
+
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/aligned_storage.hpp>
-#include <boost/utility.hpp>
+#include <boost/type_traits/decay.hpp>
 
 namespace weos
 {
 
-namespace detail
-{
-//! Data which is shared between the thread function and the thread class.
-class ThreadData : boost::noncopyable
-{
-    typedef object_pool<ThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS,
-                        mutex> pool_t;
-
-public:
-    //! Creates the shared thread data.
-    ThreadData();
-
-    //! Decreases the reference counter by one. If the reference counter reaches
-    //! zero, this ThreadData is returned to the pool.
-    void deref();
-    //! Increases the reference counter by one.
-    void ref();
-
-    //! Returns the global pool from which thread-data objects are allocated.
-    static pool_t& pool();
-
-private:
-    //! The function to execute in the new thread.
-    void (*m_function)(void*);
-    //! The argument which is supplied to the threaded function.
-    void* m_arg;
-
-    //! This semaphore is increased by the thread when it's execution finishes.
-    //! It is needed to implement thread::join().
-    semaphore m_finished;
-    volatile int m_referenceCount;
-    //! The system-specific thread id.
-    weos::detail::native_thread_traits::thread_id_type m_threadId;
-
-    friend class ::weos::thread;
-    friend void ::weos_threadInvoker(WEOS_THREAD_INVOKER_ARGUMENT_QUALIFIER void* m_arg);
-};
-
-} // namespace detail
-
-//! A thread.
-class thread : boost::noncopyable
+//! A thread handle.
+class thread
 {
 public:
     //! A representation of a thread identifier.
@@ -124,7 +86,7 @@ public:
             Error = osPriorityError
         };
 
-        //! Creates stack attributes.
+        //! Creates default thread attributes.
         attributes()
             : m_priority(Normal),
               m_customStackSize(0),
@@ -171,15 +133,107 @@ public:
     {
     }
 
-    //! Creates a thread.
-    //! Starts the function \p fun with the argument \p arg in a new thread.
-    thread(void (*fun)(void*), void* arg)
-        : m_data(0)
+    template <typename F>
+    thread(BOOST_FWD_REF(F) f,
+           typename boost::enable_if_c<
+               !boost::is_same<
+                    typename boost::decay<F>::type, thread>::value
+           >::type* dummy = 0)
+        : m_data(detail::ThreadDataBase::allocate())
     {
+        new (m_data) detail::ThreadData<
+                typename boost::remove_reference<F>::type>(
+                    boost::forward<F>(f));
+
         attributes attrs;
-        invokeWithDefaultStack(attrs, fun, arg);
+        invokeWithDefaultStack(attrs);
     }
 
+    template <typename F,
+              typename A0>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           typename boost::enable_if_c<
+               !boost::is_same<typename boost::remove_reference<F>::type,
+                               attributes>::value>::type* dummy = 0)
+        : m_data(detail::ThreadDataBase::allocate())
+    {
+        new (m_data) detail::ThreadData<
+                typename boost::remove_reference<F>::type,
+                A0>(
+                    boost::forward<F>(f),
+                    boost::forward<A0>(a0));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1)
+        : m_data(detail::ThreadDataBase::allocate())
+    {
+        new (m_data) detail::ThreadData<
+                typename boost::remove_reference<F>::type,
+                A0, A1>(
+                    boost::forward<F>(f),
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1,
+              typename A2>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1,
+           BOOST_FWD_REF(A2) a2)
+        : m_data(detail::ThreadDataBase::allocate())
+    {
+        new (m_data) detail::ThreadData<
+                typename boost::remove_reference<F>::type,
+                A0, A1, A2>(
+                    boost::forward<F>(f),
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1),
+                    boost::forward<A2>(a2));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1,
+              typename A2,
+              typename A3>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1,
+           BOOST_FWD_REF(A2) a2,
+           BOOST_FWD_REF(A3) a3)
+        : m_data(detail::ThreadDataBase::allocate())
+    {
+        new (m_data) detail::ThreadData<
+                typename boost::remove_reference<F>::type,
+                A0, A1, A2, A3>(
+                    boost::forward<F>(f),
+                    boost::forward<A0>(a0),
+                    boost::forward<A1>(a1),
+                    boost::forward<A2>(a2),
+                    boost::forward<A3>(a3));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+# if 0
     //! Creates a thread.
     //! Starts the function \p fun with the argument \p arg in a new thread.
     //! The thread attributes are passed in \p attrs.
@@ -189,9 +243,9 @@ public:
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs, fun, arg);
         else
-            invokeWithDefaultStack(attrs, fun, arg);
+            invokeWithDefaultStack(attrs);
     }
-
+#endif
     //! Destroys the thread handle.
     //! Destroys this thread handle.
     //! \note If the thread handle is still associated with a joinable thread,
@@ -223,8 +277,9 @@ public:
             return id();
     }
 
-    //! Blocks until this thread finishes.
-    //! Blocks the calling thread until this thread finishes.
+    //! Blocks until the associated thread has been finished.
+    //! Blocks the calling thread until the thread which is associated with
+    //! this thread handle has been finished.
     void join()
     {
         if (!joinable())
@@ -232,6 +287,7 @@ public:
             ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
         }
         m_data->m_finished.wait();
+
         // The thread data is not needed any longer.
         m_data->deref();
         m_data = 0;
@@ -287,13 +343,15 @@ protected:
     //! Invokes the function \p fun with the argument \p arg. The thread
     //! attributes are passed in \p attrs. This method may only be called
     //! if \p attrs does not contain a custom stack configuration.
-    void invokeWithDefaultStack(const attributes& attrs,
-                                void (*fun)(void*), void* arg);
+    void invokeWithDefaultStack(const attributes& attrs);
 
 private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
-    detail::ThreadData* m_data;
+    detail::ThreadDataBase* m_data;
+
+    thread(const thread&);
+    const thread& operator= (const thread&);
 };
 
 //! A thread with a custom stack.

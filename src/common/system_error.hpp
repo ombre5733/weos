@@ -201,7 +201,7 @@ public:
     }
 
     //! Returns an explanatory message.
-    virtual const char* what() const BOOST_NOEXCEPT
+    virtual const char* what() const throw() //BOOST_NOEXCEPT
     {
         return m_errorCode.message();
     }

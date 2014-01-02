@@ -26,69 +26,19 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
-#define WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#ifndef SYSTEM_STM32F4XX_H
+#define SYSTEM_STM32F4XX_H
 
-#include "../config.hpp"
-#include "../common/system_error.hpp"
+#include "system_config.h"
 
-namespace weos
-{
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//! Returns the category for CMSIS errors.
-const error_category& cmsis_category();
+extern void System_InitializeClock(void);
 
-namespace cmsis_error
-{
-//! An enumeration of CMSIS error codes.
-enum cmsis_error_t
-{
-    osOK                   =    0,
-    osEventSignal          = 0x08,
-    osEventMessage         = 0x10,
-    osEventMail            = 0x20,
-    osEventTimeout         = 0x40,
-    osErrorParameter       = 0x80,
-    osErrorResource        = 0x81,
-    osErrorTimeoutResource = 0xC1,
-    osErrorISR             = 0x82,
-    osErrorISRRecursive    = 0x83,
-    osErrorPriority        = 0x84,
-    osErrorNoMemory        = 0x85,
-    osErrorValue           = 0x86,
-    osErrorOS              = 0xFF
-};
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
-} // namespace cmsis_error
-
-// Specialization for CMSIS error enum.
-template <>
-struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
-{
-};
-
-namespace cmsis_error
-{
-
-//! Creates a CMSIS error code.
-//! Creates a CMSIS error code whose error value will be set to \p err. The
-//! category is the one returned by cmsis_category().
-inline
-weos::error_code make_error_code(cmsis_error_t err)
-{
-    return error_code(err, cmsis_category());
-}
-
-/*
-inline
-weos::error_code make_error_condition(cmsis_error_t err)
-{
-    return error_condition(err, cmsis_category());
-}
-*/
-
-} // namespace cmsis_error
-
-} // namespace weos
-
-#endif // WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#endif // SYSTEM_STM32F4XX_H

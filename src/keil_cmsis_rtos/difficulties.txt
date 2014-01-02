@@ -46,7 +46,7 @@ features which are not accessible otherwise.
             std::uint8_t ownerPriority;
             std::uint16_t nestingLevel;
         };
-    See also ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
+    See also ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
 
 * semaphore.hpp
   - The semaphore control block (the actual semaphore data) must be a
@@ -58,4 +58,4 @@ features which are not accessible otherwise.
             std::uint8_t tokenMask;
             std::uint16_t numTokens;
         };
-    See also ../3rdparty/keil_cmsis_rtos/SRC/rt_TypeDef.h.
+    See also ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
