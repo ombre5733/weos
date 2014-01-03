@@ -43,6 +43,7 @@ namespace detail
 // ----=====================================================================----
 //     invokeCallable
 // ----=====================================================================----
+
 // --------------------------------------------------------------------
 //     Case 1: Member function pointer together with object
 // --------------------------------------------------------------------
@@ -59,12 +60,38 @@ invokeCallable(Return (F::*f)(),
 }
 
 template <typename Return, typename F,
+          typename A0>
+inline
+typename boost::enable_if_c<
+    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)() const,
+               BOOST_FWD_REF(A0) a0)
+{
+    (boost::forward<A0>(a0).*f)(
+        );
+}
+
+template <typename Return, typename F,
           typename A0,
           typename A1>
 inline
 typename boost::enable_if_c<
     boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
 invokeCallable(Return (F::*f)(A1),
+               BOOST_FWD_REF(A0) a0,
+               BOOST_FWD_REF(A1) a1)
+{
+    (boost::forward<A0>(a0).*f)(
+        boost::forward<A1>(a1));
+}
+
+template <typename Return, typename F,
+          typename A0,
+          typename A1>
+inline
+typename boost::enable_if_c<
+    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)(A1) const,
                BOOST_FWD_REF(A0) a0,
                BOOST_FWD_REF(A1) a1)
 {
@@ -92,12 +119,49 @@ invokeCallable(Return (F::*f)(A1, A2),
 template <typename Return, typename F,
           typename A0,
           typename A1,
+          typename A2>
+inline
+typename boost::enable_if_c<
+    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)(A1, A2) const,
+               BOOST_FWD_REF(A0) a0,
+               BOOST_FWD_REF(A1) a1,
+               BOOST_FWD_REF(A2) a2)
+{
+    (boost::forward<A0>(a0).*f)(
+        boost::forward<A1>(a1),
+        boost::forward<A2>(a2));
+}
+
+template <typename Return, typename F,
+          typename A0,
+          typename A1,
           typename A2,
           typename A3>
 inline
 typename boost::enable_if_c<
     boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
 invokeCallable(Return (F::*f)(A1, A2, A3),
+               BOOST_FWD_REF(A0) a0,
+               BOOST_FWD_REF(A1) a1,
+               BOOST_FWD_REF(A2) a2,
+               BOOST_FWD_REF(A3) a3)
+{
+    (boost::forward<A0>(a0).*f)(
+        boost::forward<A1>(a1),
+        boost::forward<A2>(a2),
+        boost::forward<A3>(a3));
+}
+
+template <typename Return, typename F,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+inline
+typename boost::enable_if_c<
+    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)(A1, A2, A3) const,
                BOOST_FWD_REF(A0) a0,
                BOOST_FWD_REF(A1) a1,
                BOOST_FWD_REF(A2) a2,
@@ -125,6 +189,18 @@ invokeCallable(Return (F::*f)(),
 }
 
 template <typename Return, typename F,
+          typename A0>
+inline
+typename boost::enable_if_c<
+    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)() const,
+               BOOST_FWD_REF(A0) a0)
+{
+    ((*boost::forward<A0>(a0)).*f)(
+        );
+}
+
+template <typename Return, typename F,
           typename A0,
           typename A1>
 inline
@@ -140,12 +216,43 @@ invokeCallable(Return (F::*f)(A1),
 
 template <typename Return, typename F,
           typename A0,
+          typename A1>
+inline
+typename boost::enable_if_c<
+    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)(A1) const,
+               BOOST_FWD_REF(A0) a0,
+               BOOST_FWD_REF(A1) a1)
+{
+    ((*boost::forward<A0>(a0)).*f)(
+        boost::forward<A1>(a1));
+}
+
+template <typename Return, typename F,
+          typename A0,
           typename A1,
           typename A2>
 inline
 typename boost::enable_if_c<
     !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
 invokeCallable(Return (F::*f)(A1, A2),
+               BOOST_FWD_REF(A0) a0,
+               BOOST_FWD_REF(A1) a1,
+               BOOST_FWD_REF(A2) a2)
+{
+    ((*boost::forward<A0>(a0)).*f)(
+        boost::forward<A1>(a1),
+        boost::forward<A2>(a2));
+}
+
+template <typename Return, typename F,
+          typename A0,
+          typename A1,
+          typename A2>
+inline
+typename boost::enable_if_c<
+    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)(A1, A2) const,
                BOOST_FWD_REF(A0) a0,
                BOOST_FWD_REF(A1) a1,
                BOOST_FWD_REF(A2) a2)
@@ -175,23 +282,44 @@ invokeCallable(Return (F::*f)(A1, A2, A3),
         boost::forward<A3>(a3));
 }
 
+template <typename Return, typename F,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+inline
+typename boost::enable_if_c<
+    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
+invokeCallable(Return (F::*f)(A1, A2, A3) const,
+               BOOST_FWD_REF(A0) a0,
+               BOOST_FWD_REF(A1) a1,
+               BOOST_FWD_REF(A2) a2,
+               BOOST_FWD_REF(A3) a3)
+{
+    ((*boost::forward<A0>(a0)).*f)(
+        boost::forward<A1>(a1),
+        boost::forward<A2>(a2),
+        boost::forward<A3>(a3));
+}
+
 // --------------------------------------------------------------------
 //     Case 3: Function pointer
 // --------------------------------------------------------------------
 template <typename F>
 inline
 typename boost::enable_if_c<
-    !boost::is_member_function_pointer<F>::value>::type
+    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
 invokeCallable(BOOST_FWD_REF(F) f)
 {
-    boost::forward<F>(f)();
+    boost::forward<F>(f)(
+        );
 }
 
 template <typename F,
           typename A0>
 inline
 typename boost::enable_if_c<
-    !boost::is_member_function_pointer<F>::value>::type
+    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
 invokeCallable(BOOST_FWD_REF(F) f,
                BOOST_FWD_REF(A0) a0)
 {
@@ -204,7 +332,7 @@ template <typename F,
           typename A1>
 inline
 typename boost::enable_if_c<
-    !boost::is_member_function_pointer<F>::value>::type
+    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
 invokeCallable(BOOST_FWD_REF(F) f,
                BOOST_FWD_REF(A0) a0,
                BOOST_FWD_REF(A1) a1)
@@ -220,7 +348,7 @@ template <typename F,
           typename A2>
 inline
 typename boost::enable_if_c<
-    !boost::is_member_function_pointer<F>::value>::type
+    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
 invokeCallable(BOOST_FWD_REF(F) f,
                BOOST_FWD_REF(A0) a0,
                BOOST_FWD_REF(A1) a1,
@@ -239,7 +367,7 @@ template <typename F,
           typename A3>
 inline
 typename boost::enable_if_c<
-    !boost::is_member_function_pointer<F>::value>::type
+    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
 invokeCallable(BOOST_FWD_REF(F) f,
                BOOST_FWD_REF(A0) a0,
                BOOST_FWD_REF(A1) a1,
