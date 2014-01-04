@@ -37,7 +37,7 @@ struct SparringData
     {
         None,
         WaitForAnySignal,
-        WaitForSignalMask,
+        WaitForSignals,
         TryWaitForSignal,
         TryWaitForSignalFor,
         Terminate
@@ -77,10 +77,10 @@ void sparring(SparringData* data)
         switch (data->action)
         {
             case SparringData::WaitForAnySignal:
-                data->caughtSignals = weos::this_thread::wait_for_signal();
+                data->caughtSignals = weos::this_thread::wait_for_any_signal();
                 break;
-            case SparringData::WaitForSignalMask:
-                data->caughtSignals = weos::this_thread::wait_for_signal(data->waitMask);
+            case SparringData::WaitForSignals:
+                data->caughtSignals = weos::this_thread::wait_for_signals(data->waitMask);
                 break;
             default:
                 break;
@@ -90,7 +90,7 @@ void sparring(SparringData* data)
     }
 }
 
-TEST(signal, wait_for_any)
+TEST(signal, wait_for_any_signal)
 {
     SparringData data;
     weos::thread t(sparring, &data);
@@ -108,7 +108,7 @@ TEST(signal, wait_for_any)
         ASSERT_TRUE(data.busy);
         ASSERT_EQ(0, data.caughtSignals);
 
-        t.set_signal(mask);
+        t.set_signals(mask);
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_FALSE(data.busy);
         ASSERT_EQ(mask, data.caughtSignals);
@@ -125,7 +125,7 @@ TEST(signal, wait_for_any)
         ASSERT_TRUE(data.busy);
         ASSERT_EQ(0, data.caughtSignals);
 
-        t.set_signal(mask);
+        t.set_signals(mask);
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_FALSE(data.busy);
         ASSERT_EQ(mask, data.caughtSignals);
@@ -135,7 +135,7 @@ TEST(signal, wait_for_any)
     t.join();
 }
 
-TEST(signal, wait_for_mask)
+TEST(signal, wait_for_signals)
 {
     SparringData data;
     weos::thread t(sparring, &data);
@@ -149,7 +149,7 @@ TEST(signal, wait_for_mask)
 
         data.caughtSignals = 0;
         data.waitMask = mask;
-        data.action = SparringData::WaitForSignalMask;
+        data.action = SparringData::WaitForSignals;
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_TRUE(data.busy);
         ASSERT_EQ(0, data.caughtSignals);
@@ -159,19 +159,19 @@ TEST(signal, wait_for_mask)
             if (j == i)
                 continue;
 
-            t.set_signal(1 << j);
+            t.set_signals(1 << j);
             weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
             ASSERT_TRUE(data.busy);
             ASSERT_EQ(0, data.caughtSignals);
         }
 
-        t.set_signal(mask);
+        t.set_signals(mask);
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_FALSE(data.busy);
         ASSERT_TRUE(data.caughtSignals != 0);
 
         // Clear all signals which have not been caught.
-        t.clear_signal(0xFFFF);
+        t.clear_signals(0xFFFF);
     }
 
     for (unsigned i = 0; i < 100; ++i)
@@ -180,7 +180,7 @@ TEST(signal, wait_for_mask)
 
         data.caughtSignals = 0;
         data.waitMask = mask;
-        data.action = SparringData::WaitForSignalMask;
+        data.action = SparringData::WaitForSignals;
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_TRUE(data.busy);
         ASSERT_TRUE(data.caughtSignals == 0);
@@ -188,7 +188,7 @@ TEST(signal, wait_for_mask)
         for (unsigned j = 0; j < 16; ++j)
         {
             mask &= ~(1 << j);
-            t.set_signal(1 << j);
+            t.set_signals(1 << j);
             weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
             if (mask != 0)
             {
@@ -203,7 +203,7 @@ TEST(signal, wait_for_mask)
         }
 
         // Clear all signals which have not been caught.
-        t.clear_signal(0xFFFF);
+        t.clear_signals(0xFFFF);
     }
 
     data.action = SparringData::Terminate;

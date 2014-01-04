@@ -302,9 +302,9 @@ public:
         return m_data != 0;
     }
 
-    //! Clears a signal or a set of signals.
+    //! Clears a set of signals.
     //! Clears the signals which are specified by the \p mask.
-    void clear_signal(std::uint32_t mask)
+    void clear_signals(std::uint32_t mask)
     {
         WEOS_ASSERT(mask > 0
                     && mask < (std::uint32_t(1) << (osFeature_Signals)));
@@ -314,9 +314,9 @@ public:
         (void)result;
     }
 
-    //! Sets a signal or a set of signals.
+    //! Sets a set of signals.
     //! Sets the signals which are specified by the \p mask.
-    void set_signal(std::uint32_t mask)
+    void set_signals(std::uint32_t mask)
     {
         WEOS_ASSERT(mask > 0
                     && mask < (std::uint32_t(1) << (osFeature_Signals)));

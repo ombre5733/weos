@@ -102,7 +102,7 @@ private:
 // A helper to wait for a signal.
 struct signal_waiter
 {
-    // Creates an object which waits for a signal specified by the \p mask.
+    // Creates an object which waits for all signals specified by the \p mask.
     explicit signal_waiter(std::uint32_t mask)
         : m_mask(mask)
     {
@@ -198,21 +198,21 @@ void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
 template <typename ClockT, typename DurationT>
 void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
 
-//! Waits for a signal.
-//! Blocks the current thread until it receives any signal(s) and returns the
-//! signals.
+//! Waits for any signal.
+//! Blocks the current thread until it receives one or more signals and returns
+//! these signals.
 inline
-std::uint32_t wait_for_signal()
+std::uint32_t wait_for_any_signal()
 {
     return detail::wait_for_signal(0);
 }
 
-//! Checks if a signal has arrived.
+//! Checks if any signal has arrived.
 //! Checks if any signal has reached the current thread. If so, the boolean
 //! in the returned pair is set to \p true and the second member contains
 //! the signal flags. Otherwise, the boolean is set to \p false.
 inline
-std::pair<bool, std::uint32_t> try_wait_for_signal()
+std::pair<bool, std::uint32_t> try_wait_for_any_signal()
 {
     return detail::try_wait_for_signal(0);
 }
@@ -223,31 +223,31 @@ std::pair<bool, std::uint32_t> try_wait_for_signal()
 //! signal was present. In this case, the second member contains the signal
 //! flags. If the timeout expired, the boolean is set to \p false.
 template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> try_wait_for_signal_for(
+std::pair<bool, std::uint32_t> try_wait_for_signal_any_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
     return detail::try_wait_for_signal_for(0, d);
 }
 
-//! Waits for a signal or a set of signals.
+//! Waits for a set of signals.
 //! Blocks the current thread until the signals specified by the \p mask have
 //! arrived. Then the signal flags are returned.
 inline
-std::uint32_t wait_for_signal(std::uint32_t mask)
+std::uint32_t wait_for_signals(std::uint32_t mask)
 {
     WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
     return detail::wait_for_signal(mask);
 }
 
 inline
-std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
+std::pair<bool, std::uint32_t> try_wait_for_signals(std::uint32_t mask)
 {
     WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
     return detail::try_wait_for_signal(mask);
 }
 
 template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> try_wait_for_signal_for(
+std::pair<bool, std::uint32_t> try_wait_for_signals_for(
         std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
 {
     WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
