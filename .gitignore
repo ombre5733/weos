@@ -1,0 +1,7 @@
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+
+*-build/
+
+# QtCreator temporaries
+*.autosave
