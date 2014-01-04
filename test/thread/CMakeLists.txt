@@ -31,3 +31,6 @@ add_test_executable(tst_thread "${COMMON_SOURCES};${test_SOURCES}")
 
 set(test_SOURCES tst_signal.cpp)
 add_test_executable(tst_signal "${COMMON_SOURCES};${test_SOURCES}")
+
+set(test_SOURCES tst_sleep.cpp)
+add_test_executable(tst_sleep "${COMMON_SOURCES};${test_SOURCES}")

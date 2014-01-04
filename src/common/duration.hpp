@@ -34,21 +34,33 @@
 #include <boost/config.hpp>
 #include <boost/ratio.hpp>
 #include <boost/type_traits/common_type.hpp>
+#include <boost/type_traits/is_floating_point.hpp>
 
 #include <cstdint>
 #include <limits>
 
 namespace weos
 {
+
 namespace chrono
 {
+
+namespace detail
+{
+
+template <typename FromDurationT, typename ToDurationT>
+struct duration_caster;
+
+} // namespace detail
 
 // ----=====================================================================----
 //     treat_as_floating_point
 // ----=====================================================================----
 
-//template <class RepT>
-//struct treat_as_floating_point : std::is_floating_point<RepT> {};
+template <typename RepT>
+struct treat_as_floating_point : boost::is_floating_point<RepT>
+{
+};
 
 // ----=====================================================================----
 //     duration_values
@@ -105,12 +117,19 @@ public:
     {
     }
 
-    template <typename Rep2>
-    /*BOOST_CONSTEXPR*/ explicit duration(const Rep2& count,
-                                          //! \todo Conversion between RepT and Rep2 is missing
-                                          typename boost::enable_if_c<false>* = 0)
+    template <typename Rep2T>
+    BOOST_CONSTEXPR explicit duration(const Rep2T& count)
+        : m_count(count)
     {
-        m_count = count;
+        //! \todo Add a check if Rep2T is implicitly convertible to RepT
+    }
+
+    template <typename Rep2T, typename Period2T>
+    BOOST_CONSTEXPR duration(const duration<Rep2T, Period2T>& other)
+        : m_count(detail::duration_caster<
+                      duration<Rep2T, Period2T>, duration>().cast(other).count())
+    {
+        //! \todo Checks for overflow are missing
     }
 
     duration& operator= (const duration& other) /*= default*/
@@ -207,6 +226,124 @@ typedef duration<std::int32_t>                        seconds;
 typedef duration<std::int32_t, boost::ratio<60> >     minutes;
 typedef duration<std::int32_t, boost::ratio<3600> >   hours;
 
+} // namespace chrono
+} // namespace weos
+
+
+// ----=====================================================================----
+//     Specialisation of common_type for chrono::duration<>
+// ----=====================================================================----
+
+namespace boost
+{
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+struct common_type<weos::chrono::duration<Rep1T, Period1T>,
+                   weos::chrono::duration<Rep2T, Period2T> >;
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+struct common_type<weos::chrono::duration<Rep1T, Period1T>,
+                   weos::chrono::duration<Rep2T, Period2T> >
+{
+    typedef weos::chrono::duration<
+        typename common_type<Rep1T, Rep2T>::type,
+        typename ratio_gcd<Period1T, Period2T>::type> type;
+};
+
+} // namespace boost
+
+
+// ----=====================================================================----
+//     Operators
+// ----=====================================================================----
+
+namespace weos
+{
+namespace chrono
+{
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+typename boost::common_type<duration<Rep1T, Period1T>,
+                            duration<Rep2T, Period2T> >::type
+operator+ (const duration<Rep1T, Period1T>& x,
+           const duration<Rep2T, Period2T>& y)
+{
+    typedef typename boost::common_type<
+            duration<Rep1T, Period1T>,
+            duration<Rep2T, Period2T> >::type common_type;
+    return common_type(common_type(x).count() + common_type(y).count());
+}
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+typename boost::common_type<duration<Rep1T, Period1T>,
+                            duration<Rep2T, Period2T> >::type
+operator- (const duration<Rep1T, Period1T>& x,
+           const duration<Rep2T, Period2T>& y)
+{
+    typedef typename boost::common_type<
+            duration<Rep1T, Period1T>,
+            duration<Rep2T, Period2T> >::type common_type;
+    return common_type(common_type(x).count() - common_type(y).count());
+}
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+bool operator== (const duration<Rep1T, Period1T>& x,
+                 const duration<Rep2T, Period2T>& y)
+{
+    typedef typename boost::common_type<
+            duration<Rep1T, Period1T>,
+            duration<Rep2T, Period2T> >::type common_type;
+
+    return common_type(x).count() == common_type(y).count();
+}
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+bool operator!= (const duration<Rep1T, Period1T>& x,
+                 const duration<Rep2T, Period2T>& y)
+{
+    return !(x == y);
+}
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+bool operator< (const duration<Rep1T, Period1T>& x,
+                const duration<Rep2T, Period2T>& y)
+{
+    typedef typename boost::common_type<
+            duration<Rep1T, Period1T>,
+            duration<Rep2T, Period2T> >::type common_type;
+
+    return common_type(x).count() < common_type(y).count();
+}
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+bool operator<= (const duration<Rep1T, Period1T>& x,
+                 const duration<Rep2T, Period2T>& y)
+{
+    return !(y < x);
+}
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+bool operator> (const duration<Rep1T, Period1T>& x,
+                const duration<Rep2T, Period2T>& y)
+{
+    return y < x;
+}
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+inline BOOST_CONSTEXPR
+bool operator>= (const duration<Rep1T, Period1T>& x,
+                 const duration<Rep2T, Period2T>& y)
+{
+    return !(x < y);
+}
+
 // ----=====================================================================----
 //     duration_cast
 // ----=====================================================================----
@@ -267,9 +404,9 @@ struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, false, true>
     BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
         typedef typename boost::common_type<
-                typename FromDurationT::rep,
-                typename ToDurationT::rep,
-                cast_least_int_type>::type common_type;
+                    typename FromDurationT::rep,
+                    typename ToDurationT::rep,
+                    cast_least_int_type>::type common_type;
 
         return ToDurationT(static_cast<typename ToDurationT::rep>(
                                static_cast<common_type>(from.count())
@@ -284,9 +421,9 @@ struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, true, false>
     BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
         typedef typename boost::common_type<
-                typename FromDurationT::rep,
-                typename ToDurationT::rep,
-                cast_least_int_type>::type common_type;
+                    typename FromDurationT::rep,
+                    typename ToDurationT::rep,
+                    cast_least_int_type>::type common_type;
 
         return ToDurationT(static_cast<typename ToDurationT::rep>(
                                static_cast<common_type>(from.count())
@@ -301,9 +438,9 @@ struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, false, false>
     BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
         typedef typename boost::common_type<
-                typename FromDurationT::rep,
-                typename ToDurationT::rep,
-                cast_least_int_type>::type common_type;
+                    typename FromDurationT::rep,
+                    typename ToDurationT::rep,
+                    cast_least_int_type>::type common_type;
 
         return ToDurationT(static_cast<typename ToDurationT::rep>(
                                static_cast<common_type>(from.count())
@@ -342,8 +479,9 @@ struct duration_caster
 //! All values are cast to at least weos::detail::cast_least_int_type before
 //! performing the computation.
 template <typename ToDurationT, typename RepT, typename PeriodT>
-BOOST_CONSTEXPR
-typename boost::enable_if<detail::is_duration<ToDurationT>, ToDurationT>::type
+inline BOOST_CONSTEXPR
+typename boost::enable_if_c<detail::is_duration<ToDurationT>::value,
+                            ToDurationT>::type
 duration_cast(const duration<RepT, PeriodT>& d)
 {
     return detail::duration_caster<duration<RepT, PeriodT>,

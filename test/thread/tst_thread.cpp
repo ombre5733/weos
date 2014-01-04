@@ -484,27 +484,3 @@ TEST(thread, const_member_function_3_args)
                                           : static_cast<void*>(&m.m_b)));
     }
 }
-
-#if 0
-TEST(thread, sleep_for)
-{
-    std::uint32_t delays[] = { 0,   1,   2,   3,   4,   5,
-                                   10,  20,  30,  40,  50,
-                                  100, 200, 300, 400, 500};
-    for (unsigned i = 0; i < sizeof(delays) / sizeof(delays[0]); ++i)
-    {
-        std::uint32_t start = osKernelSysTick();
-        weos::this_thread::sleep_for(weos::chrono::milliseconds(delays[i]));
-        // Compute the time which has passed in us.
-        std::uint32_t paused = static_cast<std::uint64_t>(osKernelSysTick() - start)
-                               * static_cast<std::uint64_t>(1000000)
-                               / static_cast<std::uint64_t>(osKernelSysTickFrequency);
-
-        // The duration passed to this_thread::sleep_for() is a lower bound
-        // of the actual delay.
-        ASSERT_TRUE(paused >= delays[i] * 1000);
-        // As no other thread is running, we should wake up within 1 ms.
-        ASSERT_TRUE(paused <= (delays[i] + 1) * 1000);
-    }
-}
-#endif

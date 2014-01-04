@@ -30,6 +30,7 @@
 #define WEOS_COMMON_TIMEPOINT_HPP
 
 #include "../config.hpp"
+#include "duration.hpp"
 
 #include <boost/config.hpp>
 
@@ -105,6 +106,17 @@ public:
 private:
     duration m_duration;
 };
+
+template <typename ClockT, typename Duration1T, typename Duration2T>
+inline
+BOOST_CONSTEXPR
+typename boost::common_type<Duration1T, Duration2T>::type
+    operator- (const time_point<ClockT, Duration1T>& x,
+               const time_point<ClockT, Duration2T>& y)
+{
+
+    return x.time_since_epoch() - y.time_since_epoch();
+}
 
 } // namespace chrono
 } // namespace weos
