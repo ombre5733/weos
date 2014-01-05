@@ -36,7 +36,6 @@
 #include <boost/math/common_factor_ct.hpp>
 #include <boost/type_traits/aligned_storage.hpp>
 #include <boost/type_traits/alignment_of.hpp>
-#include <boost/utility.hpp>
 
 namespace weos
 {
@@ -47,15 +46,15 @@ namespace detail
 //! A free list.
 //! The free_list keeps a list of memory chunks which can be allocated by
 //! a memory pool.
-class free_list : boost::noncopyable
+class free_list
 {
 public:
     //! Creates a free list.
     //! Creates a free list in the memory pointed to by \p memBlock. The size
     //! of one chunk is \p chunkSize and the size of the memory block is
     //! passed in \p memSize.
-    //! The memory \p memBlock must be suitable aligned to hold a \p void
-    //! pointer and the \p chunkSize must be a multiple of
+    //! The memory \p memBlock must be suitable aligned to hold a <tt>void*</tt>
+    //! and the \p chunkSize must be a multiple of
     //! <tt>sizeof(void*)</tt> to ensure correct alignment.
     free_list(void* memBlock, std::size_t chunkSize, std::size_t memSize)
         : m_first(memBlock)
@@ -91,6 +90,9 @@ public:
     }
 
     //! Allocates a memory chunk.
+    //! Returns the first available memory chunk from the list.
+    //!
+    //! \warning This method must not be called, if the list is empty.
     void* allocate()
     {
         void* chunk = m_first;
@@ -114,6 +116,10 @@ private:
     {
         return *static_cast<void**>(p);
     }
+
+    // Hidden copy constructor and assignment operator.
+    free_list(const free_list&);
+    const free_list& operator= (const free_list&);
 };
 
 } // namespace detail
@@ -139,7 +145,7 @@ private:
     static const std::size_t min_align =
         ::boost::math::static_lcm< ::boost::alignment_of<void*>::value,
                                    ::boost::alignment_of<element_type>::value>::value;
-    // The chunk size has to be large enough to sotre a void* or an element.
+    // The chunk size has to be large enough to store a void* or an element.
     // Further it must be a multiple of the alignment.
     static const std::size_t chunk_size =
         ::boost::math::static_lcm<

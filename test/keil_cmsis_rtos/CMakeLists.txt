@@ -85,5 +85,5 @@ macro(add_test_directory _dir)
 endmacro()
 
 # Recurse into the "subdirectories" which contain the actual tests.
-#add_test_directory(memorypool)
+add_test_directory(memorypool)
 add_test_directory(thread)

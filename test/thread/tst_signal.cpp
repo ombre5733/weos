@@ -118,7 +118,7 @@ TEST(signal, wait_for_any_signal)
     // Set a bunch of signals and assert that all of them are caught.
     for (unsigned i = 0; i < 100; ++i)
     {
-        unsigned mask = (random() % 0xFFFF) + 1;
+        unsigned mask = (testing::random() % 0xFFFF) + 1;
 
         data.caughtSignals = 0;
         data.action = SparringData::WaitForAnySignal;
@@ -177,7 +177,7 @@ TEST(signal, wait_for_all_signals)
 
     for (unsigned i = 0; i < 100; ++i)
     {
-        unsigned mask = (random() % 0xFFFF) + 1;
+        unsigned mask = (testing::random() % 0xFFFF) + 1;
 
         data.caughtSignals = 0;
         data.waitMask = mask;

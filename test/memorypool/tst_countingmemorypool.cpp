@@ -33,20 +33,39 @@
 
 #include <set>
 
-typedef double typeToTest;
-
-TEST(counting_memory_pool, Constructor)
+template <typename T>
+class CountingMemoryPoolTestFixture : public testing::Test
 {
-    weos::counting_memory_pool<typeToTest, 10> p;
-    ASSERT_FALSE(p.empty());
-    ASSERT_EQ(10, p.capacity());
-    ASSERT_EQ(10, p.size());
+};
+
+// Define a list of types with which the memory pool will be instantiated.
+typedef testing::Types<
+    std::int8_t,  std::int16_t,  std::int32_t,  std::int64_t,  std::intptr_t,  std::intmax_t,
+    std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t, std::uintptr_t, std::uintmax_t,
+    float, double, long double> TypesToTest;
+TYPED_TEST_CASE(CountingMemoryPoolTestFixture, TypesToTest);
+
+TYPED_TEST(CountingMemoryPoolTestFixture, Constructor)
+{
+    {
+        weos::counting_memory_pool<TypeParam, 1> p;
+        ASSERT_FALSE(p.empty());
+        ASSERT_EQ(1, p.capacity());
+        ASSERT_EQ(1, p.size());
+    }
+
+    {
+        weos::counting_memory_pool<TypeParam, 10> p;
+        ASSERT_FALSE(p.empty());
+        ASSERT_EQ(10, p.capacity());
+        ASSERT_EQ(10, p.size());
+    }
 }
 
-TEST(counting_memory_pool, allocate)
+TYPED_TEST(CountingMemoryPoolTestFixture, allocate)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
+    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
@@ -60,7 +79,7 @@ TEST(counting_memory_pool, allocate)
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
-                    % boost::alignment_of<typeToTest>::value == 0);
+                    % boost::alignment_of<TypeParam>::value == 0);
 
         for (unsigned j = 0; j < i; ++j)
         {
@@ -69,20 +88,21 @@ TEST(counting_memory_pool, allocate)
 
             // Chunks must not overlap.
             if (chunks[j] < addr)
-                ASSERT_TRUE(chunks[j] + sizeof(typeToTest) <= addr);
+                ASSERT_TRUE(chunks[j] + sizeof(TypeParam) <= addr);
             if (chunks[j] > addr)
-                ASSERT_TRUE(addr + sizeof(typeToTest) <= chunks[j]);
+                ASSERT_TRUE(addr + sizeof(TypeParam) <= chunks[j]);
         }
         chunks[i] = addr;
     }
 
     ASSERT_TRUE(p.empty());
+    ASSERT_EQ(POOL_SIZE, p.capacity());
 }
 
-TEST(counting_memory_pool, try_allocate)
+TYPED_TEST(CountingMemoryPoolTestFixture, try_allocate)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
+    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
@@ -90,6 +110,7 @@ TEST(counting_memory_pool, try_allocate)
         ASSERT_TRUE(c != 0);
     }
     ASSERT_TRUE(p.empty());
+    ASSERT_EQ(POOL_SIZE, p.capacity());
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
@@ -97,10 +118,10 @@ TEST(counting_memory_pool, try_allocate)
     }
 }
 
-TEST(counting_memory_pool, allocate_and_free)
+TYPED_TEST(CountingMemoryPoolTestFixture, allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
+    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
 
     for (unsigned j = 1; j <= POOL_SIZE; ++j)
@@ -111,8 +132,10 @@ TEST(counting_memory_pool, allocate_and_free)
             void* c = p.allocate();
             ASSERT_TRUE(c != 0);
             ASSERT_EQ(POOL_SIZE - i - 1, p.size());
+            ASSERT_EQ(POOL_SIZE, p.capacity());
             chunks[i] = c;
         }
+
         for (unsigned i = 0; i < j; ++i)
         {
             ASSERT_EQ(POOL_SIZE - j + i, p.size());
@@ -122,10 +145,10 @@ TEST(counting_memory_pool, allocate_and_free)
     }
 }
 
-TEST(counting_memory_pool, random_allocate_and_free)
+TYPED_TEST(CountingMemoryPoolTestFixture, random_allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<typeToTest, POOL_SIZE> p;
+    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
     std::set<void*> uniqueChunks;
     int numAllocatedChunks = 0;
@@ -147,7 +170,7 @@ TEST(counting_memory_pool, random_allocate_and_free)
 
     for (unsigned i = 0; i < 10000; ++i)
     {
-        unsigned index = random() % POOL_SIZE;
+        unsigned index = testing::random() % POOL_SIZE;
         if (chunks[index] == 0)
         {
             void* c = p.allocate();
@@ -163,5 +186,6 @@ TEST(counting_memory_pool, random_allocate_and_free)
             --numAllocatedChunks;
         }
         ASSERT_EQ(POOL_SIZE - numAllocatedChunks, p.size());
+        ASSERT_EQ(POOL_SIZE, p.capacity());
     }
 }

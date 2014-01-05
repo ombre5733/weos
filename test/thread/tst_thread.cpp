@@ -85,8 +85,8 @@ TEST(thread, create_and_destroy_randomly)
 
     for (unsigned i = 0; i < 1000; ++i)
     {
-        int delayTime = 1 + random() % 3;
-        int index = random() % WEOS_MAX_NUM_CONCURRENT_THREADS;
+        int delayTime = 1 + testing::random() % 3;
+        int index = testing::random() % WEOS_MAX_NUM_CONCURRENT_THREADS;
         if (threads[index] == 0)
         {
             threads[index] = new weos::thread(delay_thread, delayTime);
