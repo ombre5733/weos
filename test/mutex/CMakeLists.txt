@@ -27,16 +27,16 @@
 #*******************************************************************************
 
 set(test_SOURCES tst_mutex.cpp)
-add_executable_and_bin(tst_mutex "${COMMON_SOURCES};${test_SOURCES}")
+add_test_executable(tst_mutex "${COMMON_SOURCES};${test_SOURCES}")
 
 set(test_SOURCES tst_timed_mutex.cpp)
-add_executable_and_bin(tst_timed_mutex "${COMMON_SOURCES};${test_SOURCES}")
+add_test_executable(tst_timed_mutex "${COMMON_SOURCES};${test_SOURCES}")
 
 set(test_SOURCES tst_recursive_mutex.cpp)
-add_executable_and_bin(tst_recursive_mutex "${COMMON_SOURCES};${test_SOURCES}")
+add_test_executable(tst_recursive_mutex "${COMMON_SOURCES};${test_SOURCES}")
 
 set(test_SOURCES tst_recursive_timed_mutex.cpp)
-add_executable_and_bin(tst_recursive_timed_mutex "${COMMON_SOURCES};${test_SOURCES}")
+add_test_executable(tst_recursive_timed_mutex "${COMMON_SOURCES};${test_SOURCES}")
 
 set(test_SOURCES tst_lock_guard.cpp)
-add_executable_and_bin(tst_lock_guard "${COMMON_SOURCES};${test_SOURCES}")
+add_test_executable(tst_lock_guard "${COMMON_SOURCES};${test_SOURCES}")
