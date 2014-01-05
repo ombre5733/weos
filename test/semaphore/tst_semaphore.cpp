@@ -26,10 +26,73 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "../../semaphore.hpp"
-#include "sparring.hpp"
+#include <semaphore.hpp>
+#include <thread.hpp>
 
 #include "gtest/gtest.h"
+
+namespace
+{
+
+struct SparringData
+{
+    enum Action
+    {
+        None,
+        SemaphorePost,
+        SemaphoreWait,
+        SemaphoreTryWait,
+        Terminate
+    };
+
+    SparringData()
+        : action(None),
+          busy(false),
+          sparringStarted(false)
+    {
+    }
+
+    weos::semaphore semaphore;
+    volatile Action action;
+    volatile bool busy;
+    volatile bool sparringStarted;
+};
+
+void sparring(SparringData* data)
+{
+    data->sparringStarted = true;
+
+    while (1)
+    {
+        if (data->action == SparringData::None)
+        {
+            weos::this_thread::sleep_for(weos::chrono::milliseconds(1));
+            continue;
+        }
+        else if (data->action == SparringData::Terminate)
+            break;
+
+        data->busy = true;
+        switch (data->action)
+        {
+            case SparringData::SemaphorePost:
+                data->semaphore.post();
+                break;
+            case SparringData::SemaphoreWait:
+                data->semaphore.wait();
+                break;
+            case SparringData::SemaphoreTryWait:
+                data->semaphore.try_wait();
+                break;
+            default:
+                break;
+        }
+        data->busy = false;
+        data->action = SparringData::None;
+    }
+}
+
+} // anonymous namespace
 
 TEST(semaphore, Constructor)
 {
@@ -89,32 +152,32 @@ TEST(semaphore, wait)
 TEST(sparring_semaphore, post_and_wait)
 {
     SparringData data;
-    osThreadId sparringId = osThreadCreate(&sparringThread, &data);
-    ASSERT_TRUE(sparringId != 0);
-    osDelay(10);
+    weos::thread sparringThread(sparring, &data);
+    ASSERT_TRUE(sparringThread.joinable());
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_TRUE(data.sparringStarted);
 
     data.action = SparringData::SemaphoreWait;
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_TRUE(data.busy);
     ASSERT_EQ(0, data.semaphore.value());
 
     data.semaphore.post();
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_FALSE(data.busy);
     ASSERT_EQ(0, data.semaphore.value());
 
     data.semaphore.post();
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_EQ(1, data.semaphore.value());
 
     data.action = SparringData::SemaphoreWait;
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_FALSE(data.busy);
     ASSERT_EQ(0, data.semaphore.value());
 
     data.action = SparringData::SemaphorePost;
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_FALSE(data.busy);
     ASSERT_EQ(1, data.semaphore.value());
 
@@ -122,5 +185,8 @@ TEST(sparring_semaphore, post_and_wait)
     ASSERT_EQ(0, data.semaphore.value());
 
     data.action = SparringData::Terminate;
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+
+    sparringThread.join();
+    ASSERT_FALSE(sparringThread.joinable());
 }

@@ -26,8 +26,5 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #*******************************************************************************
 
-set(test_SOURCES tst_memorypool.cpp)
-add_executable_and_bin(tst_memorypool "${COMMON_SOURCES};${test_SOURCES}")
-
-set(test_SOURCES tst_countingmemorypool.cpp)
-add_executable_and_bin(tst_countingmemorypool "${COMMON_SOURCES};${test_SOURCES}")
+set(test_SOURCES tst_semaphore.cpp)
+add_test_executable(tst_semaphore "${COMMON_SOURCES};${test_SOURCES}")
