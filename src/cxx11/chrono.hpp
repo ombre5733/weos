@@ -30,6 +30,7 @@
 #define WEOS_CXX11_CHRONO_HPP
 
 #include <chrono>
+
 namespace weos
 {
 

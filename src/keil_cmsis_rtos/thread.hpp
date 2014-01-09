@@ -55,6 +55,26 @@ struct native_thread_traits
 
     // The stack must be able to hold the registers R0-R15.
     static const std::size_t minimum_custom_stack_size = 64;
+
+    static void clear_signals(thread_id_type threadId, std::uint32_t mask)
+    {
+        WEOS_ASSERT(mask > 0
+                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
+        std::int32_t result = osSignalClear(threadId, mask);
+        WEOS_ASSERT(result >= 0);
+        (void)result;
+    }
+
+    // Sets the signals which have been specified in the mask of the thread
+    // selected by the threadId.
+    static void set_signals(thread_id_type threadId, std::uint32_t mask)
+    {
+        WEOS_ASSERT(mask > 0
+                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
+        std::int32_t result = osSignalSet(threadId, mask);
+        WEOS_ASSERT(result >= 0);
+        (void)result;
+    }
 };
 
 } // namespace detail
@@ -73,6 +93,39 @@ weos::thread::id get_id()
 {
     return weos::thread::id(osThreadGetId());
 }
+
+inline
+void clear_signals(std::uint32_t mask)
+{
+    if (osThreadGetId() == 0)
+    {
+        ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+    }
+    detail::native_thread_traits::clear_signals(osThreadGetId(), mask);
+}
+
+inline
+void set_signals(std::uint32_t mask)
+{
+    if (osThreadGetId() == 0)
+    {
+        ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+    }
+    detail::native_thread_traits::set_signals(osThreadGetId(), mask);
+}
+
+//! Triggers a rescheduling of the executing threads.
+inline
+void yield()
+{
+    osStatus status = osThreadYield();
+    WEOS_ASSERT(status == osOK);
+    (void)status;
+}
+
+// ----=====================================================================----
+//     Waiting for signals
+// ----=====================================================================----
 
 namespace detail
 {
@@ -256,15 +309,6 @@ std::pair<bool, std::uint32_t> try_wait_for_all_signals_for(
 {
     WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
     return detail::try_wait_for_signal_for(mask, d);
-}
-
-//! Triggers a rescheduling of the executing threads.
-inline
-void yield()
-{
-    osStatus status = osThreadYield();
-    WEOS_ASSERT(status == osOK);
-    (void)status;
 }
 
 } // namespace this_thread

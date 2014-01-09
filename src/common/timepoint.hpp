@@ -107,12 +107,30 @@ private:
     duration m_duration;
 };
 
+template <typename ClockT, typename Duration1T,
+          typename Rep2T, typename Period2T>
+inline
+BOOST_CONSTEXPR
+time_point<
+    ClockT,
+    typename boost::common_type<Duration1T, duration<Rep2T, Period2T> >::type>
+operator+ (const time_point<ClockT, Duration1T>& t,
+           const duration<Rep2T, Period2T>& d)
+{
+    typedef typename boost::common_type<Duration1T,
+                                        duration<Rep2T, Period2T> >::type
+            common_duration;
+
+    return time_point<ClockT, common_duration>(
+                t.time_since_epoch() + common_duration(d));
+}
+
 template <typename ClockT, typename Duration1T, typename Duration2T>
 inline
 BOOST_CONSTEXPR
 typename boost::common_type<Duration1T, Duration2T>::type
-    operator- (const time_point<ClockT, Duration1T>& x,
-               const time_point<ClockT, Duration2T>& y)
+operator- (const time_point<ClockT, Duration1T>& x,
+           const time_point<ClockT, Duration2T>& y)
 {
 
     return x.time_since_epoch() - y.time_since_epoch();

@@ -297,6 +297,7 @@ public:
     //! Returns \p true, if the thread is joinable.
     //! \note If a thread is joinable, either join() or detach() must be
     //! called before the destructor is executed.
+    inline
     bool joinable() BOOST_NOEXCEPT
     {
         return m_data != 0;
@@ -304,30 +305,33 @@ public:
 
     //! Clears a set of signals.
     //! Clears the signals which are specified by the \p mask.
+    inline
     void clear_signals(std::uint32_t mask)
     {
-        WEOS_ASSERT(mask > 0
-                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
-        WEOS_ASSERT(m_data);
-        std::int32_t result = osSignalClear(m_data->m_threadId, mask);
-        WEOS_ASSERT(result >= 0);
-        (void)result;
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
+
+        detail::native_thread_traits::clear_signals(m_data->m_threadId, mask);
     }
 
     //! Sets a set of signals.
     //! Sets the signals which are specified by the \p mask.
+    inline
     void set_signals(std::uint32_t mask)
     {
-        WEOS_ASSERT(mask > 0
-                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
-        WEOS_ASSERT(m_data);
-        std::int32_t result = osSignalSet(m_data->m_threadId, mask);
-        WEOS_ASSERT(result >= 0);
-        (void)result;
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
+
+        detail::native_thread_traits::set_signals(m_data->m_threadId, mask);
     }
 
     //! Returns the number of threads which can run concurrently on this
     //! hardware.
+    inline
     static unsigned hardware_concurrency() BOOST_NOEXCEPT
     {
         return 1;
