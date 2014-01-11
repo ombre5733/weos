@@ -71,7 +71,8 @@
     namespace weos
     {
         template <typename ExceptionT>
-        /*BOOST_ATTRIBUTE_NORETURN*/ inline void throw_exception(const ExceptionT& e)
+        /*BOOST_ATTRIBUTE_NORETURN*/ inline
+        void throw_exception(const ExceptionT& e)
         {
             throw e;
         }
@@ -97,7 +98,11 @@
                             const char* file, int line);
      } // namespace weos
 #    define WEOS_ASSERT(cond)                                                  \
-         do { if (!(cond)) ::weos::assert_failed(#cond, __PRETTY_FUNCTION__, __FILE__, __LINE__) } while(0)
+         do {                                                                  \
+             if (!(cond))                                                      \
+                 ::weos::assert_failed(#cond, __PRETTY_FUNCTION__,             \
+                                       __FILE__, __LINE__)                     \
+         } while (0)
 #  else
 #    include <cassert>
 #    define WEOS_ASSERT(cond)   assert(cond)

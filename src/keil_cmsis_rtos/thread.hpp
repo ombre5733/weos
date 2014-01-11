@@ -80,7 +80,7 @@ struct native_thread_traits
 } // namespace detail
 } // namespace weos
 
-#include "../common/thread.hpp"
+#include "../common/thread_detail.hpp"
 
 namespace weos
 {

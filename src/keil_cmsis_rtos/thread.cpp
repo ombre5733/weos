@@ -27,6 +27,7 @@
 *******************************************************************************/
 
 #include "thread.hpp"
+#include "memorypool.hpp"
 
 // The function which actually creates a thread. The signature can be found
 // in ../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h.
@@ -48,12 +49,12 @@ namespace
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
 //! helper function adhers to this specification. The \p arg is a pointer to
-//! a weos::ThreadDataBase object which contains thread-specific data such as
+//! a weos::ThreadSharedData object which contains thread-specific data such as
 //! the actual function to start.
 extern "C" void weos_threadInvoker(const void* arg)
 {
-    weos::detail::ThreadDataBase* data
-            = static_cast<weos::detail::ThreadDataBase*>(const_cast<void*>(arg));
+    weos::detail::ThreadSharedData* data
+            = static_cast<weos::detail::ThreadSharedData*>(const_cast<void*>(arg));
 
     // Call the threaded function.
     data->invoke();
@@ -70,30 +71,30 @@ namespace detail
 {
 
 // ----=====================================================================----
-//     ThreadData
+//     ThreadSharedData
 // ----=====================================================================----
 
 namespace
 {
-typedef memory_pool<LargestThreadData,
+typedef memory_pool<ThreadSharedData,
                     WEOS_MAX_NUM_CONCURRENT_THREADS,
-                    mutex> ThreadDataBasePool;
+                    mutex> ThreadSharedDataPool;
 
-ThreadDataBasePool& threadDataBasePool()
+ThreadSharedDataPool& threadSharedDataPool()
 {
-    static ThreadDataBasePool pool;
+    static ThreadSharedDataPool pool;
     return pool;
 }
 
 } // anonymous namespace
 
-ThreadDataBase::ThreadDataBase()
+ThreadSharedData::ThreadSharedData()
     : m_threadId(0)
 {
     m_referenceCount.value = 1;
 }
 
-void ThreadDataBase::deref()
+void ThreadSharedData::deref()
 {
     int newValue;
     {
@@ -103,26 +104,26 @@ void ThreadDataBase::deref()
     }
     if (newValue == 0)
     {
-        this->~ThreadDataBase();
-        threadDataBasePool().free(this);
+        this->~ThreadSharedData();
+        threadSharedDataPool().free(this);
     }
 }
 
-void ThreadDataBase::ref()
+void ThreadSharedData::ref()
 {
     lock_guard<mutex> lock(m_referenceCount.mtx);
     ++m_referenceCount.value;
 }
 
-ThreadDataBase* ThreadDataBase::allocate()
+ThreadSharedData* ThreadSharedData::allocate()
 {
-    void* mem = threadDataBasePool().allocate();
+    void* mem = threadSharedDataPool().allocate();
     if (!mem)
     {
         ::weos::throw_exception(system_error(cmsis_error::osErrorResource, cmsis_category())); //! \todo Use correct value
     }
 
-    return static_cast<ThreadDataBase*>(mem);
+    return new (mem) ThreadSharedData;
 }
 
 } // namespace detail

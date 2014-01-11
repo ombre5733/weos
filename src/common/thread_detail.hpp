@@ -29,11 +29,14 @@
 #ifndef WEOS_COMMON_THREAD_DETAIL_HPP
 #define WEOS_COMMON_THREAD_DETAIL_HPP
 
-#include "../memorypool.hpp"
+#include "../config.hpp"
+#include "callback.hpp"
 
 #include <boost/move/move.hpp>
 #include <boost/static_assert.hpp>
-#include <boost/type_traits.hpp>
+#include <boost/type_traits/aligned_storage.hpp>
+#include <boost/type_traits/decay.hpp>
+#include <boost/utility/enable_if.hpp>
 
 namespace weos
 {
@@ -41,378 +44,44 @@ namespace detail
 {
 
 // ----=====================================================================----
-//     invokeCallable
-// ----=====================================================================----
-
-// --------------------------------------------------------------------
-//     Case 1: Member function pointer together with object
-// --------------------------------------------------------------------
-template <typename Return, typename F,
-          typename A0>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(),
-               BOOST_FWD_REF(A0) a0)
-{
-    (boost::forward<A0>(a0).*f)(
-        );
-}
-
-template <typename Return, typename F,
-          typename A0>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)() const,
-               BOOST_FWD_REF(A0) a0)
-{
-    (boost::forward<A0>(a0).*f)(
-        );
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1),
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1)
-{
-    (boost::forward<A0>(a0).*f)(
-        boost::forward<A1>(a1));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1) const,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1)
-{
-    (boost::forward<A0>(a0).*f)(
-        boost::forward<A1>(a1));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2),
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2)
-{
-    (boost::forward<A0>(a0).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2) const,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2)
-{
-    (boost::forward<A0>(a0).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2, A3),
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2,
-               BOOST_FWD_REF(A3) a3)
-{
-    (boost::forward<A0>(a0).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2),
-        boost::forward<A3>(a3));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename boost::enable_if_c<
-    boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2, A3) const,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2,
-               BOOST_FWD_REF(A3) a3)
-{
-    (boost::forward<A0>(a0).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2),
-        boost::forward<A3>(a3));
-}
-
-// --------------------------------------------------------------------
-//     Case 2: Member function pointer together with pointer
-// --------------------------------------------------------------------
-template <typename Return, typename F,
-          typename A0>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(),
-               BOOST_FWD_REF(A0) a0)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        );
-}
-
-template <typename Return, typename F,
-          typename A0>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)() const,
-               BOOST_FWD_REF(A0) a0)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        );
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1),
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        boost::forward<A1>(a1));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1) const,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        boost::forward<A1>(a1));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2),
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2) const,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2, A3),
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2,
-               BOOST_FWD_REF(A3) a3)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2),
-        boost::forward<A3>(a3));
-}
-
-template <typename Return, typename F,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename boost::enable_if_c<
-    !boost::is_base_of<F, typename boost::remove_reference<A0>::type>::value>::type
-invokeCallable(Return (F::*f)(A1, A2, A3) const,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2,
-               BOOST_FWD_REF(A3) a3)
-{
-    ((*boost::forward<A0>(a0)).*f)(
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2),
-        boost::forward<A3>(a3));
-}
-
-// --------------------------------------------------------------------
-//     Case 3: Function pointer
-// --------------------------------------------------------------------
-template <typename F>
-inline
-typename boost::enable_if_c<
-    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
-invokeCallable(BOOST_FWD_REF(F) f)
-{
-    boost::forward<F>(f)(
-        );
-}
-
-template <typename F,
-          typename A0>
-inline
-typename boost::enable_if_c<
-    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
-invokeCallable(BOOST_FWD_REF(F) f,
-               BOOST_FWD_REF(A0) a0)
-{
-    boost::forward<F>(f)(
-        boost::forward<A0>(a0));
-}
-
-template <typename F,
-          typename A0,
-          typename A1>
-inline
-typename boost::enable_if_c<
-    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
-invokeCallable(BOOST_FWD_REF(F) f,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1)
-{
-    boost::forward<F>(f)(
-        boost::forward<A0>(a0),
-        boost::forward<A1>(a1));
-}
-
-template <typename F,
-          typename A0,
-          typename A1,
-          typename A2>
-inline
-typename boost::enable_if_c<
-    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
-invokeCallable(BOOST_FWD_REF(F) f,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2)
-{
-    boost::forward<F>(f)(
-        boost::forward<A0>(a0),
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2));
-}
-
-template <typename F,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename boost::enable_if_c<
-    !boost::is_member_function_pointer<typename boost::remove_reference<F>::type>::value>::type
-invokeCallable(BOOST_FWD_REF(F) f,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2,
-               BOOST_FWD_REF(A3) a3)
-{
-    boost::forward<F>(f)(
-        boost::forward<A0>(a0),
-        boost::forward<A1>(a1),
-        boost::forward<A2>(a2),
-        boost::forward<A3>(a3));
-}
-
-
-
-// ----=====================================================================----
-//     ThreadData
+//     ThreadSharedData
 // ----=====================================================================----
 
 //! Data which is shared between the threaded function and the thread handle.
-class ThreadDataBase
+struct ThreadSharedData
 {
-public:
     //! Creates the shared thread data with a reference count of 1.
-    ThreadDataBase();
+    ThreadSharedData();
     //! Destroys the shared data.
-    virtual ~ThreadDataBase() {}
+    virtual ~ThreadSharedData() {}
 
     //! Decreases the reference counter by one. If the reference counter reaches
-    //! zero, this ThreadData is returned to the pool.
+    //! zero, this ThreadData is destructed and returned to the pool.
     void deref();
+
     //! Increases the reference counter by one.
     void ref();
 
     //! Invokes the callable in the new thread.
-    virtual void invoke() = 0;
+    inline
+    void invoke()
+    {
+        m_callback();
+    }
 
-    //! Allocates a ThreadData object from the global pool and throws and
-    //! exception if none is available.
-    static ThreadDataBase* allocate();
+    //! Allocates a ThreadData object from the global pool. An exception is
+    //! thrown if the pool is empty.
+    static ThreadSharedData* allocate();
+
+
+
+    callback_wrapper<WEOS_MAX_THREAD_ARGUMENT_SIZE> m_callback;
 
     //! This semaphore is increased by the threaded function when it's
     //! execution finishes. It is needed to implement thread::join().
     semaphore m_finished;
 
+    //! A poor man's atomic integer.
     struct atomic_int
     {
         mutex mtx;
@@ -420,166 +89,407 @@ public:
     };
     atomic_int m_referenceCount;
 
-
     //! The system-specific thread id.
     weos::detail::native_thread_traits::thread_id_type m_threadId;
 
 private:
-    ThreadDataBase(const ThreadDataBase&);
-    const ThreadDataBase& operator= (const ThreadDataBase&);
-};
-
-// The largest possible ThreadData object.
-struct LargestThreadData : public ThreadDataBase
-{
-    virtual void invoke() {}
-    boost::aligned_storage<WEOS_MAX_THREAD_ARGUMENT_SIZE>::type m_data;
-};
-
-struct null_type {};
-
-template <typename F,
-          typename A0 = null_type, typename A1 = null_type,
-          typename A2 = null_type, typename A3 = null_type>
-struct ThreadData : public ThreadDataBase
-{
-    ThreadData(F f,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2,
-               BOOST_FWD_REF(A3) a3)
-        : m_f(f),
-          m_a0(boost::forward<A0>(a0)),
-          m_a1(boost::forward<A1>(a1)),
-          m_a2(boost::forward<A2>(a2)),
-          m_a3(boost::forward<A3>(a3))
-    {
-        BOOST_STATIC_ASSERT(sizeof(ThreadData) <= sizeof(LargestThreadData));
-        BOOST_STATIC_ASSERT(boost::alignment_of<ThreadData>::value
-                            <= boost::alignment_of<LargestThreadData>::value);
-    }
-
-    virtual void invoke()
-    {
-        invokeCallable(m_f,
-                       boost::move(m_a0),
-                       boost::move(m_a1),
-                       boost::move(m_a2),
-                       boost::move(m_a3));
-    }
-
-    typename boost::decay<F>::type m_f;
-    typename boost::decay<A0>::type m_a0;
-    typename boost::decay<A1>::type m_a1;
-    typename boost::decay<A2>::type m_a2;
-    typename boost::decay<A3>::type m_a3;
-};
-
-template <typename F, typename A0, typename A1, typename A2>
-struct ThreadData<F, A0, A1, A2, null_type>
-        : public ThreadDataBase
-{
-    ThreadData(F f,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1,
-               BOOST_FWD_REF(A2) a2)
-        : m_f(f),
-          m_a0(boost::forward<A0>(a0)),
-          m_a1(boost::forward<A1>(a1)),
-          m_a2(boost::forward<A2>(a2))
-    {
-        BOOST_STATIC_ASSERT(sizeof(ThreadData) <= sizeof(LargestThreadData));
-        BOOST_STATIC_ASSERT(boost::alignment_of<ThreadData>::value
-                            <= boost::alignment_of<LargestThreadData>::value);
-    }
-
-    virtual void invoke()
-    {
-        invokeCallable(m_f,
-                       boost::move(m_a0),
-                       boost::move(m_a1),
-                       boost::move(m_a2));
-    }
-
-    typename boost::decay<F>::type m_f;
-    typename boost::decay<A0>::type m_a0;
-    typename boost::decay<A1>::type m_a1;
-    typename boost::decay<A2>::type m_a2;
-};
-
-template <typename F, typename A0, typename A1>
-struct ThreadData<F, A0, A1, null_type, null_type>
-        : public ThreadDataBase
-{
-    ThreadData(F f,
-               BOOST_FWD_REF(A0) a0,
-               BOOST_FWD_REF(A1) a1)
-        : m_f(f),
-          m_a0(boost::forward<A0>(a0)),
-          m_a1(boost::forward<A1>(a1))
-    {
-        BOOST_STATIC_ASSERT(sizeof(ThreadData) <= sizeof(LargestThreadData));
-        BOOST_STATIC_ASSERT(boost::alignment_of<ThreadData>::value
-                            <= boost::alignment_of<LargestThreadData>::value);
-    }
-
-    virtual void invoke()
-    {
-        invokeCallable(m_f,
-                       boost::move(m_a0),
-                       boost::move(m_a1));
-    }
-
-    typename boost::decay<F>::type m_f;
-    typename boost::decay<A0>::type m_a0;
-    typename boost::decay<A1>::type m_a1;
-};
-
-template <typename F, typename A0>
-struct ThreadData<F, A0, null_type, null_type, null_type>
-        : public ThreadDataBase
-{
-    ThreadData(F f,
-               BOOST_FWD_REF(A0) a0)
-        : m_f(f),
-          m_a0(boost::forward<A0>(a0))
-    {
-        BOOST_STATIC_ASSERT(sizeof(ThreadData) <= sizeof(LargestThreadData));
-        BOOST_STATIC_ASSERT(boost::alignment_of<ThreadData>::value
-                            <= boost::alignment_of<LargestThreadData>::value);
-    }
-
-    virtual void invoke()
-    {
-        invokeCallable(m_f,
-                       boost::move(m_a0));
-    }
-
-    typename boost::decay<F>::type m_f;
-    typename boost::decay<A0>::type m_a0;
-};
-
-template <typename F>
-struct ThreadData<F, null_type, null_type, null_type, null_type>
-        : public ThreadDataBase
-{
-    explicit ThreadData(BOOST_FWD_REF(F) f)
-        : m_f(boost::forward<F>(f))
-    {
-        BOOST_STATIC_ASSERT(sizeof(ThreadData) <= sizeof(LargestThreadData));
-        BOOST_STATIC_ASSERT(boost::alignment_of<ThreadData>::value
-                            <= boost::alignment_of<LargestThreadData>::value);
-    }
-
-    virtual void invoke()
-    {
-        m_f();
-    }
-
-    typename boost::decay<F>::type m_f;
+    ThreadSharedData(const ThreadSharedData&);
+    const ThreadSharedData& operator= (const ThreadSharedData&);
 };
 
 } // namespace detail
+
+//! A thread handle.
+class thread
+{
+public:
+    //! A representation of a thread identifier.
+    //! This class is a wrapper around a thread identifier. It has a small
+    //! memory footprint such that it is inexpensive to pass copies around.
+    class id
+    {
+    public:
+        id() BOOST_NOEXCEPT
+            : m_id(0)
+        {
+        }
+
+        explicit id(weos::detail::native_thread_traits::thread_id_type _id) BOOST_NOEXCEPT
+            : m_id(_id)
+        {
+        }
+
+    private:
+        friend bool operator== (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator!= (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator< (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator<= (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator> (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator>= (id lhs, id rhs) BOOST_NOEXCEPT;
+
+        weos::detail::native_thread_traits::thread_id_type m_id;
+    };
+
+    //! Thread attributes.
+    class attributes
+    {
+    public:
+        //! An enumeration of thread priorities.
+        enum Priority
+        {
+            Idle = osPriorityIdle,
+            Low = osPriorityLow,
+            BelowNormal = osPriorityBelowNormal,
+            Normal = osPriorityNormal,
+            AboveNormal = osPriorityAboveNormal,
+            High = osPriorityHigh,
+            Realtime = osPriorityRealtime,
+            Error = osPriorityError
+        };
+
+        //! Creates default thread attributes.
+        attributes()
+            : m_priority(Normal),
+              m_customStackSize(0),
+              m_customStack(0)
+        {
+        }
+
+        //! Provides a custom stack.
+        //! Makes the thread use the memory pointed to by \p stack whose size
+        //! in bytes is passed in \p stackSize rather than the default stack.
+        //!
+        //! The default is a null-pointer for the stack and zero for its size.
+        void setCustomStack(void* stack, std::uint32_t stackSize)
+        {
+            m_customStack = stack;
+            m_customStackSize = stackSize;
+        }
+
+        //! Sets the priority.
+        //! Sets the thread priority to \p priority.
+        //!
+        //! The default value is Priority::Normal.
+        void setPriority(Priority priority)
+        {
+            m_priority = priority;
+        }
+
+    private:
+        //! The thread's priority.
+        Priority m_priority;
+        //! The size of the custom stack.
+        std::size_t m_customStackSize;
+        //! A pointer to the custom stack.
+        void* m_customStack;
+
+        friend class thread;
+    };
+
+    //! Creates a thread handle without a thread.
+    //! Creates a thread handle which is not associated with any thread. The
+    //! new thread handle is not joinable.
+    thread() BOOST_NOEXCEPT
+        : m_data(0)
+    {
+    }
+
+    template <typename F>
+    thread(BOOST_FWD_REF(F) f,
+           typename boost::enable_if_c<
+               !boost::is_same<
+                    typename boost::decay<F>::type, thread>::value
+           >::type* dummy = 0)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           typename boost::enable_if_c<
+               !boost::is_same<typename boost::remove_reference<F>::type,
+                               attributes>::value>::type* dummy = 0)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0),
+                                   boost::forward<A1>(a1));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1,
+              typename A2>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1,
+           BOOST_FWD_REF(A2) a2)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0),
+                                   boost::forward<A1>(a1),
+                                   boost::forward<A2>(a2));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1,
+              typename A2,
+              typename A3>
+    thread(BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1,
+           BOOST_FWD_REF(A2) a2,
+           BOOST_FWD_REF(A3) a3)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0),
+                                   boost::forward<A1>(a1),
+                                   boost::forward<A2>(a2),
+                                   boost::forward<A3>(a3));
+
+        attributes attrs;
+        invokeWithDefaultStack(attrs);
+    }
+# if 0
+    //! Creates a thread.
+    //! Starts the function \p fun with the argument \p arg in a new thread.
+    //! The thread attributes are passed in \p attrs.
+    thread(const attributes& attrs, void (*fun)(void*), void* arg)
+        : m_data(0)
+    {
+        if (attrs.m_customStack || attrs.m_customStackSize)
+            invokeWithCustomStack(attrs, fun, arg);
+        else
+            invokeWithDefaultStack(attrs);
+    }
+#endif
+    //! Destroys the thread handle.
+    //! Destroys this thread handle.
+    //! \note If the thread handle is still associated with a joinable thread,
+    //! its destruction will call std::terminate(). It is mandatory to either
+    //! call join() or detach().
+    ~thread()
+    {
+        if (joinable())
+            std::terminate();
+    }
+
+    //! Separates the executing thread from this thread handle.
+    void detach()
+    {
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
+        m_data->deref();
+        m_data = 0;
+    }
+
+    //! Returns the id of the thread.
+    id get_id() const BOOST_NOEXCEPT
+    {
+        if (m_data)
+            return id(m_data->m_threadId);
+        else
+            return id();
+    }
+
+    //! Blocks until the associated thread has been finished.
+    //! Blocks the calling thread until the thread which is associated with
+    //! this thread handle has been finished.
+    void join()
+    {
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
+        m_data->m_finished.wait();
+
+        // The thread data is not needed any longer.
+        m_data->deref();
+        m_data = 0;
+    }
+
+    //! Checks if the thread is joinable.
+    //! Returns \p true, if the thread is joinable.
+    //! \note If a thread is joinable, either join() or detach() must be
+    //! called before the destructor is executed.
+    inline
+    bool joinable() BOOST_NOEXCEPT
+    {
+        return m_data != 0;
+    }
+
+    //! Clears a set of signals.
+    //! Clears the signals which are specified by the \p mask.
+    inline
+    void clear_signals(std::uint32_t mask)
+    {
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
+
+        detail::native_thread_traits::clear_signals(m_data->m_threadId, mask);
+    }
+
+    //! Sets a set of signals.
+    //! Sets the signals which are specified by the \p mask.
+    inline
+    void set_signals(std::uint32_t mask)
+    {
+        if (!joinable())
+        {
+            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+        }
+
+        detail::native_thread_traits::set_signals(m_data->m_threadId, mask);
+    }
+
+    //! Returns the number of threads which can run concurrently on this
+    //! hardware.
+    inline
+    static unsigned hardware_concurrency() BOOST_NOEXCEPT
+    {
+        return 1;
+    }
+
+protected:
+    //! Invokes the function \p fun with the argument \p arg. The thread
+    //! attributes are passed in \p attrs. This method may only be called
+    //! if \p attrs contains a valid custom stack configuration.
+    void invokeWithCustomStack(const attributes& attrs,
+                               void (*fun)(void*), void* arg);
+
+    //! Invokes the function \p fun with the argument \p arg. The thread
+    //! attributes are passed in \p attrs. This method may only be called
+    //! if \p attrs does not contain a custom stack configuration.
+    void invokeWithDefaultStack(const attributes& attrs);
+
+private:
+    //! The thread-data which is shared by this class and the invoker
+    //! function.
+    detail::ThreadSharedData* m_data;
+
+    thread(const thread&);
+    const thread& operator= (const thread&);
+};
+
+//! A thread with a custom stack.
+//! The custom_stack_thread is a convenience class for creating a thread with a
+//! custom stack. The memory for the stack is held statically by the object.
+//! Its size in bytes is determined at compile-time by the template
+//! parameter \p TStackSize.
+template <std::size_t TStackSize>
+class custom_stack_thread : public thread
+{
+    BOOST_STATIC_ASSERT(TStackSize >= weos::detail::native_thread_traits::minimum_custom_stack_size);
+
+public:
+    //! Creates a thread with a custom stack.
+    //! Starts the function \p fun with the argument \p arg in a new thread.
+    custom_stack_thread(void (*fun)(void*), void* arg)
+    {
+        thread::attributes attrs;
+        attrs.setCustomStack(m_stack.address(), TStackSize);
+        this->invokeWithCustomStack(attrs, fun, arg);
+    }
+
+    //! Creates a thread with a custom stack and a custom priority.
+    //! Runs the function \p fun with the argument \p arg in a new thread,
+    //! which has a custom stack and a user-defined priority of \p priority.
+    custom_stack_thread(thread::attributes::Priority priority,
+                        void (*fun)(void*), void* arg)
+    {
+        thread::attributes attrs;
+        attrs.setCustomStack(m_stack.address(), TStackSize);
+        attrs.setPriority(priority);
+        this->invokeWithCustomStack(attrs, fun, arg);
+    }
+
+private:
+    //! The custom stack.
+    typename ::boost::aligned_storage<TStackSize>::type m_stack;
+};
+
+//! Compares two thread ids for equality.
+//! Returns \p true, if \p lhs and \p rhs are equal.
+inline
+bool operator== (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+{
+    return lhs.m_id == rhs.m_id;
+}
+
+//! Compares two thread ids for inequality.
+//! Returns \p true, if \p lhs and \p rhs are not equal.
+inline
+bool operator!= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+{
+    return lhs.m_id != rhs.m_id;
+}
+
+//! Less-than comparison for thread ids.
+//! Returns \p true, if \p lhs is less than \p rhs.
+inline
+bool operator< (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+{
+    return lhs.m_id < rhs.m_id;
+}
+
+//! Less-than or equal comparison for thread ids.
+//! Returns \p true, if \p lhs is less than or equal to \p rhs.
+inline
+bool operator<= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+{
+    return lhs.m_id <= rhs.m_id;
+}
+
+//! Greater-than comparison for thread ids.
+//! Returns \p true, if \p lhs is greater than \p rhs.
+inline
+bool operator> (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+{
+    return lhs.m_id > rhs.m_id;
+}
+
+//! Greater-than or equal comparison for thread ids.
+//! Returns \p true, if \p lhs is greater than or equal to \p rhs.
+inline
+bool operator>= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+{
+    return lhs.m_id >= rhs.m_id;
+}
+
 } // namespace weos
 
 #endif // WEOS_COMMON_THREAD_DETAIL_HPP

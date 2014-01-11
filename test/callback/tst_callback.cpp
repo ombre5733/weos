@@ -26,91 +26,10 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <thread.hpp>
+#include <common/callback.hpp>
 
 #include "../common/testutils.hpp"
 #include "gtest/gtest.h"
-
-TEST(thread, DefaultConstructor)
-{
-    weos::thread t;
-    ASSERT_FALSE(t.joinable());
-}
-
-namespace
-{
-//! An empty thread which does nothing.
-void empty_thread()
-{
-}
-
-//! A thread which sleeps for \p ms milliseconds and returns afterwards.
-void delay_thread(std::uint32_t ms)
-{
-    weos::this_thread::sleep_for(weos::chrono::milliseconds(ms));
-}
-
-} // anonymous namespace
-
-TEST(thread, start_one_thread_very_often)
-{
-    for (unsigned i = 0; i < 10000; ++i)
-    {
-        weos::thread t(empty_thread);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
-    }
-}
-
-TEST(thread, start_all_in_parallel)
-{
-    weos::thread* threads[WEOS_MAX_NUM_CONCURRENT_THREADS];
-    for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
-    {
-        threads[i] = new weos::thread(delay_thread, 5);
-        ASSERT_TRUE(threads[i]->joinable());
-    }
-    for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
-    {
-        threads[i]->join();
-        ASSERT_FALSE(threads[i]->joinable());
-        delete threads[i];
-    }
-}
-
-TEST(thread, create_and_destroy_randomly)
-{
-    weos::thread* threads[WEOS_MAX_NUM_CONCURRENT_THREADS] = {0};
-
-    for (unsigned i = 0; i < 1000; ++i)
-    {
-        int delayTime = 1 + testing::random() % 3;
-        int index = testing::random() % WEOS_MAX_NUM_CONCURRENT_THREADS;
-        if (threads[index] == 0)
-        {
-            threads[index] = new weos::thread(delay_thread, delayTime);
-            ASSERT_TRUE(threads[index]->joinable());
-        }
-        else
-        {
-            ASSERT_TRUE(threads[index]->joinable());
-            threads[index]->join();
-            delete threads[index];
-            threads[index] = 0;
-        }
-    }
-
-    for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
-    {
-        if (threads[i])
-        {
-            ASSERT_TRUE(threads[i]->joinable());
-            threads[i]->join();
-            delete threads[i];
-        }
-    }
-}
 
 // ----=====================================================================----
 //     Function pointers
@@ -162,59 +81,49 @@ void f4(int* a, double* b, int c, float d)
 
 } // anonymouse namespace
 
-TEST(thread, function_pointer_0_args)
+TEST(callback, function_pointer_0_args)
 {
     for (int counter = 0; counter < 100; ++counter)
     {
         ASSERT_FALSE(f0_flag);
-        {
-            weos::thread t(&f0);
-            ASSERT_TRUE(t.joinable());
-            t.join();
-            ASSERT_FALSE(t.joinable());
-        }
+        weos::callback_wrapper<sizeof(void*)> cb;
+        cb.emplace(&f0);
+        cb();
         ASSERT_TRUE(f0_flag);
-        {
-            weos::thread t(&f0);
-            ASSERT_TRUE(t.joinable());
-            t.join();
-            ASSERT_FALSE(t.joinable());
-        }
+        cb();
         ASSERT_FALSE(f0_flag);
     }
 }
 
-TEST(thread, function_pointer_1_arg)
+TEST(callback, function_pointer_1_arg)
 {
     ASSERT_EQ(0, f1_a);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&f1, counter);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<2 * sizeof(void*)> cb;
+        cb.emplace(&f1, counter);
+        cb();
         ASSERT_EQ(counter, f1_a);
     }
 }
 
-TEST(thread, function_pointer_2_args)
+TEST(callback, function_pointer_2_args)
 {
     static const char characters[6] = {'M', 'N', 'O', 'P', 'Q', 'R'};
     ASSERT_EQ(0, f2_a);
     ASSERT_EQ(0, f2_b);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&f2, characters[counter % 6],
-                       (std::uint64_t(1) << 60) + counter);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<3 * sizeof(uint64_t)> cb;
+        cb.emplace(&f2, characters[counter % 6],
+                   (std::uint64_t(1) << 60) + counter);
+        cb();
         ASSERT_EQ('M' + (counter %6), f2_a);
         ASSERT_EQ(std::uint64_t(0x1000000000000000) + counter, f2_b);
     }
 }
 
-TEST(thread, function_pointer_3_args)
+TEST(callback, function_pointer_3_args)
 {
     static const char characters[7] = {'B', 'C', 'D', 'E', 'F', 'G', 'H'};
     ASSERT_EQ(0, f3_a);
@@ -222,18 +131,16 @@ TEST(thread, function_pointer_3_args)
     ASSERT_EQ(0.0f, f3_c);
     for (unsigned counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&f3, counter, characters[counter % 7],
-                       2.7182f * counter);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<4 * sizeof(void*)> cb;
+        cb.emplace(&f3, counter, characters[counter % 7], 2.7182f * counter);
+        cb();
         ASSERT_EQ(counter, f3_a);
         ASSERT_EQ('B' + (counter % 7), f3_b);
         ASSERT_EQ(2.7182f * counter, f3_c);
     }
 }
 
-TEST(thread, function_pointer_4_args)
+TEST(callback, function_pointer_4_args)
 {
     int x[3];
     double y[5];
@@ -244,11 +151,10 @@ TEST(thread, function_pointer_4_args)
     ASSERT_EQ(0.0f, f4_d);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&f4, &x[counter % 3], &y[counter % 5],
-                       0xBEEFBEEF + counter, -1.0f * counter * counter);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<5 * sizeof(void*)> cb;
+        cb.emplace(&f4, &x[counter % 3], &y[counter % 5],
+                   0xBEEFBEEF + counter, -1.0f * counter * counter);
+        cb();
         ASSERT_TRUE(f4_a == &x[counter % 3]);
         ASSERT_TRUE(f4_b == &y[counter % 5]);
         ASSERT_EQ(int(0xBEEFBEEF) + counter, f4_c);
@@ -357,99 +263,93 @@ struct MemberFunction3
 
 } // anonymous namespace
 
-TEST(thread, member_function_0_args)
+TEST(callback, member_function_0_args)
 {
     MemberFunction0 m;
     ASSERT_FALSE(m.m_flag);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction0::toggle, &m);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<2 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction0::toggle, &m);
+        cb();
         ASSERT_TRUE(m.m_flag == (counter % 2) ? false : true);
     }
 }
 
-TEST(thread, const_member_function_0_args)
+TEST(callback, const_member_function_0_args)
 {
     MemberFunction0 m;
     ASSERT_FALSE(m.m_flag);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction0::toggleConst, &m);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<2 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction0::toggleConst, &m);
+        cb();
         ASSERT_TRUE(m.m_flag == (counter % 2) ? false : true);
     }
 }
 
-TEST(thread, member_function_1_arg)
+TEST(callback, member_function_1_arg)
 {
     MemberFunction1 m;
     float values[10];
     ASSERT_TRUE(m.m_a == 0);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction1::set, &m, &values[counter % 10]);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<3 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction1::set, &m, &values[counter % 10]);
+        cb();
         ASSERT_TRUE(m.m_a == &values[counter % 10]);
     }
 }
 
-TEST(thread, const_member_function_1_arg)
+TEST(callback, const_member_function_1_arg)
 {
     MemberFunction1 m;
     float values[10];
     ASSERT_TRUE(m.m_a == 0);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction1::setConst, &m, &values[counter % 10]);
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<3 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction1::setConst, &m, &values[counter % 10]);
+        cb();
         ASSERT_TRUE(m.m_a == &values[counter % 10]);
     }
 }
 
-TEST(thread, member_function_2_args)
+TEST(callback, member_function_2_args)
 {
     MemberFunction2 m;
     ASSERT_EQ(0.0, m.m_a);
     ASSERT_FALSE(m.m_b);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction2::set, &m,
-                       float(counter) / 100, bool(counter % 2));
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<4 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction2::set, &m,
+                   float(counter) / 100, bool(counter % 2));
+        cb();
         ASSERT_EQ(float(counter) / 100, m.m_a);
         ASSERT_TRUE(m.m_b == (counter % 2) ? true : false);
     }
 }
 
-TEST(thread, const_member_function_2_args)
+TEST(callback, const_member_function_2_args)
 {
     MemberFunction2 m;
     ASSERT_EQ(0.0, m.m_a);
     ASSERT_FALSE(m.m_b);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction2::setConst, &m,
-                       float(counter) / 100, bool(counter % 2));
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<4 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction2::setConst, &m,
+                   float(counter) / 100, bool(counter % 2));
+        cb();
         ASSERT_EQ(float(counter) / 100, m.m_a);
         ASSERT_TRUE(m.m_b == (counter % 2) ? true : false);
     }
 }
 
-TEST(thread, member_function_3_args)
+TEST(callback, member_function_3_args)
 {
     MemberFunction3 m;
     ASSERT_EQ(0, m.m_a);
@@ -457,13 +357,12 @@ TEST(thread, member_function_3_args)
     ASSERT_EQ(0, m.m_c);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction3::set, &m,
-                       short(counter), long(-counter),
-                       counter % 2 ? static_cast<void*>(&m.m_a)
-                                   : static_cast<void*>(&m.m_b));
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<5 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction3::set, &m,
+                   short(counter), long(-counter),
+                   counter % 2 ? static_cast<void*>(&m.m_a)
+                               : static_cast<void*>(&m.m_b));
+        cb();
         ASSERT_EQ(counter, m.m_a);
         ASSERT_EQ(-counter, m.m_b);
         ASSERT_TRUE(m.m_c == (counter % 2 ? static_cast<void*>(&m.m_a)
@@ -471,7 +370,7 @@ TEST(thread, member_function_3_args)
     }
 }
 
-TEST(thread, const_member_function_3_args)
+TEST(callback, const_member_function_3_args)
 {
     MemberFunction3 m;
     ASSERT_EQ(0, m.m_a);
@@ -479,13 +378,12 @@ TEST(thread, const_member_function_3_args)
     ASSERT_EQ(0, m.m_c);
     for (int counter = 0; counter < 100; ++counter)
     {
-        weos::thread t(&MemberFunction3::setConst, &m,
-                       short(counter), long(-counter),
-                       counter % 2 ? static_cast<void*>(&m.m_a)
-                                   : static_cast<void*>(&m.m_b));
-        ASSERT_TRUE(t.joinable());
-        t.join();
-        ASSERT_FALSE(t.joinable());
+        weos::callback_wrapper<5 * sizeof(void*)> cb;
+        cb.emplace(&MemberFunction3::setConst, &m,
+                   short(counter), long(-counter),
+                   counter % 2 ? static_cast<void*>(&m.m_a)
+                               : static_cast<void*>(&m.m_b));
+        cb();
         ASSERT_EQ(counter, m.m_a);
         ASSERT_EQ(-counter, m.m_b);
         ASSERT_TRUE(m.m_c == (counter % 2 ? static_cast<void*>(&m.m_a)

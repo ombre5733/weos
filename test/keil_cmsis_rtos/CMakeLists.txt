@@ -85,6 +85,7 @@ macro(add_test_directory _dir)
 endmacro()
 
 # Recurse into the "subdirectories" which contain the actual tests.
+add_test_directory(callback)
 add_test_directory(memorypool)
 add_test_directory(mutex)
 add_test_directory(semaphore)
