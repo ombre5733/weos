@@ -38,7 +38,6 @@
 #include <boost/config.hpp>
 
 #include <cstdint>
-#include <utility>
 
 namespace weos
 {
@@ -207,34 +206,34 @@ std::uint32_t wait_for_signal(std::uint32_t mask)
 }
 
 inline
-std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
+std::uint32_t try_wait_for_signal(std::uint32_t mask)
 {
     osEvent result = osSignalWait(mask, 0);
     if (result.status == osOK)
     {
-        return std::pair<bool, std::uint32_t>(false, 0);
+        return 0;
     }
     else if (result.status != osEventSignal)
     {
         ::weos::throw_exception(weos::system_error(
                                     result.status, cmsis_category()));
     }
-    return std::pair<bool, std::uint32_t>(true, result.value.signals);
+    return result.value.signals;
 }
 
 template <typename RepT, typename PeriodT>
 inline
-std::pair<bool, std::uint32_t> try_wait_for_signal_for(
+std::uint32_t try_wait_for_signal_for(
         std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
 {
     signal_waiter waiter(mask);
     if (chrono::detail::cmsis_wait<
             RepT, PeriodT, signal_waiter>::wait(d, waiter))
     {
-        return std::pair<bool, std::uint32_t>(true, waiter.mask());
+        return waiter.mask();
     }
 
-    return std::pair<bool, std::uint32_t>(false, 0);
+    return 0;
 }
 
 } // namespace detail
@@ -254,8 +253,8 @@ template <typename ClockT, typename DurationT>
 void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
 
 //! Waits for any signal.
-//! Blocks the current thread until it receives one or more signals and returns
-//! these signals.
+//! Blocks the current thread until one or more of its signals has been set
+//! and returns these signals.
 inline
 std::uint32_t wait_for_any_signal()
 {
@@ -263,31 +262,29 @@ std::uint32_t wait_for_any_signal()
 }
 
 //! Checks if any signal has arrived.
-//! Checks if any signal has reached the current thread. If so, the boolean
-//! in the returned pair is set to \p true and the second member contains
-//! the signal flags. Otherwise, the boolean is set to \p false.
+//! Checks if one or more signals has been set for the current thread and
+//! returns these flags. If no signal is set, zero is returned.
 inline
-std::pair<bool, std::uint32_t> try_wait_for_any_signal()
+std::uint32_t try_wait_for_any_signal()
 {
     return detail::try_wait_for_signal(0);
 }
 
 //! Waits until any signal arrives or a timeout occurs.
-//! Waits until any signal reaches the current thread or the timeout period
-//! \p d expires. The boolean in the returned pair is set to \p true if a
-//! signal was present. In this case, the second member contains the signal
-//! flags. If the timeout expired, the boolean is set to \p false.
+//! Waits up to the timeout period \p d for one or more signals to be set for
+//! the current thread. The set signals will be returned. If the timeout
+//! expires, zero is returned.
 template <typename RepT, typename PeriodT>
 inline
-std::pair<bool, std::uint32_t> try_wait_for_any_signal_for(
+std::uint32_t try_wait_for_any_signal_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
     return detail::try_wait_for_signal_for(0, d);
 }
 
 //! Waits for a set of signals.
-//! Blocks the current thread until all signals specified by the \p mask have
-//! arrived. Then the signal flags are returned.
+//! Blocks the current thread until at least the signals specified by the
+//! \p mask have been set. Then all set signal flags are returned.
 inline
 std::uint32_t wait_for_all_signals(std::uint32_t mask)
 {
@@ -295,8 +292,12 @@ std::uint32_t wait_for_all_signals(std::uint32_t mask)
     return detail::wait_for_signal(mask);
 }
 
+//! Checks if a set of signals has been set.
+//! Checks if at least the set of signals given by the \p mask has been set
+//! and returns all set signals. If not the whole set of signals has been set,
+//! zero is returned.
 inline
-std::pair<bool, std::uint32_t> try_wait_for_all_signals(std::uint32_t mask)
+std::uint32_t try_wait_for_all_signals(std::uint32_t mask)
 {
     WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
     return detail::try_wait_for_signal(mask);
@@ -304,7 +305,7 @@ std::pair<bool, std::uint32_t> try_wait_for_all_signals(std::uint32_t mask)
 
 template <typename RepT, typename PeriodT>
 inline
-std::pair<bool, std::uint32_t> try_wait_for_all_signals_for(
+std::uint32_t try_wait_for_all_signals_for(
         std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
 {
     WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
