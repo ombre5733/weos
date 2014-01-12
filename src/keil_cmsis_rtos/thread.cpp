@@ -132,11 +132,10 @@ ThreadSharedData* ThreadSharedData::allocate()
 //     thread
 // ----=====================================================================----
 
-void thread::invokeWithCustomStack(const attributes& attrs,
-                                   void (*fun)(void*), void* arg)
+void thread::invokeWithCustomStack(const attributes& attrs)
 {
     if (   attrs.m_customStack == 0
-        || attrs.m_customStackSize < 14*4
+        || attrs.m_customStackSize < detail::native_thread_traits::minimum_custom_stack_size
         || attrs.m_customStackSize >= (std::uint32_t(1) << 24))
     {
         ::weos::throw_exception(weos::system_error(
@@ -152,7 +151,7 @@ void thread::invokeWithCustomStack(const attributes& attrs,
                                (attrs.m_priority - osPriorityIdle + 1)
                                | (attrs.m_customStackSize << 8),
                                attrs.m_customStack,
-                               arg);
+                               m_data);
     if (taskId)
     {
         // Set R13 to the address of osThreadExit, which has to be invoked

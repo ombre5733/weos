@@ -102,6 +102,10 @@ private:
 //! A thread handle.
 class thread
 {
+    // An internal helper type for the enable_if machinery. Using a void pointer
+    // is no good idea as it would match a user-supplied void pointer.
+    struct _guard_type;
+
 public:
     //! A representation of a thread identifier.
     //! This class is a wrapper around a thread identifier. It has a small
@@ -194,11 +198,15 @@ public:
     {
     }
 
+    // ---- Constructors without attributes ------------------------------------
+
     template <typename F>
+    explicit
     thread(BOOST_FWD_REF(F) f,
            typename boost::enable_if_c<
                !boost::is_same<
-                    typename boost::decay<F>::type, thread>::value
+                    typename boost::decay<F>::type, thread>::value,
+               _guard_type
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
@@ -213,8 +221,10 @@ public:
     thread(BOOST_FWD_REF(F) f,
            BOOST_FWD_REF(A0) a0,
            typename boost::enable_if_c<
-               !boost::is_same<typename boost::remove_reference<F>::type,
-                               attributes>::value>::type* dummy = 0)
+               !boost::is_same<
+                    typename boost::decay<F>::type, attributes>::value,
+               _guard_type
+           >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_callback.emplace(boost::forward<F>(f),
@@ -229,7 +239,12 @@ public:
               typename A1>
     thread(BOOST_FWD_REF(F) f,
            BOOST_FWD_REF(A0) a0,
-           BOOST_FWD_REF(A1) a1)
+           BOOST_FWD_REF(A1) a1,
+           typename boost::enable_if_c<
+               !boost::is_same<
+                    typename boost::decay<F>::type, attributes>::value,
+               _guard_type
+           >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_callback.emplace(boost::forward<F>(f),
@@ -247,7 +262,12 @@ public:
     thread(BOOST_FWD_REF(F) f,
            BOOST_FWD_REF(A0) a0,
            BOOST_FWD_REF(A1) a1,
-           BOOST_FWD_REF(A2) a2)
+           BOOST_FWD_REF(A2) a2,
+           typename boost::enable_if_c<
+               !boost::is_same<
+                    typename boost::decay<F>::type, attributes>::value,
+               _guard_type
+           >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_callback.emplace(boost::forward<F>(f),
@@ -268,7 +288,12 @@ public:
            BOOST_FWD_REF(A0) a0,
            BOOST_FWD_REF(A1) a1,
            BOOST_FWD_REF(A2) a2,
-           BOOST_FWD_REF(A3) a3)
+           BOOST_FWD_REF(A3) a3,
+           typename boost::enable_if_c<
+               !boost::is_same<
+                    typename boost::decay<F>::type, attributes>::value,
+               _guard_type
+           >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_callback.emplace(boost::forward<F>(f),
@@ -280,19 +305,109 @@ public:
         attributes attrs;
         invokeWithDefaultStack(attrs);
     }
-# if 0
-    //! Creates a thread.
-    //! Starts the function \p fun with the argument \p arg in a new thread.
-    //! The thread attributes are passed in \p attrs.
-    thread(const attributes& attrs, void (*fun)(void*), void* arg)
-        : m_data(0)
+
+    // ---- Constructors with attributes ---------------------------------------
+
+    template <typename F>
+    thread(const attributes& attrs,
+           BOOST_FWD_REF(F) f,
+           typename boost::enable_if_c<
+               !boost::is_same<
+                    typename boost::decay<F>::type, thread>::value,
+               _guard_type
+           >::type* dummy = 0)
+        : m_data(detail::ThreadSharedData::allocate())
     {
+        m_data->m_callback.emplace(boost::forward<F>(f));
+
         if (attrs.m_customStack || attrs.m_customStackSize)
-            invokeWithCustomStack(attrs, fun, arg);
+            invokeWithCustomStack(attrs);
         else
             invokeWithDefaultStack(attrs);
     }
-#endif
+
+    template <typename F,
+              typename A0>
+    thread(const attributes& attrs,
+           BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0));
+
+        if (attrs.m_customStack || attrs.m_customStackSize)
+            invokeWithCustomStack(attrs);
+        else
+            invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1>
+    thread(const attributes& attrs,
+           BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0),
+                                   boost::forward<A1>(a1));
+
+        if (attrs.m_customStack || attrs.m_customStackSize)
+            invokeWithCustomStack(attrs);
+        else
+            invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1,
+              typename A2>
+    thread(const attributes& attrs,
+           BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1,
+           BOOST_FWD_REF(A2) a2)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0),
+                                   boost::forward<A1>(a1),
+                                   boost::forward<A2>(a2));
+
+        if (attrs.m_customStack || attrs.m_customStackSize)
+            invokeWithCustomStack(attrs);
+        else
+            invokeWithDefaultStack(attrs);
+    }
+
+    template <typename F,
+              typename A0,
+              typename A1,
+              typename A2,
+              typename A3>
+    thread(const attributes& attrs,
+           BOOST_FWD_REF(F) f,
+           BOOST_FWD_REF(A0) a0,
+           BOOST_FWD_REF(A1) a1,
+           BOOST_FWD_REF(A2) a2,
+           BOOST_FWD_REF(A3) a3)
+        : m_data(detail::ThreadSharedData::allocate())
+    {
+        m_data->m_callback.emplace(boost::forward<F>(f),
+                                   boost::forward<A0>(a0),
+                                   boost::forward<A1>(a1),
+                                   boost::forward<A2>(a2),
+                                   boost::forward<A3>(a3));
+
+        if (attrs.m_customStack || attrs.m_customStackSize)
+            invokeWithCustomStack(attrs);
+        else
+            invokeWithDefaultStack(attrs);
+    }
+
     //! Destroys the thread handle.
     //! Destroys this thread handle.
     //! \note If the thread handle is still associated with a joinable thread,
@@ -388,8 +503,7 @@ protected:
     //! Invokes the function \p fun with the argument \p arg. The thread
     //! attributes are passed in \p attrs. This method may only be called
     //! if \p attrs contains a valid custom stack configuration.
-    void invokeWithCustomStack(const attributes& attrs,
-                               void (*fun)(void*), void* arg);
+    void invokeWithCustomStack(const attributes& attrs);
 
     //! Invokes the function \p fun with the argument \p arg. The thread
     //! attributes are passed in \p attrs. This method may only be called
