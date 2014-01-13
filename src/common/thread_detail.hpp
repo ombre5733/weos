@@ -102,6 +102,8 @@ private:
 //! A thread handle.
 class thread
 {
+    BOOST_MOVABLE_BUT_NOT_COPYABLE(thread)
+
     // An internal helper type for the enable_if machinery. Using a void pointer
     // is no good idea as it would match a user-supplied void pointer.
     struct _guard_type;
@@ -408,6 +410,14 @@ public:
             invokeWithDefaultStack(attrs);
     }
 
+    //! Move constructor.
+    //! Constructs a thread by moving from the \p other thread.
+    thread(BOOST_RV_REF(thread) other)
+        : m_data(other.m_data)
+    {
+        other.m_data = 0;
+    }
+
     //! Destroys the thread handle.
     //! Destroys this thread handle.
     //! \note If the thread handle is still associated with a joinable thread,
@@ -417,6 +427,18 @@ public:
     {
         if (joinable())
             std::terminate();
+    }
+
+    //! Move assignment.
+    //! Move-assigns the \p other thread to this thread.
+    thread& operator= (BOOST_RV_REF(thread) other)
+    {
+        if (this != &other)
+        {
+            m_data = other.m_data;
+            other.m_data = 0;
+        }
+        return *this;
     }
 
     //! Separates the executing thread from this thread handle.
@@ -514,9 +536,6 @@ private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
     detail::ThreadSharedData* m_data;
-
-    thread(const thread&);
-    const thread& operator= (const thread&);
 };
 
 //! A thread with a custom stack.

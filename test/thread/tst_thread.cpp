@@ -31,7 +31,7 @@
 #include "../common/testutils.hpp"
 #include "gtest/gtest.h"
 
-TEST(thread, DefaultConstructor)
+TEST(thread, default_construction)
 {
     weos::thread t;
     ASSERT_FALSE(t.joinable());
@@ -50,7 +50,111 @@ void delay_thread(std::uint32_t ms)
     weos::this_thread::sleep_for(weos::chrono::milliseconds(ms));
 }
 
+void blocking_thread(weos::semaphore* sem)
+{
+    sem->wait();
+}
+
 } // anonymous namespace
+
+TEST(thread, move_construction)
+{
+    {
+        weos::thread t1;
+        ASSERT_FALSE(t1.joinable());
+
+        weos::thread t2(boost::move(t1));
+        ASSERT_FALSE(t2.joinable());
+        ASSERT_FALSE(t1.joinable());
+    }
+
+    {
+        weos::thread t1(empty_thread);
+        ASSERT_TRUE(t1.joinable());
+
+        weos::thread t2(boost::move(t1));
+        ASSERT_TRUE(t2.joinable());
+        ASSERT_FALSE(t1.joinable());
+
+        t2.join();
+    }
+
+    {
+        weos::semaphore sem;
+        weos::thread t1(blocking_thread, &sem);
+        ASSERT_TRUE(t1.joinable());
+
+        weos::thread t2(boost::move(t1));
+        ASSERT_TRUE(t2.joinable());
+        ASSERT_FALSE(t1.joinable());
+
+        sem.post();
+        t2.join();
+    }
+}
+
+TEST(thread, move_assignment)
+{
+    {
+        weos::thread t1;
+        ASSERT_FALSE(t1.joinable());
+
+        weos::thread t2;
+        ASSERT_FALSE(t2.joinable());
+
+        t2 = boost::move(t1);
+        ASSERT_FALSE(t1.joinable());
+        ASSERT_FALSE(t2.joinable());
+    }
+
+    {
+        weos::thread t1(empty_thread);
+        ASSERT_TRUE(t1.joinable());
+
+        weos::thread t2;
+        ASSERT_FALSE(t2.joinable());
+
+        t2 = boost::move(t1);
+        ASSERT_FALSE(t1.joinable());
+        ASSERT_TRUE(t2.joinable());
+
+        t2.join();
+    }
+
+    {
+        weos::thread t1(empty_thread);
+        ASSERT_TRUE(t1.joinable());
+
+        weos::thread t2;
+        ASSERT_FALSE(t2.joinable());
+
+        t2 = boost::move(t1);
+        ASSERT_FALSE(t1.joinable());
+        ASSERT_TRUE(t2.joinable());
+
+        t1 = boost::move(t2);
+        ASSERT_TRUE(t1.joinable());
+        ASSERT_FALSE(t2.joinable());
+
+        t1.join();
+    }
+
+    {
+        weos::semaphore sem;
+        weos::thread t1(blocking_thread, &sem);
+        ASSERT_TRUE(t1.joinable());
+
+        weos::thread t2;
+        ASSERT_FALSE(t2.joinable());
+
+        t2 = boost::move(t1);
+        ASSERT_FALSE(t1.joinable());
+        ASSERT_TRUE(t2.joinable());
+
+        sem.post();
+        t2.join();
+    }
+}
 
 TEST(thread, start_one_thread_very_often)
 {
@@ -81,33 +185,39 @@ TEST(thread, start_all_in_parallel)
 
 TEST(thread, create_and_destroy_randomly)
 {
-    weos::thread* threads[WEOS_MAX_NUM_CONCURRENT_THREADS] = {0};
+    weos::thread threads[WEOS_MAX_NUM_CONCURRENT_THREADS];
+    bool joinable[WEOS_MAX_NUM_CONCURRENT_THREADS];
+
+    for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
+        joinable[i] = false;
 
     for (unsigned i = 0; i < 1000; ++i)
     {
         int delayTime = 1 + testing::random() % 3;
         int index = testing::random() % WEOS_MAX_NUM_CONCURRENT_THREADS;
-        if (threads[index] == 0)
+
+        ASSERT_TRUE(threads[index].joinable() == joinable[index]);
+
+        if (joinable[index])
         {
-            threads[index] = new weos::thread(delay_thread, delayTime);
-            ASSERT_TRUE(threads[index]->joinable());
+            threads[index].join();
+            joinable[index] = false;
         }
         else
         {
-            ASSERT_TRUE(threads[index]->joinable());
-            threads[index]->join();
-            delete threads[index];
-            threads[index] = 0;
+            threads[index] = weos::thread(delay_thread, delayTime);
+            joinable[index] = true;
         }
     }
 
     for (unsigned i = 0; i < WEOS_MAX_NUM_CONCURRENT_THREADS; ++i)
     {
-        if (threads[i])
+        ASSERT_TRUE(threads[i].joinable() == joinable[i]);
+
+        if (joinable[i])
         {
-            ASSERT_TRUE(threads[i]->joinable());
-            threads[i]->join();
-            delete threads[i];
+            threads[i].join();
+            joinable[i] = false;
         }
     }
 }
