@@ -36,15 +36,20 @@
 namespace weos
 {
 
-
 class semaphore
 {
 public:
-    semaphore(std::uint32_t value = 0)
+    //! The counter type used for the semaphore.
+    typedef std::uint32_t value_type;
+
+    //! Creates a semaphore.
+    //! Creates a semaphore with an initial number of \p value tokens.
+    semaphore(value_type value = 0)
         : m_value(value)
     {
     }
 
+    //! Releases a semaphore token.
     void post()
     {
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -52,23 +57,7 @@ public:
         m_conditionVariable.notify_one();
     }
 
-    bool try_wait()
-    {
-        return try_wait_for(std::chrono::seconds(0));
-    }
-
-    template <typename RepT, typename PeriodT>
-    bool try_wait_for(const std::chrono::duration<RepT, PeriodT>& d)
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        if (m_conditionVariable.wait_for(lock, d, [this](){return m_value != 0;}))
-        {
-            --m_value;
-            return true;
-        }
-        return false;
-    }
-
+    //! Waits until a semaphore token is available.
     void wait()
     {
         std::unique_lock<std::mutex> lock(m_mutex);
@@ -77,7 +66,33 @@ public:
         --m_value;
     }
 
-    std::uint32_t value() const
+    //! Tries to acquire a semaphore token.
+    //! Tries to acquire a semaphore token and returns \p true upon success.
+    //! If no token is available, the calling thread is not blocked and
+    //! \p false is returned.
+    bool try_wait()
+    {
+        return try_wait_for(std::chrono::seconds(0));
+    }
+
+    //! Tries to acquire a semaphore token within a timeout.
+    //! Tries for a timeout period \p d to acquire a semaphore token and returns
+    //! \p true upon success or \p false in case of a timeout.
+    template <typename RepT, typename PeriodT>
+    bool try_wait_for(const std::chrono::duration<RepT, PeriodT>& d)
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        if (m_conditionVariable.wait_for(lock, d,
+                                         [this](){return m_value != 0;}))
+        {
+            --m_value;
+            return true;
+        }
+        return false;
+    }
+
+    //! Returns the numer of semaphore tokens.
+    value_type value() const
     {
         return m_value;
     }
@@ -85,7 +100,7 @@ public:
 private:
     std::mutex m_mutex;
     std::condition_variable m_conditionVariable;
-    std::uint32_t m_value;
+    value_type m_value;
 };
 
 } // namespace weos

@@ -29,6 +29,8 @@
 #include <semaphore.hpp>
 #include <thread.hpp>
 
+#include <limits>
+
 #include "gtest/gtest.h"
 
 namespace
@@ -92,7 +94,16 @@ void sparring(SparringData* data)
     }
 }
 
+// The maximum value which can be stored in a semaphore.
+const weos::semaphore::value_type maxValue
+        = std::numeric_limits<weos::semaphore::value_type>::max();
+
 } // anonymous namespace
+
+TEST(semaphore, test_preconditions)
+{
+    ASSERT_TRUE(maxValue < std::numeric_limits<std::uint64_t>::max());
+}
 
 TEST(semaphore, Constructor)
 {
@@ -100,20 +111,20 @@ TEST(semaphore, Constructor)
         weos::semaphore s;
         ASSERT_EQ(0, s.value());
     }
-    for (std::uint32_t count = 0; count < 0xFFFF; count += 123)
+    for (std::uint64_t count = 0; count < maxValue; count += 123)
     {
         weos::semaphore s(count);
         ASSERT_EQ(count, s.value());
     }
     {
-        weos::semaphore s(65535);
-        ASSERT_EQ(65535, s.value());
+        weos::semaphore s(maxValue);
+        ASSERT_EQ(maxValue, s.value());
     }
 }
 
 TEST(semaphore, post)
 {
-    for (std::uint32_t count = 0; count < 0xFFFF; count += 123)
+    for (std::uint64_t count = 0; count < maxValue; count += 123)
     {
         weos::semaphore s(count);
         ASSERT_EQ(count, s.value());
@@ -121,16 +132,16 @@ TEST(semaphore, post)
         ASSERT_EQ(count + 1, s.value());
     }
     {
-        weos::semaphore s(65534);
-        ASSERT_EQ(65534, s.value());
+        weos::semaphore s(maxValue - 1);
+        ASSERT_EQ(maxValue - 1, s.value());
         s.post();
-        ASSERT_EQ(65535, s.value());
+        ASSERT_EQ(maxValue, s.value());
     }
 }
 
 TEST(semaphore, wait)
 {
-    for (std::uint32_t count = 1; count < 0xFFFF; count += 123)
+    for (std::uint64_t count = 1; count < maxValue; count += 123)
     {
         weos::semaphore s(count);
         ASSERT_EQ(count, s.value());
@@ -138,10 +149,10 @@ TEST(semaphore, wait)
         ASSERT_EQ(count - 1, s.value());
     }
     {
-        weos::semaphore s(65535);
-        ASSERT_EQ(65535, s.value());
+        weos::semaphore s(maxValue);
+        ASSERT_EQ(maxValue, s.value());
         s.wait();
-        ASSERT_EQ(65534, s.value());
+        ASSERT_EQ(maxValue - 1, s.value());
     }
 }
 

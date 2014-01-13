@@ -33,22 +33,28 @@
 #include "chrono.hpp"
 #include "system_error.hpp"
 
-#include <boost/utility.hpp>
-
 #include <cstdint>
 
 namespace weos
 {
 
-class semaphore : boost::noncopyable
+class semaphore
 {
 public:
+    //! The counter type used for the semaphore.
+    typedef std::uint16_t value_type;
+
     //! Creates a semaphore.
     //! Creates a semaphore with an initial number of \p value tokens.
-    explicit semaphore(std::uint32_t value = 0)
+    explicit semaphore(value_type value = 0)
     {
-        WEOS_ASSERT(value <= 0xFFFF);
         os_sem_init(&m_semaphore, value);
+    }
+
+    //! Releases a semaphore token.
+    void post()
+    {
+        os_sem_send(&m_semaphore);
     }
 
     //! Waits until a semaphore token is available.
@@ -62,12 +68,19 @@ public:
         }
     }
 
+    //! Tries to acquire a semaphore token.
+    //! Tries to acquire a semaphore token and returns \p true upon success.
+    //! If no token is available, the calling thread is not blocked and
+    //! \p false is returned.
     bool try_wait()
     {
         OS_RESULT result = os_sem_wait(&m_semaphore, 0);
         return result != OS_R_TMO;
     }
 
+    //! Tries to acquire a semaphore token within a timeout.
+    //! Tries for a timeout period \p d to acquire a semaphore token and returns
+    //! \p true upon success or \p false in case of a timeout.
     template <typename RepT, typename PeriodT>
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
@@ -76,14 +89,8 @@ public:
                 RepT, PeriodT, try_waiter>::wait(d, waiter);
     }
 
-    //! Releases a semaphore token.
-    void post()
-    {
-        os_sem_send(&m_semaphore);
-    }
-
     //! Returns the numer of semaphore tokens.
-    std::uint32_t value() const
+    value_type value() const
     {
         return semaphoreControlBlockHeader()->numTokens;
     }
@@ -91,6 +98,9 @@ public:
 private:
     //! The underlying RL RTX semaphore.
     OS_SEM m_semaphore;
+
+    semaphore(const semaphore&);
+    const semaphore& operator= (const semaphore&);
 
     // The header (first 32 bits) of the semaphore control block. The full
     // definition can be found in $/RL/RTX/SRC/rt_TypeDef.h.

@@ -33,19 +33,20 @@
 #include "chrono.hpp"
 #include "system_error.hpp"
 
-#include <boost/utility.hpp>
-
 #include <cstdint>
 
 namespace weos
 {
 
-class semaphore : boost::noncopyable
+class semaphore
 {
 public:
+    //! The counter type used for the semaphore.
+    typedef std::uint16_t value_type;
+
     //! Creates a semaphore.
     //! Creates a semaphore with an initial number of \p value tokens.
-    explicit semaphore(std::uint32_t value = 0)
+    explicit semaphore(value_type value = 0)
         : m_id(0)
     {
         // Keil's RTOS wants a zero'ed control block type for initialization.
@@ -66,40 +67,6 @@ public:
             osSemaphoreDelete(m_id);
     }
 
-    //! Waits until a semaphore token is available.
-    void wait()
-    {
-        std::int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
-        if (numTokens <= 0)
-        {
-            ::weos::throw_exception(::weos::system_error(
-                                        osErrorOS, cmsis_category()));
-        }
-    }
-
-    //! Tries to acquire a semaphore token.
-    //! Tries to acquire a semaphore token and returns \p true upon success.
-    //! If no token is available, the calling thread returns immediately
-    //! without being blocked.
-    bool try_wait()
-    {
-        std::int32_t numTokens = osSemaphoreWait(m_id, 0);
-        if (numTokens < 0)
-        {
-            ::weos::throw_exception(::weos::system_error(
-                                        osErrorOS, cmsis_category()));
-        }
-        return numTokens != 0;
-    }
-
-    template <typename RepT, typename PeriodT>
-    bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
-    {
-        try_waiter waiter(m_id);
-        return chrono::detail::cmsis_wait<
-                RepT, PeriodT, try_waiter>::wait(d, waiter);
-    }
-
     //! Releases a semaphore token.
     void post()
     {
@@ -111,8 +78,45 @@ public:
         }
     }
 
+    //! Waits until a semaphore token is available.
+    void wait()
+    {
+        value_type numTokens = osSemaphoreWait(m_id, osWaitForever);
+        if (numTokens <= 0)
+        {
+            ::weos::throw_exception(::weos::system_error(
+                                        osErrorOS, cmsis_category()));
+        }
+    }
+
+    //! Tries to acquire a semaphore token.
+    //! Tries to acquire a semaphore token and returns \p true upon success.
+    //! If no token is available, the calling thread is not blocked and
+    //! \p false is returned.
+    bool try_wait()
+    {
+        value_type numTokens = osSemaphoreWait(m_id, 0);
+        if (numTokens < 0)
+        {
+            ::weos::throw_exception(::weos::system_error(
+                                        osErrorOS, cmsis_category()));
+        }
+        return numTokens != 0;
+    }
+
+    //! Tries to acquire a semaphore token within a timeout.
+    //! Tries for a timeout period \p d to acquire a semaphore token and returns
+    //! \p true upon success or \p false in case of a timeout.
+    template <typename RepT, typename PeriodT>
+    bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
+    {
+        try_waiter waiter(m_id);
+        return chrono::detail::cmsis_wait<
+                RepT, PeriodT, try_waiter>::wait(d, waiter);
+    }
+
     //! Returns the numer of semaphore tokens.
-    std::uint32_t value() const
+    value_type value() const
     {
         return semaphoreControlBlockHeader()->numTokens;
     }
@@ -122,6 +126,9 @@ private:
     // in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
     std::uint32_t m_cmsisSemaphoreControlBlock[2];
     osSemaphoreId m_id;
+
+    semaphore(const semaphore&);
+    const semaphore& operator= (const semaphore&);
 
     // The header (first 32 bits) of the semaphore control block. The full
     // definition can be found in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
@@ -151,7 +158,7 @@ private:
         // necessary.
         bool operator() (std::int32_t millisec) const
         {
-            std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
+            value_type numTokens = osSemaphoreWait(m_id, millisec);
             if (numTokens < 0)
             {
                 ::weos::throw_exception(::weos::system_error(
@@ -162,7 +169,7 @@ private:
         }
 
     private:
-        // The semaphore for which is waited.
+        // The semaphore from which a token shall be acquired.
         osSemaphoreId& m_id;
     };
 };
