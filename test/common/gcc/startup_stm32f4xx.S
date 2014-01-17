@@ -86,7 +86,7 @@ __heap_end__:
     .globl  __isr_vector
 __isr_vector:
     /* ---- Cortex-M4 vectors --------------------------------------------------------------- */
-    .word    __stack                           /* Initial stack-pointer value                 */
+    .word    __stack_top__                     /* Initial stack-pointer value                 */
     .word    Reset_Handler                     /* Reset handler                               */
     .word    NMI_Handler                       /* NMI handler                                 */
     .word    HardFault_Handler                 /* Hard fault handler                          */

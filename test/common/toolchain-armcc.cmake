@@ -30,22 +30,46 @@ set(CMAKE_SYSTEM_NAME Generic)
 
 include(CMakeForceCompiler)
 
-find_program(_gcc_executable "arm-none-eabi-gcc")
-if (_gcc_executable)
-    get_filename_component(_gcc_path ${_gcc_executable} PATH)
-    cmake_force_c_compiler("${_gcc_path}/arm-none-eabi-gcc" GNU)
-    cmake_force_cxx_compiler("${_gcc_path}/arm-none-eabi-g++" GNU)
-    set(OBJCOPY "${_gcc_path}/arm-none-eabi-objcopy")
-else()
-    message(FATAL_ERROR "Unable to locate 'arm-none-eabi-gcc'.")
+find_program(_armcc_executable "armcc")
+if (NOT _armcc_executable)
+    message(FATAL_ERROR "Unable to locate 'armcc'.")
 endif()
+
+get_filename_component(_armcc_path ${_armcc_executable} PATH)
+
+cmake_force_c_compiler("${_armcc_path}/armcc" ARM)
+cmake_force_cxx_compiler("${_armcc_path}/armcc" ARM)
+
+set(CMAKE_ASM_COMPILER "${_armcc_path}/armasm")
+set(CMAKE_ASM_COMPILER_ID_RUN TRUE)
+set(CMAKE_ASM_COMPILER_ID ARM)
+set(CMAKE_ASM_COMPILER_WORKS TRUE)
+set(CMAKE_ASM_COMPILER_FORCED TRUE)
+
+set(CMAKE_AR "${_armcc_path}/armar")
+set(CMAKE_LINKER "${_armcc_path}/armlink")
+
+set(FROMELF "${_armcc_path}/fromelf")
+
+set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
+
+set(CMAKE_C_COMPILE_OBJECT   "<CMAKE_C_COMPILER>   <DEFINES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+set(CMAKE_CXX_COMPILE_OBJECT "<CMAKE_CXX_COMPILER> <DEFINES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+set(CMAKE_ASM_COMPILE_OBJECT "<CMAKE_ASM_COMPILER> <FLAGS> -o <OBJECT> <SOURCE>")
+
+set(CMAKE_C_LINK_EXECUTABLE   "${CMAKE_LINKER} ${ARMLINK_SPECIAL_FLAGS} <LINK_FLAGS> <LINK_LIBRARIES> -o <TARGET> <OBJECTS>")
+set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_LINKER} ${ARMLINK_SPECIAL_FLAGS} <LINK_FLAGS> <LINK_LIBRARIES> -o <TARGET> <OBJECTS>")
+
+set(CMAKE_C_CREATE_STATIC_LIBRARY "${CMAKE_AR} --create <TARGET> <OBJECTS>")
+
 
 
 # A convienience function to create a binary (downloadable) image.
 function(add_binary_image outputFile inputFile)
     add_custom_command(
         OUTPUT ${outputFile}
-        COMMAND ${OBJCOPY} -O binary ${inputFile} ${outputFile}
+        COMMAND ${FROMELF} --bin --output ${outputFile} ${inputFile}
         DEPENDS ${inputFile}
     )
 endfunction()
