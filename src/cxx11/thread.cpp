@@ -26,24 +26,48 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CXX11_MUTEX_HPP
-#define WEOS_CXX11_MUTEX_HPP
+#include "thread.hpp"
 
-#include <mutex>
+#include <map>
 
 namespace weos
 {
-using std::mutex;
-using std::timed_mutex;
-using std::recursive_mutex;
-using std::recursive_timed_mutex;
+namespace detail
+{
 
-using std::lock_guard;
-using std::unique_lock;
+namespace
+{
 
-using std::adopt_lock_t;
-using std::adopt_lock;
+std::mutex g_idToDataMutex;
+std::map<std::thread::id, std::shared_ptr<ThreadData>> g_idToData;
 
+} // anonymous namespace
+
+std::shared_ptr<ThreadData> ThreadData::create(std::thread::id id)
+{
+    std::lock_guard<std::mutex> lock(g_idToDataMutex);
+    std::shared_ptr<ThreadData> data = std::make_shared<ThreadData>();
+    g_idToData[id] = data;
+    return data;
+}
+
+std::shared_ptr<ThreadData> ThreadData::find(std::thread::id id)
+{
+    std::lock_guard<std::mutex> lock(g_idToDataMutex);
+    auto iter = g_idToData.find(id);
+    if (iter != g_idToData.end())
+        return iter->second;
+    else
+        return std::shared_ptr<ThreadData>();
+}
+
+void ThreadData::remove(std::thread::id id)
+{
+    std::lock_guard<std::mutex> lock(g_idToDataMutex);
+    auto iter = g_idToData.find(id);
+    if (iter != g_idToData.end())
+        g_idToData.erase(iter);
+}
+
+} // namespace detail
 } // namespace weos
-
-#endif // WEOS_CXX11_MUTEX_HPP
