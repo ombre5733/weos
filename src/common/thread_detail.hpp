@@ -488,29 +488,29 @@ public:
     }
 
     //! Clears a set of signals.
-    //! Clears the signals which are specified by the \p mask.
+    //! Clears the signals which are specified by the \p flags.
     inline
-    void clear_signals(std::uint32_t mask)
+    void clear_signals(signal_traits::flags_type flags)
     {
         if (!joinable())
         {
             ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
         }
 
-        detail::native_thread_traits::clear_signals(m_data->m_threadId, mask);
+        detail::native_thread_traits::clear_signals(m_data->m_threadId, flags);
     }
 
     //! Sets a set of signals.
-    //! Sets the signals which are specified by the \p mask.
+    //! Sets the signals which are specified by the \p flags.
     inline
-    void set_signals(std::uint32_t mask)
+    void set_signals(signal_traits::flags_type flags)
     {
         if (!joinable())
         {
             ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
         }
 
-        detail::native_thread_traits::set_signals(m_data->m_threadId, mask);
+        detail::native_thread_traits::set_signals(m_data->m_threadId, flags);
     }
 
     //! Returns the number of threads which can run concurrently on this
@@ -522,14 +522,16 @@ public:
     }
 
 protected:
-    //! Invokes the function \p fun with the argument \p arg. The thread
-    //! attributes are passed in \p attrs. This method may only be called
-    //! if \p attrs contains a valid custom stack configuration.
+    //! Invokes the function which is stored in the shared data in a new
+    //! thread which is created with the attributes \p attrs.
+    //! This method may only be called if \p attrs contains a valid custom
+    //! stack configuration.
     void invokeWithCustomStack(const attributes& attrs);
 
-    //! Invokes the function \p fun with the argument \p arg. The thread
-    //! attributes are passed in \p attrs. This method may only be called
-    //! if \p attrs does not contain a custom stack configuration.
+    //! Invokes the function which is stored in the shared data in a new
+    //! thread which is created with the attributes \p attrs.
+    //! This method may only be called if \p attrs does not contain a custom
+    //! stack configuration.
     void invokeWithDefaultStack(const attributes& attrs);
 
 private:
@@ -538,6 +540,7 @@ private:
     detail::ThreadSharedData* m_data;
 };
 
+#if 0
 //! A thread with a custom stack.
 //! The custom_stack_thread is a convenience class for creating a thread with a
 //! custom stack. The memory for the stack is held statically by the object.
@@ -574,6 +577,7 @@ private:
     //! The custom stack.
     typename ::boost::aligned_storage<TStackSize>::type m_stack;
 };
+#endif
 
 //! Compares two thread ids for equality.
 //! Returns \p true, if \p lhs and \p rhs are equal.

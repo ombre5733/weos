@@ -31,15 +31,24 @@
 #include "../common/testutils.hpp"
 #include "gtest/gtest.h"
 
+namespace
+{
+
+#ifndef WEOS_MAX_NUM_CONCURRENT_THREADS
+const int MAX_NUM_PARALLEL_TEST_THREADS = WEOS_MAX_NUM_CONCURRENT_THREADS;
+#else
+const int MAX_NUM_PARALLEL_TEST_THREADS = 10;
+#endif // WEOS_MAX_NUM_CONCURRENT_THREADS
+
 struct SparringData
 {
     enum Action
     {
         None,
+        TryWaitForAnySignal,
+        TryWaitForAllSignals,
         WaitForAnySignal,
         WaitForAllSignals,
-        TryWaitForSignal,
-        TryWaitForSignalFor,
         Terminate
     };
 
@@ -47,15 +56,15 @@ struct SparringData
         : action(None),
           busy(false),
           caughtSignals(0),
-          waitMask(0),
+          waitFlags(0),
           sparringStarted(false)
     {
     }
 
     volatile Action action;
     volatile bool busy;
-    volatile std::uint32_t caughtSignals;
-    volatile std::uint32_t waitMask;
+    volatile weos::signal_traits::flags_type caughtSignals;
+    volatile weos::signal_traits::flags_type waitFlags;
     volatile bool sparringStarted;
 };
 
@@ -76,12 +85,21 @@ void sparring(SparringData* data)
         data->busy = true;
         switch (data->action)
         {
+            case SparringData::TryWaitForAnySignal:
+                data->caughtSignals
+                        = weos::this_thread::try_wait_for_any_signal();
+                break;
+            case SparringData::TryWaitForAllSignals:
+                data->caughtSignals
+                        = weos::this_thread::try_wait_for_all_signals(
+                              data->waitFlags);
+                break;
             case SparringData::WaitForAnySignal:
                 data->caughtSignals = weos::this_thread::wait_for_any_signal();
                 break;
             case SparringData::WaitForAllSignals:
                 data->caughtSignals = weos::this_thread::wait_for_all_signals(
-                                          data->waitMask);
+                                          data->waitFlags);
                 break;
             default:
                 break;
@@ -89,6 +107,90 @@ void sparring(SparringData* data)
         data->busy = false;
         data->action = SparringData::None;
     }
+}
+
+} // anonymous namespace
+
+TEST(signal, no_signals_in_new_thread)
+{
+    weos::thread threads[MAX_NUM_PARALLEL_TEST_THREADS];
+    SparringData data[MAX_NUM_PARALLEL_TEST_THREADS];
+
+    for (int i = 0; i < 10 * MAX_NUM_PARALLEL_TEST_THREADS; ++i)
+    {
+        int idx = i % MAX_NUM_PARALLEL_TEST_THREADS;
+        if (threads[idx].joinable())
+        {
+            data[idx].action = SparringData::Terminate;
+            threads[idx].join();
+        }
+
+        threads[idx] = weos::thread(sparring, &data[idx]);
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(5));
+        ASSERT_TRUE(data[idx].sparringStarted);
+
+        data[idx].caughtSignals = 0;
+        data[idx].action = SparringData::TryWaitForAnySignal;
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(5));
+        ASSERT_FALSE(data[idx].busy);
+        ASSERT_EQ(0, data[idx].caughtSignals);
+
+        // Set all flags to ensure that they are erased when a new thread is
+        // created.
+        threads[idx].set_signals(weos::signal_traits::all_flags);
+    }
+
+    for (int i = 0; i < MAX_NUM_PARALLEL_TEST_THREADS; ++i)
+    {
+        if (threads[i].joinable())
+        {
+            data[i].action = SparringData::Terminate;
+            threads[i].join();
+        }
+    }
+}
+
+TEST(signal, set_signals)
+{
+    SparringData data;
+    weos::thread t(sparring, &data);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    ASSERT_TRUE(data.sparringStarted);
+
+    // Set all signal flags and catch them.
+    t.set_signals(weos::signal_traits::all_flags);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    data.caughtSignals = 0;
+    data.action = SparringData::TryWaitForAnySignal;
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    ASSERT_FALSE(data.busy);
+    ASSERT_EQ(weos::signal_traits::all_flags, data.caughtSignals);
+
+    // Make sure that the signal flags have been cleared.
+    data.action = SparringData::TryWaitForAnySignal;
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    ASSERT_FALSE(data.busy);
+    ASSERT_EQ(0, data.caughtSignals);
+
+    // Set the signal flags one by one and catch them all.
+    for (int i = 0; i < weos::signal_traits::num_flags; ++i)
+    {
+        weos::signal_traits::flags_type flag = 1 << i;
+        t.set_signals(flag);
+    }
+    data.action = SparringData::TryWaitForAnySignal;
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    ASSERT_FALSE(data.busy);
+    ASSERT_EQ(weos::signal_traits::all_flags, data.caughtSignals);
+
+    // Make sure that the signal flags have been cleared.
+    data.action = SparringData::TryWaitForAnySignal;
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    ASSERT_FALSE(data.busy);
+    ASSERT_EQ(0, data.caughtSignals);
+
+    data.action = SparringData::Terminate;
+    t.join();
 }
 
 TEST(signal, wait_for_any_signal)
@@ -99,9 +201,9 @@ TEST(signal, wait_for_any_signal)
     ASSERT_TRUE(data.sparringStarted);
 
     // Set a single signal and assert that it is caught.
-    for (unsigned i = 0; i < 16; ++i)
+    for (int i = 0; i < weos::signal_traits::num_flags; ++i)
     {
-        unsigned mask = 1 << i;
+        weos::signal_traits::flags_type flag = 1 << i;
 
         data.caughtSignals = 0;
         data.action = SparringData::WaitForAnySignal;
@@ -109,16 +211,54 @@ TEST(signal, wait_for_any_signal)
         ASSERT_TRUE(data.busy);
         ASSERT_EQ(0, data.caughtSignals);
 
-        t.set_signals(mask);
+        t.set_signals(flag);
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_FALSE(data.busy);
-        ASSERT_EQ(mask, data.caughtSignals);
+        ASSERT_EQ(flag, data.caughtSignals);
+
+        // Make sure that the signal flags have been cleared.
+        data.action = SparringData::TryWaitForAnySignal;
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_FALSE(data.busy);
+        ASSERT_EQ(0, data.caughtSignals);
     }
 
-    // Set a bunch of signals and assert that all of them are caught.
-    for (unsigned i = 0; i < 100; ++i)
+    // Test with signal_traits::all_flags.
     {
-        unsigned mask = (testing::random() % 0xFFFF) + 1;
+        data.caughtSignals = 0;
+        data.action = SparringData::WaitForAnySignal;
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_TRUE(data.busy);
+        ASSERT_EQ(0, data.caughtSignals);
+
+        t.set_signals(weos::signal_traits::all_flags);
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_FALSE(data.busy);
+        ASSERT_EQ(weos::signal_traits::all_flags, data.caughtSignals);
+
+        // Make sure that the signal flags have been cleared.
+        data.action = SparringData::TryWaitForAnySignal;
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_FALSE(data.busy);
+        ASSERT_EQ(0, data.caughtSignals);
+    }
+
+    data.action = SparringData::Terminate;
+    t.join();
+}
+
+TEST(signal, wait_for_any_signal_randomly)
+{
+    SparringData data;
+    weos::thread t(sparring, &data);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    ASSERT_TRUE(data.sparringStarted);
+
+    // Set a bunch of signals and assert that all of them are caught.
+    for (int i = 0; i < 100; ++i)
+    {
+        weos::signal_traits::flags_type flag
+                = 1 + (testing::random() % weos::signal_traits::all_flags);
 
         data.caughtSignals = 0;
         data.action = SparringData::WaitForAnySignal;
@@ -126,10 +266,16 @@ TEST(signal, wait_for_any_signal)
         ASSERT_TRUE(data.busy);
         ASSERT_EQ(0, data.caughtSignals);
 
-        t.set_signals(mask);
+        t.set_signals(flag);
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_FALSE(data.busy);
-        ASSERT_EQ(mask, data.caughtSignals);
+        ASSERT_EQ(flag, data.caughtSignals);
+
+        // Make sure that the signal flags have been cleared.
+        data.action = SparringData::TryWaitForAnySignal;
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_FALSE(data.busy);
+        ASSERT_EQ(0, data.caughtSignals);
     }
 
     data.action = SparringData::Terminate;
@@ -144,54 +290,72 @@ TEST(signal, wait_for_all_signals)
     ASSERT_TRUE(data.sparringStarted);
 
     // Wait for a single signal.
-    for (unsigned i = 0; i < 16; ++i)
+    for (int i = 0; i < weos::signal_traits::num_flags; ++i)
     {
-        unsigned mask = 1 << i;
+        weos::signal_traits::flags_type flag = 1 << i;
 
         data.caughtSignals = 0;
-        data.waitMask = mask;
+        data.waitFlags = flag;
         data.action = SparringData::WaitForAllSignals;
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_TRUE(data.busy);
         ASSERT_EQ(0, data.caughtSignals);
 
-        for (unsigned j = 0; j < 16; ++j)
+        // Set all signals except the one for which we wait. The sparring
+        // thread must still block.
+        for (int j = 0; j < weos::signal_traits::num_flags; ++j)
         {
-            if (j == i)
-                continue;
-
-            t.set_signals(1 << j);
-            weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
-            ASSERT_TRUE(data.busy);
-            ASSERT_EQ(0, data.caughtSignals);
+            if (j != i)
+                t.set_signals(1 << j);
         }
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_TRUE(data.busy);
+        ASSERT_EQ(0, data.caughtSignals);
 
-        t.set_signals(mask);
+        // Set the remaining signal.
+        t.set_signals(flag);
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_FALSE(data.busy);
-        ASSERT_TRUE(data.caughtSignals != 0);
+        ASSERT_EQ(flag, data.caughtSignals);
 
-        // Clear all signals which have not been caught.
-        t.clear_signals(0xFFFF);
+        // The other signals should still be intact.
+        data.action = SparringData::TryWaitForAnySignal;
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_FALSE(data.busy);
+        ASSERT_EQ(weos::signal_traits::all_flags & ~flag, data.caughtSignals);
     }
 
-    for (unsigned i = 0; i < 100; ++i)
+    data.action = SparringData::Terminate;
+    t.join();
+}
+
+TEST(signal, wait_for_all_signals_randomly)
+{
+    SparringData data;
+    weos::thread t(sparring, &data);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+    ASSERT_TRUE(data.sparringStarted);
+
+    for (int i = 0; i < 100; ++i)
     {
-        unsigned mask = (testing::random() % 0xFFFF) + 1;
+        weos::signal_traits::flags_type flags
+                = 1 + (testing::random() % weos::signal_traits::all_flags);
 
         data.caughtSignals = 0;
-        data.waitMask = mask;
+        data.waitFlags = flags;
         data.action = SparringData::WaitForAllSignals;
         weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
         ASSERT_TRUE(data.busy);
         ASSERT_TRUE(data.caughtSignals == 0);
 
-        for (unsigned j = 0; j < 16; ++j)
+        weos::signal_traits::flags_type temp = flags;
+        for (int j = 0; j < weos::signal_traits::num_flags; ++j)
         {
-            mask &= ~(1 << j);
-            t.set_signals(1 << j);
+            weos::signal_traits::flags_type flag = 1 << j;
+            temp &= ~flag;
+            t.set_signals(flag);
             weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
-            if (mask != 0)
+            if (temp != 0)
             {
                 ASSERT_TRUE(data.busy);
                 ASSERT_EQ(0, data.caughtSignals);
@@ -203,8 +367,11 @@ TEST(signal, wait_for_all_signals)
             }
         }
 
-        // Clear all signals which have not been caught.
-        t.clear_signals(0xFFFF);
+        // The other signals should still be intact.
+        data.action = SparringData::TryWaitForAnySignal;
+        weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+        ASSERT_FALSE(data.busy);
+        ASSERT_EQ(weos::signal_traits::all_flags & ~flags, data.caughtSignals);
     }
 
     data.action = SparringData::Terminate;

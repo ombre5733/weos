@@ -30,18 +30,37 @@
 #define WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
 
 #include "../config.hpp"
+#include "algorithm.hpp"
 #include "chrono.hpp"
 #include "mutex.hpp"
 #include "semaphore.hpp"
 #include "system_error.hpp"
 
 #include <boost/config.hpp>
+#include <boost/static_assert.hpp>
 
 #include <cstdint>
+
+
+//! \todo Remove
+#include <cstdio>
 
 namespace weos
 {
 class thread;
+
+//! Traits for thread signals.
+struct signal_traits
+{
+    BOOST_STATIC_ASSERT(osFeature_Signals > 0 && osFeature_Signals <= 16);
+
+    typedef std::uint16_t flags_type;
+
+    static const int num_flags = osFeature_Signals;
+
+    static const flags_type all_flags
+            = (std::uint32_t(1) << osFeature_Signals) - 1;
+};
 
 namespace detail
 {
@@ -55,22 +74,22 @@ struct native_thread_traits
     // The stack must be able to hold the registers R0-R15.
     static const std::size_t minimum_custom_stack_size = 64;
 
-    static void clear_signals(thread_id_type threadId, std::uint32_t mask)
+    // Clears the given signal flags of the thread selected by the threadId.
+    static void clear_signals(thread_id_type threadId,
+                              signal_traits::flags_type flags)
     {
-        WEOS_ASSERT(mask > 0
-                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
-        std::int32_t result = osSignalClear(threadId, mask);
+        WEOS_ASSERT(flags < (std::uint32_t(1) << (osFeature_Signals)));
+        std::int32_t result = osSignalClear(threadId, flags);
         WEOS_ASSERT(result >= 0);
         (void)result;
     }
 
-    // Sets the signals which have been specified in the mask of the thread
-    // selected by the threadId.
-    static void set_signals(thread_id_type threadId, std::uint32_t mask)
+    // Sets the given signal flags of the thread selected by the threadId.
+    static void set_signals(thread_id_type threadId,
+                            signal_traits::flags_type flags)
     {
-        WEOS_ASSERT(mask > 0
-                    && mask < (std::uint32_t(1) << (osFeature_Signals)));
-        std::int32_t result = osSignalSet(threadId, mask);
+        WEOS_ASSERT(flags < (std::uint32_t(1) << (osFeature_Signals)));
+        std::int32_t result = osSignalSet(threadId, flags);
         WEOS_ASSERT(result >= 0);
         (void)result;
     }
@@ -94,23 +113,23 @@ weos::thread::id get_id()
 }
 
 inline
-void clear_signals(std::uint32_t mask)
+void clear_signals(signal_traits::flags_type flags)
 {
     if (osThreadGetId() == 0)
     {
         ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
     }
-    detail::native_thread_traits::clear_signals(osThreadGetId(), mask);
+    detail::native_thread_traits::clear_signals(osThreadGetId(), flags);
 }
 
 inline
-void set_signals(std::uint32_t mask)
+void set_signals(signal_traits::flags_type flags)
 {
     if (osThreadGetId() == 0)
     {
         ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
     }
-    detail::native_thread_traits::set_signals(osThreadGetId(), mask);
+    detail::native_thread_traits::set_signals(osThreadGetId(), flags);
 }
 
 //! Triggers a rescheduling of the executing threads.
@@ -154,9 +173,9 @@ private:
 // A helper to wait for a signal.
 struct signal_waiter
 {
-    // Creates an object which waits for all signals specified by the \p mask.
-    explicit signal_waiter(std::uint32_t mask)
-        : m_mask(mask)
+    // Creates an object which waits for all signals specified by the \p flags.
+    explicit signal_waiter(signal_traits::flags_type flags)
+        : m_flags(flags)
     {
     }
 
@@ -164,10 +183,10 @@ struct signal_waiter
     // if a signal has arrived and no further waiting is necessary.
     bool operator() (std::int32_t millisec)
     {
-        osEvent result = osSignalWait(m_mask, millisec);
+        osEvent result = osSignalWait(m_flags, millisec);
         if (result.status == osEventSignal)
         {
-            m_mask = result.value.signals;
+            m_flags = result.value.signals;
             return true;
         }
 
@@ -181,22 +200,22 @@ struct signal_waiter
         return false;
     }
 
-    std::uint32_t mask() const
+    signal_traits::flags_type flags() const
     {
-        return m_mask;
+        return m_flags;
     }
 
 private:
-    std::uint32_t m_mask;
+    signal_traits::flags_type m_flags;
 
    signal_waiter(const signal_waiter&);
     const signal_waiter& operator= (const signal_waiter&);
 };
 
 inline
-std::uint32_t wait_for_signal(std::uint32_t mask)
+signal_traits::flags_type wait_for_signal_flags(signal_traits::flags_type flags)
 {
-    osEvent result = osSignalWait(mask, osWaitForever);
+    osEvent result = osSignalWait(flags, osWaitForever);
     if (result.status != osEventSignal)
     {
         ::weos::throw_exception(weos::system_error(
@@ -206,14 +225,15 @@ std::uint32_t wait_for_signal(std::uint32_t mask)
 }
 
 inline
-std::uint32_t try_wait_for_signal(std::uint32_t mask)
+signal_traits::flags_type try_wait_for_signal_flags(signal_traits::flags_type flags)
 {
-    osEvent result = osSignalWait(mask, 0);
-    if (result.status == osOK)
-    {
-        return 0;
-    }
-    else if (result.status != osEventSignal)
+    osEvent result = osSignalWait(flags, 0);
+    /*
+std::printf("try_wait_for_signal_flags:\n  status = %d   signals = %04x %04x\n",
+           result.status,
+           unsigned(result.value.v >> 16),
+           unsigned(result.value.v & 0xFFFF));*/
+    if (result.status != osOK && result.status != osEventSignal)
     {
         ::weos::throw_exception(weos::system_error(
                                     result.status, cmsis_category()));
@@ -223,14 +243,15 @@ std::uint32_t try_wait_for_signal(std::uint32_t mask)
 
 template <typename RepT, typename PeriodT>
 inline
-std::uint32_t try_wait_for_signal_for(
-        std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
+signal_traits::flags_type try_wait_for_signal_flags_for(
+        signal_traits::flags_type flags,
+        const chrono::duration<RepT, PeriodT>& d)
 {
-    signal_waiter waiter(mask);
+    signal_waiter waiter(flags);
     if (chrono::detail::cmsis_wait<
             RepT, PeriodT, signal_waiter>::wait(d, waiter))
     {
-        return waiter.mask();
+        return waiter.flags();
     }
 
     return 0;
@@ -256,18 +277,18 @@ void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_N
 //! Blocks the current thread until one or more of its signals has been set
 //! and returns these signals.
 inline
-std::uint32_t wait_for_any_signal()
+signal_traits::flags_type wait_for_any_signal()
 {
-    return detail::wait_for_signal(0);
+    return detail::wait_for_signal_flags(0);
 }
 
 //! Checks if any signal has arrived.
 //! Checks if one or more signals has been set for the current thread and
 //! returns these flags. If no signal is set, zero is returned.
 inline
-std::uint32_t try_wait_for_any_signal()
+signal_traits::flags_type try_wait_for_any_signal()
 {
-    return detail::try_wait_for_signal(0);
+    return detail::try_wait_for_signal_flags(0);
 }
 
 //! Waits until any signal arrives or a timeout occurs.
@@ -276,40 +297,42 @@ std::uint32_t try_wait_for_any_signal()
 //! expires, zero is returned.
 template <typename RepT, typename PeriodT>
 inline
-std::uint32_t try_wait_for_any_signal_for(
+signal_traits::flags_type try_wait_for_any_signal_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
-    return detail::try_wait_for_signal_for(0, d);
+    return detail::try_wait_for_signal_flags_for(0, d);
 }
 
 //! Waits for a set of signals.
 //! Blocks the current thread until at least the signals specified by the
-//! \p mask have been set. Then all set signal flags are returned.
+//! \p flags have been set. Then all set signal flags are returned.
 inline
-std::uint32_t wait_for_all_signals(std::uint32_t mask)
+signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
 {
-    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::wait_for_signal(mask);
+    WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::wait_for_signal_flags(flags);
 }
 
 //! Checks if a set of signals has been set.
-//! Checks if at least the set of signals given by the \p mask has been set
+//! Checks if at least the set of signals given by the \p flags has been set
 //! and returns all set signals. If not the whole set of signals has been set,
 //! zero is returned.
 inline
-std::uint32_t try_wait_for_all_signals(std::uint32_t mask)
+signal_traits::flags_type try_wait_for_all_signals(
+        signal_traits::flags_type flags)
 {
-    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::try_wait_for_signal(mask);
+    WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::try_wait_for_signal_flags(flags);
 }
 
 template <typename RepT, typename PeriodT>
 inline
-std::uint32_t try_wait_for_all_signals_for(
-        std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
+signal_traits::flags_type try_wait_for_all_signals_for(
+        signal_traits::flags_type flags,
+        const chrono::duration<RepT, PeriodT>& d)
 {
-    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::try_wait_for_signal_for(mask, d);
+    WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::try_wait_for_signal_flags_for(flags, d);
 }
 
 } // namespace this_thread

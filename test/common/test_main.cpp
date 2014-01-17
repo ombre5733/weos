@@ -76,13 +76,6 @@ void initUart()
     USART3->CR1 |= USART_CR1_RE | USART_CR1_TE;
     USART3->CR1 |= USART_CR1_UE;
 
-    /*
-    // Turn the printf()-buffers off.
-    setvbuf(stdin, NULL, _IONBF, 0);
-    setvbuf(stdout, NULL, _IONBF, 0);
-    setvbuf(stderr, NULL, _IONBF, 0);
-    */
-
     printf("\n\nUART initialized\n");
 }
 
@@ -111,7 +104,7 @@ namespace weos
 {
 void throw_exception(const std::exception& e)
 {
-    printf("Throw exception %s\n", e.what());
+    printf("Exception: '%s'\n", e.what());
     while (1);
 }
 } // namespace weos
@@ -193,43 +186,6 @@ void showError()
     }
     while (1);
 }
-/*
-extern "C" void blink(const void* arg)
-{
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
-    GPIOD->MODER   |= 1 << (2 * GREEN_LED);
-    GPIOD->OSPEEDR |= 1 << (2 * GREEN_LED);
-    GPIOD->MODER   |= 1 << (2 * ORANGE_LED);
-    GPIOD->OSPEEDR |= 1 << (2 * ORANGE_LED);
-    GPIOD->MODER   |= 1 << (2 * RED_LED);
-    GPIOD->OSPEEDR |= 1 << (2 * RED_LED);
-    GPIOD->MODER   |= 1 << (2 * BLUE_LED);
-    GPIOD->OSPEEDR |= 1 << (2 * BLUE_LED);
-
-    // Clear all LEDs.
-    GPIOD->BRR = (1 << GREEN_LED);
-    GPIOD->BRR = (1 << ORANGE_LED);
-    GPIOD->BRR = (1 << RED_LED);
-    GPIOD->BRR = (1 << BLUE_LED);
-
-    while (1)
-    {
-        GPIOD->ODR ^= 1 << 15;
-        osDelay(500);
-    }
-}
-*/
-//osThreadDef(blink, osPriorityNormal, 1, 0);
-namespace weos
-{
-
-/*
-void throw_exception(const std::exception& e)
-{
-    while (1);
-}*/
-
-} // namespace weos
 
 int main()
 {
