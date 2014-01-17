@@ -81,7 +81,7 @@ public:
     //! Waits until a semaphore token is available.
     void wait()
     {
-        value_type numTokens = osSemaphoreWait(m_id, osWaitForever);
+        std::int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
         if (numTokens <= 0)
         {
             ::weos::throw_exception(::weos::system_error(
@@ -95,7 +95,7 @@ public:
     //! \p false is returned.
     bool try_wait()
     {
-        value_type numTokens = osSemaphoreWait(m_id, 0);
+        std::int32_t numTokens = osSemaphoreWait(m_id, 0);
         if (numTokens < 0)
         {
             ::weos::throw_exception(::weos::system_error(
@@ -158,7 +158,7 @@ private:
         // necessary.
         bool operator() (std::int32_t millisec) const
         {
-            value_type numTokens = osSemaphoreWait(m_id, millisec);
+            std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
             if (numTokens < 0)
             {
                 ::weos::throw_exception(::weos::system_error(
