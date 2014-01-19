@@ -41,32 +41,14 @@
 namespace weos
 {
 
-//! Traits for thread signals.
-struct signal_traits
-{
-    typedef std::uint32_t flags_type;
-
-    inline
-    static const int num_flags()
-    {
-        return 32;
-    }
-
-    inline
-    static const flags_type all_flags()
-    {
-        return std::numeric_limits<flags_type>::max();
-    }
-};
-
-
 namespace detail
 {
+typedef std::uint32_t signal_set;
 
 struct ThreadData
 {
     std::mutex signalMutex;
-    signal_traits::flags_type signalFlags;
+    signal_set signalFlags;
     std::condition_variable signalCv;
 
     static std::shared_ptr<ThreadData> create(std::thread::id id);
@@ -117,10 +99,31 @@ public:
         return *this;
     }
 
+    // -------------------------------------------------------------------------
+    // Signal management
+    // -------------------------------------------------------------------------
+
+    //! Represents a set of signal flags.
+    typedef detail::signal_set signal_set;
+
+    //! Returns the number of signals in a set.
+    inline
+    static const int signals_count()
+    {
+        return 32;
+    }
+
+    //! Returns a signal set with all flags being set.
+    inline
+    static const signal_set all_signals()
+    {
+        return std::numeric_limits<signal_set>::max();
+    }
+
     //! Clears a set of signals.
     //! Clears the signals which are specified by the \p flags.
     inline
-    void clear_signals(signal_traits::flags_type flags)
+    void clear_signals(signal_set flags)
     {
         if (!joinable())
         {
@@ -135,7 +138,7 @@ public:
     //! Sets a set of signals.
     //! Sets the signals which are specified by the \p flags.
     inline
-    void set_signals(signal_traits::flags_type flags)
+    void set_signals(signal_set flags)
     {
         if (!joinable())
         {
@@ -148,6 +151,7 @@ public:
     }
 
 private:
+    //! The additional data associated with this thread.
     std::shared_ptr<detail::ThreadData> m_data;
 };
 
@@ -162,7 +166,7 @@ using std::this_thread::yield;
 //! Blocks the current thread until one or more signal flags have been set,
 //! returns these flags and resets them.
 inline
-signal_traits::flags_type wait_for_any_signal()
+thread::signal_set wait_for_any_signal()
 {
     std::shared_ptr<detail::ThreadData> data
             = detail::ThreadData::find(get_id());
@@ -172,9 +176,8 @@ signal_traits::flags_type wait_for_any_signal()
     }
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
-    if (data->signalFlags == 0)
-        data->signalCv.wait(lock, [data]{ return data->signalFlags != 0; });
-    signal_traits::flags_type temp = data->signalFlags;
+    data->signalCv.wait(lock, [data]{ return data->signalFlags != 0; });
+    thread::signal_set temp = data->signalFlags;
     data->signalFlags = 0;
     return temp;
 }
@@ -184,7 +187,7 @@ signal_traits::flags_type wait_for_any_signal()
 //! returns these flags and resets them. If no signal is set, zero
 //! is returned.
 inline
-signal_traits::flags_type try_wait_for_any_signal()
+thread::signal_set try_wait_for_any_signal()
 {
     std::shared_ptr<detail::ThreadData> data
             = detail::ThreadData::find(get_id());
@@ -194,19 +197,45 @@ signal_traits::flags_type try_wait_for_any_signal()
     }
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
-    signal_traits::flags_type temp = data->signalFlags;
+    thread::signal_set temp = data->signalFlags;
     data->signalFlags = 0;
     return temp;
 }
 
-// try_wait_for_any_signal_for()
+
+//! Waits until any signal arrives or a timeout occurs.
+//! Waits up to the timeout period \p d for one or more signals to be set for
+//! the current thread. The set signals will be returned. If the timeout
+//! expires, zero is returned.
+template <typename RepT, typename PeriodT>
+inline
+thread::signal_set try_wait_for_any_signal_for(
+        const chrono::duration<RepT, PeriodT>& d)
+{
+    std::shared_ptr<detail::ThreadData> data
+            = detail::ThreadData::find(get_id());
+    if (!data)
+    {
+        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+    }
+
+    std::unique_lock<std::mutex> lock(data->signalMutex);
+    if (!data->signalCv.wait_for(
+            lock, d, [data]{ return data->signalFlags != 0; }))
+    {
+        return 0;
+    }
+    thread::signal_set temp = data->signalFlags;
+    data->signalFlags = 0;
+    return temp;
+}
 
 //! Waits for a set of signals.
 //! Blocks the current thread until all signal flags selected by \p flags have
 //! been set, returns these flags and resets them. Signal flags which are
 //! not selected by \p flags are not reset.
 inline
-signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
+thread::signal_set wait_for_all_signals(thread::signal_set flags)
 {
     std::shared_ptr<detail::ThreadData> data
             = detail::ThreadData::find(get_id());
@@ -216,17 +245,11 @@ signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
     }
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
-    if ((data->signalFlags & flags) != flags)
-    {
-        data->signalCv.wait(
-                    lock,
-                    [data, flags]{ return (data->signalFlags & flags)
-                                          == flags; });
-    }
-    signal_traits::flags_type temp = (data->signalFlags & flags) == flags
-                                     ? flags : 0;
-    data->signalFlags &= ~temp;
-    return temp;
+    data->signalCv.wait(
+                lock,
+                [data, flags]{ return (data->signalFlags & flags) == flags; });
+    data->signalFlags &= ~flags;
+    return flags;
 }
 
 //! Checks if a set of signals has been set.
@@ -236,8 +259,8 @@ signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
 //! If not all signal flags specified by \p flags are set, zero is returned
 //! and no flag is reset.
 inline
-signal_traits::flags_type try_wait_for_all_signals(
-        signal_traits::flags_type flags)
+thread::signal_set try_wait_for_all_signals(
+        thread::signal_set flags)
 {
     std::shared_ptr<detail::ThreadData> data
             = detail::ThreadData::find(get_id());
@@ -247,10 +270,39 @@ signal_traits::flags_type try_wait_for_all_signals(
     }
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
-    signal_traits::flags_type temp = (data->signalFlags & flags) == flags
-                                     ? flags : 0;
+    thread::signal_set temp = (data->signalFlags & flags) == flags
+                              ? flags : 0;
     data->signalFlags &= ~temp;
     return temp;
+}
+
+//! Blocks until a set of signals arrives or a timeout occurs.
+//! Waits up to the timeout duration \p d for all signals specified by the
+//! \p flags to be set. If these signals are set, they are returned and
+//! reset. In the case of a timeout, zero is returned and the signal flags
+//! are not modified.
+template <typename RepT, typename PeriodT>
+inline
+thread::signal_set try_wait_for_all_signals_for(
+        thread::signal_set flags,
+        const chrono::duration<RepT, PeriodT>& d)
+{
+    std::shared_ptr<detail::ThreadData> data
+            = detail::ThreadData::find(get_id());
+    if (!data)
+    {
+        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+    }
+
+    std::unique_lock<std::mutex> lock(data->signalMutex);
+    if (!data->signalCv.wait_for(
+            lock, d,
+            [data, flags]{ return (data->signalFlags & flags) == flags; }))
+    {
+        return 0;
+    }
+    data->signalFlags &= ~flags;
+    return flags;
 }
 
 } // namespace this_thread

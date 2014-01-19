@@ -200,7 +200,9 @@ public:
     {
     }
 
-    // ---- Constructors without attributes ------------------------------------
+    // -------------------------------------------------------------------------
+    // Constructors without attributes
+    // -------------------------------------------------------------------------
 
     template <typename F>
     explicit
@@ -308,7 +310,9 @@ public:
         invokeWithDefaultStack(attrs);
     }
 
-    // ---- Constructors with attributes ---------------------------------------
+    // -------------------------------------------------------------------------
+    // Constructors with attributes
+    // -------------------------------------------------------------------------
 
     template <typename F>
     thread(const attributes& attrs,
@@ -487,10 +491,39 @@ public:
         return m_data != 0;
     }
 
+    //! Returns the number of threads which can run concurrently on this
+    //! hardware.
+    inline
+    static unsigned hardware_concurrency() BOOST_NOEXCEPT
+    {
+        return 1;
+    }
+
+    // -------------------------------------------------------------------------
+    // Signal management
+    // -------------------------------------------------------------------------
+
+    //! Represents a set of signal flags.
+    typedef detail::native_thread_traits::signal_set signal_set;
+
+    //! Returns the number of signals in a set.
+    inline
+    static const int signals_count()
+    {
+        return detail::native_thread_traits::signals_count();
+    }
+
+    //! Returns a signal set with all flags being set.
+    inline
+    static const signal_set all_signals()
+    {
+        return detail::native_thread_traits::all_signals();
+    }
+
     //! Clears a set of signals.
     //! Clears the signals which are specified by the \p flags.
     inline
-    void clear_signals(signal_traits::flags_type flags)
+    void clear_signals(signal_set flags)
     {
         if (!joinable())
         {
@@ -503,7 +536,7 @@ public:
     //! Sets a set of signals.
     //! Sets the signals which are specified by the \p flags.
     inline
-    void set_signals(signal_traits::flags_type flags)
+    void set_signals(signal_set flags)
     {
         if (!joinable())
         {
@@ -511,14 +544,6 @@ public:
         }
 
         detail::native_thread_traits::set_signals(m_data->m_threadId, flags);
-    }
-
-    //! Returns the number of threads which can run concurrently on this
-    //! hardware.
-    inline
-    static unsigned hardware_concurrency() BOOST_NOEXCEPT
-    {
-        return 1;
     }
 
 protected:

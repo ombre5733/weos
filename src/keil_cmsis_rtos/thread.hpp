@@ -49,26 +49,6 @@ namespace weos
 {
 class thread;
 
-//! Traits for thread signals.
-struct signal_traits
-{
-    BOOST_STATIC_ASSERT(osFeature_Signals > 0 && osFeature_Signals <= 16);
-
-    typedef std::uint16_t flags_type;
-
-    inline
-    static const int num_flags()
-    {
-        return osFeature_Signals;
-    }
-
-    inline
-    static const flags_type all_flags()
-    {
-        return (std::uint32_t(1) << osFeature_Signals) - 1;
-    }
-};
-
 namespace detail
 {
 
@@ -81,9 +61,27 @@ struct native_thread_traits
     // The stack must be able to hold the registers R0-R15.
     static const std::size_t minimum_custom_stack_size = 64;
 
+    BOOST_STATIC_ASSERT(osFeature_Signals > 0 && osFeature_Signals <= 16);
+
+    // Represents a set of signals.
+    typedef std::uint16_t signal_set;
+
+    // Returns the number of signals in a set.
+    inline
+    static const int signals_count()
+    {
+        return osFeature_Signals;
+    }
+
+    // Returns a signal set with all flags being set.
+    inline
+    static const signal_set all_signals()
+    {
+        return (std::uint32_t(1) << osFeature_Signals) - 1;
+    }
+
     // Clears the given signal flags of the thread selected by the threadId.
-    static void clear_signals(thread_id_type threadId,
-                              signal_traits::flags_type flags)
+    static void clear_signals(thread_id_type threadId, signal_set flags)
     {
         WEOS_ASSERT(flags < (std::uint32_t(1) << (osFeature_Signals)));
         std::int32_t result = osSignalClear(threadId, flags);
@@ -92,8 +90,7 @@ struct native_thread_traits
     }
 
     // Sets the given signal flags of the thread selected by the threadId.
-    static void set_signals(thread_id_type threadId,
-                            signal_traits::flags_type flags)
+    static void set_signals(thread_id_type threadId, signal_set flags)
     {
         WEOS_ASSERT(flags < (std::uint32_t(1) << (osFeature_Signals)));
         std::int32_t result = osSignalSet(threadId, flags);
@@ -120,7 +117,7 @@ weos::thread::id get_id()
 }
 
 inline
-void clear_signals(signal_traits::flags_type flags)
+void clear_signals(thread::signal_set flags)
 {
     if (osThreadGetId() == 0)
     {
@@ -130,7 +127,7 @@ void clear_signals(signal_traits::flags_type flags)
 }
 
 inline
-void set_signals(signal_traits::flags_type flags)
+void set_signals(thread::signal_set flags)
 {
     if (osThreadGetId() == 0)
     {
@@ -181,7 +178,7 @@ private:
 struct signal_waiter
 {
     // Creates an object which waits for all signals specified by the \p flags.
-    explicit signal_waiter(signal_traits::flags_type flags)
+    explicit signal_waiter(thread::signal_set flags)
         : m_flags(flags)
     {
     }
@@ -207,20 +204,20 @@ struct signal_waiter
         return false;
     }
 
-    signal_traits::flags_type flags() const
+    thread::signal_set flags() const
     {
         return m_flags;
     }
 
 private:
-    signal_traits::flags_type m_flags;
+    thread::signal_set m_flags;
 
    signal_waiter(const signal_waiter&);
     const signal_waiter& operator= (const signal_waiter&);
 };
 
 inline
-signal_traits::flags_type wait_for_signal_flags(signal_traits::flags_type flags)
+thread::signal_set wait_for_signal_flags(thread::signal_set flags)
 {
     osEvent result = osSignalWait(flags, osWaitForever);
     if (result.status != osEventSignal)
@@ -232,7 +229,7 @@ signal_traits::flags_type wait_for_signal_flags(signal_traits::flags_type flags)
 }
 
 inline
-signal_traits::flags_type try_wait_for_signal_flags(signal_traits::flags_type flags)
+thread::signal_set try_wait_for_signal_flags(thread::signal_set flags)
 {
     osEvent result = osSignalWait(flags, 0);
     /*
@@ -250,8 +247,8 @@ std::printf("try_wait_for_signal_flags:\n  status = %d   signals = %04x %04x\n",
 
 template <typename RepT, typename PeriodT>
 inline
-signal_traits::flags_type try_wait_for_signal_flags_for(
-        signal_traits::flags_type flags,
+thread::signal_set try_wait_for_signal_flags_for(
+        thread::signal_set flags,
         const chrono::duration<RepT, PeriodT>& d)
 {
     signal_waiter waiter(flags);
@@ -284,7 +281,7 @@ void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_N
 //! Blocks the current thread until one or more signal flags have been set,
 //! returns these flags and resets them.
 inline
-signal_traits::flags_type wait_for_any_signal()
+thread::signal_set wait_for_any_signal()
 {
     return detail::wait_for_signal_flags(0);
 }
@@ -294,7 +291,7 @@ signal_traits::flags_type wait_for_any_signal()
 //! returns these flags and resets them. If no signal is set, zero
 //! is returned.
 inline
-signal_traits::flags_type try_wait_for_any_signal()
+thread::signal_set try_wait_for_any_signal()
 {
     return detail::try_wait_for_signal_flags(0);
 }
@@ -305,7 +302,7 @@ signal_traits::flags_type try_wait_for_any_signal()
 //! expires, zero is returned.
 template <typename RepT, typename PeriodT>
 inline
-signal_traits::flags_type try_wait_for_any_signal_for(
+thread::signal_set try_wait_for_any_signal_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
     return detail::try_wait_for_signal_flags_for(0, d);
@@ -316,7 +313,7 @@ signal_traits::flags_type try_wait_for_any_signal_for(
 //! been set, returns those flags and resets them. Signal flags which are
 //! not selected by \p flags are not reset.
 inline
-signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
+thread::signal_set wait_for_all_signals(thread::signal_set flags)
 {
     WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
     return detail::wait_for_signal_flags(flags);
@@ -329,17 +326,22 @@ signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
 //! If not all signal flags specified by \p flags are set, zero is returned
 //! and no flag is reset.
 inline
-signal_traits::flags_type try_wait_for_all_signals(
-        signal_traits::flags_type flags)
+thread::signal_set try_wait_for_all_signals(
+        thread::signal_set flags)
 {
     WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
     return detail::try_wait_for_signal_flags(flags);
 }
 
+//! Blocks until a set of signals arrives or a timeout occurs.
+//! Waits up to the timeout duration \p d for all signals specified by the
+//! \p flags to be set. If these signals are set, they are returned and
+//! reset. In the case of a timeout, zero is returned and the signal flags
+//! are not modified.
 template <typename RepT, typename PeriodT>
 inline
-signal_traits::flags_type try_wait_for_all_signals_for(
-        signal_traits::flags_type flags,
+thread::signal_set try_wait_for_all_signals_for(
+        thread::signal_set flags,
         const chrono::duration<RepT, PeriodT>& d)
 {
     WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
