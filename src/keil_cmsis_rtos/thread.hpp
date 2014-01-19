@@ -56,10 +56,17 @@ struct signal_traits
 
     typedef std::uint16_t flags_type;
 
-    static const int num_flags = osFeature_Signals;
+    inline
+    static const int num_flags()
+    {
+        return osFeature_Signals;
+    }
 
-    static const flags_type all_flags
-            = (std::uint32_t(1) << osFeature_Signals) - 1;
+    inline
+    static const flags_type all_flags()
+    {
+        return (std::uint32_t(1) << osFeature_Signals) - 1;
+    }
 };
 
 namespace detail
@@ -274,8 +281,8 @@ template <typename ClockT, typename DurationT>
 void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
 
 //! Waits for any signal.
-//! Blocks the current thread until one or more of its signals has been set
-//! and returns these signals.
+//! Blocks the current thread until one or more signal flags have been set,
+//! returns these flags and resets them.
 inline
 signal_traits::flags_type wait_for_any_signal()
 {
@@ -283,8 +290,9 @@ signal_traits::flags_type wait_for_any_signal()
 }
 
 //! Checks if any signal has arrived.
-//! Checks if one or more signals has been set for the current thread and
-//! returns these flags. If no signal is set, zero is returned.
+//! Checks if one or more signal flags have been set for the current thread,
+//! returns these flags and resets them. If no signal is set, zero
+//! is returned.
 inline
 signal_traits::flags_type try_wait_for_any_signal()
 {
@@ -304,8 +312,9 @@ signal_traits::flags_type try_wait_for_any_signal_for(
 }
 
 //! Waits for a set of signals.
-//! Blocks the current thread until at least the signals specified by the
-//! \p flags have been set. Then all set signal flags are returned.
+//! Blocks the current thread until all signal flags selected by \p flags have
+//! been set, returns those flags and resets them. Signal flags which are
+//! not selected by \p flags are not reset.
 inline
 signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
 {
@@ -314,9 +323,11 @@ signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
 }
 
 //! Checks if a set of signals has been set.
-//! Checks if at least the set of signals given by the \p flags has been set
-//! and returns all set signals. If not the whole set of signals has been set,
-//! zero is returned.
+//! Checks if all signal flags selected by \p flags have been set, returns
+//! those flags and resets them. Signal flags which are not selected
+//! through \p flags are not reset.
+//! If not all signal flags specified by \p flags are set, zero is returned
+//! and no flag is reset.
 inline
 signal_traits::flags_type try_wait_for_all_signals(
         signal_traits::flags_type flags)

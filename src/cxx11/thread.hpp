@@ -46,9 +46,17 @@ struct signal_traits
 {
     typedef std::uint32_t flags_type;
 
-    static const int num_flags = 32;
+    inline
+    static const int num_flags()
+    {
+        return 32;
+    }
 
-    static const flags_type all_flags = std::numeric_limits<flags_type>::max();
+    inline
+    static const flags_type all_flags()
+    {
+        return std::numeric_limits<flags_type>::max();
+    }
 };
 
 
@@ -77,10 +85,13 @@ public:
 
     template <typename TFunction, typename... TArgs>
     explicit thread(TFunction&& f, TArgs&&... args)
-        : std::thread(f, args...),
+        : std::thread(std::forward<TFunction>(f),
+                      std::forward<TArgs>(args)...),
           m_data(detail::ThreadData::create(this->get_id()))
     {
     }
+
+    thread(const thread&) = delete;
 
     thread(thread&& other)
         : m_data(other.m_data)
@@ -93,10 +104,13 @@ public:
         detail::ThreadData::remove(this->get_id());
     }
 
+    thread& operator= (thread&) = delete;
+
     thread& operator= (thread&& other)
     {
         if (this != &other)
         {
+            std::thread::operator= (std::move(other));
             m_data = other.m_data;
             other.m_data.reset();
         }
@@ -144,6 +158,9 @@ using std::this_thread::sleep_for;
 using std::this_thread::sleep_until;
 using std::this_thread::yield;
 
+//! Waits for any signal.
+//! Blocks the current thread until one or more signal flags have been set,
+//! returns these flags and resets them.
 inline
 signal_traits::flags_type wait_for_any_signal()
 {
@@ -155,10 +172,39 @@ signal_traits::flags_type wait_for_any_signal()
     }
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
-    data->signalCv.wait(lock, [data]{ return data->signalFlags != 0; });
-    return data->signalFlags;
+    if (data->signalFlags == 0)
+        data->signalCv.wait(lock, [data]{ return data->signalFlags != 0; });
+    signal_traits::flags_type temp = data->signalFlags;
+    data->signalFlags = 0;
+    return temp;
 }
 
+//! Checks if any signal has arrived.
+//! Checks if one or more signal flags have been set for the current thread,
+//! returns these flags and resets them. If no signal is set, zero
+//! is returned.
+inline
+signal_traits::flags_type try_wait_for_any_signal()
+{
+    std::shared_ptr<detail::ThreadData> data
+            = detail::ThreadData::find(get_id());
+    if (!data)
+    {
+        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+    }
+
+    std::unique_lock<std::mutex> lock(data->signalMutex);
+    signal_traits::flags_type temp = data->signalFlags;
+    data->signalFlags = 0;
+    return temp;
+}
+
+// try_wait_for_any_signal_for()
+
+//! Waits for a set of signals.
+//! Blocks the current thread until all signal flags selected by \p flags have
+//! been set, returns these flags and resets them. Signal flags which are
+//! not selected by \p flags are not reset.
 inline
 signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
 {
@@ -170,10 +216,41 @@ signal_traits::flags_type wait_for_all_signals(signal_traits::flags_type flags)
     }
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
-    data->signalCv.wait(
-                lock,
-                [data, flags]{ return (data->signalFlags & flags) == flags; });
-    return data->signalFlags;
+    if ((data->signalFlags & flags) != flags)
+    {
+        data->signalCv.wait(
+                    lock,
+                    [data, flags]{ return (data->signalFlags & flags)
+                                          == flags; });
+    }
+    signal_traits::flags_type temp = (data->signalFlags & flags) == flags
+                                     ? flags : 0;
+    data->signalFlags &= ~temp;
+    return temp;
+}
+
+//! Checks if a set of signals has been set.
+//! Checks if all signal flags selected by \p flags have been set, returns
+//! these flags and resets them. Signal flags which are not selected
+//! through \p flags are not reset.
+//! If not all signal flags specified by \p flags are set, zero is returned
+//! and no flag is reset.
+inline
+signal_traits::flags_type try_wait_for_all_signals(
+        signal_traits::flags_type flags)
+{
+    std::shared_ptr<detail::ThreadData> data
+            = detail::ThreadData::find(get_id());
+    if (!data)
+    {
+        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+    }
+
+    std::unique_lock<std::mutex> lock(data->signalMutex);
+    signal_traits::flags_type temp = (data->signalFlags & flags) == flags
+                                     ? flags : 0;
+    data->signalFlags &= ~temp;
+    return temp;
 }
 
 } // namespace this_thread

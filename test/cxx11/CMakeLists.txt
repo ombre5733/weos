@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(CXX11-test CXX)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -pthread -Wl,--no-as-needed")
 set(CMAKE_BUILD_TYPE "debug")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../src")
