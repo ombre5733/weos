@@ -68,14 +68,14 @@ struct native_thread_traits
 
     // Returns the number of signals in a set.
     inline
-    static const int signals_count()
+    static int signals_count()
     {
         return osFeature_Signals;
     }
 
     // Returns a signal set with all flags being set.
     inline
-    static const signal_set all_signals()
+    static signal_set all_signals()
     {
         return (std::uint32_t(1) << osFeature_Signals) - 1;
     }
