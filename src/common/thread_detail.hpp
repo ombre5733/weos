@@ -30,7 +30,7 @@
 #define WEOS_COMMON_THREAD_DETAIL_HPP
 
 #include "../config.hpp"
-#include "callback.hpp"
+#include "functional.hpp"
 
 #include <boost/move/move.hpp>
 #include <boost/static_assert.hpp>
@@ -66,7 +66,7 @@ struct ThreadSharedData
     inline
     void invoke()
     {
-        m_callback();
+        m_invoker();
     }
 
     //! Allocates a ThreadData object from the global pool. An exception is
@@ -75,7 +75,8 @@ struct ThreadSharedData
 
 
 
-    callback_wrapper<WEOS_MAX_THREAD_ARGUMENT_SIZE> m_callback;
+    //! The bound function which will be called in the new thread.
+    static_function<void()> m_invoker;
 
     //! This semaphore is increased by the threaded function when it's
     //! execution finishes. It is needed to implement thread::join().
@@ -214,7 +215,7 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -231,8 +232,8 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -251,9 +252,9 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0),
-                                   boost::forward<A1>(a1));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0),
+                                       boost::forward<A1>(a1));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -274,10 +275,10 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0),
-                                   boost::forward<A1>(a1),
-                                   boost::forward<A2>(a2));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0),
+                                       boost::forward<A1>(a1),
+                                       boost::forward<A2>(a2));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -300,11 +301,11 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0),
-                                   boost::forward<A1>(a1),
-                                   boost::forward<A2>(a2),
-                                   boost::forward<A3>(a3));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0),
+                                       boost::forward<A1>(a1),
+                                       boost::forward<A2>(a2),
+                                       boost::forward<A3>(a3));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -324,7 +325,7 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -339,8 +340,8 @@ public:
            BOOST_FWD_REF(A0) a0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -357,9 +358,9 @@ public:
            BOOST_FWD_REF(A1) a1)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0),
-                                   boost::forward<A1>(a1));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0),
+                                       boost::forward<A1>(a1));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -378,10 +379,10 @@ public:
            BOOST_FWD_REF(A2) a2)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0),
-                                   boost::forward<A1>(a1),
-                                   boost::forward<A2>(a2));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0),
+                                       boost::forward<A1>(a1),
+                                       boost::forward<A2>(a2));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -402,11 +403,11 @@ public:
            BOOST_FWD_REF(A3) a3)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_callback.emplace(boost::forward<F>(f),
-                                   boost::forward<A0>(a0),
-                                   boost::forward<A1>(a1),
-                                   boost::forward<A2>(a2),
-                                   boost::forward<A3>(a3));
+        m_data->m_invoker = bind<void>(boost::forward<F>(f),
+                                       boost::forward<A0>(a0),
+                                       boost::forward<A1>(a1),
+                                       boost::forward<A2>(a2),
+                                       boost::forward<A3>(a3));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);

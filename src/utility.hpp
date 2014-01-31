@@ -26,19 +26,19 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_ALGORITHM_HPP
-#define WEOS_ALGORITHM_HPP
+#ifndef WEOS_UTILITY_HPP
+#define WEOS_UTILITY_HPP
 
 #include "config.hpp"
 
 #if defined(WEOS_WRAP_CXX11)
-#  include "cxx11/algorithm.hpp"
+#  include "cxx11/utility.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "keil_cmsis_rtos/algorithm.hpp"
+#  include "keil_cmsis_rtos/utility.hpp"
 #elif defined(WEOS_WRAP_KEIL_RL_RTX)
-#  include "keil_rl_rtx/algorithm.hpp"
+#  include "keil_rl_rtx/utility.hpp"
 #else
 #  error "The OS wrapper has not been configured."
 #endif
 
-#endif // WEOS_ALGORITHM_HPP
+#endif // WEOS_UTILITY_HPP

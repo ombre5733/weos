@@ -26,5 +26,5 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #*******************************************************************************
 
-set(test_SOURCES tst_callback.cpp)
-add_test_executable(tst_callback "${COMMON_SOURCES};${test_SOURCES}")
+set(test_SOURCES tst_bind_with_result.cpp)
+add_test_executable(tst_bind_with_result "${COMMON_SOURCES};${test_SOURCES}")

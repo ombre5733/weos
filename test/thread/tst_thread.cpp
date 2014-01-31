@@ -27,8 +27,8 @@
 *******************************************************************************/
 
 #include <thread.hpp>
-#include <algorithm.hpp>
 #include <semaphore.hpp>
+#include <utility.hpp>
 
 #include "../common/testutils.hpp"
 #include "gtest/gtest.h"
@@ -200,9 +200,8 @@ TEST(thread, create_and_destroy_randomly)
     for (unsigned i = 0; i < MAX_NUM_PARALLEL_TEST_THREADS; ++i)
         joinable[i] = false;
 
-    for (unsigned i = 0; i < 1000; ++i)
+    for (unsigned i = 0; i < 2000; ++i)
     {
-        int delayTime = 1 + testing::random() % 3;
         int index = testing::random() % MAX_NUM_PARALLEL_TEST_THREADS;
 
         ASSERT_TRUE(threads[index].joinable() == joinable[index]);
@@ -212,8 +211,9 @@ TEST(thread, create_and_destroy_randomly)
             threads[index].join();
             joinable[index] = false;
         }
-        else
+        else if (testing::random() % 2)
         {
+            int delayTime = 1 + testing::random() % 3;
             threads[index] = weos::thread(delay_thread, delayTime);
             joinable[index] = true;
         }

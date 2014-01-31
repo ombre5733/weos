@@ -30,9 +30,6 @@ cmake_minimum_required(VERSION 2.8)
 
 set(TOOLCHAIN "" CACHE STRING "The toolchain for building (GCC-ARM, ARMCC).")
 
-set(TOOLCHAIN "GCC-ARM")
-set(TOOLCHAIN "ARMCC")
-
 if(TOOLCHAIN STREQUAL "GCC-ARM")
     message(STATUS "Using the GCC-ARM toolchain")
     set(CMAKE_TOOLCHAIN_FILE "../common/toolchain-gcc-arm.cmake")
@@ -95,11 +92,13 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "ARM")
         "${CMAKE_EXE_LINKER_FLAGS} --scatter ${CMAKE_CURRENT_SOURCE_DIR}/../common/armcc/linker.sct")
 
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(COMMON_FLAGS "-Wall -g -O0 -ffunction-sections -fdata-sections")
+    set(COMMON_FLAGS "-Wall -g -O2 -ffunction-sections -fdata-sections -fno-builtin")
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${COMMON_FLAGS}")
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -std=gnu++11")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${COMMON_FLAGS}")
 
     # Link against Keil's CMSIS-RTOS library.
     set(CMSIS_RTX_LIB "RTX_CM4")
@@ -132,7 +131,7 @@ macro(add_test_directory _dir)
 endmacro()
 
 # Recurse into the "subdirectories" which contain the actual tests.
-add_test_directory(callback)
+add_test_directory(functional)
 add_test_directory(memorypool)
 add_test_directory(mutex)
 add_test_directory(semaphore)

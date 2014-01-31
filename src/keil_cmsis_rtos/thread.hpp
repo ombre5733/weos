@@ -30,7 +30,6 @@
 #define WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
 
 #include "../config.hpp"
-#include "algorithm.hpp"
 #include "chrono.hpp"
 #include "mutex.hpp"
 #include "semaphore.hpp"
@@ -40,10 +39,6 @@
 #include <boost/static_assert.hpp>
 
 #include <cstdint>
-
-
-//! \todo Remove
-#include <cstdio>
 
 namespace weos
 {
@@ -232,11 +227,6 @@ inline
 thread::signal_set try_wait_for_signal_flags(thread::signal_set flags)
 {
     osEvent result = osSignalWait(flags, 0);
-    /*
-std::printf("try_wait_for_signal_flags:\n  status = %d   signals = %04x %04x\n",
-           result.status,
-           unsigned(result.value.v >> 16),
-           unsigned(result.value.v & 0xFFFF));*/
     if (result.status != osOK && result.status != osEventSignal)
     {
         ::weos::throw_exception(weos::system_error(

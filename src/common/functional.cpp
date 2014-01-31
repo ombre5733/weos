@@ -1,3 +1,4 @@
+
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
@@ -26,18 +27,44 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_ALGORITHM_HPP
-#define WEOS_KEIL_CMSIS_RTOS_ALGORITHM_HPP
+#include "functional.hpp"
 
-#include "../config.hpp"
+namespace placeholders
+{
 
-#include <boost/move/move.hpp>
+template <int TIndex>
+struct placeholder
+{
+};
+
+extern const placeholder<1> _1;
+extern const placeholder<2> _2;
+extern const placeholder<3> _3;
+extern const placeholder<4> _4;
+} // namespace placeholders
+
+template <typename T>
+struct is_placeholder : boost::integral_constant<int, 0>
+{
+};
+
+template <int TIndex>
+struct is_placeholder<placeholders::placeholder<TIndex> >
+        : boost::integral_constant<int, TIndex>
+{
+};
 
 namespace weos
 {
 
-using boost::move;
+namespace placeholders
+{
+
+const placeholder<1> _1;
+const placeholder<2> _2;
+const placeholder<3> _3;
+const placeholder<4> _4;
+} // namespace placeholders
 
 } // namespace weos
 
-#endif // WEOS_KEIL_CMSIS_RTOS_ALGORITHM_HPP

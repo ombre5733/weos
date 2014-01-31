@@ -53,8 +53,6 @@
 #  define WEOS_SYSTICK_FREQUENCY            1000
 // The maximum number of threads which can be active concurrently.
 #  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
-// The maximum size of all arguments passed to a thread().
-#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     4 * sizeof(void*)
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 
@@ -75,14 +73,20 @@
 #  define WEOS_SYSTICK_FREQUENCY            1000
 // The maximum number of threads which can be active concurrently.
 #  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
-// The maximum size of all arguments passed to a thread().
-#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     4 * sizeof(void*)
 
 #endif // WEOS_WRAP_KEIL_RL_RTX
 
 // ----=====================================================================----
 //     General settings
 // ----=====================================================================----
+
+// The default storage size of a static_function<>.
+// A static_function<> holds a (member) function pointer and the bound
+// arguments (the fixed parameters). If the accumulated size of the bound
+// arguments exceeds the value below, a compile-time error is generated.
+#define WEOS_DEFAULT_STATIC_FUNCTION_SIZE   4 * sizeof(void*)
+
+
 
 // If this macro is defined, the user has to provide the throw_exception()
 // function. The function's signature is
@@ -102,8 +106,6 @@
 // Note: If WEOS_ENABLE_ASSERT is not defined, this macro has no effect.
 // #define WEOS_CUSTOM_ASSERT_HANDLER
 
-
-
 // ----=====================================================================----
 //     Private section.
 //     Do not modify the code below.
@@ -111,6 +113,6 @@
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   1
+#define WEOS_USER_CONFIG_VERSION   2
 
 #endif // WEOS_USER_CONFIG_HPP

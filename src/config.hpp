@@ -39,8 +39,8 @@
 #endif // WEOS_USER_CONFIG
 
 // Check the version of the user configuration file.
-#if WEOS_USER_CONFIG_VERSION != 1
-#  error "Version 1 of the WEOS user configuration is required."
+#if WEOS_USER_CONFIG_VERSION != 2
+#  error "Version 2 of the WEOS user configuration is required."
 #endif // WEOS_USER_CONFIG_VERSION
 
 // -----------------------------------------------------------------------------

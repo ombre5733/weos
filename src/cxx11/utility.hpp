@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CXX11_ALGORITHM_HPP
-#define WEOS_CXX11_ALGORITHM_HPP
+#ifndef WEOS_CXX11_UTILITY_HPP
+#define WEOS_CXX11_UTILITY_HPP
 
 #include "../config.hpp"
 
@@ -40,4 +40,4 @@ using std::move;
 
 } // namespace weos
 
-#endif // WEOS_CXX11_ALGORITHM_HPP
+#endif // WEOS_CXX11_UTILITY_HPP

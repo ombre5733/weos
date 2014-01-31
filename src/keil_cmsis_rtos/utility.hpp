@@ -26,10 +26,18 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CALLBACK_HPP
-#define WEOS_CALLBACK_HPP
+#ifndef WEOS_KEIL_CMSIS_RTOS_UTILITY_HPP
+#define WEOS_KEIL_CMSIS_RTOS_UTILITY_HPP
 
-#include "config.hpp"
-#include "common/callback.hpp"
+#include "../config.hpp"
 
-#endif // WEOS_CALLBACK_HPP
+#include <boost/move/move.hpp>
+
+namespace weos
+{
+
+using boost::move;
+
+} // namespace weos
+
+#endif // WEOS_KEIL_CMSIS_RTOS_UTILITY_HPP
