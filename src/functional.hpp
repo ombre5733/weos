@@ -32,7 +32,7 @@
 #include "config.hpp"
 
 #if defined(WEOS_WRAP_CXX11)
-#  include <functional>
+#  include "cxx11/functional.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 #  include "common/functional.hpp"
 #else

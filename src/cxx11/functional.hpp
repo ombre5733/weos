@@ -26,19 +26,22 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CXX11_UTILITY_HPP
-#define WEOS_CXX11_UTILITY_HPP
+#ifndef WEOS_CXX11_FUNCTIONAL_HPP
+#define WEOS_CXX11_FUNCTIONAL_HPP
 
 #include "../config.hpp"
-
-#include <algorithm>
+#include <functional>
 
 namespace weos
 {
 
-using std::forward;
-using std::move;
+using std::bind;
+
+//! \todo: This should be replaced by a class which never allocates from the heap.
+template <typename TSignature,
+          std::size_t TStorageSize = WEOS_DEFAULT_STATIC_FUNCTION_SIZE>
+using static_function = std::function<TSignature>;
 
 } // namespace weos
 
-#endif // WEOS_CXX11_UTILITY_HPP
+#endif // WEOS_CXX11_FUNCTIONAL_HPP

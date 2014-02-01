@@ -36,6 +36,7 @@
 namespace weos
 {
 
+using boost::forward;
 using boost::move;
 
 } // namespace weos
