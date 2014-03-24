@@ -29,31 +29,6 @@
 
 #include "functional.hpp"
 
-namespace placeholders
-{
-
-template <int TIndex>
-struct placeholder
-{
-};
-
-extern const placeholder<1> _1;
-extern const placeholder<2> _2;
-extern const placeholder<3> _3;
-extern const placeholder<4> _4;
-} // namespace placeholders
-
-template <typename T>
-struct is_placeholder : boost::integral_constant<int, 0>
-{
-};
-
-template <int TIndex>
-struct is_placeholder<placeholders::placeholder<TIndex> >
-        : boost::integral_constant<int, TIndex>
-{
-};
-
 namespace weos
 {
 

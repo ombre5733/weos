@@ -35,6 +35,9 @@
 namespace weos
 {
 
+namespace placeholders = std::placeholders;
+
+
 using std::bind;
 
 //! \todo: This should be replaced by a class which never allocates from the heap.
