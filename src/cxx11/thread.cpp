@@ -28,45 +28,41 @@
 
 #include "thread.hpp"
 
-#include <map>
-
 namespace weos
 {
 namespace detail
 {
 
-namespace
+ThreadDataManager& ThreadDataManager::instance()
 {
+    static ThreadDataManager manager;
+    return manager;
+}
 
-std::mutex g_idToDataMutex;
-std::map<std::thread::id, std::shared_ptr<ThreadData>> g_idToData;
-
-} // anonymous namespace
-
-std::shared_ptr<ThreadData> ThreadData::create(std::thread::id id)
+std::shared_ptr<ThreadData> ThreadDataManager::create(std::thread::id id)
 {
-    std::lock_guard<std::mutex> lock(g_idToDataMutex);
+    std::lock_guard<std::mutex> lock(m_idToDataMutex);
     std::shared_ptr<ThreadData> data = std::make_shared<ThreadData>();
-    g_idToData[id] = data;
+    m_idToData[id] = data;
     return data;
 }
 
-std::shared_ptr<ThreadData> ThreadData::find(std::thread::id id)
+std::shared_ptr<ThreadData> ThreadDataManager::find(std::thread::id id)
 {
-    std::lock_guard<std::mutex> lock(g_idToDataMutex);
-    auto iter = g_idToData.find(id);
-    if (iter != g_idToData.end())
+    std::lock_guard<std::mutex> lock(m_idToDataMutex);
+    auto iter = m_idToData.find(id);
+    if (iter != m_idToData.end())
         return iter->second;
     else
         return std::shared_ptr<ThreadData>();
 }
 
-void ThreadData::remove(std::thread::id id)
+void ThreadDataManager::remove(std::thread::id id)
 {
-    std::lock_guard<std::mutex> lock(g_idToDataMutex);
-    auto iter = g_idToData.find(id);
-    if (iter != g_idToData.end())
-        g_idToData.erase(iter);
+    std::lock_guard<std::mutex> lock(m_idToDataMutex);
+    auto iter = m_idToData.find(id);
+    if (iter != m_idToData.end())
+        m_idToData.erase(iter);
 }
 
 } // namespace detail
