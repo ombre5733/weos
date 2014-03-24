@@ -117,7 +117,7 @@ void ThreadSharedData::ref()
 
 ThreadSharedData* ThreadSharedData::allocate()
 {
-    void* mem = threadSharedDataPool().allocate();
+    void* mem = threadSharedDataPool().try_allocate();
     if (!mem)
     {
         ::weos::throw_exception(system_error(cmsis_error::osErrorResource, cmsis_category())); //! \todo Use correct value

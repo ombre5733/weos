@@ -35,6 +35,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <mutex>
 #include <thread>
 
@@ -50,10 +51,25 @@ struct ThreadData
     std::mutex signalMutex;
     signal_set signalFlags;
     std::condition_variable signalCv;
+};
 
-    static std::shared_ptr<ThreadData> create(std::thread::id id);
-    static std::shared_ptr<ThreadData> find(std::thread::id id);
-    static void remove(std::thread::id id);
+class ThreadDataManager
+{
+public:
+    ThreadDataManager() {}
+
+    std::shared_ptr<ThreadData> create(std::thread::id id);
+    std::shared_ptr<ThreadData> find(std::thread::id id);
+    void remove(std::thread::id id);
+
+    static ThreadDataManager& instance();
+
+private:
+    ThreadDataManager(const ThreadDataManager&);
+    const ThreadDataManager& operator= (const ThreadDataManager&);
+
+    std::mutex m_idToDataMutex;
+    std::map<std::thread::id, std::shared_ptr<ThreadData>> m_idToData;
 };
 
 } // namespace detail
@@ -69,7 +85,7 @@ public:
     explicit thread(TFunction&& f, TArgs&&... args)
         : std::thread(std::forward<TFunction>(f),
                       std::forward<TArgs>(args)...),
-          m_data(detail::ThreadData::create(this->get_id()))
+          m_data(detail::ThreadDataManager::instance().create(this->get_id()))
     {
     }
 
@@ -83,7 +99,7 @@ public:
 
     ~thread()
     {
-        detail::ThreadData::remove(this->get_id());
+        detail::ThreadDataManager::instance().remove(this->get_id());
     }
 
     thread& operator= (thread&) = delete;
@@ -169,7 +185,7 @@ inline
 thread::signal_set wait_for_any_signal()
 {
     std::shared_ptr<detail::ThreadData> data
-            = detail::ThreadData::find(get_id());
+            = detail::ThreadDataManager::instance().find(get_id());
     if (!data)
     {
         //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
@@ -190,7 +206,7 @@ inline
 thread::signal_set try_wait_for_any_signal()
 {
     std::shared_ptr<detail::ThreadData> data
-            = detail::ThreadData::find(get_id());
+            = detail::ThreadDataManager::instance().find(get_id());
     if (!data)
     {
         //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
@@ -213,7 +229,7 @@ thread::signal_set try_wait_for_any_signal_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
     std::shared_ptr<detail::ThreadData> data
-            = detail::ThreadData::find(get_id());
+            = detail::ThreadDataManager::instance().find(get_id());
     if (!data)
     {
         //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
@@ -238,7 +254,7 @@ inline
 thread::signal_set wait_for_all_signals(thread::signal_set flags)
 {
     std::shared_ptr<detail::ThreadData> data
-            = detail::ThreadData::find(get_id());
+            = detail::ThreadDataManager::instance().find(get_id());
     if (!data)
     {
         //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
@@ -263,7 +279,7 @@ thread::signal_set try_wait_for_all_signals(
         thread::signal_set flags)
 {
     std::shared_ptr<detail::ThreadData> data
-            = detail::ThreadData::find(get_id());
+            = detail::ThreadDataManager::instance().find(get_id());
     if (!data)
     {
         //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
@@ -288,7 +304,7 @@ thread::signal_set try_wait_for_all_signals_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
     std::shared_ptr<detail::ThreadData> data
-            = detail::ThreadData::find(get_id());
+            = detail::ThreadDataManager::instance().find(get_id());
     if (!data)
     {
         //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value

@@ -182,7 +182,7 @@ public:
     //! If the pool is already empty, a null-pointer is returned.
     //!
     //! \sa free()
-    void* allocate()
+    void* try_allocate()
     {
         lock_guard<mutex_type> lock(*this);
         if (m_freeList.empty())
@@ -257,7 +257,7 @@ public:
     void* allocate()
     {
         m_numElements.wait();
-        return m_memoryPool.allocate();
+        return m_memoryPool.try_allocate();
     }
 
     //! Tries to allocate a chunk of memory.
@@ -268,7 +268,7 @@ public:
     void* try_allocate()
     {
         if (m_numElements.try_wait())
-            return m_memoryPool.allocate();
+            return m_memoryPool.try_allocate();
         else
             return 0;
     }
@@ -283,7 +283,7 @@ public:
     void* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
     {
         if (m_numElements.try_wait_for(d))
-            return m_memoryPool.allocate();
+            return m_memoryPool.try_allocate();
         else
             return 0;
     }

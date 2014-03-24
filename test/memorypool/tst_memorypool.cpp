@@ -60,7 +60,7 @@ TYPED_TEST(MemoryPoolTestFixture, Constructor)
     }
 }
 
-TYPED_TEST(MemoryPoolTestFixture, allocate)
+TYPED_TEST(MemoryPoolTestFixture, try_allocate)
 {
     const unsigned POOL_SIZE = 10;
     weos::memory_pool<TypeParam, POOL_SIZE> p;
@@ -69,7 +69,7 @@ TYPED_TEST(MemoryPoolTestFixture, allocate)
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         ASSERT_FALSE(p.empty());
-        void* c = p.allocate();
+        void* c = p.try_allocate();
         ASSERT_TRUE(c != 0);
 
         // Check the alignment of the allocated chunk.
@@ -114,7 +114,7 @@ TYPED_TEST(MemoryPoolTestFixture, allocate_and_free)
     {
         for (unsigned i = 0; i < std::min(j, POOL_SIZE); ++i)
         {
-            void* c = p.allocate();
+            void* c = p.try_allocate();
             ASSERT_TRUE(c != 0);
             chunks[i] = c;
         }
@@ -125,7 +125,7 @@ TYPED_TEST(MemoryPoolTestFixture, allocate_and_free)
         for (unsigned i = POOL_SIZE; i < j; ++i)
         {
             ASSERT_TRUE(p.empty());
-            ASSERT_TRUE(p.allocate() == 0);
+            ASSERT_TRUE(p.try_allocate() == 0);
         }
 
         for (unsigned i = 0; i < std::min(j, POOL_SIZE); ++i)
@@ -146,7 +146,7 @@ TYPED_TEST(MemoryPoolTestFixture, random_allocate_and_free)
     // chunk pointers.
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
-        void* c = p.allocate();
+        void* c = p.try_allocate();
         ASSERT_TRUE(c != 0);
         chunks[i] = c;
         uniqueChunks.insert(c);
@@ -165,7 +165,7 @@ TYPED_TEST(MemoryPoolTestFixture, random_allocate_and_free)
         unsigned index = testing::random() % POOL_SIZE;
         if (chunks[index] == 0)
         {
-            void* c = p.allocate();
+            void* c = p.try_allocate();
             ASSERT_TRUE(c != 0);
             ASSERT_TRUE(uniqueChunks.find(c) != uniqueChunks.end());
             chunks[index] = c;
@@ -196,7 +196,7 @@ TYPED_TEST(MemoryPoolTestFixture, allocate_inside_struct)
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
         ASSERT_FALSE(s.p.empty());
-        void* c = s.p.allocate();
+        void* c = s.p.try_allocate();
         ASSERT_TRUE(c != 0);
 
         // Check the alignment of the allocated chunk.

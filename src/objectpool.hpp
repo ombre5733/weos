@@ -78,9 +78,9 @@ public:
     //! space. The object is not initialized, i.e. the caller has to invoke the
     //! constructor using placement-new. The method returns a pointer to
     //! the allocated memory or a null-pointer if no more memory was available.
-    element_type* allocate()
+    element_type* try_allocate()
     {
-        return static_cast<element_type*>(m_memoryPool.allocate());
+        return static_cast<element_type*>(m_memoryPool.try_allocate());
     }
 
     //! Frees a previously allocated storage.
@@ -96,9 +96,9 @@ public:
     //! Allocates memory for an object and calls its constructor. The method
     //! returns a pointer to the newly created object or a null-pointer if no
     //! memory was available.
-    element_type* construct()
+    element_type* try_construct()
     {
-        void* mem = this->allocate();
+        void* mem = this->try_allocate();
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type;
@@ -106,9 +106,9 @@ public:
     }
 
     template <class T1>
-    element_type* construct(BOOST_FWD_REF(T1) x1)
+    element_type* try_construct(BOOST_FWD_REF(T1) x1)
     {
-        void* mem = this->allocate();
+        void* mem = this->try_allocate();
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
@@ -117,9 +117,9 @@ public:
     }
 
     template <class T1, class T2>
-    element_type* construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
+    element_type* try_construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
     {
-        void* mem = this->allocate();
+        void* mem = this->try_allocate();
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
