@@ -757,7 +757,7 @@ def generateSource(maxArgs):
 
     s += "#include \"functional.hpp\"\n\n"
 
-    s += placeholders(maxArgs)
+    #s += placeholders(maxArgs)
 
     s += "namespace weos\n{\n\n"
     s += "namespace placeholders\n{\n\n"
