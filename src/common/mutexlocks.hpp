@@ -116,9 +116,8 @@ public:
 
     unique_lock(mutex_type& mutex, try_to_lock_t /*tag*/)
         : m_mutex(&mutex),
-          m_locked(false)
+          m_locked(m_mutex->try_lock())
     {
-        m_locked = mutex.try_lock();
     }
 
     //! Creates a unique lock for a locked mutex.
@@ -145,9 +144,10 @@ public:
     //! Locks the associated mutex.
     void lock()
     {
-        if (!m_mutex)
+        if (!m_mutex || m_locked)
             ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
         m_mutex->lock();
+        m_locked = true;
     }
 
     //! Returns a pointer to the associated mutex.
@@ -179,10 +179,20 @@ public:
         return m;
     }
 
+    //! Tries to lock the associated mutex.
+    bool try_lock()
+    {
+        if (!m_mutex || m_locked)
+            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
+
+        m_locked = m_mutex->try_lock();
+        return m_locked;
+    }
+
     //! Unlocks the associated mutex.
     void unlock()
     {
-        if (!m_locked)
+        if (!m_mutex || !m_locked)
             ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
         m_mutex->unlock();
         m_locked = false;
@@ -193,6 +203,11 @@ private:
     mutex_type* m_mutex;
     //! A flag indicating if the mutex has been locked.
     bool m_locked;
+
+    // ---- Hidden methods
+
+    unique_lock(const unique_lock&);
+    unique_lock& operator= (const unique_lock&);
 };
 
 } // namespace weos
