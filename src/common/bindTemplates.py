@@ -646,6 +646,12 @@ def staticFunction(numArgs):
     s += ");\n"
     s += "    }\n\n"
 
+    s += "    static_function& operator= (weos::nullptr_t)\n"
+    s += "    {\n"
+    s += "        release();\n"
+    s += "        return *this;\n"
+    s += "    }\n\n"
+
     s += "    operator bool() const\n"
     s += "    {\n"
     s += "        return m_invoker != 0;\n"
@@ -686,6 +692,7 @@ def generateHeader(maxArgs):
     s += "#define WEOS_COMMON_FUNCTIONAL_HPP\n\n"
 
     s += "#include \"../config.hpp\"\n\n"
+    s += "#include \"../utility.hpp\"\n\n"
 
     s += "#include <boost/utility/enable_if.hpp>\n"
     s += "#include <boost/move/move.hpp>\n"

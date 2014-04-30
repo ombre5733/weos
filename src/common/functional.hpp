@@ -32,6 +32,8 @@
 
 #include "../config.hpp"
 
+#include "../utility.hpp"
+
 #include <boost/utility/enable_if.hpp>
 #include <boost/move/move.hpp>
 #include <boost/type_traits.hpp>
@@ -2342,6 +2344,12 @@ public:
         return (*m_invoker)(&m_storage);
     }
 
+    static_function& operator= (weos::nullptr_t)
+    {
+        release();
+        return *this;
+    }
+
     operator bool() const
     {
         return m_invoker != 0;
@@ -2400,6 +2408,12 @@ public:
     {
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0));
+    }
+
+    static_function& operator= (weos::nullptr_t)
+    {
+        release();
+        return *this;
     }
 
     operator bool() const
@@ -2465,6 +2479,12 @@ public:
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0),
                             boost::forward<A1>(a1));
+    }
+
+    static_function& operator= (weos::nullptr_t)
+    {
+        release();
+        return *this;
     }
 
     operator bool() const
@@ -2535,6 +2555,12 @@ public:
                             boost::forward<A0>(a0),
                             boost::forward<A1>(a1),
                             boost::forward<A2>(a2));
+    }
+
+    static_function& operator= (weos::nullptr_t)
+    {
+        release();
+        return *this;
     }
 
     operator bool() const
@@ -2610,6 +2636,12 @@ public:
                             boost::forward<A1>(a1),
                             boost::forward<A2>(a2),
                             boost::forward<A3>(a3));
+    }
+
+    static_function& operator= (weos::nullptr_t)
+    {
+        release();
+        return *this;
     }
 
     operator bool() const

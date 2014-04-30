@@ -39,6 +39,8 @@ namespace weos
 using std::forward;
 using std::move;
 
+using std::nullptr_t;
+
 } // namespace weos
 
 #endif // WEOS_CXX11_UTILITY_HPP

@@ -291,16 +291,16 @@ void TestInfo::Run()
   internal::UnitTest::instance()->setCurrentTestInfo(this);
 
   Test* test = 0;
-  try
+  //try
   {
       test = factory_->CreateTest();
   }
-  catch (...)
+  /*catch (...)
   {
       internal::UnitTest::instance()->currentTestInfo()->recordFailure(
                   "", -1);
       return;
-  }
+  }*/
 
   test->Run();
   test->DeleteSelf_();
@@ -315,38 +315,38 @@ void TestInfo::Run()
 // Runs the test and updates the test result.
 void Test::Run()
 {
-    try
+    //try
     {
         this->SetUp();
     }
-    catch (...)
+    /*catch (...)
     {
         internal::UnitTest::instance()->currentTestInfo()->recordFailure(
                     "", -1);
         return;
-    }
+    }*/
 
-    try
+    //try
     {
         this->TestBody();
     }
-    catch (...)
+    /*catch (...)
     {
         internal::UnitTest::instance()->currentTestInfo()->recordFailure(
                     "", -1);
         return;
-    }
+    }*/
 
-    try
+    //try
     {
         this->TearDown();
     }
-    catch (...)
+    /*catch (...)
     {
         internal::UnitTest::instance()->currentTestInfo()->recordFailure(
                     "", -1);
         return;
-    }
+    }*/
     /*
   if (!HasSameFixtureClass()) return;
 

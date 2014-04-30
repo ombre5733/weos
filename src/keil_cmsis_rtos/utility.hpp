@@ -39,6 +39,16 @@ namespace weos
 using boost::forward;
 using boost::move;
 
+#ifdef ARMCC
+  struct nullptr_t {};
+#else
+  using std::nullptr_t;
+#endif
+
 } // namespace weos
+
+#ifdef ARMCC
+  BOOST_CONSTEXPR_OR_CONST weos::nullptr_t nullptr = weos::nullptr_t();
+#endif
 
 #endif // WEOS_KEIL_CMSIS_RTOS_UTILITY_HPP
