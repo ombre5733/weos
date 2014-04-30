@@ -2248,7 +2248,7 @@ struct BindAdapter
     template <typename T0>
     static typename TBindResult::result_type invoke(
             void* bindExpression,
-            BOOST_FWD_REF(T0) t0)
+            T0 t0)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
                     boost::forward<T0>(t0));
@@ -2258,8 +2258,8 @@ struct BindAdapter
               typename T1>
     static typename TBindResult::result_type invoke(
             void* bindExpression,
-            BOOST_FWD_REF(T0) t0,
-            BOOST_FWD_REF(T1) t1)
+            T0 t0,
+            T1 t1)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
                     boost::forward<T0>(t0),
@@ -2271,9 +2271,9 @@ struct BindAdapter
               typename T2>
     static typename TBindResult::result_type invoke(
             void* bindExpression,
-            BOOST_FWD_REF(T0) t0,
-            BOOST_FWD_REF(T1) t1,
-            BOOST_FWD_REF(T2) t2)
+            T0 t0,
+            T1 t1,
+            T2 t2)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
                     boost::forward<T0>(t0),
@@ -2287,10 +2287,10 @@ struct BindAdapter
               typename T3>
     static typename TBindResult::result_type invoke(
             void* bindExpression,
-            BOOST_FWD_REF(T0) t0,
-            BOOST_FWD_REF(T1) t1,
-            BOOST_FWD_REF(T2) t2,
-            BOOST_FWD_REF(T3) t3)
+            T0 t0,
+            T1 t1,
+            T2 t2,
+            T3 t3)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
                     boost::forward<T0>(t0),
@@ -2348,8 +2348,8 @@ public:
     }
 
 private:
-    typedef void(*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult(*invoker_type)(void*);
+    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef TResult (*invoker_type)(void*);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2392,11 +2392,11 @@ public:
         release();
         m_manager = &adapter::manage;
         m_manager(detail::AdapterTaskClone, &m_storage, &expr);
-        m_invoker = &adapter::template invoke<BOOST_FWD_REF(A0)>;
+        m_invoker = &adapter::template invoke<A0>;
         return *this;
     }
 
-    TResult operator() (BOOST_FWD_REF(A0) a0)
+    TResult operator() (A0 a0)
     {
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0));
@@ -2408,9 +2408,9 @@ public:
     }
 
 private:
-    typedef void(*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult(*invoker_type)(void*,
-                                   BOOST_FWD_REF(A0));
+    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef TResult (*invoker_type)(void*,
+                                    A0);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2454,13 +2454,13 @@ public:
         release();
         m_manager = &adapter::manage;
         m_manager(detail::AdapterTaskClone, &m_storage, &expr);
-        m_invoker = &adapter::template invoke<BOOST_FWD_REF(A0),
-                                              BOOST_FWD_REF(A1)>;
+        m_invoker = &adapter::template invoke<A0,
+                                              A1>;
         return *this;
     }
 
-    TResult operator() (BOOST_FWD_REF(A0) a0,
-                        BOOST_FWD_REF(A1) a1)
+    TResult operator() (A0 a0,
+                        A1 a1)
     {
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0),
@@ -2473,10 +2473,10 @@ public:
     }
 
 private:
-    typedef void(*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult(*invoker_type)(void*,
-                                   BOOST_FWD_REF(A0),
-                                   BOOST_FWD_REF(A1));
+    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef TResult (*invoker_type)(void*,
+                                    A0,
+                                    A1);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2521,15 +2521,15 @@ public:
         release();
         m_manager = &adapter::manage;
         m_manager(detail::AdapterTaskClone, &m_storage, &expr);
-        m_invoker = &adapter::template invoke<BOOST_FWD_REF(A0),
-                                              BOOST_FWD_REF(A1),
-                                              BOOST_FWD_REF(A2)>;
+        m_invoker = &adapter::template invoke<A0,
+                                              A1,
+                                              A2>;
         return *this;
     }
 
-    TResult operator() (BOOST_FWD_REF(A0) a0,
-                        BOOST_FWD_REF(A1) a1,
-                        BOOST_FWD_REF(A2) a2)
+    TResult operator() (A0 a0,
+                        A1 a1,
+                        A2 a2)
     {
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0),
@@ -2543,11 +2543,11 @@ public:
     }
 
 private:
-    typedef void(*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult(*invoker_type)(void*,
-                                   BOOST_FWD_REF(A0),
-                                   BOOST_FWD_REF(A1),
-                                   BOOST_FWD_REF(A2));
+    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef TResult (*invoker_type)(void*,
+                                    A0,
+                                    A1,
+                                    A2);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2593,17 +2593,17 @@ public:
         release();
         m_manager = &adapter::manage;
         m_manager(detail::AdapterTaskClone, &m_storage, &expr);
-        m_invoker = &adapter::template invoke<BOOST_FWD_REF(A0),
-                                              BOOST_FWD_REF(A1),
-                                              BOOST_FWD_REF(A2),
-                                              BOOST_FWD_REF(A3)>;
+        m_invoker = &adapter::template invoke<A0,
+                                              A1,
+                                              A2,
+                                              A3>;
         return *this;
     }
 
-    TResult operator() (BOOST_FWD_REF(A0) a0,
-                        BOOST_FWD_REF(A1) a1,
-                        BOOST_FWD_REF(A2) a2,
-                        BOOST_FWD_REF(A3) a3)
+    TResult operator() (A0 a0,
+                        A1 a1,
+                        A2 a2,
+                        A3 a3)
     {
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0),
@@ -2618,12 +2618,12 @@ public:
     }
 
 private:
-    typedef void(*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult(*invoker_type)(void*,
-                                   BOOST_FWD_REF(A0),
-                                   BOOST_FWD_REF(A1),
-                                   BOOST_FWD_REF(A2),
-                                   BOOST_FWD_REF(A3));
+    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef TResult (*invoker_type)(void*,
+                                    A0,
+                                    A1,
+                                    A2,
+                                    A3);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;

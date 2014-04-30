@@ -574,7 +574,7 @@ def typeErasedBindInvoker(maxArgs):
         s += "            void* bindExpression"
         if nargs:
             s += ",\n            "
-            s += ",\n            ".join(["BOOST_FWD_REF(T%d) t%d" % (i,i) for i in xrange(nargs)])
+            s += ",\n            ".join(["T%d t%d" % (i,i) for i in xrange(nargs)])
         s += ")\n"
         s += "    {\n"
         s += "        return (*static_cast<TBindResult*>(bindExpression))("
@@ -630,13 +630,13 @@ def staticFunction(numArgs):
         s += "invoke;\n"
     else:
         s += "template invoke<"
-        s += ",\n                                              ".join(["BOOST_FWD_REF(A%d)" % i for i in xrange(numArgs)])
+        s += ",\n                                              ".join(["A%d" % i for i in xrange(numArgs)])
         s += ">;\n"
     s += "        return *this;\n"
     s += "    }\n\n"
 
     s += "    TResult operator() ("
-    s += ",\n                        ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
+    s += ",\n                        ".join(["A%d a%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n"
     s += "    {\n"
     s += "        return (*m_invoker)(&m_storage"
@@ -652,11 +652,11 @@ def staticFunction(numArgs):
     s += "    }\n\n"
 
     s += "private:\n"
-    s += "    typedef void(*manager_type)(detail::AdapterTask, void*, const void*);\n"
-    s += "    typedef TResult(*invoker_type)(void*"
+    s += "    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);\n"
+    s += "    typedef TResult (*invoker_type)(void*"
     if numArgs:
-        s += ",\n                                   "
-        s += ",\n                                   ".join(["BOOST_FWD_REF(A%d)" % i for i in xrange(numArgs)])
+        s += ",\n                                    "
+        s += ",\n                                    ".join(["A%d" % i for i in xrange(numArgs)])
     s += ");\n\n"
 
     s += "    typename boost::aligned_storage<TStorageSize>::type m_storage;\n"
