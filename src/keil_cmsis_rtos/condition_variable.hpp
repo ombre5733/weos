@@ -102,12 +102,12 @@ public:
     {
         lock_guard<mutex> locker(m_mutex);
 
-        WaitingThread* head = m_waitingThreads;
-        if (head != 0)
+        if (m_waitingThreads != 0)
         {
-            m_waitingThreads = head->next;
-            head->dequeued = true;
-            head->signal.post();
+            WaitingThread* next = m_waitingThreads->next;
+            m_waitingThreads->dequeued = true;
+            m_waitingThreads->signal.post();
+            m_waitingThreads = next;
         }
     }
 
@@ -117,13 +117,13 @@ public:
     {
         lock_guard<mutex> locker(m_mutex);
 
-        for (WaitingThread* head = m_waitingThreads; head != 0;
-             head = head->next)
+        while (m_waitingThreads)
         {
-            head->dequeued = true;
-            head->signal.post();
+            WaitingThread* next = m_waitingThreads->next;
+            m_waitingThreads->dequeued = true;
+            m_waitingThreads->signal.post();
+            m_waitingThreads = next;
         }
-        m_waitingThreads = 0;
     }
 
     //! Waits on this condition variable.
@@ -136,7 +136,7 @@ public:
     {
         // First enqueue ourselfs in the list of waiters.
         WaitingThread w;
-        enqueueWaitingThread(w);
+        enqueue(w);
 
         // We can only release the lock when we are sure that a signal will
         // reach our thread.
@@ -159,7 +159,7 @@ public:
     {
         // First enqueue ourselfs in the list of waiters.
         WaitingThread w;
-        enqueueWaitingThread(w);
+        enqueue(w);
 
         // We can only unlock the lock when we are sure that a signal will
         // reach our thread.
@@ -171,7 +171,7 @@ public:
             {
                 lock_guard<mutex> locker(m_mutex);
                 if (!w.dequeued)
-                    dequeueWaitingThread(w);
+                    dequeue(w);
                 return cv_status::timeout;
             }
         }
@@ -199,34 +199,38 @@ private:
     };
 
     //! Adds the waiter \p w to the queue.
-    void enqueueWaitingThread(WaitingThread& w)
+    void enqueue(WaitingThread& w)
     {
         lock_guard<mutex> locker(m_mutex);
 
-        //! \todo enqueue using priorities
-        if (m_waitingThreads)
+        if (!m_waitingThreads)
+            m_waitingThreads = &w;
+        else
         {
+            //! \todo enqueue using priorities
             WaitingThread* iter = m_waitingThreads;
             while (iter->next)
                 iter = iter->next;
             iter->next = &w;
         }
-        else
-        {
-            m_waitingThreads = &w;
-        }
     }
 
     //! Removes the waiter \p w from the queue.
-    void dequeueWaitingThread(WaitingThread& w)
+    void dequeue(WaitingThread& w)
     {
+        WEOS_ASSERT(m_waitingThreads);
+
         if (m_waitingThreads == &w)
             m_waitingThreads = w.next;
         else
         {
             WaitingThread* iter = m_waitingThreads;
-            if (iter->next == &w)
-                iter->next = w.next;
+            while (iter->next != &w)
+            {
+                iter = iter->next;
+                WEOS_ASSERT(iter);
+            }
+            iter->next = w.next;
         }
     }
 
