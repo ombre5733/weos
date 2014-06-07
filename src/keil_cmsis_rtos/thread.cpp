@@ -76,9 +76,9 @@ namespace detail
 
 namespace
 {
-typedef memory_pool<ThreadSharedData,
-                    WEOS_MAX_NUM_CONCURRENT_THREADS,
-                    mutex> ThreadSharedDataPool;
+typedef shared_memory_pool<ThreadSharedData,
+                           WEOS_MAX_NUM_CONCURRENT_THREADS>
+    ThreadSharedDataPool;
 
 ThreadSharedDataPool& threadSharedDataPool()
 {

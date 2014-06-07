@@ -29,6 +29,8 @@
 #ifndef WEOS_MEMORYPOOL_HPP
 #define WEOS_MEMORYPOOL_HPP
 
+#include "config.hpp"
+
 #include "mutex.hpp"
 #include "semaphore.hpp"
 
@@ -128,17 +130,17 @@ private:
 //! A memory_pool provides storage for (\p TNumElem) elements of
 //! type \p TElement. The storage is allocated statically, i.e. the pool
 //! does not acquire memory from the heap.
-template <typename TElement, std::size_t TNumElem, typename TMutex = null_mutex>
-class memory_pool : private TMutex
+//!
+//! The memory_pool is not thread-safe. If it is simultaneously accessed from
+//! multiple threads, some kind of external synchronization (e.g. a mutex)
+//! has to be used. The shared_memory_pool might be an alternative in this
+//! case.
+template <typename TElement, std::size_t TNumElem>
+class memory_pool
 {
 public:
     //! The type of the elements stored in the pool.
     typedef TElement element_type;
-    //! The type of the mutex which protects the internal data from concurrent
-    //! modifications.
-    typedef TMutex mutex_type;
-    //! The type of the pool.
-    typedef memory_pool<TElement, TNumElem, TMutex> pool_t;
 
 private:
     // A chunk has to be aligned such that it can contain a void* or an element.
@@ -173,7 +175,6 @@ public:
     //! Returns \p true, if the memory pool is empty.
     bool empty() const
     {
-        lock_guard<mutex_type> lock(*const_cast<pool_t*>(this));
         return m_freeList.empty();
     }
 
@@ -184,7 +185,6 @@ public:
     //! \sa free()
     void* try_allocate()
     {
-        lock_guard<mutex_type> lock(*this);
         if (m_freeList.empty())
             return 0;
         else
@@ -198,7 +198,6 @@ public:
     //! \sa allocate()
     void free(void* const chunk)
     {
-        lock_guard<mutex_type> lock(*this);
         m_freeList.free(chunk);
     }
 
@@ -209,23 +208,24 @@ private:
     detail::free_list m_freeList;
 };
 
-//! A counting memory pool.
-//! A counting memory pool is an extension to memory_pool. Internally it holds
-//! memory for (\p TNumElem) elements of type \p TElement. In addition, it
-//! keeps track of the number of elements available in the pool and can thus
-//! block the calling thread until an element becomes available.
+//! A shared memory pool.
+//! A shared_memory_pool is a thread-safe alternative to the memory_pool.
+//! Like its non-threaded counterpart, it hold the memory for up to
+//! (\p TNumElem) elements of type \p TElement internally and does not
+//! allocate them on the heap.
 //!
-//! The counting_memory_pool is always thread safe. Multiple threads can
-//! concurrently use it to allocate and free memory chunks.
+//! The thread-safe interface brings along some additional functionality. When
+//! allocating from an empty pool, the calling thread can be put to sleep until
+//! another thread returns an element back to the pool.
 template <typename TElement, std::size_t TNumElem>
-class counting_memory_pool
+class shared_memory_pool
 {
 public:
     //! The type of the elements in this pool.
     typedef TElement element_type;
 
-    //! Constructs a counting memory pool.
-    counting_memory_pool()
+    //! Constructs a shared memory pool.
+    shared_memory_pool()
         : m_numElements(TNumElem)
     {
     }
@@ -240,6 +240,7 @@ public:
     //! Checks if the pool is empty.
     bool empty() const
     {
+        lock_guard<mutex> lock(m_mutex);
         return m_memoryPool.empty();
     }
 
@@ -257,7 +258,10 @@ public:
     void* allocate()
     {
         m_numElements.wait();
-        return m_memoryPool.try_allocate();
+        lock_guard<mutex> lock(m_mutex);
+        void* element = m_memoryPool.try_allocate();
+        WEOS_ASSERT(element);
+        return element;
     }
 
     //! Tries to allocate a chunk of memory.
@@ -268,7 +272,12 @@ public:
     void* try_allocate()
     {
         if (m_numElements.try_wait())
-            return m_memoryPool.try_allocate();
+        {
+            lock_guard<mutex> lock(m_mutex);
+            void* element = m_memoryPool.try_allocate();
+            WEOS_ASSERT(element);
+            return element;
+        }
         else
             return 0;
     }
@@ -283,7 +292,12 @@ public:
     void* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
     {
         if (m_numElements.try_wait_for(d))
-            return m_memoryPool.try_allocate();
+        {
+            lock_guard<mutex> lock(m_mutex);
+            void* element = m_memoryPool.try_allocate();
+            WEOS_ASSERT(element);
+            return element;
+        }
         else
             return 0;
     }
@@ -295,14 +309,17 @@ public:
     //! \sa allocate(), try_allocate(), try_allocate_for()
     void free(void* const chunk)
     {
+        lock_guard<mutex> lock(m_mutex);
         m_memoryPool.free(chunk);
         m_numElements.post();
     }
 
 private:
-    typedef memory_pool<TElement, TNumElem, mutex> pool_t;
+    typedef memory_pool<TElement, TNumElem> pool_t;
     //! The pool from which the memory for the element is allocated.
     pool_t m_memoryPool;
+    //! A mutex to protect the pool.
+    mutex m_mutex;
     //! The number of available elements.
     semaphore m_numElements;
 };

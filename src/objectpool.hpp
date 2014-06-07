@@ -37,16 +37,21 @@ namespace weos
 {
 
 //! An object pool with static (compile-time) storage.
+//!
 //! The object_pool is a memory pool for (\p TNumElem) objects of
 //! type \p TElement. The memory is allocated statically (internally in the
 //! object), i.e. the pool does not allocate memory from the heap.
-template <typename TElement, unsigned TNumElem, typename TMutex = null_mutex>
+//! In addition to the memory_pool, the object_pool constructs and destroys
+//! the allocated objects. When allocating from this pool, the element's
+//! constructor is invoked using a placement new. Upon destruction, the
+//! element's destructor is called before the memory is returned back to the
+//! pool.
+template <typename TElement, unsigned TNumElem>
 class object_pool
 {
 public:
     //! The type of the elements which can be allocated via this pool.
     typedef TElement element_type;
-    typedef TMutex mutex_type;
 
     ~object_pool()
     {
@@ -138,28 +143,27 @@ public:
     }
 
 private:
-    typedef memory_pool<TElement, TNumElem, TMutex> pool_t;
+    typedef memory_pool<TElement, TNumElem> pool_t;
     //! The pool from which the memory for the elements is allocated.
     pool_t m_memoryPool;
 };
 
-//! An object pool which counts the available elements.
-//! The counting_object_pool is a pool for the creation of elements of type
-//! \p TElement. The necessary memory for up to (\p TNumElem) elements is
-//! held internally, i.e. no memory is allocated dynamically. As the pool
-//! counts the number of available elements, it provides methods which
-//! block the calling thread when no memory is available.
+//! A shared object pool.
 //!
-//! The counting_object_pool is always thread safe and so multiple threads can
-//! concurrently use it for the creation and destruction of elements.
+//! The shared_object_pool is a pool for the creation of elements of type
+//! \p TElement. The necessary memory for up to (\p TNumElem) elements is
+//! held internally, i.e. no memory is allocated dynamically.
+//!
+//! As the shared_object_pool uses a shared_memory_pool internally, it is
+//! thread-safe.
 template <typename TElement, unsigned TNumElem>
-class counting_object_pool
+class shared_object_pool
 {
 public:
     //! The type of the elements which can be allocated via this pool.
     typedef TElement element_type;
 
-    ~counting_object_pool()
+    ~shared_object_pool()
     {
         //! \todo Sort and delete the objects
     }
@@ -358,7 +362,7 @@ public:
     }
 
 private:
-    typedef counting_memory_pool<TElement, TNumElem> pool_t;
+    typedef shared_memory_pool<TElement, TNumElem> pool_t;
     //! The pool from which the memory for the elements is allocated.
     pool_t m_memoryPool;
 };
