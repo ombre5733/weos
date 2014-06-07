@@ -32,11 +32,10 @@
 #include "../config.hpp"
 #include "chrono.hpp"
 
-#include <boost/static_assert.hpp>
-#include <boost/thread.hpp>
-
+#include <condition_variable>
 #include <cstdint>
 #include <deque>
+#include <mutex>
 #include <utility>
 
 namespace weos
@@ -50,9 +49,12 @@ namespace weos
 template <typename TypeT, std::size_t QueueSizeT>
 class message_queue
 {
+    //! \todo Removed the size check for now because 64-bit pointers must
+    //! work, too.
     // For compatibility we limit the size of a message to the size of uint32_t.
-    BOOST_STATIC_ASSERT(sizeof(TypeT) <= 4);
-    BOOST_STATIC_ASSERT(QueueSizeT > 0);
+    //static_assert(sizeof(TypeT) <= 4, "The element size is too large.");
+
+    static_assert(QueueSizeT > 0, "The queue size must be nonzero.");
 
 public:
     //! The type of the elements transfered via this message queue.
@@ -70,7 +72,7 @@ public:
     //! empty, the calling thread is blocked until an element is added.
     element_type receive()
     {
-        boost::unique_lock<boost::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         while (m_queue.empty())
         {
             m_cv_receive.wait(lock);
@@ -91,7 +93,7 @@ public:
     //! the returned element is default-constructed.
     std::pair<bool, element_type> try_receive()
     {
-        boost::unique_lock<boost::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         if (m_queue.empty())
         {
             return std::pair<bool, element_type>(false, element_type());
@@ -115,12 +117,12 @@ public:
     std::pair<bool, element_type> try_receive_for(
             const chrono::duration<RepT, PeriodT>& d)
     {
-        boost::unique_lock<boost::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         while (m_queue.empty())
         {
             // Note: If we spuriously wakeup, we should not wait again for
             // the same time because then we wait too long.
-            if (m_cv_receive.wait(lock, d) == cv_status::timeout)
+            if (m_cv_receive.wait(lock, d) == std::cv_status::timeout)
             {
                 if (m_queue.empty())
                     return std::pair<bool, element_type>(false, element_type());
@@ -142,7 +144,7 @@ public:
     //! available.
     void send(element_type element)
     {
-        boost::unique_lock<boost::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         while (isFull())
         {
             m_cv_send.wait(lock);
@@ -159,7 +161,7 @@ public:
     //! calling thread is never blocked.
     bool try_send(element_type element)
     {
-        boost::unique_lock<boost::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         if (isFull())
             return false;
 
@@ -178,12 +180,12 @@ public:
     bool try_send_for(element_type element,
                       const chrono::duration<RepT, PeriodT>& d)
     {
-        boost::unique_lock<boost::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         while (isFull())
         {
             // Note: If we spuriously wakeup, we should not wait again for
             // the same time because then we wait too long.
-            if (m_cv_send.wait_for(lock, d) == cv_status::timeout)
+            if (m_cv_send.wait_for(lock, d) == std::cv_status::timeout)
             {
                 if (isFull())
                     return false;
@@ -200,15 +202,15 @@ public:
 
 private:
     //! A mutex to protect the queue.
-    boost::mutex m_mutex;
+    std::mutex m_mutex;
     //! The queue to transfer the data.
     std::deque<element_type> m_queue;
     //! This condition variable is triggered whenever something is added to
     //! the queue (i.e. we can receive from it).
-    boost::condition_variable m_cv_receive;
+    std::condition_variable m_cv_receive;
     //! This condition variable is triggered whenever seomthing is taken from
     //! the queue (i.e. we can send via it).
-    boost::condition_variable m_cv_send;
+    std::condition_variable m_cv_send;
 
     //! Checks if the queue is full.
     bool isFull() const
