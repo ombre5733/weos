@@ -319,7 +319,7 @@ private:
     //! The pool from which the memory for the element is allocated.
     pool_t m_memoryPool;
     //! A mutex to protect the pool.
-    mutex m_mutex;
+    mutable mutex m_mutex;
     //! The number of available elements.
     semaphore m_numElements;
 };

@@ -34,7 +34,7 @@
 #include <set>
 
 template <typename T>
-class CountingMemoryPoolTestFixture : public testing::Test
+class SharedMemoryPoolTestFixture : public testing::Test
 {
 };
 
@@ -43,29 +43,29 @@ typedef testing::Types<
     std::int8_t,  std::int16_t,  std::int32_t,  std::int64_t,  std::intptr_t,  std::intmax_t,
     std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t, std::uintptr_t, std::uintmax_t,
     float, double, long double> TypesToTest;
-TYPED_TEST_CASE(CountingMemoryPoolTestFixture, TypesToTest);
+TYPED_TEST_CASE(SharedMemoryPoolTestFixture, TypesToTest);
 
-TYPED_TEST(CountingMemoryPoolTestFixture, Constructor)
+TYPED_TEST(SharedMemoryPoolTestFixture, Constructor)
 {
     {
-        weos::counting_memory_pool<TypeParam, 1> p;
+        weos::shared_memory_pool<TypeParam, 1> p;
         ASSERT_FALSE(p.empty());
         ASSERT_EQ(1, p.capacity());
         ASSERT_EQ(1, p.size());
     }
 
     {
-        weos::counting_memory_pool<TypeParam, 10> p;
+        weos::shared_memory_pool<TypeParam, 10> p;
         ASSERT_FALSE(p.empty());
         ASSERT_EQ(10, p.capacity());
         ASSERT_EQ(10, p.size());
     }
 }
 
-TYPED_TEST(CountingMemoryPoolTestFixture, allocate)
+TYPED_TEST(SharedMemoryPoolTestFixture, allocate)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
+    weos::shared_memory_pool<TypeParam, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
@@ -99,10 +99,10 @@ TYPED_TEST(CountingMemoryPoolTestFixture, allocate)
     ASSERT_EQ(POOL_SIZE, p.capacity());
 }
 
-TYPED_TEST(CountingMemoryPoolTestFixture, try_allocate)
+TYPED_TEST(SharedMemoryPoolTestFixture, try_allocate)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
+    weos::shared_memory_pool<TypeParam, POOL_SIZE> p;
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
@@ -118,10 +118,10 @@ TYPED_TEST(CountingMemoryPoolTestFixture, try_allocate)
     }
 }
 
-TYPED_TEST(CountingMemoryPoolTestFixture, allocate_and_free)
+TYPED_TEST(SharedMemoryPoolTestFixture, allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
+    weos::shared_memory_pool<TypeParam, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
 
     for (unsigned j = 1; j <= POOL_SIZE; ++j)
@@ -145,10 +145,10 @@ TYPED_TEST(CountingMemoryPoolTestFixture, allocate_and_free)
     }
 }
 
-TYPED_TEST(CountingMemoryPoolTestFixture, random_allocate_and_free)
+TYPED_TEST(SharedMemoryPoolTestFixture, random_allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_memory_pool<TypeParam, POOL_SIZE> p;
+    weos::shared_memory_pool<TypeParam, POOL_SIZE> p;
     void* chunks[POOL_SIZE];
     std::set<void*> uniqueChunks;
     int numAllocatedChunks = 0;

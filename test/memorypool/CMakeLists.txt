@@ -29,5 +29,5 @@
 set(test_SOURCES tst_memorypool.cpp)
 add_test_executable(tst_memorypool "${COMMON_SOURCES};${test_SOURCES}")
 
-set(test_SOURCES tst_countingmemorypool.cpp)
-add_test_executable(tst_countingmemorypool "${COMMON_SOURCES};${test_SOURCES}")
+set(test_SOURCES tst_sharedmemorypool.cpp)
+add_test_executable(tst_sharedmemorypool "${COMMON_SOURCES};${test_SOURCES}")
