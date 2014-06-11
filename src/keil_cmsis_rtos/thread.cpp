@@ -56,6 +56,8 @@ extern "C" void weos_threadInvoker(const void* arg)
     weos::detail::ThreadSharedData* data
             = static_cast<weos::detail::ThreadSharedData*>(const_cast<void*>(arg));
 
+    // Wait until the caller has initialized the shared data.
+    data->m_initializationDone.wait();
     // Call the threaded function.
     data->invoke();
     // Use the semaphore to signal that the thread has been completed.
@@ -76,8 +78,7 @@ namespace detail
 
 namespace
 {
-typedef shared_memory_pool<ThreadSharedData,
-                           WEOS_MAX_NUM_CONCURRENT_THREADS>
+typedef shared_memory_pool<ThreadSharedData, WEOS_MAX_NUM_CONCURRENT_THREADS>
     ThreadSharedDataPool;
 
 ThreadSharedDataPool& threadSharedDataPool()
@@ -157,8 +158,9 @@ void thread::invokeWithCustomStack(const attributes& attrs)
         // Set R13 to the address of osThreadExit, which has to be invoked
         // when the thread exits.
         *(static_cast<std::uint32_t*>(attrs.m_customStack) + 13)
-                = (std::uint32_t)osThreadExit;
+                = (std::uint32_t)&osThreadExit;
         m_data->m_threadId = (osThreadId)os_active_TCB[taskId - 1];
+        m_data->m_initializationDone.post();
     }
 
     if (!m_data->m_threadId)
@@ -186,6 +188,7 @@ void thread::invokeWithDefaultStack(const attributes& attrs)
                                 static_cast<osPriority>(attrs.m_priority),
                                 1, 0 };
     m_data->m_threadId = osThreadCreate(&threadDef, m_data);
+    m_data->m_initializationDone.post();
 
     if (!m_data->m_threadId)
     {

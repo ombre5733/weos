@@ -90,6 +90,10 @@ struct ThreadSharedData
     };
     atomic_int m_referenceCount;
 
+    //! This semaphore is increased by the thread creator when it has
+    //! initialized the shared data, i.e. it is abused for sending a signal.
+    semaphore m_initializationDone;
+
     //! The system-specific thread id.
     weos::detail::native_thread_traits::thread_id_type m_threadId;
 
