@@ -41,22 +41,21 @@ ThreadDataManager& ThreadDataManager::instance()
     return manager;
 }
 
-std::shared_ptr<ThreadData> ThreadDataManager::create(std::thread::id id)
+void ThreadDataManager::add(std::thread::id id, ThreadData* data)
 {
     std::lock_guard<std::mutex> lock(m_idToDataMutex);
-    std::shared_ptr<ThreadData> data = std::make_shared<ThreadData>();
+    WEOS_ASSERT(m_idToData.find(id) == m_idToData.cend());
     m_idToData[id] = data;
-    return data;
 }
 
-std::shared_ptr<ThreadData> ThreadDataManager::find(std::thread::id id)
+ThreadData* ThreadDataManager::find(std::thread::id id)
 {
     std::lock_guard<std::mutex> lock(m_idToDataMutex);
     auto iter = m_idToData.find(id);
     if (iter != m_idToData.end())
         return iter->second;
     else
-        return std::shared_ptr<ThreadData>();
+        return nullptr;
 }
 
 void ThreadDataManager::remove(std::thread::id id)
