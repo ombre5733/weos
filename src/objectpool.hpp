@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,8 @@
 
 #include "memorypool.hpp"
 
-#include <boost/move/move.hpp>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
 
 //! An object pool with static (compile-time) storage.
 //!
@@ -46,7 +44,7 @@ namespace weos
 //! constructor is invoked using a placement new. Upon destruction, the
 //! element's destructor is called before the memory is returned back to the
 //! pool.
-template <typename TElement, unsigned TNumElem>
+template <typename TElement, std::size_t TNumElem>
 class object_pool
 {
 public:
@@ -65,7 +63,7 @@ public:
 
     //! Returns the pool's capacity.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const
+    std::size_t capacity() const WEOS_NOEXCEPT
     {
         return TNumElem;
     }
@@ -73,7 +71,7 @@ public:
     //! Checks if the pool is empty.
     //! Returns \p true, if the pool is empty and no more object can be
     //! allocated.
-    bool empty() const
+    bool empty() const WEOS_NOEXCEPT
     {
         return m_memoryPool.empty();
     }
@@ -111,25 +109,25 @@ public:
     }
 
     template <class T1>
-    element_type* try_construct(BOOST_FWD_REF(T1) x1)
+    element_type* try_construct(WEOS_FWD_REF(T1) x1)
     {
         void* mem = this->try_allocate();
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1));
+                                    weos::forward<T1>(x1));
         return element;
     }
 
     template <class T1, class T2>
-    element_type* try_construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
+    element_type* try_construct(WEOS_FWD_REF(T1) x1, WEOS_FWD_REF(T2) x2)
     {
         void* mem = this->try_allocate();
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1),
-                                    boost::forward<T2>(x2));
+                                    weos::forward<T1>(x1),
+                                    weos::forward<T2>(x2));
         return element;
     }
 
@@ -156,7 +154,7 @@ private:
 //!
 //! As the shared_object_pool uses a shared_memory_pool internally, it is
 //! thread-safe.
-template <typename TElement, unsigned TNumElem>
+template <typename TElement, std::size_t TNumElem>
 class shared_object_pool
 {
 public:
@@ -170,7 +168,7 @@ public:
 
     //! Returns the pool's capacity.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const
+    std::size_t capacity() const WEOS_NOEXCEPT
     {
         return TNumElem;
     }
@@ -253,21 +251,21 @@ public:
     }
 
     template <class T1>
-    element_type* construct(BOOST_FWD_REF(T1) x1)
+    element_type* construct(WEOS_FWD_REF(T1) x1)
     {
         void* mem = this->allocate();
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1));
+                                    weos::forward<T1>(x1));
         return element;
     }
 
     template <class T1, class T2>
-    element_type* construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
+    element_type* construct(WEOS_FWD_REF(T1) x1, WEOS_FWD_REF(T2) x2)
     {
         void* mem = this->allocate();
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1),
-                                    boost::forward<T2>(x2));
+                                    weos::forward<T1>(x1),
+                                    weos::forward<T2>(x2));
         return element;
     }
 
@@ -285,25 +283,25 @@ public:
     }
 
     template <class T1>
-    element_type* try_construct(BOOST_FWD_REF(T1) x1)
+    element_type* try_construct(WEOS_FWD_REF(T1) x1)
     {
         void* mem = this->try_allocate();
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1));
+                                    weos::forward<T1>(x1));
         return element;
     }
 
     template <class T1, class T2>
-    element_type* try_construct(BOOST_FWD_REF(T1) x1, BOOST_FWD_REF(T2) x2)
+    element_type* try_construct(WEOS_FWD_REF(T1) x1, WEOS_FWD_REF(T2) x2)
     {
         void* mem = this->try_allocate();
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1),
-                                    boost::forward<T2>(x2));
+                                    weos::forward<T1>(x1),
+                                    weos::forward<T2>(x2));
         return element;
     }
 
@@ -325,27 +323,27 @@ public:
 
     template <typename RepT, typename PeriodT, class T1>
     element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d,
-                                    BOOST_FWD_REF(T1) x1)
+                                    WEOS_FWD_REF(T1) x1)
     {
         void* mem = this->try_allocate_for(d);
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1));
+                                    weos::forward<T1>(x1));
         return element;
     }
 
     template <typename RepT, typename PeriodT, class T1, class T2>
     element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d,
-                                    BOOST_FWD_REF(T1) x1,
-                                    BOOST_FWD_REF(T2) x2)
+                                    WEOS_FWD_REF(T1) x1,
+                                    WEOS_FWD_REF(T2) x2)
     {
         void* mem = this->try_allocate_for(d);
         if (!mem)
             return 0;
         element_type* element = new (mem) element_type(
-                                    boost::forward<T1>(x1),
-                                    boost::forward<T2>(x2));
+                                    weos::forward<T1>(x1),
+                                    weos::forward<T2>(x2));
         return element;
     }
 
@@ -367,6 +365,6 @@ private:
     pool_t m_memoryPool;
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_OBJECTPOOL_HPP

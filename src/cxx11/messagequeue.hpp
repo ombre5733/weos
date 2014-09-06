@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,8 @@
 #ifndef WEOS_CXX11_MESSAGEQUEUE_HPP
 #define WEOS_CXX11_MESSAGEQUEUE_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 
 #include <condition_variable>
@@ -38,8 +39,8 @@
 #include <mutex>
 #include <utility>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 //! A message queue.
 //! The message_queue is an object to pass elements from one thread to another
@@ -219,6 +220,6 @@ private:
     }
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_CXX11_MESSAGEQUEUE_HPP

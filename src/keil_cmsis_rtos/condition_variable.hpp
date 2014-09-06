@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,15 +29,14 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_CONDITIONVARIABLE_HPP
 #define WEOS_KEIL_CMSIS_RTOS_CONDITIONVARIABLE_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 #include "mutex.hpp"
 #include "semaphore.hpp"
 
-#include <boost/utility.hpp>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
 
 namespace detail
 {
@@ -69,6 +68,8 @@ private:
 
 } // namespace detail
 
+
+
 namespace cv_status
 {
     enum cv_status
@@ -79,7 +80,7 @@ namespace cv_status
 } // namespace cv_status
 
 //! A condition variable.
-class condition_variable : boost::noncopyable
+class condition_variable
 {
 public:
     condition_variable()
@@ -98,7 +99,7 @@ public:
 
     //! Notifies a thread waiting on this condition variable.
     //! Notifies one thread which is waiting on this condition variable.
-    void notify_one() BOOST_NOEXCEPT
+    void notify_one() WEOS_NOEXCEPT
     {
         lock_guard<mutex> locker(m_mutex);
 
@@ -113,7 +114,7 @@ public:
 
     //! Notifies all threads waiting on this condition variable.
     //! Notifies all threads which are waiting on this condition variable.
-    void notify_all() BOOST_NOEXCEPT
+    void notify_all() WEOS_NOEXCEPT
     {
         lock_guard<mutex> locker(m_mutex);
 
@@ -238,8 +239,12 @@ private:
     mutex m_mutex;
     //! A pointer to the first waiter.
     WaitingThread* m_waitingThreads;
+
+
+    condition_variable(const condition_variable&);
+    condition_variable& operator= (const condition_variable&);
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_CONDITIONVARIABLE_HPP

@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,18 +29,13 @@
 #ifndef WEOS_CXX11_UTILITY_HPP
 #define WEOS_CXX11_UTILITY_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
 
-#include <algorithm>
-
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
 
 using std::forward;
 using std::move;
 
-using std::nullptr_t;
-
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_CXX11_UTILITY_HPP

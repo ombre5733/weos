@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,12 +29,13 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_EXCEPTION_HPP
 #define WEOS_KEIL_CMSIS_RTOS_EXCEPTION_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "error.hpp"
 #include "../objectpool.hpp"
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 class error_code_node
 {
@@ -66,6 +67,6 @@ private:
     error_code_node* m_errorCodeList;
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_EXCEPTION_HPP

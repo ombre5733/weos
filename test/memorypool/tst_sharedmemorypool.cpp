@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -79,7 +79,7 @@ TYPED_TEST(SharedMemoryPoolTestFixture, allocate)
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
-                    % boost::alignment_of<TypeParam>::value == 0);
+                    % weos::alignment_of<TypeParam>::value == 0);
 
         for (unsigned j = 0; j < i; ++j)
         {

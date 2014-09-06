@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,17 +29,16 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
 #define WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 #include "system_error.hpp"
 #include "../common/mutexlocks.hpp"
 
-#include <boost/config.hpp>
-
 #include <cstdint>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 namespace detail
 {
@@ -66,8 +65,8 @@ public:
         m_id = osMutexCreate(&mutexDef);
         if (m_id == 0)
         {
-            ::weos::throw_exception(weos::system_error(
-                                        osErrorOS, cmsis_category()));
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "basic_mutex::basic_mutex failed");
         }
     }
 
@@ -83,10 +82,9 @@ public:
     {
         osStatus status = osMutexWait(m_id, osWaitForever);
         if (status != osOK)
-        {
-            ::weos::throw_exception(weos::system_error(
-                                        status, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+                                    "basic_mutex::lock failed");
+
         derived()->post_lock_check(mutexControlBlockHeader());
     }
 
@@ -104,8 +102,8 @@ public:
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
         {
-            ::weos::throw_exception(weos::system_error(
-                                        status, cmsis_category()));
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+                                    "basic_mutex::try_lock failed");
         }
 
         return false;
@@ -173,8 +171,8 @@ struct mutex_try_locker
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
         {
-            ::weos::throw_exception(weos::system_error(
-                                        status, cmsis_category()));
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+                                    "mutex_try_locker::() failed");
         }
 
         return false;
@@ -324,6 +322,6 @@ class recursive_timed_mutex
 public:
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP

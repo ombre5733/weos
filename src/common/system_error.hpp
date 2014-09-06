@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -26,19 +26,16 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_ERROR_HPP
-#define WEOS_COMMON_ERROR_HPP
+#ifndef WEOS_COMMON_SYSTEMERROR_HPP
+#define WEOS_COMMON_SYSTEMERROR_HPP
 
 #include "../config.hpp"
 
-#include <boost/config.hpp>
-#include <boost/utility.hpp>
-#include <boost/type_traits/integral_constant.hpp>
+#include "type_traits.hpp"
 
 #include <exception>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
 
 // ----=====================================================================----
 //     is_error_code_enum
@@ -48,7 +45,7 @@ namespace weos
 //! This struct has to be specialized if an enum shall be treated as error
 //! code. The overload has to be placed in the weos namespace.
 template <typename TType>
-struct is_error_code_enum : public boost::false_type
+struct is_error_code_enum : public false_type
 {
 };
 
@@ -78,15 +75,15 @@ struct is_error_code_enum : public boost::false_type
 class error_category
 {
 public:
-    BOOST_CONSTEXPR error_category() BOOST_NOEXCEPT {}
+    WEOS_CONSTEXPR error_category() WEOS_NOEXCEPT {}
 
-    virtual ~error_category() BOOST_NOEXCEPT {}
+    virtual ~error_category() WEOS_NOEXCEPT {}
 
     //! Returns a string representation of an error condition.
     virtual const char* message(int condition) const = 0;
 
     //! Returns the name of this error category.
-    virtual const char* name() const BOOST_NOEXCEPT = 0;
+    virtual const char* name() const WEOS_NOEXCEPT = 0;
 
 private:
     error_category(const error_category&);
@@ -109,7 +106,7 @@ public:
     //! Creates an error code.
     //! Creates an error code which is defined by the error \p value and the
     //! error \p category.
-    error_code(int value, const error_category& category) BOOST_NOEXCEPT
+    error_code(int value, const error_category& category) WEOS_NOEXCEPT
         : m_value(value),
           m_category(&category)
     {
@@ -126,7 +123,7 @@ public:
     //! <tt>weos::is_error_code_enum<ErrorCodeEnumT>::value == true</tt>.
     template <typename ErrorCodeEnumT>
     error_code(ErrorCodeEnumT value,
-               typename boost::enable_if_c<weos::is_error_code_enum<ErrorCodeEnumT>::value>::type* = 0) BOOST_NOEXCEPT
+               typename weos::enable_if<weos::is_error_code_enum<ErrorCodeEnumT>::value>::type* = 0) WEOS_NOEXCEPT
         : m_value(value),
           m_category(&make_error_code(value).category())
     {
@@ -134,14 +131,14 @@ public:
 
     //! Assigns a new value and category.
     //! Assigns the error \p value and error \p category to this error code.
-    void assign(int value, const error_category& category) BOOST_NOEXCEPT
+    void assign(int value, const error_category& category) WEOS_NOEXCEPT
     {
         m_value = value;
         m_category = &category;
     }
 
     //! Returns the error category of this error code.
-    const error_category& category() const BOOST_NOEXCEPT
+    const error_category& category() const WEOS_NOEXCEPT
     {
         return *m_category;
     }
@@ -158,7 +155,7 @@ public:
     }
 
     //! Returns the error value of this error code.
-    int value() const BOOST_NOEXCEPT
+    int value() const WEOS_NOEXCEPT
     {
         return m_value;
     }
@@ -169,6 +166,45 @@ private:
     //! The error category.
     const error_category* m_category;
 };
+
+// ----=====================================================================----
+//     Generic error category
+// ----=====================================================================----
+
+//! Returns the generic error category.
+const error_category& generic_category();
+
+namespace errc
+{
+
+enum errc_t
+{
+    invalid_argument              = 22,
+    no_child_process              = 10,
+    not_enough_memory             = 12,
+    operation_not_permitted       =  1,
+    resource_deadlock_would_occur = 35,
+};
+
+} // namespace errc
+
+// Specialization for errc::errc_t.
+template <>
+struct is_error_code_enum<errc::errc_t> : public true_type
+{
+};
+
+namespace errc
+{
+
+//! Creates an error code from errc::errc_t.
+inline
+WEOS_NAMESPACE::error_code make_error_code(errc_t err)
+{
+    return error_code(static_cast<int>(err), generic_category());
+}
+
+} // namespace errc
 
 // ----=====================================================================----
 //     system_error
@@ -195,13 +231,13 @@ public:
     }
 
     //! Returns the error code.
-    const error_code& code() const BOOST_NOEXCEPT
+    const error_code& code() const WEOS_NOEXCEPT
     {
         return m_errorCode;
     }
 
     //! Returns an explanatory message.
-    virtual const char* what() const throw() //BOOST_NOEXCEPT
+    virtual const char* what() const throw() //WEOS_NOEXCEPT
     {
         return m_errorCode.message();
     }
@@ -211,6 +247,6 @@ private:
     error_code m_errorCode;
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
-#endif // WEOS_COMMON_ERROR_HPP
+#endif // WEOS_COMMON_SYSTEMERROR_HPP

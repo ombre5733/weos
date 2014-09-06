@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,12 +29,13 @@
 #ifndef WEOS_CXX11_SEMAPHORE_HPP
 #define WEOS_CXX11_SEMAPHORE_HPP
 
+#include "core.hpp"
+
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
 
 class semaphore
 {
@@ -103,6 +104,6 @@ private:
     value_type m_value;
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_CXX11_SEMAPHORE_HPP

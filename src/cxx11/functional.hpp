@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,12 @@
 #ifndef WEOS_CXX11_FUNCTIONAL_HPP
 #define WEOS_CXX11_FUNCTIONAL_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include <functional>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 namespace placeholders = std::placeholders;
 
@@ -45,6 +46,6 @@ template <typename TSignature,
           std::size_t TStorageSize = WEOS_DEFAULT_STATIC_FUNCTION_SIZE>
 using static_function = std::function<TSignature>;
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_CXX11_FUNCTIONAL_HPP

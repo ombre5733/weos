@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,24 +29,49 @@
 #ifndef WEOS_COMMON_MUTEXLOCKS_HPP
 #define WEOS_COMMON_MUTEXLOCKS_HPP
 
-#include "../config.hpp"
+#include "system_error.hpp"
 
-#include <boost/utility.hpp>
+// -----------------------------------------------------------------------------
+// C++11
+// -----------------------------------------------------------------------------
+#if defined(WEOS_USE_CXX11)
 
-namespace weos
-{
+#include <mutex>
+
+WEOS_BEGIN_NAMESPACE
+
+using std::adopt_lock_t;
+using std::adopt_lock;
+
+using std::defer_lock_t;
+using std::defer_lock;
+
+using std::try_to_lock_t;
+using std::try_to_lock;
+
+using std::lock_guard;
+using std::unique_lock;
+
+WEOS_END_NAMESPACE
+
+// -----------------------------------------------------------------------------
+// Boost
+// -----------------------------------------------------------------------------
+#elif defined(WEOS_USE_BOOST)
+
+WEOS_BEGIN_NAMESPACE
 
 struct defer_lock_t {};
 struct try_to_lock_t {};
 struct adopt_lock_t {};
 
-BOOST_CONSTEXPR_OR_CONST defer_lock_t defer_lock = defer_lock_t();
-BOOST_CONSTEXPR_OR_CONST try_to_lock_t try_to_lock = try_to_lock_t();
-BOOST_CONSTEXPR_OR_CONST adopt_lock_t adopt_lock = adopt_lock_t();
+WEOS_CONSTEXPR_OR_CONST defer_lock_t defer_lock = defer_lock_t();
+WEOS_CONSTEXPR_OR_CONST try_to_lock_t try_to_lock = try_to_lock_t();
+WEOS_CONSTEXPR_OR_CONST adopt_lock_t adopt_lock = adopt_lock_t();
 
 //! A lock guard for RAII-style mutex locking.
-template <class MutexT>
-class lock_guard : boost::noncopyable
+template <typename MutexT>
+class lock_guard
 {
 public:
     typedef MutexT mutex_type;
@@ -79,14 +104,17 @@ public:
 private:
     //! The mutex which is guarded.
     mutex_type& m_mutex;
+
+    lock_guard(const lock_guard&);
+    lock_guard& operator= (const lock_guard&);
 };
 
 //! A unique lock for a mutex.
-template <class Mutex>
+template <typename MutexT>
 class unique_lock
 {
 public:
-    typedef Mutex mutex_type;
+    typedef MutexT mutex_type;
 
     //! Creates a lock which is not associated with a mutex.
     unique_lock() BOOST_NOEXCEPT
@@ -99,10 +127,9 @@ public:
     //! Creates a unique lock tied to the \p mutex and locks it.
     explicit unique_lock(mutex_type& mutex)
         : m_mutex(&mutex),
-          m_locked(false)
+          m_locked(true)
     {
-        mutex.lock();
-        m_locked = true;
+        m_mutex->lock();
     }
 
     //! Creates a unique lock without locking.
@@ -114,6 +141,9 @@ public:
     {
     }
 
+    //! Creates a unique lock by trying to lock a mutex.
+    //! Creates a unique lock, which tries to lock the given \p mutex. If
+    //! locking has been successful can be queried by owns_lock.
     unique_lock(mutex_type& mutex, try_to_lock_t /*tag*/)
         : m_mutex(&mutex),
           m_locked(m_mutex->try_lock())
@@ -130,7 +160,34 @@ public:
     {
     }
 
-    //! \todo Timed constructors are missing
+    //! \todo Document
+    template <typename ClockT, typename DurationT>
+    unique_lock(mutex_type& mutex,
+                const chrono::time_point<ClockT, DurationT>& timePoint)
+        : m_mutex(&mutex),
+          m_locked(m_mutex->try_lock_until(timePoint))
+    {
+    }
+
+    //! \todo Document
+    template <typename RepT, typename PeriodT>
+    unique_lock(mutex_type& mutex,
+                const chrono::duration<RepT, PeriodT>& duration)
+        : m_mutex(&mutex),
+          m_locked(m_mutex->try_lock_for(duration))
+    {
+    }
+
+    //! Move construction.
+    //!
+    //! Creates a unique lock by moving from the \p other lock.
+    unique_lock(BOOST_RV_REF(unique_lock) other) BOOST_NOEXCEPT
+        : m_mutex(other.m_mutex),
+          m_locked(other.m_locked)
+    {
+        other.m_mutex = 0;
+        other.m_locked = false;
+    }
 
     //! Destroys the unique lock.
     //! If the lock has an associated mutex and has locked this mutex, the
@@ -141,11 +198,34 @@ public:
             m_mutex->unlock();
     }
 
+    //! Move assignment.
+    //!
+    //! Moves the \p other lock to this lock. If this lock owns a mutex, it
+    //! will be released.
+    unique_lock& operator= (BOOST_RV_REF(unique_lock) other) BOOST_NOEXCEPT
+    {
+        if (m_locked)
+            m_mutex->unlock();
+
+        m_mutex = other.m_mutex;
+        m_locked = other.m_locked;
+
+        other.m_mutex = 0;
+        other.m_locked = false;
+
+        return *this;
+    }
+
     //! Locks the associated mutex.
     void lock()
     {
-        if (!m_mutex || m_locked)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
+        if (m_mutex == 0)
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "unique_lock::lock: no mutex");
+        if (m_locked)
+            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+                                    "unique_lock::lock: already locked");
+
         m_mutex->lock();
         m_locked = true;
     }
@@ -179,23 +259,75 @@ public:
         return m;
     }
 
+    //! Swaps two locks.
+    //! Swaps this lock with the \p other lock.
+    void swap(unique_lock& other) BOOST_NOEXCEPT
+    {
+        std::swap(m_mutex, other.m_mutex);
+        std::wap(m_locked, other.m_locked);
+    }
+
     //! Tries to lock the associated mutex.
+    //!
+    //! Tries to lock the associated mutex and returns \p true if it could
+    //! be locked and \p false otherwise.
     bool try_lock()
     {
-        if (!m_mutex || m_locked)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
+        if (m_mutex == 0)
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "unique_lock::try_lock: no mutex");
+        if (m_locked)
+            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+                                    "unique_lock::try_lock: already locked");
 
         m_locked = m_mutex->try_lock();
+        return m_locked;
+    }
+
+    //! \todo Document
+    template <typename RepT, typename PeriodT>
+    bool try_lock_for(const chrono::duration<RepT, PeriodT>& duration)
+    {
+        if (m_mutex == 0)
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "unique_lock::try_lock_for: no mutex");
+        if (m_locked)
+            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+                                    "unique_lock::try_lock_for: already locked");
+
+        m_locked = m_mutex->try_lock_for(duration);
+        return m_locked;
+    }
+
+    //! \todo Document
+    template <typename ClockT, typename DurationT>
+    bool try_lock_until(const chrono::time_point<ClockT, DurationT>& timePoint)
+    {
+        if (m_mutex == 0)
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "unique_lock::try_lock_until: no mutex");
+        if (m_locked)
+            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+                                    "unique_lock::try_lock_until: already locked");
+
+        m_locked = m_mutex->try_lock_until(timePoint);
         return m_locked;
     }
 
     //! Unlocks the associated mutex.
     void unlock()
     {
-        if (!m_mutex || !m_locked)
-            ::weos::throw_exception(::weos::system_error(-1, cmsis_category()));//! \todo std::system_error);
+        if (!m_locked)
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "unique_lock::unlock: not locked");
+
         m_mutex->unlock();
         m_locked = false;
+    }
+
+    /*explicit*/ operator bool() const BOOST_NOEXCEPT
+    {
+        return m_locked;
     }
 
 private:
@@ -204,12 +336,33 @@ private:
     //! A flag indicating if the mutex has been locked.
     bool m_locked;
 
-    // ---- Hidden methods
 
-    unique_lock(const unique_lock&);
-    unique_lock& operator= (const unique_lock&);
+    BOOST_MOVABLE_BUT_NOT_COPYABLE(unique_lock)
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
+
+
+
+namespace std
+{
+
+// Overload for swapping two mutexes \p x and \p y.
+template <typename MutexT>
+inline
+void swap(WEOS_NAMESPACE_NAME::unique_lock<MutexT>& x,
+          WEOS_NAMESPACE_NAME::unique_lock<MutexT>& y) BOOST_NOEXCEPT
+{
+    x.swap(y);
+}
+
+} // namespace std
+
+// -----------------------------------------------------------------------------
+// Unknown
+// -----------------------------------------------------------------------------
+#else
+    #error "No mutexlocks.hpp available."
+#endif
 
 #endif // WEOS_COMMON_MUTEXLOCKS_HPP

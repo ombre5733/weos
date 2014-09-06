@@ -1,7 +1,7 @@
 #*******************************************************************************
 # WEOS - Wrapper for embedded operating systems
 #
-# Copyright (c) 2013, Manuel Freiberger
+# Copyright (c) 2013-2014, Manuel Freiberger
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 #*******************************************************************************
 
 set(test_SOURCES tst_objectpool.cpp)
-add_executable_and_bin(tst_objectpool "${COMMON_SOURCES};${test_SOURCES}")
+add_test_executable(tst_objectpool "${COMMON_SOURCES};${test_SOURCES}")
 
-set(test_SOURCES tst_countingobjectpool.cpp)
-add_executable_and_bin(tst_countingobjectpool "${COMMON_SOURCES};${test_SOURCES}")
+set(test_SOURCES tst_sharedobjectpool.cpp)
+add_test_executable(tst_sharedobjectpool "${COMMON_SOURCES};${test_SOURCES}")

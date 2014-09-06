@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,19 +29,17 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_MESSAGEQUEUE_HPP
 #define WEOS_KEIL_CMSIS_RTOS_MESSAGEQUEUE_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 #include "system_error.hpp"
-
-#include <boost/config.hpp>
-#include <boost/static_assert.hpp>
 
 #include <cstdint>
 #include <cstring>
 #include <utility>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 //! A message queue.
 //! The message_queue is an object to pass elements from one thread to another
@@ -50,8 +48,9 @@ template <typename TypeT, std::size_t QueueSizeT>
 class message_queue
 {
     // The CMSIS message queue operates on elements of type uint32_t.
-    BOOST_STATIC_ASSERT(sizeof(TypeT) <= 4);
-    BOOST_STATIC_ASSERT(QueueSizeT > 0);
+    static_assert(sizeof(TypeT) <= 4,
+                  "Implementation limits lement size to 32 bit.");
+    static_assert(QueueSizeT > 0, "The queue size must be non-zero.");
 
 public:
     //! The type of the elements transfered via this message queue.
@@ -68,10 +67,8 @@ public:
         osMessageQDef_t queueDef = { QueueSizeT, m_queueData };
         m_id = osMessageCreate(&queueDef, NULL);
         if (m_id == 0)
-        {
-            ::weos::throw_exception(weos::system_error(
-                                        osErrorOS, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "message_queue::message_queue failed");
     }
 
     //! Returns the capacity.
@@ -88,10 +85,9 @@ public:
     {
         osEvent result = osMessageGet(m_id, osWaitForever);
         if (result.status != osEventMessage)
-        {
-            ::weos::throw_exception(weos::system_error(
-                                        result.status, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                    "message_queue::receive failed");
+
         element_type element;
         std::memcpy(&element, &result.value.p, sizeof(element_type));
         return element;
@@ -111,9 +107,10 @@ public:
         }
         else if (result.status != osEventMessage)
         {
-            ::weos::throw_exception(weos::system_error(
-                                        result.status, cmsis_category()));
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                    "message_queue::try_receive failed");
         }
+
         element_type element;
         std::memcpy(&element, &result.value.p, sizeof(element_type));
         return std::pair<bool, element_type>(true, element);
@@ -151,10 +148,8 @@ public:
         std::memcpy(&datum, &element, sizeof(element_type));
         osStatus status = osMessagePut(m_id, datum, osWaitForever);
         if (status != osOK)
-        {
-            ::weos::throw_exception(weos::system_error(
-                                        status, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+                                    "message_queue::send failed");
     }
 
     //! Tries to send an element via the queue.
@@ -172,8 +167,8 @@ public:
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
         {
-            ::weos::throw_exception(weos::system_error(
-                                        status, cmsis_category()));
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+                                    "message_queue::try_send failed");
         }
 
         return false;
@@ -230,8 +225,9 @@ private:
             if (   result.status != osOK
                 && result.status != osEventTimeout)
             {
-                ::weos::throw_exception(weos::system_error(
-                                            result.status, cmsis_category()));
+                WEOS_THROW_SYSTEM_ERROR(
+                            cmsis_error::cmsis_error_t(result.status),
+                            "message_queue::try_receiver failed");
             }
 
             return false;
@@ -266,8 +262,8 @@ private:
             if (   status != osErrorTimeoutResource
                 && status != osErrorResource)
             {
-                ::weos::throw_exception(weos::system_error(
-                                            status, cmsis_category()));
+                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+                                        "message_queue::try_sender failed");
             }
 
             return false;
@@ -281,6 +277,6 @@ private:
     };
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_MESSAGEQUEUE_HPP

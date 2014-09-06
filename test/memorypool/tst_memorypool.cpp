@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@ TYPED_TEST(MemoryPoolTestFixture, try_allocate)
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
-                    % boost::alignment_of<TypeParam>::value == 0);
+                    % weos::alignment_of<TypeParam>::value == 0);
 
         // Attempt to store and load something in the chunk. Some processors
         // might throw a hard-fault if an incorrect memory access occurs.
@@ -202,7 +202,7 @@ TYPED_TEST(MemoryPoolTestFixture, allocate_inside_struct)
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
-                    % boost::alignment_of<TypeParam>::value == 0);
+                    % weos::alignment_of<TypeParam>::value == 0);
 
         // Attempt to store and load something in the chunk. Some processors
         // might throw a hard-fault if an incorrect memory access occurs.

@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -26,10 +26,11 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CXX11_SYSTEM_ERROR_HPP
-#define WEOS_KEIL_CXX11_SYSTEM_ERROR_HPP
+#ifndef WEOS_CXX11_SYSTEM_ERROR_HPP
+#define WEOS_CXX11_SYSTEM_ERROR_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "../common/system_error.hpp"
 
-#endif // WEOS_KEIL_CXX11_SYSTEM_ERROR_HPP
+#endif // WEOS_CXX11_SYSTEM_ERROR_HPP

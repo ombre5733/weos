@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -33,98 +33,10 @@
 
 #include "mutex.hpp"
 #include "semaphore.hpp"
+#include "type_traits.hpp"
 
-#include <boost/integer/static_min_max.hpp>
-#include <boost/math/common_factor_ct.hpp>
-#include <boost/type_traits/aligned_storage.hpp>
-#include <boost/type_traits/alignment_of.hpp>
 
-namespace weos
-{
-
-namespace detail
-{
-
-//! A free list.
-//! The free_list keeps a list of memory chunks which can be allocated by
-//! a memory pool.
-class free_list
-{
-public:
-    //! Creates a free list.
-    //! Creates a free list in the memory pointed to by \p memBlock. The size
-    //! of one chunk is \p chunkSize and the size of the memory block is
-    //! passed in \p memSize.
-    //! The memory \p memBlock must be suitable aligned to hold a <tt>void*</tt>
-    //! and the \p chunkSize must be a multiple of
-    //! <tt>sizeof(void*)</tt> to ensure correct alignment.
-    free_list(void* memBlock, std::size_t chunkSize, std::size_t memSize)
-        : m_first(memBlock)
-    {
-        // Make memSize a multiple of chunkSize.
-        memSize = (memSize / chunkSize) * chunkSize;
-        if (memSize == 0)
-        {
-            m_first = 0;
-            return;
-        }
-
-        // Compute the location of the last chunk and terminate it with a
-        // null-pointer.
-        char* last = static_cast<char*>(memBlock) + memSize - chunkSize;
-        next(last) = 0;
-
-        char* iter = static_cast<char*>(memBlock);
-        while (iter != last)
-        {
-            char* follow = iter + chunkSize;
-            next(iter) = follow;
-            iter = follow;
-        }
-    }
-
-    //! Checks if the free list is empty.
-    //! Returns \p true if the free list is empty and no further chunk can
-    //! be allocated.
-    bool empty() const BOOST_NOEXCEPT
-    {
-        return m_first == 0;
-    }
-
-    //! Allocates a memory chunk.
-    //! Returns the first available memory chunk from the list.
-    //!
-    //! \warning This method must not be called, if the list is empty.
-    void* allocate()
-    {
-        void* chunk = m_first;
-        m_first = next(m_first);
-        return chunk;
-    }
-
-    //! Returns a memory \p chunk back to the list.
-    void free(void* const chunk)
-    {
-        next(chunk) = m_first;
-        m_first = chunk;
-    }
-
-private:
-    //! Pointer to the first free block.
-    void* m_first;
-
-    //! Returns a reference to the next pointer.
-    static void*& next(void* const p)
-    {
-        return *static_cast<void**>(p);
-    }
-
-    // Hidden copy constructor and assignment operator.
-    free_list(const free_list&);
-    const free_list& operator= (const free_list&);
-};
-
-} // namespace detail
+WEOS_BEGIN_NAMESPACE
 
 //! A memory pool.
 //! A memory_pool provides storage for (\p TNumElem) elements of
@@ -143,39 +55,56 @@ public:
     typedef TElement element_type;
 
 private:
-    // A chunk has to be aligned such that it can contain a void* or an element.
-    static const std::size_t min_align =
-        ::boost::math::static_lcm< ::boost::alignment_of<void*>::value,
-                                   ::boost::alignment_of<element_type>::value>::value;
+    static_assert(TNumElem > 0, "The number of elements must be non-zero.");
+
+    // Every chunk has to be aligned such that it can contain either a
+    // void* or an element_type.
+    static const std::size_t chunk_align =
+            alignment_of<void*>::value > alignment_of<element_type>::value
+            ? alignment_of<void*>::value
+            : alignment_of<element_type>::value;
     // The chunk size has to be large enough to store a void* or an element.
-    // Further it must be a multiple of the alignment.
     static const std::size_t chunk_size =
-        ::boost::math::static_lcm<
-            ::boost::static_unsigned_max<sizeof(void*), sizeof(element_type)>::value,
-            min_align>::value;
-    // The memory block must be able to hold TNumElem elements.
-    static const std::size_t block_size = chunk_size * TNumElem;
+            sizeof(void*) > sizeof(element_type)
+            ? sizeof(void*)
+            : sizeof(element_type);
+
+    // One chunk must be large enough for a void* or an element_type and it
+    // must be aligned to the stricter of both. Furthermore, the alignment
+    // must be a multiple of the size. The aligned_storage<> takes care
+    // of this.
+    typedef typename aligned_storage<chunk_size, chunk_align>::type chunk_type;
 
 public:
     //! Creates a memory pool.
     //! Creates a memory pool with statically allocated storage.
-    memory_pool()
-        : m_freeList(m_data.address(), chunk_size, block_size)
+    memory_pool() WEOS_NOEXCEPT
+        : m_first(&m_chunks[0])
     {
+        chunk_type* iter = &m_chunks[TNumElem - 1];
+        chunk_type* prev = 0;
+        while (1)
+        {
+            next(iter) = prev;
+            prev = iter;
+            if (iter == &m_chunks[0])
+                break;
+            --iter;
+        }
     }
 
     //! Returns the number of pool elements.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const
+    std::size_t capacity() const WEOS_NOEXCEPT
     {
         return TNumElem;
     }
 
     //! Checks if the memory pool is empty.
     //! Returns \p true, if the memory pool is empty.
-    bool empty() const
+    bool empty() const WEOS_NOEXCEPT
     {
-        return m_freeList.empty();
+        return m_first == 0;
     }
 
     //! Allocates a chunk from the pool.
@@ -183,12 +112,14 @@ public:
     //! If the pool is already empty, a null-pointer is returned.
     //!
     //! \sa free()
-    void* try_allocate()
+    void* try_allocate() WEOS_NOEXCEPT
     {
-        if (m_freeList.empty())
+        if (m_first == 0)
             return 0;
-        else
-            return m_freeList.allocate();
+
+        void* chunk = m_first;
+        m_first = next(m_first);
+        return chunk;
     }
 
     //! Frees a previously allocated chunk.
@@ -196,16 +127,27 @@ public:
     //! to the pool.
     //!
     //! \sa allocate()
-    void free(void* const chunk)
+    void free(void* const chunk) WEOS_NOEXCEPT
     {
-        m_freeList.free(chunk);
+        next(chunk) = m_first;
+        m_first = chunk;
     }
 
 private:
-    //! The aligned data block for the memory chunks.
-    typename ::boost::aligned_storage<block_size, min_align>::type m_data;
-    //! A list of free (i.e. not allocated) memory chunks.
-    detail::free_list m_freeList;
+    //! The memory chunks for the elements and the free-list pointers.
+    chunk_type m_chunks[TNumElem];
+
+    //! Pointer to the first free block.
+    void* m_first;
+
+    //! Returns a reference to the next pointer.
+    static void*& next(void* const p)
+    {
+        return *static_cast<void**>(p);
+    }
+
+    memory_pool(const memory_pool&);
+    memory_pool& operator= (const memory_pool&);
 };
 
 //! A shared memory pool.
@@ -232,7 +174,7 @@ public:
 
     //! Returns the number of pool elements.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const
+    std::size_t capacity() const WEOS_NOEXCEPT
     {
         return TNumElem;
     }
@@ -324,6 +266,6 @@ private:
     semaphore m_numElements;
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_MEMORYPOOL_HPP

@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,13 +29,15 @@
 #ifndef WEOS_CXX11_CHRONO_HPP
 #define WEOS_CXX11_CHRONO_HPP
 
+#include "core.hpp"
+
 #include <chrono>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 namespace chrono = std::chrono;
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_CXX11_CHRONO_HPP

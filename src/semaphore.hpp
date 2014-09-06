@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -32,11 +32,11 @@
 #include "config.hpp"
 
 #if defined(WEOS_WRAP_CXX11)
-#  include "cxx11/semaphore.hpp"
+    #include "cxx11/semaphore.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "keil_cmsis_rtos/semaphore.hpp"
+    #include "keil_cmsis_rtos/semaphore.hpp"
 #else
-#  error "The OS wrapper has not been configured."
+    #error "Invalid native OS."
 #endif
 
 #endif // WEOS_SEMAPHORE_HPP

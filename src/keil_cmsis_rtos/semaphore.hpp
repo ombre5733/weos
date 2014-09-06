@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,15 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_SEMAPHORE_HPP
 #define WEOS_KEIL_CMSIS_RTOS_SEMAPHORE_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 #include "system_error.hpp"
 
 #include <cstdint>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 class semaphore
 {
@@ -54,10 +55,8 @@ public:
         osSemaphoreDef_t semaphoreDef = { m_cmsisSemaphoreControlBlock };
         m_id = osSemaphoreCreate(&semaphoreDef, value);
         if (m_id == 0)
-        {
-            ::weos::throw_exception(::weos::system_error(
-                                        osErrorOS, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "semaphore::semaphore failed");
     }
 
     //! Destroys the semaphore.
@@ -72,10 +71,8 @@ public:
     {
         osStatus status = osSemaphoreRelease(m_id);
         if (status != osOK)
-        {
-            ::weos::throw_exception(::weos::system_error(
-                                        status, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+                                    "semaphore::post failed");
     }
 
     //! Waits until a semaphore token is available.
@@ -83,10 +80,8 @@ public:
     {
         std::int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
         if (numTokens <= 0)
-        {
-            ::weos::throw_exception(::weos::system_error(
-                                        osErrorOS, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "semaphore::wait failed");
     }
 
     //! Tries to acquire a semaphore token.
@@ -97,10 +92,9 @@ public:
     {
         std::int32_t numTokens = osSemaphoreWait(m_id, 0);
         if (numTokens < 0)
-        {
-            ::weos::throw_exception(::weos::system_error(
-                                        osErrorOS, cmsis_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "semaphore::try_wait failed");
+
         return numTokens != 0;
     }
 
@@ -160,10 +154,8 @@ private:
         {
             std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
             if (numTokens < 0)
-            {
-                ::weos::throw_exception(::weos::system_error(
-                                            osErrorOS, cmsis_category()));
-            }
+                WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                        "semaphore::try_waiter failed");
 
             return numTokens != 0;
         }
@@ -174,6 +166,6 @@ private:
     };
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_SEMAPHORE_HPP

@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -67,8 +67,8 @@ extern "C" void weos_threadInvoker(const void* arg)
 
 } // anonymous namespace
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
+
 namespace detail
 {
 
@@ -120,9 +120,9 @@ ThreadSharedData* ThreadSharedData::allocate()
 {
     void* mem = threadSharedDataPool().try_allocate();
     if (!mem)
-    {
-        ::weos::throw_exception(system_error(cmsis_error::osErrorResource, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::not_enough_memory,
+                    "ThreadSharedData::allocate: no more thread handle");
 
     return new (mem) ThreadSharedData;
 }
@@ -139,9 +139,9 @@ void thread::invokeWithCustomStack(const attributes& attrs)
         || attrs.m_customStackSize < detail::native_thread_traits::minimum_custom_stack_size
         || attrs.m_customStackSize >= (std::uint32_t(1) << 24))
     {
-        ::weos::throw_exception(weos::system_error(
-                                    cmsis_error::osErrorParameter,
-                                    cmsis_category()));
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::invalid_argument,
+                    "thread::invokeWithCustomStack: invalid thread attributes");
     }
 
     // Increase the reference count before creating the new thread.
@@ -170,10 +170,9 @@ void thread::invokeWithCustomStack(const attributes& attrs)
         m_data->deref();
         m_data = 0;
 
-        //! \todo Use correct error code
-        ::weos::throw_exception(weos::system_error(
-                                    cmsis_error::osErrorResource,
-                                    cmsis_category()));
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::no_child_process,
+                    "thread::invokeWithCustomStack: new thread was not created");
     }
 }
 
@@ -197,11 +196,10 @@ void thread::invokeWithDefaultStack(const attributes& attrs)
         m_data->deref();
         m_data = 0;
 
-        //! \todo Use correct error code
-        ::weos::throw_exception(weos::system_error(
-                                    cmsis_error::osErrorResource,
-                                    cmsis_category()));
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::no_child_process,
+                    "thread::invokeWithDefaultStack: new thread was not created");
     }
 }
 
-} // namespace weos
+WEOS_END_NAMESPACE

@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,19 +29,17 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
 #define WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 #include "mutex.hpp"
 #include "semaphore.hpp"
 #include "system_error.hpp"
 
-#include <boost/config.hpp>
-#include <boost/static_assert.hpp>
-
 #include <cstdint>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
+
 class thread;
 
 namespace detail
@@ -56,7 +54,8 @@ struct native_thread_traits
     // The stack must be able to hold the registers R0-R15.
     static const std::size_t minimum_custom_stack_size = 64;
 
-    BOOST_STATIC_ASSERT(osFeature_Signals > 0 && osFeature_Signals <= 16);
+    static_assert(osFeature_Signals > 0 && osFeature_Signals <= 16,
+                  "The wrapper supports only up 16 signals.");
 
     // Represents a set of signals.
     typedef std::uint16_t signal_set;
@@ -95,12 +94,15 @@ struct native_thread_traits
 };
 
 } // namespace detail
-} // namespace weos
+
+WEOS_END_NAMESPACE
 
 #include "../common/thread_detail.hpp"
 
-namespace weos
-{
+
+
+WEOS_BEGIN_NAMESPACE
+
 namespace this_thread
 {
 
@@ -115,9 +117,9 @@ inline
 void clear_signals(thread::signal_set flags)
 {
     if (osThreadGetId() == 0)
-    {
-        ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "clear_signals: no thread");
+
     detail::native_thread_traits::clear_signals(osThreadGetId(), flags);
 }
 
@@ -125,9 +127,9 @@ inline
 void set_signals(thread::signal_set flags)
 {
     if (osThreadGetId() == 0)
-    {
-        ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "set_signals: no thread");
+
     detail::native_thread_traits::set_signals(osThreadGetId(), flags);
 }
 
@@ -192,8 +194,8 @@ struct signal_waiter
         if (   result.status != osOK
             && result.status != osEventTimeout)
         {
-            ::weos::throw_exception(weos::system_error(
-                                        result.status, cmsis_category()));
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                    "signal_waiter failed");
         }
 
         return false;
@@ -212,32 +214,30 @@ private:
 };
 
 inline
-thread::signal_set wait_for_signal_flags(thread::signal_set flags)
+thread::signal_set wait_for_signalflags(thread::signal_set flags)
 {
     osEvent result = osSignalWait(flags, osWaitForever);
     if (result.status != osEventSignal)
-    {
-        ::weos::throw_exception(weos::system_error(
-                                    result.status, cmsis_category()));
-    }
+        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                "wait_for_signalflags failed");
+
     return result.value.signals;
 }
 
 inline
-thread::signal_set try_wait_for_signal_flags(thread::signal_set flags)
+thread::signal_set try_wait_for_signalflags(thread::signal_set flags)
 {
     osEvent result = osSignalWait(flags, 0);
     if (result.status != osOK && result.status != osEventSignal)
-    {
-        ::weos::throw_exception(weos::system_error(
-                                    result.status, cmsis_category()));
-    }
+        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                "try_wait_for_signalflags failed");
+
     return result.value.signals;
 }
 
 template <typename RepT, typename PeriodT>
 inline
-thread::signal_set try_wait_for_signal_flags_for(
+thread::signal_set try_wait_for_signalflags_for(
         thread::signal_set flags,
         const chrono::duration<RepT, PeriodT>& d)
 {
@@ -257,7 +257,7 @@ thread::signal_set try_wait_for_signal_flags_for(
 //! Blocks the execution of the current thread for the given duration \p d.
 template <typename RepT, typename PeriodT>
 inline
-void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
+void sleep_for(const chrono::duration<RepT, PeriodT>& d) WEOS_NOEXCEPT
 {
     detail::thread_sleeper sleeper;
     chrono::detail::cmsis_wait<RepT, PeriodT, detail::thread_sleeper>::wait(
@@ -265,7 +265,7 @@ void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
 }
 
 template <typename ClockT, typename DurationT>
-void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
+void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) WEOS_NOEXCEPT;
 
 //! Waits for any signal.
 //! Blocks the current thread until one or more signal flags have been set,
@@ -273,7 +273,7 @@ void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_N
 inline
 thread::signal_set wait_for_any_signal()
 {
-    return detail::wait_for_signal_flags(0);
+    return detail::wait_for_signalflags(0);
 }
 
 //! Checks if any signal has arrived.
@@ -283,7 +283,7 @@ thread::signal_set wait_for_any_signal()
 inline
 thread::signal_set try_wait_for_any_signal()
 {
-    return detail::try_wait_for_signal_flags(0);
+    return detail::try_wait_for_signalflags(0);
 }
 
 //! Waits until any signal arrives or a timeout occurs.
@@ -295,7 +295,7 @@ inline
 thread::signal_set try_wait_for_any_signal_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
-    return detail::try_wait_for_signal_flags_for(0, d);
+    return detail::try_wait_for_signalflags_for(0, d);
 }
 
 //! Waits for a set of signals.
@@ -306,7 +306,7 @@ inline
 thread::signal_set wait_for_all_signals(thread::signal_set flags)
 {
     WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::wait_for_signal_flags(flags);
+    return detail::wait_for_signalflags(flags);
 }
 
 //! Checks if a set of signals has been set.
@@ -320,7 +320,7 @@ thread::signal_set try_wait_for_all_signals(
         thread::signal_set flags)
 {
     WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::try_wait_for_signal_flags(flags);
+    return detail::try_wait_for_signalflags(flags);
 }
 
 //! Blocks until a set of signals arrives or a timeout occurs.
@@ -335,10 +335,11 @@ thread::signal_set try_wait_for_all_signals_for(
         const chrono::duration<RepT, PeriodT>& d)
 {
     WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::try_wait_for_signal_flags_for(flags, d);
+    return detail::try_wait_for_signalflags_for(flags, d);
 }
 
 } // namespace this_thread
-} // namespace weos
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_THREAD_HPP

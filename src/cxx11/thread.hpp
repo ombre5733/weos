@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,8 @@
 #ifndef WEOS_CXX11_THREAD_HPP
 #define WEOS_CXX11_THREAD_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 
 #include <condition_variable>
@@ -39,8 +40,7 @@
 #include <mutex>
 #include <thread>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
 
 namespace detail
 {
@@ -366,6 +366,6 @@ thread::signal_set try_wait_for_all_signals_for(
 
 } // namespace this_thread
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_CXX11_THREAD_HPP

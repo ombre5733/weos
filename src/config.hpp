@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -33,82 +33,107 @@
 // configuration file. If the switch is not set, we assume that the
 // user configuration is somewhere in the path.
 #if defined(WEOS_USER_CONFIG)
-#  include WEOS_USER_CONFIG
+    #include WEOS_USER_CONFIG
 #else
-#  include "weos_user_config.hpp"
+    #include "weos_user_config.hpp"
 #endif // WEOS_USER_CONFIG
 
 // Check the version of the user configuration file.
 #if WEOS_USER_CONFIG_VERSION != 2
-#  error "Version 2 of the WEOS user configuration is required."
+    #error "Version 2 of the WEOS user configuration is required."
 #endif // WEOS_USER_CONFIG_VERSION
+
 
 // -----------------------------------------------------------------------------
 // Compatibility checks
 // -----------------------------------------------------------------------------
 
 // Include the CMSIS header file if necessary.
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "cmsis_os.h"
-#  if osCMSIS_RTX < ((4<<16) | 70) || osCMSIS_RTX > ((4<<16) | 74)
-#    error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.74."
-#  endif
-#endif // WEOS_WRAP_KEIL_CMSIS_RTOS
-
-// Include the RL RTX header file if necessary.
-#if defined(WEOS_WRAP_KEIL_RL_RTX)
-#  include "3rdparty/keil_rl_rtx/INC/RTL.h"
-#  if __RL_ARM_VER != 472
-#    error "The Keil RL RTX version must be 4.72."
-#  endif
+#if defined(WEOS_WRAP_CXX11)
+#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#elif defined(WEOS_WRAP_KEIL_RL_RTX)
+#else
+    #error "No native OS has been defined in the user configuration file."
 #endif // WEOS_WRAP_KEIL_RL_RTX
 
 // -----------------------------------------------------------------------------
-// Exception handling
+// Namespace
 // -----------------------------------------------------------------------------
 
-#if !defined(WEOS_CUSTOM_THROW_EXCEPTION)
-    namespace weos
-    {
-        template <typename ExceptionT>
-        /*BOOST_ATTRIBUTE_NORETURN*/ inline
-        void throw_exception(const ExceptionT& e)
-        {
-            throw e;
-        }
-    } // namespace weos
-#else
-#   include <exception>
-    namespace weos
-    {
-        // This is only a declaration - the definition has to be provided by the user.
-        void throw_exception(const std::exception& e);
-     } // namespace weos
-#endif // WEOS_CUSTOM_THROW_EXCEPTION
+#define WEOS_NAMESPACE         weos
+#define WEOS_BEGIN_NAMESPACE   namespace WEOS_NAMESPACE {
+#define WEOS_END_NAMESPACE     }
+
 
 // -----------------------------------------------------------------------------
 // Assertion handling
 // -----------------------------------------------------------------------------
 
 #if defined(WEOS_ENABLE_ASSERT)
-#  if defined(WEOS_CUSTOM_ASSERT_HANDLER)
-     namespace weos
-     {
-         void assert_failed(const char* condition, const char* function,
-                            const char* file, int line);
-     } // namespace weos
-#    define WEOS_ASSERT(cond)                                                  \
-         do {                                                                  \
-             if (!(cond))                                                      \
-                 ::weos::assert_failed(#cond, __PRETTY_FUNCTION__,             \
-                                       __FILE__, __LINE__)                     \
-         } while (0)
-#  else
-#    include <cassert>
-#    define WEOS_ASSERT(cond)   assert(cond)
-#  endif // WEOS_CUSTOM_ASSERT_HANDLER
+
+    #if defined(WEOS_CUSTOM_ASSERT_HANDLER)
+        WEOS_BEGIN_NAMESPACE
+
+        void assert_failed(const char* condition, const char* function,
+                           const char* file, int line);
+
+        WEOS_END_NAMESPACE
+
+        #define WEOS_ASSERT(cond)                                              \
+            do {                                                               \
+                if (!(cond))                                                   \
+                    WEOS_NAMESPACE::assert_failed(#cond, __PRETTY_FUNCTION__,  \
+                                                  __FILE__, __LINE__)          \
+            } while (0)
+    #else
+        #include <cassert>
+        #define WEOS_ASSERT(cond)   assert(cond)
+    #endif // WEOS_CUSTOM_ASSERT_HANDLER
+
 #else
-#  define WEOS_ASSERT(cond)   ((void)0)
+
+    #define WEOS_ASSERT(cond)   ((void)0)
+
 #endif // WEOS_ENABLE_ASSERT
+
+
+// -----------------------------------------------------------------------------
+// Exception support
+// -----------------------------------------------------------------------------
+
+#if defined(WEOS_ENABLE_EXCEPTIONS)
+
+    #if !defined(WEOS_CUSTOM_THROW_EXCEPTION)
+        WEOS_BEGIN_NAMESPACE
+
+        template <typename ExceptionT>
+        /*[[noreturn]]*/
+        inline
+        void throw_exception(const ExceptionT& exception)
+        {
+            throw exception;
+        }
+
+        WEOS_END_NAMESPACE
+    #else
+        #include <exception>
+
+        WEOS_BEGIN_NAMESPACE
+
+        // This is only a declaration - the definition has to be provided
+        // by the user.
+        void throw_exception(const std::exception& exception);
+
+        WEOS_END_NAMESPACE
+    #endif // WEOS_CUSTOM_THROW_EXCEPTION
+
+    #define WEOS_THROW_SYSTEM_ERROR(err, msg)                                       \
+        WEOS_NAMESPACE::throw_exception(system_error(err))
+
+#else
+
+    #define WEOS_THROW_SYSTEM_ERROR(err, msg)   WEOS_ASSERT(0 && err && msg)
+
+#endif // WEOS_ENABLE_EXCEPTIONS
 
 #endif // WEOS_CONFIG_HPP

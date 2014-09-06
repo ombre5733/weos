@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -28,14 +28,14 @@
 
 #include "system_error.hpp"
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 //! An error category for CMSIS errors.
 class cmsis_category_impl : public error_category
 {
 public:
-    virtual const char* name() const BOOST_NOEXCEPT
+    virtual const char* name() const WEOS_NOEXCEPT
     {
         return "CMSIS";
     }
@@ -74,4 +74,4 @@ const error_category& cmsis_category()
     return categoryInstance;
 }
 
-} // namespace weos
+WEOS_END_NAMESPACE

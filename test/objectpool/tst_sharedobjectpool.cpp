@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "../../objectpool.hpp"
+#include <objectpool.hpp>
 
 #include "../common/testutils.hpp"
 #include "gtest/gtest.h"
@@ -35,18 +35,18 @@
 
 typedef double typeToTest;
 
-TEST(counting_object_pool, Constructor)
+TEST(shared_object_pool, Constructor)
 {
-    weos::counting_object_pool<typeToTest, 10> p;
+    weos::shared_object_pool<typeToTest, 10> p;
     ASSERT_FALSE(p.empty());
     ASSERT_EQ(10, p.capacity());
     ASSERT_EQ(10, p.size());
 }
 
-TEST(counting_object_pool, allocate)
+TEST(shared_object_pool, allocate)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_object_pool<typeToTest, POOL_SIZE> p;
+    weos::shared_object_pool<typeToTest, POOL_SIZE> p;
     char* chunks[POOL_SIZE];
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
@@ -60,7 +60,7 @@ TEST(counting_object_pool, allocate)
         // Check the alignment of the allocated chunk.
         char* addr = static_cast<char*>(c);
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(addr)
-                    % boost::alignment_of<typeToTest>::value == 0);
+                    % weos::alignment_of<typeToTest>::value == 0);
 
         for (unsigned j = 0; j < i; ++j)
         {
@@ -79,10 +79,10 @@ TEST(counting_object_pool, allocate)
     ASSERT_TRUE(p.empty());
 }
 
-TEST(counting_object_pool, try_allocate)
+TEST(shared_object_pool, try_allocate)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_object_pool<typeToTest, POOL_SIZE> p;
+    weos::shared_object_pool<typeToTest, POOL_SIZE> p;
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
@@ -97,10 +97,10 @@ TEST(counting_object_pool, try_allocate)
     }
 }
 
-TEST(counting_object_pool, allocate_and_free)
+TEST(shared_object_pool, allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_object_pool<typeToTest, POOL_SIZE> p;
+    weos::shared_object_pool<typeToTest, POOL_SIZE> p;
     typeToTest* chunks[POOL_SIZE];
 
     for (unsigned j = 1; j <= POOL_SIZE; ++j)
@@ -122,10 +122,10 @@ TEST(counting_object_pool, allocate_and_free)
     }
 }
 
-TEST(counting_object_pool, random_allocate_and_free)
+TEST(shared_object_pool, random_allocate_and_free)
 {
     const unsigned POOL_SIZE = 10;
-    weos::counting_object_pool<typeToTest, POOL_SIZE> p;
+    weos::shared_object_pool<typeToTest, POOL_SIZE> p;
     typeToTest* chunks[POOL_SIZE];
     std::set<void*> uniqueChunks;
     int numAllocatedChunks = 0;

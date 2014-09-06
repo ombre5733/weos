@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -32,26 +32,26 @@
 #include "config.hpp"
 
 #if defined(WEOS_WRAP_CXX11)
-#  include "cxx11/mutex.hpp"
+    #include "cxx11/mutex.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#  include "keil_cmsis_rtos/mutex.hpp"
+    #include "keil_cmsis_rtos/mutex.hpp"
 #elif defined(WEOS_WRAP_KEIL_RL_RTX)
-#  include "keil_rl_rtx/mutex.hpp"
+    #include "keil_rl_rtx/mutex.hpp"
 #else
-#  error "The OS wrapper has not been configured."
+    #error "Invalid native OS."
 #endif
 
 #include "chrono.hpp"
-#include <boost/utility.hpp>
 
-namespace weos
-{
+
+
+WEOS_BEGIN_NAMESPACE
 
 //! A null-mutex.
 //! The null-mutex is a class which implements the Lockable concept but
 //! does not block a thread. It can be used as a stub for a mutex in
 //! single-threaded applications.
-class null_mutex : boost::noncopyable
+class null_mutex
 {
 public:
     //! Locks the null-mutex.
@@ -75,8 +75,12 @@ public:
     void unlock()
     {
     }
+
+private:
+    null_mutex(const null_mutex&);
+    null_mutex& operator= (const null_mutex&);
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_MUTEX_HPP

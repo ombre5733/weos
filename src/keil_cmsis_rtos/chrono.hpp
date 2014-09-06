@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,17 +29,21 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 #define WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "../common/duration.hpp"
+#include "../common/ratio.hpp"
 #include "../common/timepoint.hpp"
+#include "../type_traits.hpp"
 
 #include <cstdint>
 
 // Declaration from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
 extern "C" std::uint32_t rt_time_get(void);
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
+
 namespace chrono
 {
 
@@ -54,11 +58,11 @@ class system_clock
 {
 public:
     typedef std::int32_t rep;
-    typedef boost::ratio<1, WEOS_SYSTICK_FREQUENCY> period;
+    typedef ratio<1, WEOS_SYSTICK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<system_clock> time_point;
 
-    static BOOST_CONSTEXPR_OR_CONST bool is_steady = true;
+    static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
 
     static time_point now()
     {
@@ -78,11 +82,11 @@ class high_resolution_clock
 {
 public:
     typedef std::int32_t rep;
-    typedef boost::ratio<1, WEOS_SYSTEM_CLOCK_FREQUENCY> period;
+    typedef ratio<1, WEOS_SYSTEM_CLOCK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<high_resolution_clock> time_point;
 
-    static BOOST_CONSTEXPR_OR_CONST bool is_steady = true;
+    static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
 
     static time_point now()
     {
@@ -103,8 +107,8 @@ struct cmsis_wait
 {
     // Create the ratio for converting from a duration d to another duration
     // t which is in milliseconds (t = d / 1e-3).
-    typedef typename boost::ratio_divide<PeriodT, boost::milli>::type ratio;
-    typedef typename boost::common_type<RepT, cast_least_int_type>::type
+    typedef typename ratio_divide<PeriodT, milli>::type ratio;
+    typedef typename common_type<RepT, cast_least_int_type>::type
         common_type;
 
     // Compute the maximum number of milliseconds which correspond to a SysTick
@@ -144,6 +148,7 @@ struct cmsis_wait
 } // namespace detail
 
 } // namespace chrono
-} // namespace weos
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP

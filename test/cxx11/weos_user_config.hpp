@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -30,15 +30,19 @@
 #define WEOS_USER_CONFIG_HPP
 
 // ----=====================================================================----
-//     C++11
+//     Native operating system configuration
 // ----=====================================================================----
+
+// -----------------------------------------------------------------------------
+//     C++11
+// -----------------------------------------------------------------------------
 
 // Set this macro to make WEOS wrap the native C++11 STL.
 #define WEOS_WRAP_CXX11
 
-// ----=====================================================================----
+// -----------------------------------------------------------------------------
 //     Keil CMSIS-RTOS
-// ----=====================================================================----
+// -----------------------------------------------------------------------------
 
 // Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
 // #define WEOS_WRAP_KEIL_CMSIS_RTOS
@@ -53,14 +57,12 @@
 #  define WEOS_SYSTICK_FREQUENCY            1000
 // The maximum number of threads which can be active concurrently.
 #  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
-// The maximum size of all arguments passed to a thread().
-#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     4 * sizeof(void*)
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 
-// ----=====================================================================----
+// -----------------------------------------------------------------------------
 //     Keil RL-RTX
-// ----=====================================================================----
+// -----------------------------------------------------------------------------
 
 // Set this macro to make WEOS wrap Keil's RL-RTX.
 // #define WEOS_WRAP_KEIL_RL_RTX
@@ -75,32 +77,56 @@
 #  define WEOS_SYSTICK_FREQUENCY            1000
 // The maximum number of threads which can be active concurrently.
 #  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
-// The maximum size of all arguments passed to a thread().
-#  define WEOS_MAX_THREAD_ARGUMENT_SIZE     4 * sizeof(void*)
 
 #endif // WEOS_WRAP_KEIL_RL_RTX
 
+
 // ----=====================================================================----
-//     General settings
+//     Wrapper configuration
 // ----=====================================================================----
 
-// If this macro is defined, the user has to provide the throw_exception()
-// function. The function's signature is
-// void ::weos::throw_exception(const std::exception& e);
-// This function must never return.
-// #define WEOS_CUSTOM_THROW_EXCEPTION
+// -----------------------------------------------------------------------------
+//     Assertion handling
+// -----------------------------------------------------------------------------
 
 // If this macro is defined, assertions are enabled in the WEOS library.
 // By default, the assertion is checked using the assert() function from
 // <cassert>.
-// #define WEOS_ENABLE_ASSERT
+#define WEOS_ENABLE_ASSERT
 
 // If this macro is defined, the user has to provide a handler for a failed
 // assertion. The function's signature is
-// void ::weos::assert_failed(const char* condition, const char* function,
-//                            const char* file, int line);
+//   [[noreturn]] void weos::assert_failed(const char* condition,
+//                                         const char* function,
+//                                         const char* file, int line);
 // Note: If WEOS_ENABLE_ASSERT is not defined, this macro has no effect.
 // #define WEOS_CUSTOM_ASSERT_HANDLER
+
+// -----------------------------------------------------------------------------
+//     Exception support
+// -----------------------------------------------------------------------------
+
+// If this macro is defined, exceptions are enabled in the WEOS library.
+// #define WEOS_ENABLE_EXCEPTIONS
+
+// If this macro is defined, the user has to provide the throw_exception()
+// function, which has to throw the given exception. This is usefull, if the
+// exception must be decorated in a user-defined way before it can be thrown.
+// The function's signature is
+//   [[noreturn]] void weos::throw_exception(const std::exception& e);
+// If the macro is not defined, WEOS uses a 'throw'-statement.
+// Note: If WEOS_ENABLE_EXCEPTIONS is not defined, this macro has no effect.
+// #define WEOS_CUSTOM_THROW_EXCEPTION
+
+// -----------------------------------------------------------------------------
+//     Miscellaneous
+// -----------------------------------------------------------------------------
+
+// The default storage size of a static_function<>.
+// A static_function<> holds a (member) function pointer and the bound
+// arguments (the fixed parameters). If the accumulated size of the bound
+// arguments exceeds the value below, a compile-time error is generated.
+#define WEOS_DEFAULT_STATIC_FUNCTION_SIZE   4 * sizeof(void*)
 
 
 
@@ -111,6 +137,6 @@
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   1
+#define WEOS_USER_CONFIG_VERSION   2
 
 #endif // WEOS_USER_CONFIG_HPP

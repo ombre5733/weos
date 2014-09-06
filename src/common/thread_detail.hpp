@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -31,15 +31,12 @@
 
 #include "../config.hpp"
 #include "functional.hpp"
+#include "system_error.hpp"
+#include "utility.hpp"
 
-#include <boost/move/move.hpp>
-#include <boost/static_assert.hpp>
-#include <boost/type_traits/aligned_storage.hpp>
-#include <boost/type_traits/decay.hpp>
-#include <boost/utility/enable_if.hpp>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
+
 namespace detail
 {
 
@@ -107,7 +104,7 @@ private:
 //! A thread handle.
 class thread
 {
-    BOOST_MOVABLE_BUT_NOT_COPYABLE(thread)
+    WEOS_MOVABLE_BUT_NOT_COPYABLE(thread)
 
     // An internal helper type for the enable_if machinery. Using a void pointer
     // is no good idea as it would match a user-supplied void pointer.
@@ -120,23 +117,23 @@ public:
     class id
     {
     public:
-        id() BOOST_NOEXCEPT
+        id() WEOS_NOEXCEPT
             : m_id(0)
         {
         }
 
-        explicit id(weos::detail::native_thread_traits::thread_id_type _id) BOOST_NOEXCEPT
+        explicit id(weos::detail::native_thread_traits::thread_id_type _id) WEOS_NOEXCEPT
             : m_id(_id)
         {
         }
 
     private:
-        friend bool operator== (id lhs, id rhs) BOOST_NOEXCEPT;
-        friend bool operator!= (id lhs, id rhs) BOOST_NOEXCEPT;
-        friend bool operator< (id lhs, id rhs) BOOST_NOEXCEPT;
-        friend bool operator<= (id lhs, id rhs) BOOST_NOEXCEPT;
-        friend bool operator> (id lhs, id rhs) BOOST_NOEXCEPT;
-        friend bool operator>= (id lhs, id rhs) BOOST_NOEXCEPT;
+        friend bool operator== (id lhs, id rhs) WEOS_NOEXCEPT;
+        friend bool operator!= (id lhs, id rhs) WEOS_NOEXCEPT;
+        friend bool operator< (id lhs, id rhs) WEOS_NOEXCEPT;
+        friend bool operator<= (id lhs, id rhs) WEOS_NOEXCEPT;
+        friend bool operator> (id lhs, id rhs) WEOS_NOEXCEPT;
+        friend bool operator>= (id lhs, id rhs) WEOS_NOEXCEPT;
 
         weos::detail::native_thread_traits::thread_id_type m_id;
     };
@@ -171,7 +168,7 @@ public:
         //! in bytes is passed in \p stackSize rather than the default stack.
         //!
         //! The default is a null-pointer for the stack and zero for its size.
-        void setCustomStack(void* stack, std::uint32_t stackSize)
+        void setCustomStack(void* stack, std::size_t stackSize)
         {
             m_customStack = stack;
             m_customStackSize = stackSize;
@@ -200,7 +197,7 @@ public:
     //! Creates a thread handle without a thread.
     //! Creates a thread handle which is not associated with any thread. The
     //! new thread handle is not joinable.
-    thread() BOOST_NOEXCEPT
+    thread() WEOS_NOEXCEPT
         : m_data(0)
     {
     }
@@ -211,15 +208,14 @@ public:
 
     template <typename F>
     explicit
-    thread(BOOST_FWD_REF(F) f,
-           typename boost::enable_if_c<
-               !boost::is_same<
-                    typename boost::decay<F>::type, thread>::value,
+    thread(WEOS_FWD_REF(F) f,
+           typename enable_if<
+               !is_same<typename decay<F>::type, thread>::value,
                _guard_type
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f));
+        m_data->m_invoker = bind<void>(forward<F>(f));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -227,17 +223,16 @@ public:
 
     template <typename F,
               typename A0>
-    thread(BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0,
-           typename boost::enable_if_c<
-               !boost::is_same<
-                    typename boost::decay<F>::type, attributes>::value,
+    thread(WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0,
+           typename enable_if<
+               !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -246,19 +241,18 @@ public:
     template <typename F,
               typename A0,
               typename A1>
-    thread(BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0,
-           BOOST_FWD_REF(A1) a1,
-           typename boost::enable_if_c<
-               !boost::is_same<
-                    typename boost::decay<F>::type, attributes>::value,
+    thread(WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0,
+           WEOS_FWD_REF(A1) a1,
+           typename enable_if<
+               !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0),
-                                       boost::forward<A1>(a1));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0),
+                                       forward<A1>(a1));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -268,21 +262,20 @@ public:
               typename A0,
               typename A1,
               typename A2>
-    thread(BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0,
-           BOOST_FWD_REF(A1) a1,
-           BOOST_FWD_REF(A2) a2,
-           typename boost::enable_if_c<
-               !boost::is_same<
-                    typename boost::decay<F>::type, attributes>::value,
+    thread(WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0,
+           WEOS_FWD_REF(A1) a1,
+           WEOS_FWD_REF(A2) a2,
+           typename enable_if<
+               !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0),
-                                       boost::forward<A1>(a1),
-                                       boost::forward<A2>(a2));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0),
+                                       forward<A1>(a1),
+                                       forward<A2>(a2));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -293,23 +286,22 @@ public:
               typename A1,
               typename A2,
               typename A3>
-    thread(BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0,
-           BOOST_FWD_REF(A1) a1,
-           BOOST_FWD_REF(A2) a2,
-           BOOST_FWD_REF(A3) a3,
-           typename boost::enable_if_c<
-               !boost::is_same<
-                    typename boost::decay<F>::type, attributes>::value,
+    thread(WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0,
+           WEOS_FWD_REF(A1) a1,
+           WEOS_FWD_REF(A2) a2,
+           WEOS_FWD_REF(A3) a3,
+           typename enable_if<
+               !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0),
-                                       boost::forward<A1>(a1),
-                                       boost::forward<A2>(a2),
-                                       boost::forward<A3>(a3));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0),
+                                       forward<A1>(a1),
+                                       forward<A2>(a2),
+                                       forward<A3>(a3));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -321,15 +313,14 @@ public:
 
     template <typename F>
     thread(const attributes& attrs,
-           BOOST_FWD_REF(F) f,
-           typename boost::enable_if_c<
-               !boost::is_same<
-                    typename boost::decay<F>::type, thread>::value,
+           WEOS_FWD_REF(F) f,
+           typename enable_if<
+               !is_same<typename decay<F>::type, thread>::value,
                _guard_type
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f));
+        m_data->m_invoker = bind<void>(forward<F>(f));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -340,12 +331,12 @@ public:
     template <typename F,
               typename A0>
     thread(const attributes& attrs,
-           BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0)
+           WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -357,14 +348,14 @@ public:
               typename A0,
               typename A1>
     thread(const attributes& attrs,
-           BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0,
-           BOOST_FWD_REF(A1) a1)
+           WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0,
+           WEOS_FWD_REF(A1) a1)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0),
-                                       boost::forward<A1>(a1));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0),
+                                       forward<A1>(a1));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -377,16 +368,16 @@ public:
               typename A1,
               typename A2>
     thread(const attributes& attrs,
-           BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0,
-           BOOST_FWD_REF(A1) a1,
-           BOOST_FWD_REF(A2) a2)
+           WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0,
+           WEOS_FWD_REF(A1) a1,
+           WEOS_FWD_REF(A2) a2)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0),
-                                       boost::forward<A1>(a1),
-                                       boost::forward<A2>(a2));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0),
+                                       forward<A1>(a1),
+                                       forward<A2>(a2));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -400,18 +391,18 @@ public:
               typename A2,
               typename A3>
     thread(const attributes& attrs,
-           BOOST_FWD_REF(F) f,
-           BOOST_FWD_REF(A0) a0,
-           BOOST_FWD_REF(A1) a1,
-           BOOST_FWD_REF(A2) a2,
-           BOOST_FWD_REF(A3) a3)
+           WEOS_FWD_REF(F) f,
+           WEOS_FWD_REF(A0) a0,
+           WEOS_FWD_REF(A1) a1,
+           WEOS_FWD_REF(A2) a2,
+           WEOS_FWD_REF(A3) a3)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(boost::forward<F>(f),
-                                       boost::forward<A0>(a0),
-                                       boost::forward<A1>(a1),
-                                       boost::forward<A2>(a2),
-                                       boost::forward<A3>(a3));
+        m_data->m_invoker = bind<void>(forward<F>(f),
+                                       forward<A0>(a0),
+                                       forward<A1>(a1),
+                                       forward<A2>(a2),
+                                       forward<A3>(a3));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -421,7 +412,7 @@ public:
 
     //! Move constructor.
     //! Constructs a thread by moving from the \p other thread.
-    thread(BOOST_RV_REF(thread) other)
+    thread(WEOS_RV_REF(thread) other)
         : m_data(other.m_data)
     {
         other.m_data = 0;
@@ -440,7 +431,7 @@ public:
 
     //! Move assignment.
     //! Move-assigns the \p other thread to this thread.
-    thread& operator= (BOOST_RV_REF(thread) other)
+    thread& operator= (WEOS_RV_REF(thread) other)
     {
         if (this != &other)
         {
@@ -454,15 +445,15 @@ public:
     void detach()
     {
         if (!joinable())
-        {
-            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-        }
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "thread::detach: thread is not joinable");
+
         m_data->deref();
         m_data = 0;
     }
 
     //! Returns the id of the thread.
-    id get_id() const BOOST_NOEXCEPT
+    id get_id() const WEOS_NOEXCEPT
     {
         if (m_data)
             return id(m_data->m_threadId);
@@ -476,9 +467,9 @@ public:
     void join()
     {
         if (!joinable())
-        {
-            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-        }
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "thread::join: thread is not joinable");
+
         m_data->m_finished.wait();
 
         // The thread data is not needed any longer.
@@ -491,7 +482,7 @@ public:
     //! \note If a thread is joinable, either join() or detach() must be
     //! called before the destructor is executed.
     inline
-    bool joinable() BOOST_NOEXCEPT
+    bool joinable() WEOS_NOEXCEPT
     {
         return m_data != 0;
     }
@@ -499,7 +490,7 @@ public:
     //! Returns the number of threads which can run concurrently on this
     //! hardware.
     inline
-    static unsigned hardware_concurrency() BOOST_NOEXCEPT
+    static unsigned hardware_concurrency() WEOS_NOEXCEPT
     {
         return 1;
     }
@@ -532,7 +523,9 @@ public:
     {
         if (!joinable())
         {
-            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+            WEOS_THROW_SYSTEM_ERROR(
+                        errc::operation_not_permitted,
+                        "thread::clear_signals: thread is not joinable");
         }
 
         detail::native_thread_traits::clear_signals(m_data->m_threadId, flags);
@@ -545,7 +538,9 @@ public:
     {
         if (!joinable())
         {
-            ::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
+            WEOS_THROW_SYSTEM_ERROR(
+                        errc::operation_not_permitted,
+                        "thread::set_signals: thread is not joinable");
         }
 
         detail::native_thread_traits::set_signals(m_data->m_threadId, flags);
@@ -570,49 +565,10 @@ private:
     detail::ThreadSharedData* m_data;
 };
 
-#if 0
-//! A thread with a custom stack.
-//! The custom_stack_thread is a convenience class for creating a thread with a
-//! custom stack. The memory for the stack is held statically by the object.
-//! Its size in bytes is determined at compile-time by the template
-//! parameter \p TStackSize.
-template <std::size_t TStackSize>
-class custom_stack_thread : public thread
-{
-    BOOST_STATIC_ASSERT(TStackSize >= weos::detail::native_thread_traits::minimum_custom_stack_size);
-
-public:
-    //! Creates a thread with a custom stack.
-    //! Starts the function \p fun with the argument \p arg in a new thread.
-    custom_stack_thread(void (*fun)(void*), void* arg)
-    {
-        thread::attributes attrs;
-        attrs.setCustomStack(m_stack.address(), TStackSize);
-        this->invokeWithCustomStack(attrs, fun, arg);
-    }
-
-    //! Creates a thread with a custom stack and a custom priority.
-    //! Runs the function \p fun with the argument \p arg in a new thread,
-    //! which has a custom stack and a user-defined priority of \p priority.
-    custom_stack_thread(thread::attributes::Priority priority,
-                        void (*fun)(void*), void* arg)
-    {
-        thread::attributes attrs;
-        attrs.setCustomStack(m_stack.address(), TStackSize);
-        attrs.setPriority(priority);
-        this->invokeWithCustomStack(attrs, fun, arg);
-    }
-
-private:
-    //! The custom stack.
-    typename ::boost::aligned_storage<TStackSize>::type m_stack;
-};
-#endif
-
 //! Compares two thread ids for equality.
 //! Returns \p true, if \p lhs and \p rhs are equal.
 inline
-bool operator== (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+bool operator== (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 {
     return lhs.m_id == rhs.m_id;
 }
@@ -620,7 +576,7 @@ bool operator== (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
 //! Compares two thread ids for inequality.
 //! Returns \p true, if \p lhs and \p rhs are not equal.
 inline
-bool operator!= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+bool operator!= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 {
     return lhs.m_id != rhs.m_id;
 }
@@ -628,7 +584,7 @@ bool operator!= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
 //! Less-than comparison for thread ids.
 //! Returns \p true, if \p lhs is less than \p rhs.
 inline
-bool operator< (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+bool operator< (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 {
     return lhs.m_id < rhs.m_id;
 }
@@ -636,7 +592,7 @@ bool operator< (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
 //! Less-than or equal comparison for thread ids.
 //! Returns \p true, if \p lhs is less than or equal to \p rhs.
 inline
-bool operator<= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+bool operator<= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 {
     return lhs.m_id <= rhs.m_id;
 }
@@ -644,7 +600,7 @@ bool operator<= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
 //! Greater-than comparison for thread ids.
 //! Returns \p true, if \p lhs is greater than \p rhs.
 inline
-bool operator> (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+bool operator> (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 {
     return lhs.m_id > rhs.m_id;
 }
@@ -652,11 +608,11 @@ bool operator> (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
 //! Greater-than or equal comparison for thread ids.
 //! Returns \p true, if \p lhs is greater than or equal to \p rhs.
 inline
-bool operator>= (thread::id lhs, thread::id rhs) BOOST_NOEXCEPT
+bool operator>= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 {
     return lhs.m_id >= rhs.m_id;
 }
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_THREAD_DETAIL_HPP

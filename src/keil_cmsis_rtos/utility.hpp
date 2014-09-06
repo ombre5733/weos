@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,26 +29,8 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_UTILITY_HPP
 #define WEOS_KEIL_CMSIS_RTOS_UTILITY_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
 
-#include <boost/move/move.hpp>
-
-namespace weos
-{
-
-using boost::forward;
-using boost::move;
-
-#ifdef ARMCC
-  struct nullptr_t {};
-#else
-  using std::nullptr_t;
-#endif
-
-} // namespace weos
-
-#ifdef ARMCC
-  BOOST_CONSTEXPR_OR_CONST weos::nullptr_t nullptr = weos::nullptr_t();
-#endif
+#include "../common/utility.hpp"
 
 #endif // WEOS_KEIL_CMSIS_RTOS_UTILITY_HPP

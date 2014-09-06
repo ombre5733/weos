@@ -1,7 +1,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013, Manuel Freiberger
+  Copyright (c) 2013-2014, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,12 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
 #define WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "../common/system_error.hpp"
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 //! Returns the category for CMSIS errors.
 const error_category& cmsis_category();
@@ -63,7 +64,7 @@ enum cmsis_error_t
 
 // Specialization for CMSIS error enum.
 template <>
-struct is_error_code_enum<cmsis_error::cmsis_error_t> : public boost::true_type
+struct is_error_code_enum<cmsis_error::cmsis_error_t> : public true_type
 {
 };
 
@@ -76,7 +77,7 @@ namespace cmsis_error
 inline
 weos::error_code make_error_code(cmsis_error_t err)
 {
-    return error_code(err, cmsis_category());
+    return error_code(static_cast<int>(err), cmsis_category());
 }
 
 /*
@@ -89,6 +90,6 @@ weos::error_code make_error_condition(cmsis_error_t err)
 
 } // namespace cmsis_error
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
