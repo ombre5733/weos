@@ -313,11 +313,7 @@ public:
 
     template <typename F>
     thread(const attributes& attrs,
-           WEOS_FWD_REF(F) f,
-           typename enable_if<
-               !is_same<typename decay<F>::type, thread>::value,
-               _guard_type
-           >::type* dummy = 0)
+           WEOS_FWD_REF(F) f)
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_invoker = bind<void>(forward<F>(f));
