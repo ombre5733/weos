@@ -35,6 +35,8 @@
     #include "cxx11/system_error.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/system_error.hpp"
+#elif defined(WEOS_WRAP_OSAL)
+    #include "osal/system_error.hpp"
 #else
     #error "Invalid native OS."
 #endif

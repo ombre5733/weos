@@ -37,6 +37,8 @@
     #include "keil_cmsis_rtos/utility.hpp"
 #elif defined(WEOS_WRAP_KEIL_RL_RTX)
     #include "keil_rl_rtx/utility.hpp"
+#elif defined(WEOS_WRAP_OSAL)
+    #include "osal/utility.hpp"
 #else
     #error "Invalid native OS."
 #endif

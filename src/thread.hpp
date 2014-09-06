@@ -35,6 +35,8 @@
     #include "cxx11/thread.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/thread.hpp"
+#elif defined(WEOS_WRAP_OSAL)
+    #include "osal/thread.hpp"
 #else
     #error "Invalid native OS."
 #endif

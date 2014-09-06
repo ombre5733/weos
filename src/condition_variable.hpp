@@ -37,6 +37,8 @@
     #include "keil_cmsis_rtos/condition_variable.hpp"
 #elif defined(WEOS_WRAP_KEIL_RL_RTX)
     #include "keil_rl_rtx/condition_variable.hpp"
+#elif defined(WEOS_WRAP_OSAL)
+    #include "osal/condition_variable.hpp"
 #else
     #error "Invalid native OS."
 #endif

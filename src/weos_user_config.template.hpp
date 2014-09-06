@@ -80,6 +80,14 @@
 
 #endif // WEOS_WRAP_KEIL_RL_RTX
 
+// -----------------------------------------------------------------------------
+//     OSAL
+// -----------------------------------------------------------------------------
+
+// Set this macro to make WEOS wrap OSAL.
+// #define WEOS_WRAP_OSAL
+
+
 
 // ----=====================================================================----
 //     Wrapper configuration
@@ -137,6 +145,6 @@
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   2
+#define WEOS_USER_CONFIG_VERSION   3
 
 #endif // WEOS_USER_CONFIG_HPP

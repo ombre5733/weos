@@ -35,6 +35,8 @@
     #include "cxx11/semaphore.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/semaphore.hpp"
+#elif defined(WEOS_WRAP_OSAL)
+    #include "osal/semaphore.hpp"
 #else
     #error "Invalid native OS."
 #endif

@@ -39,8 +39,8 @@
 #endif // WEOS_USER_CONFIG
 
 // Check the version of the user configuration file.
-#if WEOS_USER_CONFIG_VERSION != 2
-    #error "Version 2 of the WEOS user configuration is required."
+#if WEOS_USER_CONFIG_VERSION != 3
+    #error "Version 3 of the WEOS user configuration is required."
 #endif // WEOS_USER_CONFIG_VERSION
 
 
@@ -52,6 +52,7 @@
 #if defined(WEOS_WRAP_CXX11)
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 #elif defined(WEOS_WRAP_KEIL_RL_RTX)
+#elif defined(WEOS_WRAP_OSAL)
 #else
     #error "No native OS has been defined in the user configuration file."
 #endif // WEOS_WRAP_KEIL_RL_RTX

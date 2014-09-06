@@ -37,6 +37,8 @@
     #include "keil_cmsis_rtos/messagequeue.hpp"
 #elif defined(WEOS_WRAP_KEIL_RL_RTX)
     #include "keil_rl_rtx/messagequeue.hpp"
+#elif defined(WEOS_WRAP_OSAL)
+    #include "osal/messagequeue.hpp"
 #else
     #error "Invalid native OS."
 #endif
