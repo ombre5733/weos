@@ -542,8 +542,9 @@ def typeErasedBindInvoker(maxArgs):
 
     s += "enum AdapterTask\n"
     s += "{\n"
-    s += "    AdapterTaskClone,\n"
-    s += "    AdapterTaskDestroy\n"
+    s += "    AdapterTask_Clone,\n"
+    s += "    AdapterTask_CloneInto,\n"
+    s += "    AdapterTask_Destroy\n"
     s += "};\n\n"
 
     s += "// An adapter which allows to erase the type of a bind expression.\n"
@@ -551,17 +552,22 @@ def typeErasedBindInvoker(maxArgs):
     s += "struct BindAdapter\n"
     s += "{\n"
 
-    s += "    static void manage(AdapterTask task, void* self, const void* other)\n"
+    s += "    static void* manage(AdapterTask task, void* self, const void* other)\n"
     s += "    {\n"
     s += "        switch (task)\n"
     s += "        {\n"
-    s += "        case AdapterTaskClone:\n"
+    s += "        case AdapterTask_Clone:\n"
+    s += "            self = std::malloc(sizeof(TBindResult)); //! \\todo Hold in unique_ptr until copy construction is done\n"
     s += "            new (self) TBindResult(*static_cast<const TBindResult*>(other));\n"
-    s += "            break;\n"
-    s += "        case AdapterTaskDestroy:\n"
+    s += "            return self;\n"
+    s += "        case AdapterTask_CloneInto:\n"
+    s += "            new (self) TBindResult(*static_cast<const TBindResult*>(other));\n"
+    s += "            return self;\n"
+    s += "        case AdapterTask_Destroy:\n"
     s += "            static_cast<TBindResult*>(self)->~TBindResult();\n"
-    s += "            break;\n"
+    s += "            return 0;\n"
     s += "        }\n"
+    s += "        return 0;\n"
     s += "    }\n\n"
 
     def invoke(nargs):
@@ -593,6 +599,146 @@ def typeErasedBindInvoker(maxArgs):
     return s
 
 
+"""
+def functionBase():
+    namespace detail\n
+    {\n\n
+    struct function_pointer_tag {};\n
+    struct function_object_tag {};\n\n
+    template <typename TCallable>\n
+    struct FunctionTag\n
+    {\n
+        typedef typename conditional<is_pointer<TCallable>::value,\n
+                                     function_pointer_tag,\n
+                                     function_object_tag>::type type;\n
+    };\n\n
+    } // namespace detail\n\n
+"""
+
+def function(numArgs):
+    name = "function"
+    s = ""
+    s += "template <typename TResult"
+    if numArgs:
+        s += ",\n          "
+        s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
+    s += ">\n"
+    s += "class %s<TResult(" % name
+    s += ", ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ")>\n{\n"
+
+    s += "public:\n"
+    s += "    typedef TResult result_type;\n\n"
+
+    s += "    %s() WEOS_NOEXCEPT\n" % name
+    s += "        : m_invoker(0)\n"
+    s += "    {\n"
+    s += "    }\n\n"
+
+    s += "    %s(nullptr_t) WEOS_NOEXCEPT\n" % name
+    s += "        : m_invoker(0)\n"
+    s += "    {\n"
+    s += "    }\n\n"
+
+    s += "    %s(const %s& other)\n" % (name, name)
+    s += "        : m_invoker(0)\n"
+    s += "    {\n"
+    s += "        *this = other;\n"
+    s += "    }\n\n"
+
+    s += "    template <typename TSignature>\n"
+    s += "    %s(const detail::BindResult<result_type, TSignature>& expr)\n" % name
+    s += "        : m_invoker(0)\n"
+    s += "    {\n"
+    s += "        *this = expr;\n"
+    s += "    }\n\n"
+
+    s += "    ~%s()\n" % name
+    s += "    {\n"
+    s += "        release();\n"
+    s += "    }\n\n"
+
+    s += "    %s& operator= (const %s& other)\n" % (name, name)
+    s += "    {\n"
+    s += "        if (this != &other)\n"
+    s += "        {\n"
+    s += "            release();\n"
+    s += "            if (other.m_invoker)\n"
+    s += "            {\n"
+    s += "                m_manager = other.m_manager;\n"
+    s += "                m_storage = m_manager(detail::AdapterTask_Clone, 0, other.m_storage);\n"
+    s += "                m_invoker = other.m_invoker;\n"
+    s += "            }\n"
+    s += "        }\n"
+    s += "        return *this;\n"
+    s += "    }\n\n"
+
+    s += "    template <typename TSignature>\n"
+    s += "    %s& operator= (const detail::BindResult<result_type, TSignature>& expr)\n" % name
+    s += "    {\n"
+    s += "        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;\n\n"
+    s += "        release();\n"
+    s += "        m_manager = &adapter::manage;\n"
+    s += "        m_storage = m_manager(detail::AdapterTask_Clone, 0, &expr);\n"
+    s += "        m_invoker = &adapter::"
+    if numArgs == 0:
+        s += "invoke;\n"
+    else:
+        s += "template invoke<"
+        s += ",\n                                              ".join(["A%d" % i for i in xrange(numArgs)])
+        s += ">;\n"
+    s += "        return *this;\n"
+    s += "    }\n\n"
+
+    s += "    result_type operator() ("
+    s += ",\n                            ".join(["A%d a%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
+    s += "    {\n"
+    s += "        WEOS_ASSERT(m_invoker);\n"
+    s += "        return (*m_invoker)(m_storage"
+    if numArgs:
+        s += ",\n                            "
+        s += ",\n                            ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    }\n\n"
+
+    s += "    %s& operator= (nullptr_t)\n" % name
+    s += "    {\n"
+    s += "        release();\n"
+    s += "        return *this;\n"
+    s += "    }\n\n"
+
+    s += "    /*explicit*/ operator bool() const WEOS_NOEXCEPT\n"
+    s += "    {\n"
+    s += "        return m_invoker != 0;\n"
+    s += "    }\n\n"
+
+    s += "private:\n"
+    s += "    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);\n"
+    s += "    typedef result_type (*invoker_type)(void*"
+    if numArgs:
+        s += ",\n                                        "
+        s += ",\n                                        ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ");\n\n"
+
+    s += "    void* m_storage;\n"
+    s += "    manager_type m_manager;\n"
+    s += "    invoker_type m_invoker;\n\n"
+
+    s += "    void release()\n"
+    s += "    {\n"
+    s += "        if (m_invoker)\n"
+    s += "        {\n"
+    s += "            m_manager(detail::AdapterTask_Destroy, m_storage, 0);\n"
+    s += "            m_invoker = 0;\n"
+    s += "            std::free(m_storage);\n"
+    s += "        }\n"
+    s += "    }\n"
+
+    s += "};\n\n"
+    return s
+
+
 def staticFunction(numArgs):
     s = ""
     s += "template <typename TResult"
@@ -605,10 +751,23 @@ def staticFunction(numArgs):
     s += "), TStorageSize>\n{\n"
 
     s += "public:\n"
+    s += "    typedef TResult result_type;\n\n"
 
-    s += "    static_function()\n"
+    s += "    static_function() WEOS_NOEXCEPT\n"
     s += "        : m_invoker(0)\n"
     s += "    {\n"
+    s += "    }\n\n"
+
+    s += "    static_function(nullptr_t) WEOS_NOEXCEPT\n"
+    s += "        : m_invoker(0)\n"
+    s += "    {\n"
+    s += "    }\n\n"
+
+    s += "    template <typename TSignature>\n"
+    s += "    static_function(const detail::BindResult<result_type, TSignature>& expr)\n"
+    s += "        : m_invoker(0)\n"
+    s += "    {\n"
+    s += "        *this = expr;\n"
     s += "    }\n\n"
 
     s += "    ~static_function()\n"
@@ -617,14 +776,14 @@ def staticFunction(numArgs):
     s += "    }\n\n"
 
     s += "    template <typename TSignature>\n"
-    s += "    static_function& operator= (const detail::BindResult<TResult, TSignature>& expr)\n"
+    s += "    static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)\n"
     s += "    {\n"
     s += "        BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,\n"
     s += "                                \"The bind expression is too large for this function.\");\n\n"
-    s += "        typedef detail::BindAdapter<detail::BindResult<TResult, TSignature> > adapter;\n\n"
+    s += "        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;\n\n"
     s += "        release();\n"
     s += "        m_manager = &adapter::manage;\n"
-    s += "        m_manager(detail::AdapterTaskClone, &m_storage, &expr);\n"
+    s += "        m_manager(detail::AdapterTask_CloneInto, &m_storage, &expr);\n"
     s += "        m_invoker = &adapter::"
     if numArgs == 0:
         s += "invoke;\n"
@@ -635,10 +794,11 @@ def staticFunction(numArgs):
     s += "        return *this;\n"
     s += "    }\n\n"
 
-    s += "    TResult operator() ("
-    s += ",\n                        ".join(["A%d a%d" % (i,i) for i in xrange(numArgs)])
-    s += ")\n"
+    s += "    result_type operator() ("
+    s += ",\n                            ".join(["A%d a%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
     s += "    {\n"
+    s += "        WEOS_ASSERT(m_invoker);\n"
     s += "        return (*m_invoker)(&m_storage"
     if numArgs:
         s += ",\n                            "
@@ -646,23 +806,23 @@ def staticFunction(numArgs):
     s += ");\n"
     s += "    }\n\n"
 
-    s += "    static_function& operator= (weos::nullptr_t)\n"
+    s += "    static_function& operator= (nullptr_t)\n"
     s += "    {\n"
     s += "        release();\n"
     s += "        return *this;\n"
     s += "    }\n\n"
 
-    s += "    operator bool() const\n"
+    s += "    /*explicit*/ operator bool() const WEOS_NOEXCEPT\n"
     s += "    {\n"
     s += "        return m_invoker != 0;\n"
     s += "    }\n\n"
 
     s += "private:\n"
-    s += "    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);\n"
-    s += "    typedef TResult (*invoker_type)(void*"
+    s += "    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);\n"
+    s += "    typedef result_type (*invoker_type)(void*"
     if numArgs:
-        s += ",\n                                    "
-        s += ",\n                                    ".join(["A%d" % i for i in xrange(numArgs)])
+        s += ",\n                                        "
+        s += ",\n                                        ".join(["A%d" % i for i in xrange(numArgs)])
     s += ");\n\n"
 
     s += "    typename boost::aligned_storage<TStorageSize>::type m_storage;\n"
@@ -673,10 +833,13 @@ def staticFunction(numArgs):
     s += "    {\n"
     s += "        if (m_invoker)\n"
     s += "        {\n"
-    s += "            m_manager(detail::AdapterTaskDestroy, &m_storage, 0);\n"
+    s += "            m_manager(detail::AdapterTask_Destroy, &m_storage, 0);\n"
     s += "            m_invoker = 0;\n"
     s += "        }\n"
     s += "    }\n"
+
+    s += "static_function(const static_function&);\n"
+    s += "static_function& operator= (const static_function&);\n"
 
     s += "};\n\n"
     return s
@@ -698,7 +861,9 @@ def generateHeader(maxArgs):
     s += "#include <boost/move/move.hpp>\n"
     s += "#include <boost/type_traits.hpp>\n\n"
 
-    s += "namespace weos\n{\n\n"
+    s += "#include <cstdlib>\n\n"
+
+    s += "WEOS_BEGIN_NAMESPACE\n\n"
 
     s += placeholders(maxArgs)
 
@@ -735,12 +900,22 @@ def generateHeader(maxArgs):
         s += bind(i)
 
     s += "// ====================================================================\n"
-    s += "// static_function<>\n"
+    s += "// function<>\n"
     s += "// ====================================================================\n\n"
 
     s += "namespace detail\n{\n\n"
     s += typeErasedBindInvoker(maxArgs)
     s += "} // namespace detail\n\n"
+
+    s += "template <typename TSignature>\n"
+    s += "class function;\n\n"
+
+    for i in xrange(maxArgs + 1):
+        s += function(i)
+
+    s += "// ====================================================================\n"
+    s += "// static_function<>\n"
+    s += "// ====================================================================\n\n"
 
     s += "template <typename TSignature,\n"
     s += "          std::size_t TStorageSize = WEOS_DEFAULT_STATIC_FUNCTION_SIZE>\n"
@@ -749,7 +924,7 @@ def generateHeader(maxArgs):
     for i in xrange(maxArgs + 1):
         s += staticFunction(i)
 
-    s += "} // namespace weos\n\n"
+    s += "WEOS_END_NAMESPACE\n\n"
 
     s += "#endif // WEOS_COMMON_FUNCTIONAL_HPP\n\n"
 
@@ -764,14 +939,14 @@ def generateSource(maxArgs):
 
     s += "#include \"functional.hpp\"\n\n"
 
-    s += "namespace weos\n{\n\n"
+    s += "WEOS_BEGIN_NAMESPACE\n\n"
     s += "namespace placeholders\n{\n\n"
 
     for i in xrange(1, maxArgs + 1):
         s += "const placeholder<%d> _%d;\n" % (i,i)
 
     s += "} // namespace placeholders\n\n"
-    s += "} // namespace weos\n\n"
+    s += "WEOS_END_NAMESPACE\n\n"
 
     return s
 

@@ -29,8 +29,7 @@
 
 #include "functional.hpp"
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
 
 namespace placeholders
 {
@@ -41,5 +40,5 @@ const placeholder<3> _3;
 const placeholder<4> _4;
 } // namespace placeholders
 
-} // namespace weos
+WEOS_END_NAMESPACE
 

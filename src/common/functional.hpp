@@ -38,8 +38,9 @@
 #include <boost/move/move.hpp>
 #include <boost/type_traits.hpp>
 
-namespace weos
-{
+#include <cstdlib>
+
+WEOS_BEGIN_NAMESPACE
 
 namespace placeholders
 {
@@ -2212,7 +2213,7 @@ bind(BOOST_FWD_REF(TFunctor) f,
 }
 
 // ====================================================================
-// static_function<>
+// function<>
 // ====================================================================
 
 namespace detail
@@ -2220,25 +2221,31 @@ namespace detail
 
 enum AdapterTask
 {
-    AdapterTaskClone,
-    AdapterTaskDestroy
+    AdapterTask_Clone,
+    AdapterTask_CloneInto,
+    AdapterTask_Destroy
 };
 
 // An adapter which allows to erase the type of a bind expression.
 template <typename TBindResult>
 struct BindAdapter
 {
-    static void manage(AdapterTask task, void* self, const void* other)
+    static void* manage(AdapterTask task, void* self, const void* other)
     {
         switch (task)
         {
-        case AdapterTaskClone:
+        case AdapterTask_Clone:
+            self = std::malloc(sizeof(TBindResult)); //! \todo Hold in unique_ptr until copy construction is done
             new (self) TBindResult(*static_cast<const TBindResult*>(other));
-            break;
-        case AdapterTaskDestroy:
+            return self;
+        case AdapterTask_CloneInto:
+            new (self) TBindResult(*static_cast<const TBindResult*>(other));
+            return self;
+        case AdapterTask_Destroy:
             static_cast<TBindResult*>(self)->~TBindResult();
-            break;
+            return 0;
         }
+        return 0;
     }
 
     static typename TBindResult::result_type invoke(
@@ -2305,6 +2312,540 @@ struct BindAdapter
 
 } // namespace detail
 
+template <typename TSignature>
+class function;
+
+template <typename TResult>
+class function<TResult()>
+{
+public:
+    typedef TResult result_type;
+
+    function() WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(const function& other)
+        : m_invoker(0)
+    {
+        *this = other;
+    }
+
+    template <typename TSignature>
+    function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
+    }
+
+    ~function()
+    {
+        release();
+    }
+
+    function& operator= (const function& other)
+    {
+        if (this != &other)
+        {
+            release();
+            if (other.m_invoker)
+            {
+                m_manager = other.m_manager;
+                m_storage = m_manager(detail::AdapterTask_Clone, 0, other.m_storage);
+                m_invoker = other.m_invoker;
+            }
+        }
+        return *this;
+    }
+
+    template <typename TSignature>
+    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
+    {
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
+
+        release();
+        m_manager = &adapter::manage;
+        m_storage = m_manager(detail::AdapterTask_Clone, 0, &expr);
+        m_invoker = &adapter::invoke;
+        return *this;
+    }
+
+    result_type operator() () const
+    {
+        WEOS_ASSERT(m_invoker);
+        return (*m_invoker)(m_storage);
+    }
+
+    function& operator= (nullptr_t)
+    {
+        release();
+        return *this;
+    }
+
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
+    {
+        return m_invoker != 0;
+    }
+
+private:
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*);
+
+    void* m_storage;
+    manager_type m_manager;
+    invoker_type m_invoker;
+
+    void release()
+    {
+        if (m_invoker)
+        {
+            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
+            m_invoker = 0;
+            std::free(m_storage);
+        }
+    }
+};
+
+template <typename TResult,
+          typename A0>
+class function<TResult(A0)>
+{
+public:
+    typedef TResult result_type;
+
+    function() WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(const function& other)
+        : m_invoker(0)
+    {
+        *this = other;
+    }
+
+    template <typename TSignature>
+    function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
+    }
+
+    ~function()
+    {
+        release();
+    }
+
+    function& operator= (const function& other)
+    {
+        if (this != &other)
+        {
+            release();
+            if (other.m_invoker)
+            {
+                m_manager = other.m_manager;
+                m_storage = m_manager(detail::AdapterTask_Clone, 0, other.m_storage);
+                m_invoker = other.m_invoker;
+            }
+        }
+        return *this;
+    }
+
+    template <typename TSignature>
+    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
+    {
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
+
+        release();
+        m_manager = &adapter::manage;
+        m_storage = m_manager(detail::AdapterTask_Clone, 0, &expr);
+        m_invoker = &adapter::template invoke<A0>;
+        return *this;
+    }
+
+    result_type operator() (A0 a0) const
+    {
+        WEOS_ASSERT(m_invoker);
+        return (*m_invoker)(m_storage,
+                            boost::forward<A0>(a0));
+    }
+
+    function& operator= (nullptr_t)
+    {
+        release();
+        return *this;
+    }
+
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
+    {
+        return m_invoker != 0;
+    }
+
+private:
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0);
+
+    void* m_storage;
+    manager_type m_manager;
+    invoker_type m_invoker;
+
+    void release()
+    {
+        if (m_invoker)
+        {
+            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
+            m_invoker = 0;
+            std::free(m_storage);
+        }
+    }
+};
+
+template <typename TResult,
+          typename A0,
+          typename A1>
+class function<TResult(A0, A1)>
+{
+public:
+    typedef TResult result_type;
+
+    function() WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(const function& other)
+        : m_invoker(0)
+    {
+        *this = other;
+    }
+
+    template <typename TSignature>
+    function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
+    }
+
+    ~function()
+    {
+        release();
+    }
+
+    function& operator= (const function& other)
+    {
+        if (this != &other)
+        {
+            release();
+            if (other.m_invoker)
+            {
+                m_manager = other.m_manager;
+                m_storage = m_manager(detail::AdapterTask_Clone, 0, other.m_storage);
+                m_invoker = other.m_invoker;
+            }
+        }
+        return *this;
+    }
+
+    template <typename TSignature>
+    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
+    {
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
+
+        release();
+        m_manager = &adapter::manage;
+        m_storage = m_manager(detail::AdapterTask_Clone, 0, &expr);
+        m_invoker = &adapter::template invoke<A0,
+                                              A1>;
+        return *this;
+    }
+
+    result_type operator() (A0 a0,
+                            A1 a1) const
+    {
+        WEOS_ASSERT(m_invoker);
+        return (*m_invoker)(m_storage,
+                            boost::forward<A0>(a0),
+                            boost::forward<A1>(a1));
+    }
+
+    function& operator= (nullptr_t)
+    {
+        release();
+        return *this;
+    }
+
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
+    {
+        return m_invoker != 0;
+    }
+
+private:
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0,
+                                        A1);
+
+    void* m_storage;
+    manager_type m_manager;
+    invoker_type m_invoker;
+
+    void release()
+    {
+        if (m_invoker)
+        {
+            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
+            m_invoker = 0;
+            std::free(m_storage);
+        }
+    }
+};
+
+template <typename TResult,
+          typename A0,
+          typename A1,
+          typename A2>
+class function<TResult(A0, A1, A2)>
+{
+public:
+    typedef TResult result_type;
+
+    function() WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(const function& other)
+        : m_invoker(0)
+    {
+        *this = other;
+    }
+
+    template <typename TSignature>
+    function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
+    }
+
+    ~function()
+    {
+        release();
+    }
+
+    function& operator= (const function& other)
+    {
+        if (this != &other)
+        {
+            release();
+            if (other.m_invoker)
+            {
+                m_manager = other.m_manager;
+                m_storage = m_manager(detail::AdapterTask_Clone, 0, other.m_storage);
+                m_invoker = other.m_invoker;
+            }
+        }
+        return *this;
+    }
+
+    template <typename TSignature>
+    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
+    {
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
+
+        release();
+        m_manager = &adapter::manage;
+        m_storage = m_manager(detail::AdapterTask_Clone, 0, &expr);
+        m_invoker = &adapter::template invoke<A0,
+                                              A1,
+                                              A2>;
+        return *this;
+    }
+
+    result_type operator() (A0 a0,
+                            A1 a1,
+                            A2 a2) const
+    {
+        WEOS_ASSERT(m_invoker);
+        return (*m_invoker)(m_storage,
+                            boost::forward<A0>(a0),
+                            boost::forward<A1>(a1),
+                            boost::forward<A2>(a2));
+    }
+
+    function& operator= (nullptr_t)
+    {
+        release();
+        return *this;
+    }
+
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
+    {
+        return m_invoker != 0;
+    }
+
+private:
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0,
+                                        A1,
+                                        A2);
+
+    void* m_storage;
+    manager_type m_manager;
+    invoker_type m_invoker;
+
+    void release()
+    {
+        if (m_invoker)
+        {
+            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
+            m_invoker = 0;
+            std::free(m_storage);
+        }
+    }
+};
+
+template <typename TResult,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+class function<TResult(A0, A1, A2, A3)>
+{
+public:
+    typedef TResult result_type;
+
+    function() WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    function(const function& other)
+        : m_invoker(0)
+    {
+        *this = other;
+    }
+
+    template <typename TSignature>
+    function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
+    }
+
+    ~function()
+    {
+        release();
+    }
+
+    function& operator= (const function& other)
+    {
+        if (this != &other)
+        {
+            release();
+            if (other.m_invoker)
+            {
+                m_manager = other.m_manager;
+                m_storage = m_manager(detail::AdapterTask_Clone, 0, other.m_storage);
+                m_invoker = other.m_invoker;
+            }
+        }
+        return *this;
+    }
+
+    template <typename TSignature>
+    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
+    {
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
+
+        release();
+        m_manager = &adapter::manage;
+        m_storage = m_manager(detail::AdapterTask_Clone, 0, &expr);
+        m_invoker = &adapter::template invoke<A0,
+                                              A1,
+                                              A2,
+                                              A3>;
+        return *this;
+    }
+
+    result_type operator() (A0 a0,
+                            A1 a1,
+                            A2 a2,
+                            A3 a3) const
+    {
+        WEOS_ASSERT(m_invoker);
+        return (*m_invoker)(m_storage,
+                            boost::forward<A0>(a0),
+                            boost::forward<A1>(a1),
+                            boost::forward<A2>(a2),
+                            boost::forward<A3>(a3));
+    }
+
+    function& operator= (nullptr_t)
+    {
+        release();
+        return *this;
+    }
+
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
+    {
+        return m_invoker != 0;
+    }
+
+private:
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0,
+                                        A1,
+                                        A2,
+                                        A3);
+
+    void* m_storage;
+    manager_type m_manager;
+    invoker_type m_invoker;
+
+    void release()
+    {
+        if (m_invoker)
+        {
+            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
+            m_invoker = 0;
+            std::free(m_storage);
+        }
+    }
+};
+
+// ====================================================================
+// static_function<>
+// ====================================================================
+
 template <typename TSignature,
           std::size_t TStorageSize = WEOS_DEFAULT_STATIC_FUNCTION_SIZE>
 class static_function;
@@ -2314,9 +2855,23 @@ template <typename TResult,
 class static_function<TResult(), TStorageSize>
 {
 public:
-    static_function()
+    typedef TResult result_type;
+
+    static_function() WEOS_NOEXCEPT
         : m_invoker(0)
     {
+    }
+
+    static_function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    template <typename TSignature>
+    static_function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
     }
 
     ~static_function()
@@ -2325,39 +2880,40 @@ public:
     }
 
     template <typename TSignature>
-    static_function& operator= (const detail::BindResult<TResult, TSignature>& expr)
+    static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
         BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
                                 "The bind expression is too large for this function.");
 
-        typedef detail::BindAdapter<detail::BindResult<TResult, TSignature> > adapter;
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
         release();
         m_manager = &adapter::manage;
-        m_manager(detail::AdapterTaskClone, &m_storage, &expr);
+        m_manager(detail::AdapterTask_CloneInto, &m_storage, &expr);
         m_invoker = &adapter::invoke;
         return *this;
     }
 
-    TResult operator() ()
+    result_type operator() () const
     {
+        WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage);
     }
 
-    static_function& operator= (weos::nullptr_t)
+    static_function& operator= (nullptr_t)
     {
         release();
         return *this;
     }
 
-    operator bool() const
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
     {
         return m_invoker != 0;
     }
 
 private:
-    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult (*invoker_type)(void*);
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2367,10 +2923,12 @@ private:
     {
         if (m_invoker)
         {
-            m_manager(detail::AdapterTaskDestroy, &m_storage, 0);
+            m_manager(detail::AdapterTask_Destroy, &m_storage, 0);
             m_invoker = 0;
         }
     }
+static_function(const static_function&);
+static_function& operator= (const static_function&);
 };
 
 template <typename TResult,
@@ -2379,9 +2937,23 @@ template <typename TResult,
 class static_function<TResult(A0), TStorageSize>
 {
 public:
-    static_function()
+    typedef TResult result_type;
+
+    static_function() WEOS_NOEXCEPT
         : m_invoker(0)
     {
+    }
+
+    static_function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    template <typename TSignature>
+    static_function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
     }
 
     ~static_function()
@@ -2390,41 +2962,42 @@ public:
     }
 
     template <typename TSignature>
-    static_function& operator= (const detail::BindResult<TResult, TSignature>& expr)
+    static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
         BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
                                 "The bind expression is too large for this function.");
 
-        typedef detail::BindAdapter<detail::BindResult<TResult, TSignature> > adapter;
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
         release();
         m_manager = &adapter::manage;
-        m_manager(detail::AdapterTaskClone, &m_storage, &expr);
+        m_manager(detail::AdapterTask_CloneInto, &m_storage, &expr);
         m_invoker = &adapter::template invoke<A0>;
         return *this;
     }
 
-    TResult operator() (A0 a0)
+    result_type operator() (A0 a0) const
     {
+        WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0));
     }
 
-    static_function& operator= (weos::nullptr_t)
+    static_function& operator= (nullptr_t)
     {
         release();
         return *this;
     }
 
-    operator bool() const
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
     {
         return m_invoker != 0;
     }
 
 private:
-    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult (*invoker_type)(void*,
-                                    A0);
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2434,10 +3007,12 @@ private:
     {
         if (m_invoker)
         {
-            m_manager(detail::AdapterTaskDestroy, &m_storage, 0);
+            m_manager(detail::AdapterTask_Destroy, &m_storage, 0);
             m_invoker = 0;
         }
     }
+static_function(const static_function&);
+static_function& operator= (const static_function&);
 };
 
 template <typename TResult,
@@ -2447,9 +3022,23 @@ template <typename TResult,
 class static_function<TResult(A0, A1), TStorageSize>
 {
 public:
-    static_function()
+    typedef TResult result_type;
+
+    static_function() WEOS_NOEXCEPT
         : m_invoker(0)
     {
+    }
+
+    static_function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    template <typename TSignature>
+    static_function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
     }
 
     ~static_function()
@@ -2458,45 +3047,46 @@ public:
     }
 
     template <typename TSignature>
-    static_function& operator= (const detail::BindResult<TResult, TSignature>& expr)
+    static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
         BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
                                 "The bind expression is too large for this function.");
 
-        typedef detail::BindAdapter<detail::BindResult<TResult, TSignature> > adapter;
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
         release();
         m_manager = &adapter::manage;
-        m_manager(detail::AdapterTaskClone, &m_storage, &expr);
+        m_manager(detail::AdapterTask_CloneInto, &m_storage, &expr);
         m_invoker = &adapter::template invoke<A0,
                                               A1>;
         return *this;
     }
 
-    TResult operator() (A0 a0,
-                        A1 a1)
+    result_type operator() (A0 a0,
+                            A1 a1) const
     {
+        WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0),
                             boost::forward<A1>(a1));
     }
 
-    static_function& operator= (weos::nullptr_t)
+    static_function& operator= (nullptr_t)
     {
         release();
         return *this;
     }
 
-    operator bool() const
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
     {
         return m_invoker != 0;
     }
 
 private:
-    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult (*invoker_type)(void*,
-                                    A0,
-                                    A1);
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0,
+                                        A1);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2506,10 +3096,12 @@ private:
     {
         if (m_invoker)
         {
-            m_manager(detail::AdapterTaskDestroy, &m_storage, 0);
+            m_manager(detail::AdapterTask_Destroy, &m_storage, 0);
             m_invoker = 0;
         }
     }
+static_function(const static_function&);
+static_function& operator= (const static_function&);
 };
 
 template <typename TResult,
@@ -2520,9 +3112,23 @@ template <typename TResult,
 class static_function<TResult(A0, A1, A2), TStorageSize>
 {
 public:
-    static_function()
+    typedef TResult result_type;
+
+    static_function() WEOS_NOEXCEPT
         : m_invoker(0)
     {
+    }
+
+    static_function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    template <typename TSignature>
+    static_function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
     }
 
     ~static_function()
@@ -2531,49 +3137,50 @@ public:
     }
 
     template <typename TSignature>
-    static_function& operator= (const detail::BindResult<TResult, TSignature>& expr)
+    static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
         BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
                                 "The bind expression is too large for this function.");
 
-        typedef detail::BindAdapter<detail::BindResult<TResult, TSignature> > adapter;
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
         release();
         m_manager = &adapter::manage;
-        m_manager(detail::AdapterTaskClone, &m_storage, &expr);
+        m_manager(detail::AdapterTask_CloneInto, &m_storage, &expr);
         m_invoker = &adapter::template invoke<A0,
                                               A1,
                                               A2>;
         return *this;
     }
 
-    TResult operator() (A0 a0,
-                        A1 a1,
-                        A2 a2)
+    result_type operator() (A0 a0,
+                            A1 a1,
+                            A2 a2) const
     {
+        WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0),
                             boost::forward<A1>(a1),
                             boost::forward<A2>(a2));
     }
 
-    static_function& operator= (weos::nullptr_t)
+    static_function& operator= (nullptr_t)
     {
         release();
         return *this;
     }
 
-    operator bool() const
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
     {
         return m_invoker != 0;
     }
 
 private:
-    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult (*invoker_type)(void*,
-                                    A0,
-                                    A1,
-                                    A2);
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0,
+                                        A1,
+                                        A2);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2583,10 +3190,12 @@ private:
     {
         if (m_invoker)
         {
-            m_manager(detail::AdapterTaskDestroy, &m_storage, 0);
+            m_manager(detail::AdapterTask_Destroy, &m_storage, 0);
             m_invoker = 0;
         }
     }
+static_function(const static_function&);
+static_function& operator= (const static_function&);
 };
 
 template <typename TResult,
@@ -2598,9 +3207,23 @@ template <typename TResult,
 class static_function<TResult(A0, A1, A2, A3), TStorageSize>
 {
 public:
-    static_function()
+    typedef TResult result_type;
+
+    static_function() WEOS_NOEXCEPT
         : m_invoker(0)
     {
+    }
+
+    static_function(nullptr_t) WEOS_NOEXCEPT
+        : m_invoker(0)
+    {
+    }
+
+    template <typename TSignature>
+    static_function(const detail::BindResult<result_type, TSignature>& expr)
+        : m_invoker(0)
+    {
+        *this = expr;
     }
 
     ~static_function()
@@ -2609,16 +3232,16 @@ public:
     }
 
     template <typename TSignature>
-    static_function& operator= (const detail::BindResult<TResult, TSignature>& expr)
+    static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
         BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
                                 "The bind expression is too large for this function.");
 
-        typedef detail::BindAdapter<detail::BindResult<TResult, TSignature> > adapter;
+        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
         release();
         m_manager = &adapter::manage;
-        m_manager(detail::AdapterTaskClone, &m_storage, &expr);
+        m_manager(detail::AdapterTask_CloneInto, &m_storage, &expr);
         m_invoker = &adapter::template invoke<A0,
                                               A1,
                                               A2,
@@ -2626,11 +3249,12 @@ public:
         return *this;
     }
 
-    TResult operator() (A0 a0,
-                        A1 a1,
-                        A2 a2,
-                        A3 a3)
+    result_type operator() (A0 a0,
+                            A1 a1,
+                            A2 a2,
+                            A3 a3) const
     {
+        WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
                             boost::forward<A0>(a0),
                             boost::forward<A1>(a1),
@@ -2638,24 +3262,24 @@ public:
                             boost::forward<A3>(a3));
     }
 
-    static_function& operator= (weos::nullptr_t)
+    static_function& operator= (nullptr_t)
     {
         release();
         return *this;
     }
 
-    operator bool() const
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
     {
         return m_invoker != 0;
     }
 
 private:
-    typedef void (*manager_type)(detail::AdapterTask, void*, const void*);
-    typedef TResult (*invoker_type)(void*,
-                                    A0,
-                                    A1,
-                                    A2,
-                                    A3);
+    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
+    typedef result_type (*invoker_type)(void*,
+                                        A0,
+                                        A1,
+                                        A2,
+                                        A3);
 
     typename boost::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
@@ -2665,13 +3289,15 @@ private:
     {
         if (m_invoker)
         {
-            m_manager(detail::AdapterTaskDestroy, &m_storage, 0);
+            m_manager(detail::AdapterTask_Destroy, &m_storage, 0);
             m_invoker = 0;
         }
     }
+static_function(const static_function&);
+static_function& operator= (const static_function&);
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_FUNCTIONAL_HPP
 
