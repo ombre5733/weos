@@ -367,14 +367,14 @@ def bindResult(numArgs, maxArgs):
             s += "    template <"
             s += ",\n              ".join(["typename T%d" % i for i in xrange(nargs)])
             s += ">\n"
-        s += "    TResult operator() ("
-        s += ",\n                        ".join(["BOOST_FWD_REF(T%d) t%d" % (i,i) for i in xrange(nargs)])
+        s += "    result_type operator() ("
+        s += ",\n                            ".join(["BOOST_FWD_REF(T%d) t%d" % (i,i) for i in xrange(nargs)])
         s += ")"
         if qualifier:
             s += " " + qualifier
         s += "\n"
         s += "    {\n"
-        s += "        return this->invoke<TResult>(\n"
+        s += "        return this->invoke<result_type>(\n"
         s += "                forward_as_argument_tuple("
         if nargs:
             s += "\n                    "
@@ -505,6 +505,40 @@ def bindHelper(numArgs, maxArgs):
 def bind(numArgs):
     s = ""
 
+    s += "template <typename TFunctor"
+    if numArgs:
+        s += ",\n          "
+        s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
+    s += ">\n"
+    s += "inline\n"
+    s += "typename detail::bind_helper<detail::unspecified_type,\n"
+    s += "                             TFunctor"
+    if numArgs:
+        s += ",\n                             "
+        s += ",\n                             ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ">::type\n"
+    s += "bind(BOOST_FWD_REF(TFunctor) f"
+    if numArgs:
+        s += ",\n     "
+        s += ",\n     ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
+    s += ")\n{\n"
+    s += "    typedef typename detail::bind_helper<detail::unspecified_type,\n"
+    s += "                                         TFunctor"
+    if numArgs:
+        s += ",\n                                         "
+        s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ">::type bound_type;\n"
+    s += "    return bound_type(boost::forward<TFunctor>(f)"
+    if numArgs:
+        s += ",\n                      "
+        s += ",\n                      ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "}\n\n"
+    return s
+
+def bindWithResult(numArgs):
+    s = ""
+
     s += "template <typename TResult,\n"
     s += "          typename TFunctor"
     if numArgs:
@@ -530,6 +564,47 @@ def bind(numArgs):
         s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
     s += ">::type bound_type;\n"
     s += "    return bound_type(boost::forward<TFunctor>(f)"
+    if numArgs:
+        s += ",\n                      "
+        s += ",\n                      ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "}\n\n"
+    return s
+
+def bindFunctionPointer(numArgs):
+    s = ""
+
+    s += "template <typename TResult"
+    if numArgs:
+        s += ",\n          "
+        s += ",\n          ".join(["typename T%d" % i for i in xrange(numArgs)])
+        s += ",\n          "
+        s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
+    s += ">\n"
+    s += "inline\n"
+    s += "typename detail::bind_helper<TResult,\n"
+    s += "                             TResult (*) ("
+    if numArgs:
+        s += ", ".join(["T%d" % i for i in xrange(numArgs)])
+    s += ")>::type\n"
+    s += "bind(TResult (*f) ("
+    if numArgs:
+        s += ", ".join(["T%d" % i for i in xrange(numArgs)])
+    s += ")"
+    if numArgs:
+        s += ",\n     "
+        s += ",\n     ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
+    s += ")\n{\n"
+    s += "    typedef TResult (*fun_t) ("
+    if numArgs:
+        s += ", ".join(["T%d" % i for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    typedef typename detail::bind_helper<TResult, fun_t"
+    if numArgs:
+        s += ",\n                                         "
+        s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ">::type bound_type;\n"
+    s += "    return bound_type(f"
     if numArgs:
         s += ",\n                      "
         s += ",\n                      ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
@@ -606,7 +681,7 @@ def functionBase():
     struct function_pointer_tag {};\n
     struct function_object_tag {};\n\n
     template <typename TCallable>\n
-    struct FunctionTag\n
+    struct callable_traits\n
     {\n
         typedef typename conditional<is_pointer<TCallable>::value,\n
                                      function_pointer_tag,\n
@@ -869,6 +944,19 @@ def generateHeader(maxArgs):
 
     s += "namespace detail\n{\n\n"
 
+    s += "struct unspecified_type {};\n\n"
+    s += "template <typename TResult, typename TF>\n"
+    s += "struct result_traits\n"
+    s += "{\n"
+    s += "    typedef TResult type;\n"
+    s += "};\n\n"
+
+    s += "template <typename TF>\n"
+    s += "struct result_traits<unspecified_type, TF>\n"
+    s += "{\n"
+    s += "    typedef typename TF::result_type type;\n"
+    s += "};\n\n"
+
     s += "// ====================================================================\n"
     s += "// argument_tuple<>\n"
     s += "// ====================================================================\n\n"
@@ -897,7 +985,9 @@ def generateHeader(maxArgs):
     s += "// ====================================================================\n\n"
 
     for i in xrange(maxArgs + 1):
-        s += bind(i)
+        s += bindFunctionPointer(i)
+    for i in xrange(maxArgs + 1):
+        s += bindWithResult(i)
 
     s += "// ====================================================================\n"
     s += "// function<>\n"

@@ -70,6 +70,20 @@ struct is_placeholder<placeholders::placeholder<TIndex> >
 namespace detail
 {
 
+struct unspecified_type {};
+
+template <typename TResult, typename TF>
+struct result_traits
+{
+    typedef TResult type;
+};
+
+template <typename TF>
+struct result_traits<unspecified_type, TF>
+{
+    typedef typename TF::result_type type;
+};
+
 // ====================================================================
 // argument_tuple<>
 // ====================================================================
@@ -573,40 +587,40 @@ struct BindResult<TResult, F()>
     {
     }
 
-    TResult operator() ()
+    result_type operator() ()
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
-    TResult operator() () const
+    result_type operator() () const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (BOOST_FWD_REF(T0) t0)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (BOOST_FWD_REF(T0) t0) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -614,10 +628,10 @@ struct BindResult<TResult, F()>
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -626,11 +640,11 @@ struct BindResult<TResult, F()>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -640,11 +654,11 @@ struct BindResult<TResult, F()>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -655,12 +669,12 @@ struct BindResult<TResult, F()>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -672,12 +686,12 @@ struct BindResult<TResult, F()>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -773,40 +787,40 @@ struct BindResult<TResult, F(A0)>
     {
     }
 
-    TResult operator() ()
+    result_type operator() ()
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
-    TResult operator() () const
+    result_type operator() () const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (BOOST_FWD_REF(T0) t0)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (BOOST_FWD_REF(T0) t0) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -814,10 +828,10 @@ struct BindResult<TResult, F(A0)>
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -826,11 +840,11 @@ struct BindResult<TResult, F(A0)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -840,11 +854,11 @@ struct BindResult<TResult, F(A0)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -855,12 +869,12 @@ struct BindResult<TResult, F(A0)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -872,12 +886,12 @@ struct BindResult<TResult, F(A0)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1053,40 +1067,40 @@ struct BindResult<TResult, F(A0, A1)>
     {
     }
 
-    TResult operator() ()
+    result_type operator() ()
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
-    TResult operator() () const
+    result_type operator() () const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (BOOST_FWD_REF(T0) t0)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (BOOST_FWD_REF(T0) t0) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -1094,10 +1108,10 @@ struct BindResult<TResult, F(A0, A1)>
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -1106,11 +1120,11 @@ struct BindResult<TResult, F(A0, A1)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1120,11 +1134,11 @@ struct BindResult<TResult, F(A0, A1)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1135,12 +1149,12 @@ struct BindResult<TResult, F(A0, A1)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1152,12 +1166,12 @@ struct BindResult<TResult, F(A0, A1)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1361,40 +1375,40 @@ struct BindResult<TResult, F(A0, A1, A2)>
     {
     }
 
-    TResult operator() ()
+    result_type operator() ()
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
-    TResult operator() () const
+    result_type operator() () const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (BOOST_FWD_REF(T0) t0)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (BOOST_FWD_REF(T0) t0) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -1402,10 +1416,10 @@ struct BindResult<TResult, F(A0, A1, A2)>
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -1414,11 +1428,11 @@ struct BindResult<TResult, F(A0, A1, A2)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1428,11 +1442,11 @@ struct BindResult<TResult, F(A0, A1, A2)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1443,12 +1457,12 @@ struct BindResult<TResult, F(A0, A1, A2)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1460,12 +1474,12 @@ struct BindResult<TResult, F(A0, A1, A2)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1697,40 +1711,40 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
     {
     }
 
-    TResult operator() ()
+    result_type operator() ()
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
-    TResult operator() () const
+    result_type operator() () const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple());
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (BOOST_FWD_REF(T0) t0)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0>
-    TResult operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (BOOST_FWD_REF(T0) t0) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -1738,10 +1752,10 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
 
     template <typename T0,
               typename T1>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1)));
@@ -1750,11 +1764,11 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1764,11 +1778,11 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
     template <typename T0,
               typename T1,
               typename T2>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1779,12 +1793,12 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3)
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3)
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -1796,12 +1810,12 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
               typename T1,
               typename T2,
               typename T3>
-    TResult operator() (BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3) const
+    result_type operator() (BOOST_FWD_REF(T0) t0,
+                            BOOST_FWD_REF(T1) t1,
+                            BOOST_FWD_REF(T2) t2,
+                            BOOST_FWD_REF(T3) t3) const
     {
-        return this->invoke<TResult>(
+        return this->invoke<result_type>(
                 forward_as_argument_tuple(
                     boost::forward<T0>(t0),
                     boost::forward<T1>(t1),
@@ -2101,6 +2115,111 @@ struct bind_helper<TResult, TFunctor,
 // ====================================================================
 // bind<>
 // ====================================================================
+
+template <typename TResult>
+inline
+typename detail::bind_helper<TResult,
+                             TResult (*) ()>::type
+bind(TResult (*f) ())
+{
+    typedef TResult (*fun_t) ();
+    typedef typename detail::bind_helper<TResult, fun_t>::type bound_type;
+    return bound_type(f);
+}
+
+template <typename TResult,
+          typename T0,
+          typename A0>
+inline
+typename detail::bind_helper<TResult,
+                             TResult (*) (T0)>::type
+bind(TResult (*f) (T0),
+     BOOST_FWD_REF(A0) a0)
+{
+    typedef TResult (*fun_t) (T0);
+    typedef typename detail::bind_helper<TResult, fun_t,
+                                         A0>::type bound_type;
+    return bound_type(f,
+                      boost::forward<A0>(a0));
+}
+
+template <typename TResult,
+          typename T0,
+          typename T1,
+          typename A0,
+          typename A1>
+inline
+typename detail::bind_helper<TResult,
+                             TResult (*) (T0, T1)>::type
+bind(TResult (*f) (T0, T1),
+     BOOST_FWD_REF(A0) a0,
+     BOOST_FWD_REF(A1) a1)
+{
+    typedef TResult (*fun_t) (T0, T1);
+    typedef typename detail::bind_helper<TResult, fun_t,
+                                         A0,
+                                         A1>::type bound_type;
+    return bound_type(f,
+                      boost::forward<A0>(a0),
+                      boost::forward<A1>(a1));
+}
+
+template <typename TResult,
+          typename T0,
+          typename T1,
+          typename T2,
+          typename A0,
+          typename A1,
+          typename A2>
+inline
+typename detail::bind_helper<TResult,
+                             TResult (*) (T0, T1, T2)>::type
+bind(TResult (*f) (T0, T1, T2),
+     BOOST_FWD_REF(A0) a0,
+     BOOST_FWD_REF(A1) a1,
+     BOOST_FWD_REF(A2) a2)
+{
+    typedef TResult (*fun_t) (T0, T1, T2);
+    typedef typename detail::bind_helper<TResult, fun_t,
+                                         A0,
+                                         A1,
+                                         A2>::type bound_type;
+    return bound_type(f,
+                      boost::forward<A0>(a0),
+                      boost::forward<A1>(a1),
+                      boost::forward<A2>(a2));
+}
+
+template <typename TResult,
+          typename T0,
+          typename T1,
+          typename T2,
+          typename T3,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+inline
+typename detail::bind_helper<TResult,
+                             TResult (*) (T0, T1, T2, T3)>::type
+bind(TResult (*f) (T0, T1, T2, T3),
+     BOOST_FWD_REF(A0) a0,
+     BOOST_FWD_REF(A1) a1,
+     BOOST_FWD_REF(A2) a2,
+     BOOST_FWD_REF(A3) a3)
+{
+    typedef TResult (*fun_t) (T0, T1, T2, T3);
+    typedef typename detail::bind_helper<TResult, fun_t,
+                                         A0,
+                                         A1,
+                                         A2,
+                                         A3>::type bound_type;
+    return bound_type(f,
+                      boost::forward<A0>(a0),
+                      boost::forward<A1>(a1),
+                      boost::forward<A2>(a2),
+                      boost::forward<A3>(a3));
+}
 
 template <typename TResult,
           typename TFunctor>
