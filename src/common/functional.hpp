@@ -559,6 +559,2066 @@ struct unpack_argument<placeholders::placeholder<TIndex> >
     }
 };
 
+// ====================================================================
+// MemFnResult
+// ====================================================================
+
+template <typename TMemberPointer>
+class MemFnResult;
+
+// Result of mem_fn(TResult (TClass::*) () )
+template <typename TResult,
+          typename TClass>
+class MemFnResult<TResult (TClass::*) () >
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) () ;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)();
+    }
+
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*) const
+    {
+        return ((*ptr).*m_pm)();
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    result_type operator() ( TClass& object) const
+    {
+        return (object.*m_pm)();
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    result_type operator() ( TClass&& object) const
+    {
+        return (weos::move(object).*m_pm)();
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    result_type operator() ( TClass* object) const
+    {
+        return (object->*m_pm)();
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer>
+    result_type operator() (WEOS_FWD_REF(TPointer) object) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object);
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) () const)
+template <typename TResult,
+          typename TClass>
+class MemFnResult<TResult (TClass::*) () const>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) () const;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)();
+    }
+
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*) const
+    {
+        return ((*ptr).*m_pm)();
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    result_type operator() (const TClass& object) const
+    {
+        return (object.*m_pm)();
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    result_type operator() (const TClass&& object) const
+    {
+        return (weos::move(object).*m_pm)();
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    result_type operator() (const TClass* object) const
+    {
+        return (object->*m_pm)();
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer>
+    result_type operator() (WEOS_FWD_REF(TPointer) object) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object);
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) () volatile)
+template <typename TResult,
+          typename TClass>
+class MemFnResult<TResult (TClass::*) () volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) () volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)();
+    }
+
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*) const
+    {
+        return ((*ptr).*m_pm)();
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    result_type operator() (volatile TClass& object) const
+    {
+        return (object.*m_pm)();
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    result_type operator() (volatile TClass&& object) const
+    {
+        return (weos::move(object).*m_pm)();
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    result_type operator() (volatile TClass* object) const
+    {
+        return (object->*m_pm)();
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer>
+    result_type operator() (WEOS_FWD_REF(TPointer) object) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object);
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) () const volatile)
+template <typename TResult,
+          typename TClass>
+class MemFnResult<TResult (TClass::*) () const volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) () const volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)();
+    }
+
+    template <typename TPointer>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*) const
+    {
+        return ((*ptr).*m_pm)();
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    result_type operator() (const volatile TClass& object) const
+    {
+        return (object.*m_pm)();
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    result_type operator() (const volatile TClass&& object) const
+    {
+        return (weos::move(object).*m_pm)();
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    result_type operator() (const volatile TClass* object) const
+    {
+        return (object->*m_pm)();
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer>
+    result_type operator() (WEOS_FWD_REF(TPointer) object) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object);
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0) )
+template <typename TResult,
+          typename TClass,
+          typename A0>
+class MemFnResult<TResult (TClass::*) (A0) >
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0) ;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0));
+    }
+
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0>
+    result_type operator() ( TClass& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0>
+    result_type operator() ( TClass&& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0>
+    result_type operator() ( TClass* object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0) const)
+template <typename TResult,
+          typename TClass,
+          typename A0>
+class MemFnResult<TResult (TClass::*) (A0) const>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0) const;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0));
+    }
+
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0>
+    result_type operator() (const TClass& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0>
+    result_type operator() (const TClass&& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0>
+    result_type operator() (const TClass* object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0) volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0>
+class MemFnResult<TResult (TClass::*) (A0) volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0) volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0));
+    }
+
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0>
+    result_type operator() (volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0>
+    result_type operator() (volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0>
+    result_type operator() (volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0) const volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0>
+class MemFnResult<TResult (TClass::*) (A0) const volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0) const volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0));
+    }
+
+    template <typename TPointer,
+              typename T0>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0>
+    result_type operator() (const volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0>
+    result_type operator() (const volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0>
+    result_type operator() (const volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1) )
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1>
+class MemFnResult<TResult (TClass::*) (A0, A1) >
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1) ;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1>
+    result_type operator() ( TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1>
+    result_type operator() ( TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1>
+    result_type operator() ( TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1) const)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1>
+class MemFnResult<TResult (TClass::*) (A0, A1) const>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1) const;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1>
+    result_type operator() (const TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1>
+    result_type operator() (const TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1>
+    result_type operator() (const TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1) volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1>
+class MemFnResult<TResult (TClass::*) (A0, A1) volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1) volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1>
+    result_type operator() (volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1>
+    result_type operator() (volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1>
+    result_type operator() (volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1) const volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1>
+class MemFnResult<TResult (TClass::*) (A0, A1) const volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1) const volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1>
+    result_type operator() (const volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1>
+    result_type operator() (const volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1>
+    result_type operator() (const volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2) )
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2) >
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2) ;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() ( TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() ( TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() ( TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2) const)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2) const>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2) const;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (const TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (const TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (const TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2) volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2) volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2) volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2) const volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2) const volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2) const volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (const volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (const volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (const volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2, A3) )
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2, A3) >
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2, A3) ;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2),
+                weos::forward<T3>(t3));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() ( TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() ( TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2),
+                                          weos::forward<T3>(t3));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() ( TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2),
+                               weos::forward<T3>(t3));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2),
+                    weos::forward<T3>(t3));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2, A3) const)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2, A3) const>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2, A3) const;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2),
+                weos::forward<T3>(t3));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (const TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (const TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2),
+                                          weos::forward<T3>(t3));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (const TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2),
+                               weos::forward<T3>(t3));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2),
+                    weos::forward<T3>(t3));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2, A3) volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2, A3) volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2, A3) volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2),
+                weos::forward<T3>(t3));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2),
+                                          weos::forward<T3>(t3));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2),
+                               weos::forward<T3>(t3));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2),
+                    weos::forward<T3>(t3));
+    }
+
+};
+
+// Result of mem_fn(TResult (TClass::*) (A0, A1, A2, A3) const volatile)
+template <typename TResult,
+          typename TClass,
+          typename A0,
+          typename A1,
+          typename A2,
+          typename A3>
+class MemFnResult<TResult (TClass::*) (A0, A1, A2, A3) const volatile>
+{
+public:
+    typedef TResult result_type;
+
+private:
+    typedef TResult (TClass::* mem_fn_t) (A0, A1, A2, A3) const volatile;
+    mem_fn_t m_pm;
+
+    // Helpers to differentiate between smart pointers and references/pointers to derived classes
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) object,
+                     const volatile TClass*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::forward<TPointer>(object).*m_pm)(
+                weos::forward<T0>(t0),
+                weos::forward<T1>(t1),
+                weos::forward<T2>(t2),
+                weos::forward<T3>(t3));
+    }
+
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type call(WEOS_FWD_REF(TPointer) ptr,
+                     const volatile void*,
+                     WEOS_FWD_REF(T0) t0,
+                     WEOS_FWD_REF(T1) t1,
+                     WEOS_FWD_REF(T2) t2,
+                     WEOS_FWD_REF(T3) t3) const
+    {
+        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)
+        : m_pm(pm)
+    {
+    }
+
+    // Reference to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (const volatile TClass& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object.*m_pm)(weos::forward<T0>(t0),
+                              weos::forward<T1>(t1),
+                              weos::forward<T2>(t2),
+                              weos::forward<T3>(t3));
+    }
+
+#if WEOS_USE_CXX11
+
+    // Reference to movable object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (const volatile TClass&& object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
+                                          weos::forward<T1>(t1),
+                                          weos::forward<T2>(t2),
+                                          weos::forward<T3>(t3));
+    }
+
+#endif // WEOS_USE_CXX11
+
+    // Pointer to object
+    template <typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (const volatile TClass* object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return (object->*m_pm)(weos::forward<T0>(t0),
+                               weos::forward<T1>(t1),
+                               weos::forward<T2>(t2),
+                               weos::forward<T3>(t3));
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    template <typename TPointer,
+              typename T0,
+              typename T1,
+              typename T2,
+              typename T3>
+    result_type operator() (WEOS_FWD_REF(TPointer) object,
+                            WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
+    {
+        return call(weos::forward<TPointer>(object),
+                    &object,
+                    weos::forward<T0>(t0),
+                    weos::forward<T1>(t1),
+                    weos::forward<T2>(t2),
+                    weos::forward<T3>(t3));
+    }
+
+};
+
+// Result of mem_fn(TResult TClass::*)
+template <typename TResult, typename TClass>
+class MemFnResult<TResult TClass::*>
+{
+    typedef TResult TClass::* mem_fn_t;
+    mem_fn_t m_pm;
+
+public:
+    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm) WEOS_NOEXCEPT
+        : m_pm(pm)
+    {
+    }
+
+    TResult& operator() (TClass& object) const WEOS_NOEXCEPT
+    {
+        return object.*m_pm;
+    }
+
+    WEOS_CONSTEXPR
+    const TResult& operator() (const TClass& object) const WEOS_NOEXCEPT
+    {
+        return object.*m_pm;
+    }
+
+#if WEOS_USE_CXX11
+
+    TResult&& operator()(TClass&& object) const WEOS_NOEXCEPT
+    {
+        return weos::forward<TClass>(object).*m_pm;
+    }
+
+    const TResult&& operator()(const TClass&& object) const WEOS_NOEXCEPT
+    {
+        return weos::forward<const TClass>(object).*m_pm;
+    }
+
+#endif // WEOS_USE_CXX11
+
+    TResult& operator() (TClass* object) const WEOS_NOEXCEPT
+    {
+        return object->*m_pm;
+    }
+
+    WEOS_CONSTEXPR
+    const TResult& operator() (const TClass* object) const WEOS_NOEXCEPT
+    {
+        return object->*m_pm;
+    }
+
+    // Smart pointer, reference/pointer to derived class
+    //! \todo Missing
+};
+
+// ====================================================================
+// BindResult
+// ====================================================================
+
 template <typename TResult, typename TSignature>
 struct BindResult;
 
@@ -2034,14 +4094,14 @@ private:
 struct bind_helper_null_type;
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0 = bind_helper_null_type,
           typename A1 = bind_helper_null_type,
           typename A2 = bind_helper_null_type,
           typename A3 = bind_helper_null_type>
 struct bind_helper
 {
-    typedef typename boost::decay<TFunctor>::type functor_type;
+    typedef typename boost::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
                        functor_type(typename boost::decay<A0>::type,
                                     typename boost::decay<A1>::type,
@@ -2050,17 +4110,17 @@ struct bind_helper
 };
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0,
           typename A1,
           typename A2>
-struct bind_helper<TResult, TFunctor,
+struct bind_helper<TResult, TCallable,
                    A0,
                    A1,
                    A2,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TFunctor>::type functor_type;
+    typedef typename boost::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
                        functor_type(typename boost::decay<A0>::type,
                                     typename boost::decay<A1>::type,
@@ -2068,44 +4128,44 @@ struct bind_helper<TResult, TFunctor,
 };
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0,
           typename A1>
-struct bind_helper<TResult, TFunctor,
+struct bind_helper<TResult, TCallable,
                    A0,
                    A1,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TFunctor>::type functor_type;
+    typedef typename boost::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
                        functor_type(typename boost::decay<A0>::type,
                                     typename boost::decay<A1>::type)> type;
 };
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0>
-struct bind_helper<TResult, TFunctor,
+struct bind_helper<TResult, TCallable,
                    A0,
                    bind_helper_null_type,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TFunctor>::type functor_type;
+    typedef typename boost::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
                        functor_type(typename boost::decay<A0>::type)> type;
 };
 
 template <typename TResult,
-          typename TFunctor>
-struct bind_helper<TResult, TFunctor,
+          typename TCallable>
+struct bind_helper<TResult, TCallable,
                    bind_helper_null_type,
                    bind_helper_null_type,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TFunctor>::type functor_type;
+    typedef typename boost::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
                        functor_type()> type;
 };
@@ -2113,218 +4173,233 @@ struct bind_helper<TResult, TFunctor,
 } // namespace detail
 
 // ====================================================================
+// mem_fn<>
+// ====================================================================
+
+template <typename TResult, typename TClass>
+inline
+detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) WEOS_NOEXCEPT
+{
+    return detail::MemFnResult<TResult TClass::*>(pm);
+}
+
+// ====================================================================
 // bind<>
 // ====================================================================
 
-template <typename TResult>
+// template <typename F, typename... TArgs>
+// /*unspecified*/ bind(F&& f, TArgs&&... args);
+template <typename TCallable>
 inline
-typename detail::bind_helper<TResult,
-                             TResult (*) ()>::type
-bind(TResult (*f) ())
+typename detail::bind_helper<detail::unspecified_type,
+                             TCallable>::type
+bind(BOOST_FWD_REF(TCallable) f)
 {
-    typedef TResult (*fun_t) ();
-    typedef typename detail::bind_helper<TResult, fun_t>::type bound_type;
-    return bound_type(f);
+    typedef typename detail::bind_helper<detail::unspecified_type,
+                                         TCallable>::type bound_type;
+    return bound_type(boost::forward<TCallable>(f));
 }
 
-template <typename TResult,
-          typename T0,
+template <typename TCallable,
           typename A0>
 inline
-typename detail::bind_helper<TResult,
-                             TResult (*) (T0)>::type
-bind(TResult (*f) (T0),
+typename detail::bind_helper<detail::unspecified_type,
+                             TCallable,
+                             A0>::type
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0)
 {
-    typedef TResult (*fun_t) (T0);
-    typedef typename detail::bind_helper<TResult, fun_t,
+    typedef typename detail::bind_helper<detail::unspecified_type,
+                                         TCallable,
                                          A0>::type bound_type;
-    return bound_type(f,
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0));
 }
 
-template <typename TResult,
-          typename T0,
-          typename T1,
+template <typename TCallable,
           typename A0,
           typename A1>
 inline
-typename detail::bind_helper<TResult,
-                             TResult (*) (T0, T1)>::type
-bind(TResult (*f) (T0, T1),
+typename detail::bind_helper<detail::unspecified_type,
+                             TCallable,
+                             A0,
+                             A1>::type
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0,
      BOOST_FWD_REF(A1) a1)
 {
-    typedef TResult (*fun_t) (T0, T1);
-    typedef typename detail::bind_helper<TResult, fun_t,
+    typedef typename detail::bind_helper<detail::unspecified_type,
+                                         TCallable,
                                          A0,
                                          A1>::type bound_type;
-    return bound_type(f,
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0),
                       boost::forward<A1>(a1));
 }
 
-template <typename TResult,
-          typename T0,
-          typename T1,
-          typename T2,
+template <typename TCallable,
           typename A0,
           typename A1,
           typename A2>
 inline
-typename detail::bind_helper<TResult,
-                             TResult (*) (T0, T1, T2)>::type
-bind(TResult (*f) (T0, T1, T2),
+typename detail::bind_helper<detail::unspecified_type,
+                             TCallable,
+                             A0,
+                             A1,
+                             A2>::type
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0,
      BOOST_FWD_REF(A1) a1,
      BOOST_FWD_REF(A2) a2)
 {
-    typedef TResult (*fun_t) (T0, T1, T2);
-    typedef typename detail::bind_helper<TResult, fun_t,
+    typedef typename detail::bind_helper<detail::unspecified_type,
+                                         TCallable,
                                          A0,
                                          A1,
                                          A2>::type bound_type;
-    return bound_type(f,
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0),
                       boost::forward<A1>(a1),
                       boost::forward<A2>(a2));
 }
 
-template <typename TResult,
-          typename T0,
-          typename T1,
-          typename T2,
-          typename T3,
+template <typename TCallable,
           typename A0,
           typename A1,
           typename A2,
           typename A3>
 inline
-typename detail::bind_helper<TResult,
-                             TResult (*) (T0, T1, T2, T3)>::type
-bind(TResult (*f) (T0, T1, T2, T3),
+typename detail::bind_helper<detail::unspecified_type,
+                             TCallable,
+                             A0,
+                             A1,
+                             A2,
+                             A3>::type
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0,
      BOOST_FWD_REF(A1) a1,
      BOOST_FWD_REF(A2) a2,
      BOOST_FWD_REF(A3) a3)
 {
-    typedef TResult (*fun_t) (T0, T1, T2, T3);
-    typedef typename detail::bind_helper<TResult, fun_t,
+    typedef typename detail::bind_helper<detail::unspecified_type,
+                                         TCallable,
                                          A0,
                                          A1,
                                          A2,
                                          A3>::type bound_type;
-    return bound_type(f,
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0),
                       boost::forward<A1>(a1),
                       boost::forward<A2>(a2),
                       boost::forward<A3>(a3));
 }
 
+// template <typename R, typename F, typename... TArgs>
+// /*unspecified*/ bind(F&& f, TArgs&&... args);
 template <typename TResult,
-          typename TFunctor>
+          typename TCallable>
 inline
 typename detail::bind_helper<TResult,
-                             TFunctor>::type
-bind(BOOST_FWD_REF(TFunctor) f)
+                             TCallable>::type
+bind(BOOST_FWD_REF(TCallable) f)
 {
     typedef typename detail::bind_helper<TResult,
-                                         TFunctor>::type bound_type;
-    return bound_type(boost::forward<TFunctor>(f));
+                                         TCallable>::type bound_type;
+    return bound_type(boost::forward<TCallable>(f));
 }
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0>
 inline
 typename detail::bind_helper<TResult,
-                             TFunctor,
+                             TCallable,
                              A0>::type
-bind(BOOST_FWD_REF(TFunctor) f,
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0)
 {
     typedef typename detail::bind_helper<TResult,
-                                         TFunctor,
+                                         TCallable,
                                          A0>::type bound_type;
-    return bound_type(boost::forward<TFunctor>(f),
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0));
 }
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0,
           typename A1>
 inline
 typename detail::bind_helper<TResult,
-                             TFunctor,
+                             TCallable,
                              A0,
                              A1>::type
-bind(BOOST_FWD_REF(TFunctor) f,
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0,
      BOOST_FWD_REF(A1) a1)
 {
     typedef typename detail::bind_helper<TResult,
-                                         TFunctor,
+                                         TCallable,
                                          A0,
                                          A1>::type bound_type;
-    return bound_type(boost::forward<TFunctor>(f),
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0),
                       boost::forward<A1>(a1));
 }
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0,
           typename A1,
           typename A2>
 inline
 typename detail::bind_helper<TResult,
-                             TFunctor,
+                             TCallable,
                              A0,
                              A1,
                              A2>::type
-bind(BOOST_FWD_REF(TFunctor) f,
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0,
      BOOST_FWD_REF(A1) a1,
      BOOST_FWD_REF(A2) a2)
 {
     typedef typename detail::bind_helper<TResult,
-                                         TFunctor,
+                                         TCallable,
                                          A0,
                                          A1,
                                          A2>::type bound_type;
-    return bound_type(boost::forward<TFunctor>(f),
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0),
                       boost::forward<A1>(a1),
                       boost::forward<A2>(a2));
 }
 
 template <typename TResult,
-          typename TFunctor,
+          typename TCallable,
           typename A0,
           typename A1,
           typename A2,
           typename A3>
 inline
 typename detail::bind_helper<TResult,
-                             TFunctor,
+                             TCallable,
                              A0,
                              A1,
                              A2,
                              A3>::type
-bind(BOOST_FWD_REF(TFunctor) f,
+bind(BOOST_FWD_REF(TCallable) f,
      BOOST_FWD_REF(A0) a0,
      BOOST_FWD_REF(A1) a1,
      BOOST_FWD_REF(A2) a2,
      BOOST_FWD_REF(A3) a3)
 {
     typedef typename detail::bind_helper<TResult,
-                                         TFunctor,
+                                         TCallable,
                                          A0,
                                          A1,
                                          A2,
                                          A3>::type bound_type;
-    return bound_type(boost::forward<TFunctor>(f),
+    return bound_type(boost::forward<TCallable>(f),
                       boost::forward<A0>(a0),
                       boost::forward<A1>(a1),
                       boost::forward<A2>(a2),

@@ -26,19 +26,11 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_FUNCTIONAL_HPP
-#define WEOS_FUNCTIONAL_HPP
+#ifndef WEOS_KEIL_CMSIS_RTOS_FUNCTIONAL_HPP
+#define WEOS_KEIL_CMSIS_RTOS_FUNCTIONAL_HPP
 
-#include "config.hpp"
+#include "core.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/functional.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/functional.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/functional.hpp"
-#else
-    #error "Invalid native OS."
-#endif
+#include "../common/functional.hpp"
 
-#endif // WEOS_FUNCTIONAL_HPP
+#endif // WEOS_KEIL_CMSIS_RTOS_FUNCTIONAL_HPP

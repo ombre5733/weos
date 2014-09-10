@@ -319,6 +319,161 @@ def unpackArgument():
 
     return s
 
+
+def memFnResult(numArgs, cv):
+    s = ""
+
+    s += "// Result of mem_fn(TResult (TClass::*) ("
+    s += ", ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ") %s)\n" % cv
+
+    s += "template <typename TResult,\n"
+    s += "          typename TClass"
+    if numArgs:
+        s += ",\n          "
+        s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
+    s += ">\n"
+    s += "class MemFnResult<TResult (TClass::*) ("
+    s += ", ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ") %s>\n" % cv
+    s += "{\n"
+
+    s += "public:\n"
+    s += "    typedef TResult result_type;\n\n"
+    s += "private:\n"
+
+    s += "    typedef TResult (TClass::* mem_fn_t) ("
+    s += ", ".join(["A%d" % i for i in xrange(numArgs)])
+    s += ") %s;\n" % cv
+
+    s += "    mem_fn_t m_pm;\n\n"
+
+    ## Invoke via reference to derived
+    s += "    // Helpers to differentiate between smart pointers and references/pointers to derived classes\n"
+    s += "    template <typename TPointer"
+    if numArgs:
+        s += ",\n              "
+        s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
+    s += ">\n"
+    s += "    result_type call(WEOS_FWD_REF(TPointer) object,\n"
+    s += "                     const volatile TClass*"
+    if numArgs:
+        s += ",\n                     "
+        s += ",\n                     ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
+    s += "    {\n"
+    s += "        return (weos::forward<TPointer>(object).*m_pm)("
+    if numArgs:
+        s += "\n                "
+        s += ",\n                ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    }\n\n"
+
+    ## Invoke via smart pointer or pointer to derived
+    s += "    template <typename TPointer"
+    if numArgs:
+        s += ",\n              "
+        s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
+    s += ">\n"
+    s += "    result_type call(WEOS_FWD_REF(TPointer) ptr,\n"
+    s += "                     const volatile void*"
+    if numArgs:
+        s += ",\n                     "
+        s += ",\n                     ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
+    s += "    {\n"
+    s += "        return ((*ptr).*m_pm)("
+    s += ",\n                              ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    }\n\n"
+
+    s += "public:\n"
+
+    s += "    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)\n"
+    s += "        : m_pm(pm)\n"
+    s += "    {\n    }\n\n"
+
+    ## template <typename T>
+    ## result_type operator() (TClass& object, T&&... t);
+    s += "    // Reference to object\n"
+    if numArgs:
+        s += "    template <"
+        s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
+        s += ">\n"
+    s += "    result_type operator() (%s TClass& object" % cv
+    if numArgs:
+        s += ",\n                            "
+        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
+    s += "    {\n"
+    s += "        return (object.*m_pm)("
+    s += ",\n                              ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    }\n\n"
+
+    ## template <typename T>
+    ## result_type operator() (TClass&& object, T&&... t);
+    s += "#if WEOS_USE_CXX11\n\n"
+    s += "    // Reference to movable object\n"
+    if numArgs:
+        s += "    template <"
+        s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
+        s += ">\n"
+    s += "    result_type operator() (%s TClass&& object" % cv
+    if numArgs:
+        s += ",\n                            "
+        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
+    s += "    {\n"
+    s += "        return (weos::move(object).*m_pm)("
+    s += ",\n                                          ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    }\n\n"
+    s += "#endif // WEOS_USE_CXX11\n\n"
+
+    ## template <typename T>
+    ## result_type operator() (TClass* object, T&&... t);
+    s += "    // Pointer to object\n"
+    if numArgs:
+        s += "    template <"
+        s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
+        s += ">\n"
+    s += "    result_type operator() (%s TClass* object" % cv
+    if numArgs:
+        s += ",\n                            "
+        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
+    s += "    {\n"
+    s += "        return (object->*m_pm)("
+    s += ",\n                               ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    }\n\n"
+
+    ## template <typename TPointer, typename T>
+    ## result_type operator() (TPointer&& object, T&&... t);
+    s += "    // Smart pointer, reference/pointer to derived class\n"
+    s += "    template <typename TPointer"
+    if numArgs:
+        s += ",\n              "
+        s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
+    s += ">\n"
+    s += "    result_type operator() (WEOS_FWD_REF(TPointer) object"
+    if numArgs:
+        s += ",\n                            "
+        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+    s += ") const\n"
+    s += "    {\n"
+    s += "        return call(weos::forward<TPointer>(object),\n"
+    s += "                    &object"
+    if numArgs:
+        s += ",\n                    "
+        s += ",\n                    ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ");\n"
+    s += "    }\n\n"
+
+    s += "};\n\n"
+    return s
+
 def bindResult(numArgs, maxArgs):
     s = ""
     s += "template <typename TResult, typename F"
@@ -475,11 +630,45 @@ def bindResult(numArgs, maxArgs):
     s += "};\n\n"
     return s
 
+def deduceReturnType(maxArgs):
+    s = ""
+
+    s += "// Default case with explicit result type.\n"
+    s += "template <typename TResult, typename TCallable>\n"
+    s += "struct deduce_return_type\n"
+    s += "{\n"
+    s += "    typedef TResult type;\n"
+    s += "};\n\n"
+
+    s += "// Pointers to functions\n"
+    s += "template <typename R>\n"
+    """
+    struct deduce_return_type<detail::unspecified_type,
+                              R (*) (A0, A1, A2, ...)>
+    {
+        typedef R type;
+    };
+
+    // Pointers to member functions
+    template <typename R, typename C>
+    struct deduce_return_type<detail::unspecified_type,
+                              R (C::*) (A0, A1, A2, ...)>
+    {
+        typedef R type;
+    };
+
+    // Pointers to data members
+    template <typename R, typename C>
+    struct deduce_return_type<detail::unspecified_type,
+                              R C::*>
+    """
+    return s
+
 def bindHelper(numArgs, maxArgs):
     s = ""
 
     s += "template <typename TResult,\n"
-    s += "          typename TFunctor"
+    s += "          typename TCallable"
     if numArgs == maxArgs:
         s += ",\n          "
         s += ",\n          ".join(["typename A%d = bind_helper_null_type" % i for i in xrange(numArgs)])
@@ -489,12 +678,13 @@ def bindHelper(numArgs, maxArgs):
     s += ">\n"
     s += "struct bind_helper"
     if numArgs != maxArgs:
-        s += "<TResult, TFunctor,\n                   "
-        s += ",\n                   ".join(["A%d" % i for i in xrange(numArgs)] +
-                       ["bind_helper_null_type" for i in xrange(maxArgs - numArgs)])
+        s += "<TResult, TCallable,\n                   "
+        s += ",\n                   ".join(
+                ["A%d" % i for i in xrange(numArgs)] +
+                ["bind_helper_null_type" for i in xrange(maxArgs - numArgs)])
         s += ">"
     s += "\n{\n"
-    s += "    typedef typename boost::decay<TFunctor>::type functor_type;\n"
+    s += "    typedef typename boost::decay<TCallable>::type functor_type;\n"
     s += "    typedef BindResult<TResult,\n"
     s += "                       functor_type("
     s += ",\n                                    ".join(["typename boost::decay<A%d>::type" % i for i in xrange(numArgs)])
@@ -502,109 +692,39 @@ def bindHelper(numArgs, maxArgs):
     s += "};\n\n"
     return s
 
-def bind(numArgs):
+def bind(numArgs, withResult):
     s = ""
 
-    s += "template <typename TFunctor"
+    if withResult:
+        s += "template <typename TResult,\n"
+        s += "          typename TCallable"
+        resultType = "TResult"
+    else:
+        s += "template <typename TCallable"
+        resultType = "detail::unspecified_type"
     if numArgs:
         s += ",\n          "
         s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
     s += ">\n"
     s += "inline\n"
-    s += "typename detail::bind_helper<detail::unspecified_type,\n"
-    s += "                             TFunctor"
+    s += "typename detail::bind_helper<%s,\n" % resultType
+    s += "                             TCallable"
     if numArgs:
         s += ",\n                             "
         s += ",\n                             ".join(["A%d" % i for i in xrange(numArgs)])
     s += ">::type\n"
-    s += "bind(BOOST_FWD_REF(TFunctor) f"
+    s += "bind(BOOST_FWD_REF(TCallable) f"
     if numArgs:
         s += ",\n     "
         s += ",\n     ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n{\n"
-    s += "    typedef typename detail::bind_helper<detail::unspecified_type,\n"
-    s += "                                         TFunctor"
+    s += "    typedef typename detail::bind_helper<%s,\n" % resultType
+    s += "                                         TCallable"
     if numArgs:
         s += ",\n                                         "
         s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
     s += ">::type bound_type;\n"
-    s += "    return bound_type(boost::forward<TFunctor>(f)"
-    if numArgs:
-        s += ",\n                      "
-        s += ",\n                      ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
-    s += ");\n"
-    s += "}\n\n"
-    return s
-
-def bindWithResult(numArgs):
-    s = ""
-
-    s += "template <typename TResult,\n"
-    s += "          typename TFunctor"
-    if numArgs:
-        s += ",\n          "
-        s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
-    s += ">\n"
-    s += "inline\n"
-    s += "typename detail::bind_helper<TResult,\n"
-    s += "                             TFunctor"
-    if numArgs:
-        s += ",\n                             "
-        s += ",\n                             ".join(["A%d" % i for i in xrange(numArgs)])
-    s += ">::type\n"
-    s += "bind(BOOST_FWD_REF(TFunctor) f"
-    if numArgs:
-        s += ",\n     "
-        s += ",\n     ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
-    s += ")\n{\n"
-    s += "    typedef typename detail::bind_helper<TResult,\n"
-    s += "                                         TFunctor"
-    if numArgs:
-        s += ",\n                                         "
-        s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
-    s += ">::type bound_type;\n"
-    s += "    return bound_type(boost::forward<TFunctor>(f)"
-    if numArgs:
-        s += ",\n                      "
-        s += ",\n                      ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
-    s += ");\n"
-    s += "}\n\n"
-    return s
-
-def bindFunctionPointer(numArgs):
-    s = ""
-
-    s += "template <typename TResult"
-    if numArgs:
-        s += ",\n          "
-        s += ",\n          ".join(["typename T%d" % i for i in xrange(numArgs)])
-        s += ",\n          "
-        s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
-    s += ">\n"
-    s += "inline\n"
-    s += "typename detail::bind_helper<TResult,\n"
-    s += "                             TResult (*) ("
-    if numArgs:
-        s += ", ".join(["T%d" % i for i in xrange(numArgs)])
-    s += ")>::type\n"
-    s += "bind(TResult (*f) ("
-    if numArgs:
-        s += ", ".join(["T%d" % i for i in xrange(numArgs)])
-    s += ")"
-    if numArgs:
-        s += ",\n     "
-        s += ",\n     ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
-    s += ")\n{\n"
-    s += "    typedef TResult (*fun_t) ("
-    if numArgs:
-        s += ", ".join(["T%d" % i for i in xrange(numArgs)])
-    s += ");\n"
-    s += "    typedef typename detail::bind_helper<TResult, fun_t"
-    if numArgs:
-        s += ",\n                                         "
-        s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
-    s += ">::type bound_type;\n"
-    s += "    return bound_type(f"
+    s += "    return bound_type(boost::forward<TCallable>(f)"
     if numArgs:
         s += ",\n                      "
         s += ",\n                      ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
@@ -970,6 +1090,82 @@ def generateHeader(maxArgs):
         s += forwardAsArgumentTuple(i)
     s += unpackArgument()
 
+    s += "// ====================================================================\n"
+    s += "// MemFnResult\n"
+    s += "// ====================================================================\n\n"
+
+    ## Forward declaration of MemFnResult
+    s += "template <typename TMemberPointer>\n"
+    s += "class MemFnResult;\n\n"
+
+    ## MemFnResult for pointer to (qualified) member functions
+    for i in xrange(maxArgs + 1):
+        s += memFnResult(i, "")
+        s += memFnResult(i, "const")
+        s += memFnResult(i, "volatile")
+        s += memFnResult(i, "const volatile")
+
+    ## MemFnResult for pointer to member objects
+    s += "// Result of mem_fn(TResult TClass::*)\n"
+    s += "template <typename TResult, typename TClass>\n"
+    s += "class MemFnResult<TResult TClass::*>\n"
+    s += "{\n"
+
+    s += "    typedef TResult TClass::* mem_fn_t;\n"
+    s += "    mem_fn_t m_pm;\n\n"
+
+    s += "public:\n"
+
+    s += "    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm) WEOS_NOEXCEPT\n"
+    s += "        : m_pm(pm)\n"
+    s += "    {\n    }\n\n"
+
+    s += "    TResult& operator() (TClass& object) const WEOS_NOEXCEPT\n"
+    s += "    {\n"
+    s += "        return object.*m_pm;\n"
+    s += "    }\n\n"
+
+    s += "    WEOS_CONSTEXPR\n"
+    s += "    const TResult& operator() (const TClass& object) const WEOS_NOEXCEPT\n"
+    s += "    {\n"
+    s += "        return object.*m_pm;\n"
+    s += "    }\n\n"
+
+    s += "#if WEOS_USE_CXX11\n\n"
+
+    s += "    TResult&& operator()(TClass&& object) const WEOS_NOEXCEPT\n"
+    s += "    {\n"
+    s += "        return weos::forward<TClass>(object).*m_pm;\n"
+    s += "    }\n\n"
+
+    s += "    const TResult&& operator()(const TClass&& object) const WEOS_NOEXCEPT\n"
+    s += "    {\n"
+    s += "        return weos::forward<const TClass>(object).*m_pm;\n"
+    s += "    }\n\n"
+
+    s += "#endif // WEOS_USE_CXX11\n\n"
+
+    s += "    TResult& operator() (TClass* object) const WEOS_NOEXCEPT\n"
+    s += "    {\n"
+    s += "        return object->*m_pm;\n"
+    s += "    }\n\n"
+
+    s += "    WEOS_CONSTEXPR\n"
+    s += "    const TResult& operator() (const TClass* object) const WEOS_NOEXCEPT\n"
+    s += "    {\n"
+    s += "        return object->*m_pm;\n"
+    s += "    }\n\n"
+
+    ## TODO: Smart pointers and pointers to derived classes
+    s += "    // Smart pointer, reference/pointer to derived class\n"
+    s += "    //! \\todo Missing\n"
+
+    s += "};\n\n"
+
+    s += "// ====================================================================\n"
+    s += "// BindResult\n"
+    s += "// ====================================================================\n\n"
+
     s += "template <typename TResult, typename TSignature>\n"
     s += "struct BindResult;\n\n"
     for i in xrange(maxArgs + 1):
@@ -981,13 +1177,29 @@ def generateHeader(maxArgs):
     s += "} // namespace detail\n\n"
 
     s += "// ====================================================================\n"
+    s += "// mem_fn<>\n"
+    s += "// ====================================================================\n\n"
+
+    s += "template <typename TResult, typename TClass>\n"
+    s += "inline\n"
+    s += "detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) WEOS_NOEXCEPT\n"
+    s += "{\n"
+    s += "    return detail::MemFnResult<TResult TClass::*>(pm);\n"
+    s += "}\n\n"
+
+    s += "// ====================================================================\n"
     s += "// bind<>\n"
     s += "// ====================================================================\n\n"
 
+    s += "// template <typename F, typename... TArgs>\n"
+    s += "// /*unspecified*/ bind(F&& f, TArgs&&... args);\n"
     for i in xrange(maxArgs + 1):
-        s += bindFunctionPointer(i)
+        s += bind(i, False)
+
+    s += "// template <typename R, typename F, typename... TArgs>\n"
+    s += "// /*unspecified*/ bind(F&& f, TArgs&&... args);\n"
     for i in xrange(maxArgs + 1):
-        s += bindWithResult(i)
+        s += bind(i, True)
 
     s += "// ====================================================================\n"
     s += "// function<>\n"
