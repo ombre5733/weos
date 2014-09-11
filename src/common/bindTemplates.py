@@ -413,7 +413,7 @@ def memFnResult(numArgs, cv):
 
     ## template <typename T>
     ## result_type operator() (TClass&& object, T&&... t);
-    s += "#if WEOS_USE_CXX11\n\n"
+    s += "#if defined(WEOS_USE_CXX11)\n\n"
     s += "    // Reference to movable object\n"
     if numArgs:
         s += "    template <"
@@ -551,6 +551,11 @@ def bindResult(numArgs, maxArgs):
 
     s += "    struct dispatch_tag;\n\n"
 
+    ## TODO: Remove the member function case from here.
+    s += "    //! \\todo We can never have a member function pointer.\n"
+    s += "    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,\n"
+    s += "                  \"The callable has not been wrapped.\");\n\n"
+
     def invoke(void, memberFunction, qualifier):
         if numArgs == 0 and memberFunction:
             return ""
@@ -630,39 +635,44 @@ def bindResult(numArgs, maxArgs):
     s += "};\n\n"
     return s
 
-def deduceReturnType(maxArgs):
+def deduceResultType(numArgs):
     s = ""
 
-    s += "// Default case with explicit result type.\n"
-    s += "template <typename TResult, typename TCallable>\n"
-    s += "struct deduce_return_type\n"
-    s += "{\n"
-    s += "    typedef TResult type;\n"
-    s += "};\n\n"
+    s += "// Function\n"
+    def fun(ref, cv, klass=False):
+        s = ""
+        s += "template <typename R"
+        if klass:
+            s += ",\n          typename C"
+            ref = "(C::*)"
+        if numArgs:
+            s += ",\n          "
+            s += ",\n          ".join(["typename A%d" % i for i in xrange(numArgs)])
+        s += ">\n"
+        s += "struct deduce_result_type<detail::unspecified_type,\n"
+        s += "                          R %s (" % ref
+        s += ", ".join(["A%d" % i for i in xrange(numArgs)])
+        s += ") %s>\n" % cv
+        s += "{\n"
+        s += "    typedef R type;\n"
+        s += "};\n\n"
+        return s
 
-    s += "// Pointers to functions\n"
-    s += "template <typename R>\n"
-    """
-    struct deduce_return_type<detail::unspecified_type,
-                              R (*) (A0, A1, A2, ...)>
-    {
-        typedef R type;
-    };
+    s += fun("", "")
 
-    // Pointers to member functions
-    template <typename R, typename C>
-    struct deduce_return_type<detail::unspecified_type,
-                              R (C::*) (A0, A1, A2, ...)>
-    {
-        typedef R type;
-    };
+    s += "// Function reference\n"
+    s += fun("(&)", "")
 
-    // Pointers to data members
-    template <typename R, typename C>
-    struct deduce_return_type<detail::unspecified_type,
-                              R C::*>
-    """
+    s += "// Function pointer\n"
+    s += fun("(*)", "")
+
+    s += "// Member function pointer\n"
+    s += fun("", "", True)
+    s += fun("", "const", True)
+    s += fun("", "volatile", True)
+    s += fun("", "const volatile", True)
     return s
+
 
 def bindHelper(numArgs, maxArgs):
     s = ""
@@ -684,8 +694,12 @@ def bindHelper(numArgs, maxArgs):
                 ["bind_helper_null_type" for i in xrange(maxArgs - numArgs)])
         s += ">"
     s += "\n{\n"
-    s += "    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;\n"
-    s += "    typedef BindResult<TResult,\n"
+    s += "    // Deduce the result type.\n"
+    s += "    typedef typename deduce_result_type<TResult, TCallable>::type result_type;\n"
+    s += "    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.\n"
+    s += "    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;\n"
+    s += "    typedef typename wrapper_type::type functor_type;\n"
+    s += "    typedef BindResult<result_type,\n"
     s += "                       functor_type("
     s += ",\n                                    ".join(["typename WEOS_NAMESPACE::decay<A%d>::type" % i for i in xrange(numArgs)])
     s += ")> type;\n"
@@ -718,13 +732,16 @@ def bind(numArgs, withResult):
         s += ",\n     "
         s += ",\n     ".join(["WEOS_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n{\n"
-    s += "    typedef typename detail::bind_helper<%s,\n" % resultType
-    s += "                                         TCallable"
+    s += "    typedef detail::bind_helper<%s,\n" % resultType
+    s += "                                TCallable"
     if numArgs:
-        s += ",\n                                         "
-        s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
-    s += ">::type bound_type;\n"
-    s += "    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f)"
+        s += ",\n                                "
+        s += ",\n                                ".join(["A%d" % i for i in xrange(numArgs)])
+    s += "> helper_type;\n"
+    s += "    typedef typename helper_type::wrapper_type wrapper_type;\n"
+    s += "    typedef typename helper_type::type bind_result_type;\n\n"
+
+    s += "    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f))"
     if numArgs:
         s += ",\n                      "
         s += ",\n                      ".join(["WEOS_NAMESPACE::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
@@ -1060,6 +1077,7 @@ def generateHeader(maxArgs):
 
     s += placeholders(maxArgs)
 
+    ## namespace detail {
     s += "namespace detail\n{\n\n"
 
     s += "struct unspecified_type {};\n\n"
@@ -1129,7 +1147,7 @@ def generateHeader(maxArgs):
     s += "        return object.*m_pm;\n"
     s += "    }\n\n"
 
-    s += "#if WEOS_USE_CXX11\n\n"
+    s += "#if defined(WEOS_USE_CXX11)\n\n"
 
     s += "    TResult&& operator()(TClass&& object) const WEOS_NOEXCEPT\n"
     s += "    {\n"
@@ -1161,8 +1179,62 @@ def generateHeader(maxArgs):
     s += "};\n\n"
 
     s += "// ====================================================================\n"
+    s += "// deduce_result_type\n"
+    s += "// ====================================================================\n\n"
+
+    s += "// Default case with explicit result type.\n"
+    s += "template <typename TResult, typename TCallable>\n"
+    s += "struct deduce_result_type\n"
+    s += "{\n"
+    s += "    typedef TResult type;\n"
+    s += "};\n\n"
+
+    for i in xrange(maxArgs):
+        s += deduceResultType(i)
+
+    s += "// ====================================================================\n"
     s += "// BindResult\n"
     s += "// ====================================================================\n\n"
+
+    s += "// MemberPointerWrapper will wrap member pointers using mem_fn<>.\n"
+    s += "// The default case does nothing.\n"
+    s += "template <typename TType>\n"
+    s += "struct MemberPointerWrapper\n"
+    s += "{\n"
+    s += "    typedef TType type;\n\n"
+    s += "    static const TType& wrap(const TType& t)\n"
+    s += "    {\n"
+    s += "        return t;\n"
+    s += "    }\n\n"
+    s += "#if defined(WEOS_USE_CXX11)\n"
+    s += "    static TType&& wrap(TType&& t)\n"
+    s += "    {\n"
+    s += "        return static_cast<TType&&>(t);\n"
+    s += "    }\n"
+    s += "#endif // WEOS_USE_CXX11\n"
+    s += "};\n\n"
+
+    s += "// In the special case of a member pointer, mem_fn<> is applied.\n"
+    s += "template <typename TType, typename TClass>\n"
+    s += "struct MemberPointerWrapper<TType TClass::*>\n"
+    s += "{\n"
+    s += "    typedef MemFnResult<TType TClass::*> type;\n\n"
+    s += "    static type wrap(TType TClass::* pm)\n"
+    s += "    {\n"
+    s += "        return type(pm);\n"
+    s += "    }\n"
+    s += "};\n\n"
+
+    s += "// When the best overload for bind<>() is determined, the compiler\n"
+    s += "// instantiates MemberPointerWrapper<void>, which forms a reference\n"
+    s += "// to void in turn. A solution is to provide a template\n"
+    s += "// specialization for this case. It is never used, because there\n"
+    s += "// are better matches for bind<>.\n"
+    s += "template <>\n"
+    s += "struct MemberPointerWrapper<void>\n"
+    s += "{\n"
+    s += "    typedef void type;\n"
+    s += "};\n\n"
 
     s += "template <typename TResult, typename TSignature>\n"
     s += "struct BindResult;\n\n"
@@ -1172,7 +1244,9 @@ def generateHeader(maxArgs):
     s += "\nstruct bind_helper_null_type;\n\n"
     for i in xrange(maxArgs + 1):
         s += bindHelper(maxArgs - i, maxArgs)
+
     s += "} // namespace detail\n\n"
+    ## } namespace detail
 
     s += "// ====================================================================\n"
     s += "// mem_fn<>\n"

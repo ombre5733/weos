@@ -602,7 +602,7 @@ public:
         return (object.*m_pm)();
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     result_type operator() ( TClass&& object) const
@@ -667,7 +667,7 @@ public:
         return (object.*m_pm)();
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     result_type operator() (const TClass&& object) const
@@ -732,7 +732,7 @@ public:
         return (object.*m_pm)();
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     result_type operator() (volatile TClass&& object) const
@@ -797,7 +797,7 @@ public:
         return (object.*m_pm)();
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     result_type operator() (const volatile TClass&& object) const
@@ -870,7 +870,7 @@ public:
         return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0>
@@ -950,7 +950,7 @@ public:
         return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0>
@@ -1030,7 +1030,7 @@ public:
         return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0>
@@ -1110,7 +1110,7 @@ public:
         return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0>
@@ -1200,7 +1200,7 @@ public:
                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -1299,7 +1299,7 @@ public:
                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -1398,7 +1398,7 @@ public:
                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -1497,7 +1497,7 @@ public:
                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -1606,7 +1606,7 @@ public:
                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -1724,7 +1724,7 @@ public:
                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -1842,7 +1842,7 @@ public:
                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -1960,7 +1960,7 @@ public:
                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -2088,7 +2088,7 @@ public:
                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -2225,7 +2225,7 @@ public:
                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -2362,7 +2362,7 @@ public:
                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -2499,7 +2499,7 @@ public:
                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     // Reference to movable object
     template <typename T0,
@@ -2583,7 +2583,7 @@ public:
         return object.*m_pm;
     }
 
-#if WEOS_USE_CXX11
+#if defined(WEOS_USE_CXX11)
 
     TResult&& operator()(TClass&& object) const WEOS_NOEXCEPT
     {
@@ -2613,8 +2613,332 @@ public:
 };
 
 // ====================================================================
+// deduce_result_type
+// ====================================================================
+
+// Default case with explicit result type.
+template <typename TResult, typename TCallable>
+struct deduce_result_type
+{
+    typedef TResult type;
+};
+
+// Function
+template <typename R>
+struct deduce_result_type<detail::unspecified_type,
+                          R  () >
+{
+    typedef R type;
+};
+
+// Function reference
+template <typename R>
+struct deduce_result_type<detail::unspecified_type,
+                          R (&) () >
+{
+    typedef R type;
+};
+
+// Function pointer
+template <typename R>
+struct deduce_result_type<detail::unspecified_type,
+                          R (*) () >
+{
+    typedef R type;
+};
+
+// Member function pointer
+template <typename R,
+          typename C>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) () >
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) () const>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) () volatile>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) () const volatile>
+{
+    typedef R type;
+};
+
+// Function
+template <typename R,
+          typename A0>
+struct deduce_result_type<detail::unspecified_type,
+                          R  (A0) >
+{
+    typedef R type;
+};
+
+// Function reference
+template <typename R,
+          typename A0>
+struct deduce_result_type<detail::unspecified_type,
+                          R (&) (A0) >
+{
+    typedef R type;
+};
+
+// Function pointer
+template <typename R,
+          typename A0>
+struct deduce_result_type<detail::unspecified_type,
+                          R (*) (A0) >
+{
+    typedef R type;
+};
+
+// Member function pointer
+template <typename R,
+          typename C,
+          typename A0>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0) >
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0) const>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0) volatile>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0) const volatile>
+{
+    typedef R type;
+};
+
+// Function
+template <typename R,
+          typename A0,
+          typename A1>
+struct deduce_result_type<detail::unspecified_type,
+                          R  (A0, A1) >
+{
+    typedef R type;
+};
+
+// Function reference
+template <typename R,
+          typename A0,
+          typename A1>
+struct deduce_result_type<detail::unspecified_type,
+                          R (&) (A0, A1) >
+{
+    typedef R type;
+};
+
+// Function pointer
+template <typename R,
+          typename A0,
+          typename A1>
+struct deduce_result_type<detail::unspecified_type,
+                          R (*) (A0, A1) >
+{
+    typedef R type;
+};
+
+// Member function pointer
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1) >
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1) const>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1) volatile>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1) const volatile>
+{
+    typedef R type;
+};
+
+// Function
+template <typename R,
+          typename A0,
+          typename A1,
+          typename A2>
+struct deduce_result_type<detail::unspecified_type,
+                          R  (A0, A1, A2) >
+{
+    typedef R type;
+};
+
+// Function reference
+template <typename R,
+          typename A0,
+          typename A1,
+          typename A2>
+struct deduce_result_type<detail::unspecified_type,
+                          R (&) (A0, A1, A2) >
+{
+    typedef R type;
+};
+
+// Function pointer
+template <typename R,
+          typename A0,
+          typename A1,
+          typename A2>
+struct deduce_result_type<detail::unspecified_type,
+                          R (*) (A0, A1, A2) >
+{
+    typedef R type;
+};
+
+// Member function pointer
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1,
+          typename A2>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1, A2) >
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1,
+          typename A2>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1, A2) const>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1,
+          typename A2>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1, A2) volatile>
+{
+    typedef R type;
+};
+
+template <typename R,
+          typename C,
+          typename A0,
+          typename A1,
+          typename A2>
+struct deduce_result_type<detail::unspecified_type,
+                          R (C::*) (A0, A1, A2) const volatile>
+{
+    typedef R type;
+};
+
+// ====================================================================
 // BindResult
 // ====================================================================
+
+// MemberPointerWrapper will wrap member pointers using mem_fn<>.
+// The default case does nothing.
+template <typename TType>
+struct MemberPointerWrapper
+{
+    typedef TType type;
+
+    static const TType& wrap(const TType& t)
+    {
+        return t;
+    }
+
+#if defined(WEOS_USE_CXX11)
+    static TType&& wrap(TType&& t)
+    {
+        return static_cast<TType&&>(t);
+    }
+#endif // WEOS_USE_CXX11
+};
+
+// In the special case of a member pointer, mem_fn<> is applied.
+template <typename TType, typename TClass>
+struct MemberPointerWrapper<TType TClass::*>
+{
+    typedef MemFnResult<TType TClass::*> type;
+
+    static type wrap(TType TClass::* pm)
+    {
+        return type(pm);
+    }
+};
+
+// When the best overload for bind<>() is determined, the compiler
+// instantiates MemberPointerWrapper<void>, which forms a reference
+// to void in turn. A solution is to provide a template
+// specialization for this case. It is never used, because there
+// are better matches for bind<>.
+template <>
+struct MemberPointerWrapper<void>
+{
+    typedef void type;
+};
 
 template <typename TResult, typename TSignature>
 struct BindResult;
@@ -2763,6 +3087,10 @@ private:
     arguments_type m_arguments;
 
     struct dispatch_tag;
+
+    //! \todo We can never have a member function pointer.
+    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
+                  "The callable has not been wrapped.");
 
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
@@ -2963,6 +3291,10 @@ private:
     arguments_type m_arguments;
 
     struct dispatch_tag;
+
+    //! \todo We can never have a member function pointer.
+    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
+                  "The callable has not been wrapped.");
 
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
@@ -3243,6 +3575,10 @@ private:
     arguments_type m_arguments;
 
     struct dispatch_tag;
+
+    //! \todo We can never have a member function pointer.
+    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
+                  "The callable has not been wrapped.");
 
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
@@ -3551,6 +3887,10 @@ private:
     arguments_type m_arguments;
 
     struct dispatch_tag;
+
+    //! \todo We can never have a member function pointer.
+    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
+                  "The callable has not been wrapped.");
 
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
@@ -3888,6 +4228,10 @@ private:
 
     struct dispatch_tag;
 
+    //! \todo We can never have a member function pointer.
+    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
+                  "The callable has not been wrapped.");
+
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
@@ -4098,8 +4442,12 @@ template <typename TResult,
           typename A3 = bind_helper_null_type>
 struct bind_helper
 {
-    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
-    typedef BindResult<TResult,
+    // Deduce the result type.
+    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
+    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
+    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
+    typedef typename wrapper_type::type functor_type;
+    typedef BindResult<result_type,
                        functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
                                     typename WEOS_NAMESPACE::decay<A1>::type,
                                     typename WEOS_NAMESPACE::decay<A2>::type,
@@ -4117,8 +4465,12 @@ struct bind_helper<TResult, TCallable,
                    A2,
                    bind_helper_null_type>
 {
-    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
-    typedef BindResult<TResult,
+    // Deduce the result type.
+    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
+    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
+    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
+    typedef typename wrapper_type::type functor_type;
+    typedef BindResult<result_type,
                        functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
                                     typename WEOS_NAMESPACE::decay<A1>::type,
                                     typename WEOS_NAMESPACE::decay<A2>::type)> type;
@@ -4134,8 +4486,12 @@ struct bind_helper<TResult, TCallable,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
-    typedef BindResult<TResult,
+    // Deduce the result type.
+    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
+    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
+    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
+    typedef typename wrapper_type::type functor_type;
+    typedef BindResult<result_type,
                        functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
                                     typename WEOS_NAMESPACE::decay<A1>::type)> type;
 };
@@ -4149,8 +4505,12 @@ struct bind_helper<TResult, TCallable,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
-    typedef BindResult<TResult,
+    // Deduce the result type.
+    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
+    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
+    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
+    typedef typename wrapper_type::type functor_type;
+    typedef BindResult<result_type,
                        functor_type(typename WEOS_NAMESPACE::decay<A0>::type)> type;
 };
 
@@ -4162,8 +4522,12 @@ struct bind_helper<TResult, TCallable,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
-    typedef BindResult<TResult,
+    // Deduce the result type.
+    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
+    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
+    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
+    typedef typename wrapper_type::type functor_type;
+    typedef BindResult<result_type,
                        functor_type()> type;
 };
 
@@ -4192,9 +4556,12 @@ typename detail::bind_helper<detail::unspecified_type,
                              TCallable>::type
 bind(WEOS_FWD_REF(TCallable) f)
 {
-    typedef typename detail::bind_helper<detail::unspecified_type,
-                                         TCallable>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f));
+    typedef detail::bind_helper<detail::unspecified_type,
+                                TCallable> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)));
 }
 
 template <typename TCallable,
@@ -4206,10 +4573,13 @@ typename detail::bind_helper<detail::unspecified_type,
 bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A0) a0)
 {
-    typedef typename detail::bind_helper<detail::unspecified_type,
-                                         TCallable,
-                                         A0>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<detail::unspecified_type,
+                                TCallable,
+                                A0> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0));
 }
 
@@ -4225,11 +4595,14 @@ bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A0) a0,
      WEOS_FWD_REF(A1) a1)
 {
-    typedef typename detail::bind_helper<detail::unspecified_type,
-                                         TCallable,
-                                         A0,
-                                         A1>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<detail::unspecified_type,
+                                TCallable,
+                                A0,
+                                A1> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0),
                       WEOS_NAMESPACE::forward<A1>(a1));
 }
@@ -4249,12 +4622,15 @@ bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A1) a1,
      WEOS_FWD_REF(A2) a2)
 {
-    typedef typename detail::bind_helper<detail::unspecified_type,
-                                         TCallable,
-                                         A0,
-                                         A1,
-                                         A2>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<detail::unspecified_type,
+                                TCallable,
+                                A0,
+                                A1,
+                                A2> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0),
                       WEOS_NAMESPACE::forward<A1>(a1),
                       WEOS_NAMESPACE::forward<A2>(a2));
@@ -4278,13 +4654,16 @@ bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A2) a2,
      WEOS_FWD_REF(A3) a3)
 {
-    typedef typename detail::bind_helper<detail::unspecified_type,
-                                         TCallable,
-                                         A0,
-                                         A1,
-                                         A2,
-                                         A3>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<detail::unspecified_type,
+                                TCallable,
+                                A0,
+                                A1,
+                                A2,
+                                A3> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0),
                       WEOS_NAMESPACE::forward<A1>(a1),
                       WEOS_NAMESPACE::forward<A2>(a2),
@@ -4300,9 +4679,12 @@ typename detail::bind_helper<TResult,
                              TCallable>::type
 bind(WEOS_FWD_REF(TCallable) f)
 {
-    typedef typename detail::bind_helper<TResult,
-                                         TCallable>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f));
+    typedef detail::bind_helper<TResult,
+                                TCallable> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)));
 }
 
 template <typename TResult,
@@ -4315,10 +4697,13 @@ typename detail::bind_helper<TResult,
 bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A0) a0)
 {
-    typedef typename detail::bind_helper<TResult,
-                                         TCallable,
-                                         A0>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<TResult,
+                                TCallable,
+                                A0> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0));
 }
 
@@ -4335,11 +4720,14 @@ bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A0) a0,
      WEOS_FWD_REF(A1) a1)
 {
-    typedef typename detail::bind_helper<TResult,
-                                         TCallable,
-                                         A0,
-                                         A1>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<TResult,
+                                TCallable,
+                                A0,
+                                A1> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0),
                       WEOS_NAMESPACE::forward<A1>(a1));
 }
@@ -4360,12 +4748,15 @@ bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A1) a1,
      WEOS_FWD_REF(A2) a2)
 {
-    typedef typename detail::bind_helper<TResult,
-                                         TCallable,
-                                         A0,
-                                         A1,
-                                         A2>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<TResult,
+                                TCallable,
+                                A0,
+                                A1,
+                                A2> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0),
                       WEOS_NAMESPACE::forward<A1>(a1),
                       WEOS_NAMESPACE::forward<A2>(a2));
@@ -4390,13 +4781,16 @@ bind(WEOS_FWD_REF(TCallable) f,
      WEOS_FWD_REF(A2) a2,
      WEOS_FWD_REF(A3) a3)
 {
-    typedef typename detail::bind_helper<TResult,
-                                         TCallable,
-                                         A0,
-                                         A1,
-                                         A2,
-                                         A3>::type bound_type;
-    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+    typedef detail::bind_helper<TResult,
+                                TCallable,
+                                A0,
+                                A1,
+                                A2,
+                                A3> helper_type;
+    typedef typename helper_type::wrapper_type wrapper_type;
+    typedef typename helper_type::type bind_result_type;
+
+    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
                       WEOS_NAMESPACE::forward<A0>(a0),
                       WEOS_NAMESPACE::forward<A1>(a1),
                       WEOS_NAMESPACE::forward<A2>(a2),
