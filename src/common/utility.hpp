@@ -36,6 +36,7 @@
 
 #include <utility>
 
+#define WEOS_COPYABLE_AND_MOVABLE(type)
 #define WEOS_MOVABLE_BUT_NOT_COPYABLE(type)                                    \
     type(const type&) = delete;                                                \
     type& operator= (const type&) = delete;
@@ -58,6 +59,8 @@ WEOS_END_NAMESPACE
 
 #include <boost/move/move.hpp>
 
+#define WEOS_COPYABLE_AND_MOVABLE(type)                                        \
+    BOOST_COPYABLE_AND_MOVABLE(type)
 #define WEOS_MOVABLE_BUT_NOT_COPYABLE(type)                                    \
     BOOST_MOVABLE_BUT_NOT_COPYABLE(type)
 

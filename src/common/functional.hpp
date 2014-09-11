@@ -32,11 +32,8 @@
 
 #include "../config.hpp"
 
+#include "../type_traits.hpp"
 #include "../utility.hpp"
-
-#include <boost/utility/enable_if.hpp>
-#include <boost/move/move.hpp>
-#include <boost/type_traits.hpp>
 
 #include <cstdlib>
 
@@ -57,13 +54,13 @@ extern const placeholder<4> _4;
 } // namespace placeholders
 
 template <typename T>
-struct is_placeholder : boost::integral_constant<int, 0>
+struct is_placeholder : WEOS_NAMESPACE::integral_constant<int, 0>
 {
 };
 
 template <int TIndex>
 struct is_placeholder<placeholders::placeholder<TIndex> >
-        : boost::integral_constant<int, TIndex>
+        : WEOS_NAMESPACE::integral_constant<int, TIndex>
 {
 };
 
@@ -114,14 +111,14 @@ struct argument_tuple
               typename T1,
               typename T2,
               typename T3>
-    explicit argument_tuple(BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3)
-        : m_a0(boost::forward<T0>(t0)),
-          m_a1(boost::forward<T1>(t1)),
-          m_a2(boost::forward<T2>(t2)),
-          m_a3(boost::forward<T3>(t3))
+    explicit argument_tuple(WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3)
+        : m_a0(WEOS_NAMESPACE::forward<T0>(t0)),
+          m_a1(WEOS_NAMESPACE::forward<T1>(t1)),
+          m_a2(WEOS_NAMESPACE::forward<T2>(t2)),
+          m_a3(WEOS_NAMESPACE::forward<T3>(t3))
     {
     }
 
@@ -135,26 +132,26 @@ struct argument_tuple
     }
 
     // Move constructor
-    argument_tuple(BOOST_RV_REF(argument_tuple) other)
-        : m_a0(boost::forward<A0>(other.m_a0)),
-          m_a1(boost::forward<A1>(other.m_a1)),
-          m_a2(boost::forward<A2>(other.m_a2)),
-          m_a3(boost::forward<A3>(other.m_a3))
+    argument_tuple(WEOS_RV_REF(argument_tuple) other)
+        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0)),
+          m_a1(WEOS_NAMESPACE::forward<A1>(other.m_a1)),
+          m_a2(WEOS_NAMESPACE::forward<A2>(other.m_a2)),
+          m_a3(WEOS_NAMESPACE::forward<A3>(other.m_a3))
     {
     }
 
     // Accessors
-    A0& get(boost::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(boost::integral_constant<std::size_t, 0>) const { return m_a0; }
+    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
+    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
 
-    A1& get(boost::integral_constant<std::size_t, 1>) { return m_a1; }
-    const A1& get(boost::integral_constant<std::size_t, 1>) const { return m_a1; }
+    A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) { return m_a1; }
+    const A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) const { return m_a1; }
 
-    A2& get(boost::integral_constant<std::size_t, 2>) { return m_a2; }
-    const A2& get(boost::integral_constant<std::size_t, 2>) const { return m_a2; }
+    A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) { return m_a2; }
+    const A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) const { return m_a2; }
 
-    A3& get(boost::integral_constant<std::size_t, 3>) { return m_a3; }
-    const A3& get(boost::integral_constant<std::size_t, 3>) const { return m_a3; }
+    A3& get(WEOS_NAMESPACE::integral_constant<std::size_t, 3>) { return m_a3; }
+    const A3& get(WEOS_NAMESPACE::integral_constant<std::size_t, 3>) const { return m_a3; }
 
 private:
     A0 m_a0;
@@ -162,7 +159,7 @@ private:
     A2 m_a2;
     A3 m_a3;
 
-    BOOST_COPYABLE_AND_MOVABLE(argument_tuple)
+    WEOS_COPYABLE_AND_MOVABLE(argument_tuple)
 };
 
 template <typename A0,
@@ -188,12 +185,12 @@ struct argument_tuple<A0,
     template <typename T0,
               typename T1,
               typename T2>
-    explicit argument_tuple(BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2)
-        : m_a0(boost::forward<T0>(t0)),
-          m_a1(boost::forward<T1>(t1)),
-          m_a2(boost::forward<T2>(t2))
+    explicit argument_tuple(WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2)
+        : m_a0(WEOS_NAMESPACE::forward<T0>(t0)),
+          m_a1(WEOS_NAMESPACE::forward<T1>(t1)),
+          m_a2(WEOS_NAMESPACE::forward<T2>(t2))
     {
     }
 
@@ -206,29 +203,29 @@ struct argument_tuple<A0,
     }
 
     // Move constructor
-    argument_tuple(BOOST_RV_REF(argument_tuple) other)
-        : m_a0(boost::forward<A0>(other.m_a0)),
-          m_a1(boost::forward<A1>(other.m_a1)),
-          m_a2(boost::forward<A2>(other.m_a2))
+    argument_tuple(WEOS_RV_REF(argument_tuple) other)
+        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0)),
+          m_a1(WEOS_NAMESPACE::forward<A1>(other.m_a1)),
+          m_a2(WEOS_NAMESPACE::forward<A2>(other.m_a2))
     {
     }
 
     // Accessors
-    A0& get(boost::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(boost::integral_constant<std::size_t, 0>) const { return m_a0; }
+    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
+    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
 
-    A1& get(boost::integral_constant<std::size_t, 1>) { return m_a1; }
-    const A1& get(boost::integral_constant<std::size_t, 1>) const { return m_a1; }
+    A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) { return m_a1; }
+    const A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) const { return m_a1; }
 
-    A2& get(boost::integral_constant<std::size_t, 2>) { return m_a2; }
-    const A2& get(boost::integral_constant<std::size_t, 2>) const { return m_a2; }
+    A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) { return m_a2; }
+    const A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) const { return m_a2; }
 
 private:
     A0 m_a0;
     A1 m_a1;
     A2 m_a2;
 
-    BOOST_COPYABLE_AND_MOVABLE(argument_tuple)
+    WEOS_COPYABLE_AND_MOVABLE(argument_tuple)
 };
 
 template <typename A0,
@@ -250,10 +247,10 @@ struct argument_tuple<A0,
     // Constructor with perfect forwarding
     template <typename T0,
               typename T1>
-    explicit argument_tuple(BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1)
-        : m_a0(boost::forward<T0>(t0)),
-          m_a1(boost::forward<T1>(t1))
+    explicit argument_tuple(WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1)
+        : m_a0(WEOS_NAMESPACE::forward<T0>(t0)),
+          m_a1(WEOS_NAMESPACE::forward<T1>(t1))
     {
     }
 
@@ -265,24 +262,24 @@ struct argument_tuple<A0,
     }
 
     // Move constructor
-    argument_tuple(BOOST_RV_REF(argument_tuple) other)
-        : m_a0(boost::forward<A0>(other.m_a0)),
-          m_a1(boost::forward<A1>(other.m_a1))
+    argument_tuple(WEOS_RV_REF(argument_tuple) other)
+        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0)),
+          m_a1(WEOS_NAMESPACE::forward<A1>(other.m_a1))
     {
     }
 
     // Accessors
-    A0& get(boost::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(boost::integral_constant<std::size_t, 0>) const { return m_a0; }
+    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
+    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
 
-    A1& get(boost::integral_constant<std::size_t, 1>) { return m_a1; }
-    const A1& get(boost::integral_constant<std::size_t, 1>) const { return m_a1; }
+    A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) { return m_a1; }
+    const A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) const { return m_a1; }
 
 private:
     A0 m_a0;
     A1 m_a1;
 
-    BOOST_COPYABLE_AND_MOVABLE(argument_tuple)
+    WEOS_COPYABLE_AND_MOVABLE(argument_tuple)
 };
 
 template <typename A0>
@@ -300,8 +297,8 @@ struct argument_tuple<A0,
 
     // Constructor with perfect forwarding
     template <typename T0>
-    explicit argument_tuple(BOOST_FWD_REF(T0) t0)
-        : m_a0(boost::forward<T0>(t0))
+    explicit argument_tuple(WEOS_FWD_REF(T0) t0)
+        : m_a0(WEOS_NAMESPACE::forward<T0>(t0))
     {
     }
 
@@ -312,19 +309,19 @@ struct argument_tuple<A0,
     }
 
     // Move constructor
-    argument_tuple(BOOST_RV_REF(argument_tuple) other)
-        : m_a0(boost::forward<A0>(other.m_a0))
+    argument_tuple(WEOS_RV_REF(argument_tuple) other)
+        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0))
     {
     }
 
     // Accessors
-    A0& get(boost::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(boost::integral_constant<std::size_t, 0>) const { return m_a0; }
+    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
+    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
 
 private:
     A0 m_a0;
 
-    BOOST_COPYABLE_AND_MOVABLE(argument_tuple)
+    WEOS_COPYABLE_AND_MOVABLE(argument_tuple)
 };
 
 template <>
@@ -374,7 +371,7 @@ template <std::size_t TIndex,
 struct argument_tuple_element<TIndex, const argument_tuple<A0, A1, A2, A3> >
 {
     typedef argument_tuple<A0, A1, A2, A3> tuple_type;
-    typedef typename boost::add_const<
+    typedef typename WEOS_NAMESPACE::add_const<
         typename argument_tuple_element<TIndex, tuple_type>::type>::type type;
 };
 
@@ -390,7 +387,7 @@ inline
 typename argument_tuple_element<TIndex, argument_tuple<A0, A1, A2, A3> >::type&
     get(argument_tuple<A0, A1, A2, A3>& t)
 {
-    return t.get(boost::integral_constant<std::size_t, TIndex>());
+    return t.get(WEOS_NAMESPACE::integral_constant<std::size_t, TIndex>());
 }
 
 template <std::size_t TIndex,
@@ -402,7 +399,7 @@ inline
 const typename argument_tuple_element<TIndex, argument_tuple<A0, A1, A2, A3> >::type&
     get(const argument_tuple<A0, A1, A2, A3>& t)
 {
-    return t.get(boost::integral_constant<std::size_t, TIndex>());
+    return t.get(WEOS_NAMESPACE::integral_constant<std::size_t, TIndex>());
 }
 
 // --------------------------------------------------------------------
@@ -416,7 +413,7 @@ template <typename A0,
           typename A2,
           typename A3>
 struct argument_tuple_size<argument_tuple<A0, A1, A2, A3> >
-        : boost::integral_constant<
+        : WEOS_NAMESPACE::integral_constant<
               std::size_t,
               argument_tuple<A0, A1, A2, A3>::size>
 {
@@ -427,7 +424,7 @@ template <typename A0,
           typename A2,
           typename A3>
 struct argument_tuple_size<const argument_tuple<A0, A1, A2, A3> >
-        : boost::integral_constant<
+        : WEOS_NAMESPACE::integral_constant<
               std::size_t,
               argument_tuple<A0, A1, A2, A3>::size>
 {
@@ -441,44 +438,44 @@ argument_tuple<> forward_as_argument_tuple()
 
 template <typename A0>
 inline
-argument_tuple<BOOST_FWD_REF(A0)>
-forward_as_argument_tuple(BOOST_FWD_REF(A0) a0)
+argument_tuple<WEOS_FWD_REF(A0)>
+forward_as_argument_tuple(WEOS_FWD_REF(A0) a0)
 {
-    return argument_tuple<BOOST_FWD_REF(A0)>(
-            boost::forward<A0>(a0));
+    return argument_tuple<WEOS_FWD_REF(A0)>(
+            WEOS_NAMESPACE::forward<A0>(a0));
 }
 
 template <typename A0,
           typename A1>
 inline
-argument_tuple<BOOST_FWD_REF(A0),
-               BOOST_FWD_REF(A1)>
-forward_as_argument_tuple(BOOST_FWD_REF(A0) a0,
-                          BOOST_FWD_REF(A1) a1)
+argument_tuple<WEOS_FWD_REF(A0),
+               WEOS_FWD_REF(A1)>
+forward_as_argument_tuple(WEOS_FWD_REF(A0) a0,
+                          WEOS_FWD_REF(A1) a1)
 {
-    return argument_tuple<BOOST_FWD_REF(A0),
-                          BOOST_FWD_REF(A1)>(
-            boost::forward<A0>(a0),
-            boost::forward<A1>(a1));
+    return argument_tuple<WEOS_FWD_REF(A0),
+                          WEOS_FWD_REF(A1)>(
+            WEOS_NAMESPACE::forward<A0>(a0),
+            WEOS_NAMESPACE::forward<A1>(a1));
 }
 
 template <typename A0,
           typename A1,
           typename A2>
 inline
-argument_tuple<BOOST_FWD_REF(A0),
-               BOOST_FWD_REF(A1),
-               BOOST_FWD_REF(A2)>
-forward_as_argument_tuple(BOOST_FWD_REF(A0) a0,
-                          BOOST_FWD_REF(A1) a1,
-                          BOOST_FWD_REF(A2) a2)
+argument_tuple<WEOS_FWD_REF(A0),
+               WEOS_FWD_REF(A1),
+               WEOS_FWD_REF(A2)>
+forward_as_argument_tuple(WEOS_FWD_REF(A0) a0,
+                          WEOS_FWD_REF(A1) a1,
+                          WEOS_FWD_REF(A2) a2)
 {
-    return argument_tuple<BOOST_FWD_REF(A0),
-                          BOOST_FWD_REF(A1),
-                          BOOST_FWD_REF(A2)>(
-            boost::forward<A0>(a0),
-            boost::forward<A1>(a1),
-            boost::forward<A2>(a2));
+    return argument_tuple<WEOS_FWD_REF(A0),
+                          WEOS_FWD_REF(A1),
+                          WEOS_FWD_REF(A2)>(
+            WEOS_NAMESPACE::forward<A0>(a0),
+            WEOS_NAMESPACE::forward<A1>(a1),
+            WEOS_NAMESPACE::forward<A2>(a2));
 }
 
 template <typename A0,
@@ -486,23 +483,23 @@ template <typename A0,
           typename A2,
           typename A3>
 inline
-argument_tuple<BOOST_FWD_REF(A0),
-               BOOST_FWD_REF(A1),
-               BOOST_FWD_REF(A2),
-               BOOST_FWD_REF(A3)>
-forward_as_argument_tuple(BOOST_FWD_REF(A0) a0,
-                          BOOST_FWD_REF(A1) a1,
-                          BOOST_FWD_REF(A2) a2,
-                          BOOST_FWD_REF(A3) a3)
+argument_tuple<WEOS_FWD_REF(A0),
+               WEOS_FWD_REF(A1),
+               WEOS_FWD_REF(A2),
+               WEOS_FWD_REF(A3)>
+forward_as_argument_tuple(WEOS_FWD_REF(A0) a0,
+                          WEOS_FWD_REF(A1) a1,
+                          WEOS_FWD_REF(A2) a2,
+                          WEOS_FWD_REF(A3) a3)
 {
-    return argument_tuple<BOOST_FWD_REF(A0),
-                          BOOST_FWD_REF(A1),
-                          BOOST_FWD_REF(A2),
-                          BOOST_FWD_REF(A3)>(
-            boost::forward<A0>(a0),
-            boost::forward<A1>(a1),
-            boost::forward<A2>(a2),
-            boost::forward<A3>(a3));
+    return argument_tuple<WEOS_FWD_REF(A0),
+                          WEOS_FWD_REF(A1),
+                          WEOS_FWD_REF(A2),
+                          WEOS_FWD_REF(A3)>(
+            WEOS_NAMESPACE::forward<A0>(a0),
+            WEOS_NAMESPACE::forward<A1>(a1),
+            WEOS_NAMESPACE::forward<A2>(a2),
+            WEOS_NAMESPACE::forward<A3>(a3));
 }
 
 struct placeholder_out_of_bounds;
@@ -530,17 +527,17 @@ template <int TIndex, typename TUnbound>
 struct unpacked_argument_type<placeholders::placeholder<TIndex>, TUnbound>
 {
     typedef typename placeholder_bounds_checker<TIndex - 1, TUnbound>::type temp_type;
-    typedef typename boost::add_rvalue_reference<temp_type>::type type;
+    typedef typename WEOS_NAMESPACE::add_rvalue_reference<temp_type>::type type;
 };
 
 template <typename TBound>
 struct unpack_argument
 {
     template <typename TType, typename TUnbound>
-    BOOST_FWD_REF(TType) operator() (BOOST_FWD_REF(TType) bound,
+    WEOS_FWD_REF(TType) operator() (WEOS_FWD_REF(TType) bound,
                                      TUnbound& unbound) const
     {
-        return boost::forward<TType>(bound);
+        return WEOS_NAMESPACE::forward<TType>(bound);
     }
 };
 
@@ -553,7 +550,7 @@ struct unpack_argument<placeholders::placeholder<TIndex> >
     typename unpacked_argument_type<bound_type, TUnbound>::type operator() (
         const bound_type& /*bound*/, TUnbound& unbound) const
     {
-        return boost::forward<typename unpacked_argument_type<
+        return WEOS_NAMESPACE::forward<typename unpacked_argument_type<
                                   bound_type, TUnbound>::type>(
                     get<TIndex - 1>(unbound));
     }
@@ -583,7 +580,7 @@ private:
     result_type call(WEOS_FWD_REF(TPointer) object,
                      const volatile TClass*) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)();
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)();
     }
 
     template <typename TPointer>
@@ -610,7 +607,7 @@ public:
     // Reference to movable object
     result_type operator() ( TClass&& object) const
     {
-        return (weos::move(object).*m_pm)();
+        return (WEOS_NAMESPACE::move(object).*m_pm)();
     }
 
 #endif // WEOS_USE_CXX11
@@ -625,7 +622,7 @@ public:
     template <typename TPointer>
     result_type operator() (WEOS_FWD_REF(TPointer) object) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object);
     }
 
@@ -648,7 +645,7 @@ private:
     result_type call(WEOS_FWD_REF(TPointer) object,
                      const volatile TClass*) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)();
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)();
     }
 
     template <typename TPointer>
@@ -675,7 +672,7 @@ public:
     // Reference to movable object
     result_type operator() (const TClass&& object) const
     {
-        return (weos::move(object).*m_pm)();
+        return (WEOS_NAMESPACE::move(object).*m_pm)();
     }
 
 #endif // WEOS_USE_CXX11
@@ -690,7 +687,7 @@ public:
     template <typename TPointer>
     result_type operator() (WEOS_FWD_REF(TPointer) object) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object);
     }
 
@@ -713,7 +710,7 @@ private:
     result_type call(WEOS_FWD_REF(TPointer) object,
                      const volatile TClass*) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)();
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)();
     }
 
     template <typename TPointer>
@@ -740,7 +737,7 @@ public:
     // Reference to movable object
     result_type operator() (volatile TClass&& object) const
     {
-        return (weos::move(object).*m_pm)();
+        return (WEOS_NAMESPACE::move(object).*m_pm)();
     }
 
 #endif // WEOS_USE_CXX11
@@ -755,7 +752,7 @@ public:
     template <typename TPointer>
     result_type operator() (WEOS_FWD_REF(TPointer) object) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object);
     }
 
@@ -778,7 +775,7 @@ private:
     result_type call(WEOS_FWD_REF(TPointer) object,
                      const volatile TClass*) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)();
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)();
     }
 
     template <typename TPointer>
@@ -805,7 +802,7 @@ public:
     // Reference to movable object
     result_type operator() (const volatile TClass&& object) const
     {
-        return (weos::move(object).*m_pm)();
+        return (WEOS_NAMESPACE::move(object).*m_pm)();
     }
 
 #endif // WEOS_USE_CXX11
@@ -820,7 +817,7 @@ public:
     template <typename TPointer>
     result_type operator() (WEOS_FWD_REF(TPointer) object) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object);
     }
 
@@ -846,8 +843,8 @@ private:
                      const volatile TClass*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     template <typename TPointer,
@@ -856,7 +853,7 @@ private:
                      const volatile void*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 public:
@@ -870,7 +867,7 @@ public:
     result_type operator() ( TClass& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #if WEOS_USE_CXX11
@@ -880,7 +877,7 @@ public:
     result_type operator() ( TClass&& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #endif // WEOS_USE_CXX11
@@ -890,7 +887,7 @@ public:
     result_type operator() ( TClass* object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -899,9 +896,9 @@ public:
     result_type operator() (WEOS_FWD_REF(TPointer) object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0));
+                    WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 };
@@ -926,8 +923,8 @@ private:
                      const volatile TClass*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     template <typename TPointer,
@@ -936,7 +933,7 @@ private:
                      const volatile void*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 public:
@@ -950,7 +947,7 @@ public:
     result_type operator() (const TClass& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #if WEOS_USE_CXX11
@@ -960,7 +957,7 @@ public:
     result_type operator() (const TClass&& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #endif // WEOS_USE_CXX11
@@ -970,7 +967,7 @@ public:
     result_type operator() (const TClass* object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -979,9 +976,9 @@ public:
     result_type operator() (WEOS_FWD_REF(TPointer) object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0));
+                    WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 };
@@ -1006,8 +1003,8 @@ private:
                      const volatile TClass*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     template <typename TPointer,
@@ -1016,7 +1013,7 @@ private:
                      const volatile void*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 public:
@@ -1030,7 +1027,7 @@ public:
     result_type operator() (volatile TClass& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #if WEOS_USE_CXX11
@@ -1040,7 +1037,7 @@ public:
     result_type operator() (volatile TClass&& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1050,7 +1047,7 @@ public:
     result_type operator() (volatile TClass* object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1059,9 +1056,9 @@ public:
     result_type operator() (WEOS_FWD_REF(TPointer) object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0));
+                    WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 };
@@ -1086,8 +1083,8 @@ private:
                      const volatile TClass*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     template <typename TPointer,
@@ -1096,7 +1093,7 @@ private:
                      const volatile void*,
                      WEOS_FWD_REF(T0) t0) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 public:
@@ -1110,7 +1107,7 @@ public:
     result_type operator() (const volatile TClass& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #if WEOS_USE_CXX11
@@ -1120,7 +1117,7 @@ public:
     result_type operator() (const volatile TClass&& object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1130,7 +1127,7 @@ public:
     result_type operator() (const volatile TClass* object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1139,9 +1136,9 @@ public:
     result_type operator() (WEOS_FWD_REF(TPointer) object,
                             WEOS_FWD_REF(T0) t0) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0));
+                    WEOS_NAMESPACE::forward<T0>(t0));
     }
 
 };
@@ -1169,9 +1166,9 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     template <typename TPointer,
@@ -1182,8 +1179,8 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 public:
@@ -1199,8 +1196,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #if WEOS_USE_CXX11
@@ -1212,8 +1209,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1225,8 +1222,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1237,10 +1234,10 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 };
@@ -1268,9 +1265,9 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     template <typename TPointer,
@@ -1281,8 +1278,8 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 public:
@@ -1298,8 +1295,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #if WEOS_USE_CXX11
@@ -1311,8 +1308,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1324,8 +1321,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1336,10 +1333,10 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 };
@@ -1367,9 +1364,9 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     template <typename TPointer,
@@ -1380,8 +1377,8 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 public:
@@ -1397,8 +1394,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #if WEOS_USE_CXX11
@@ -1410,8 +1407,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1423,8 +1420,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1435,10 +1432,10 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 };
@@ -1466,9 +1463,9 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     template <typename TPointer,
@@ -1479,8 +1476,8 @@ private:
                      WEOS_FWD_REF(T0) t0,
                      WEOS_FWD_REF(T1) t1) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 public:
@@ -1496,8 +1493,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #if WEOS_USE_CXX11
@@ -1509,8 +1506,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1522,8 +1519,8 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1534,10 +1531,10 @@ public:
                             WEOS_FWD_REF(T0) t0,
                             WEOS_FWD_REF(T1) t1) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1));
     }
 
 };
@@ -1568,10 +1565,10 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     template <typename TPointer,
@@ -1584,9 +1581,9 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 public:
@@ -1604,9 +1601,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #if WEOS_USE_CXX11
@@ -1620,9 +1617,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1636,9 +1633,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1651,11 +1648,11 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 };
@@ -1686,10 +1683,10 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     template <typename TPointer,
@@ -1702,9 +1699,9 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 public:
@@ -1722,9 +1719,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #if WEOS_USE_CXX11
@@ -1738,9 +1735,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1754,9 +1751,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1769,11 +1766,11 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 };
@@ -1804,10 +1801,10 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     template <typename TPointer,
@@ -1820,9 +1817,9 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 public:
@@ -1840,9 +1837,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #if WEOS_USE_CXX11
@@ -1856,9 +1853,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1872,9 +1869,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -1887,11 +1884,11 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 };
@@ -1922,10 +1919,10 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     template <typename TPointer,
@@ -1938,9 +1935,9 @@ private:
                      WEOS_FWD_REF(T1) t1,
                      WEOS_FWD_REF(T2) t2) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 public:
@@ -1958,9 +1955,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #if WEOS_USE_CXX11
@@ -1974,9 +1971,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 #endif // WEOS_USE_CXX11
@@ -1990,9 +1987,9 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -2005,11 +2002,11 @@ public:
                             WEOS_FWD_REF(T1) t1,
                             WEOS_FWD_REF(T2) t2) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2));
     }
 
 };
@@ -2043,11 +2040,11 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2),
-                weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2),
+                WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     template <typename TPointer,
@@ -2062,10 +2059,10 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 public:
@@ -2085,10 +2082,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #if WEOS_USE_CXX11
@@ -2104,10 +2101,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2),
-                                          weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2),
+                                          WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #endif // WEOS_USE_CXX11
@@ -2123,10 +2120,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2),
-                               weos::forward<T3>(t3));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2),
+                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -2141,12 +2138,12 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2),
-                    weos::forward<T3>(t3));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 };
@@ -2180,11 +2177,11 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2),
-                weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2),
+                WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     template <typename TPointer,
@@ -2199,10 +2196,10 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 public:
@@ -2222,10 +2219,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #if WEOS_USE_CXX11
@@ -2241,10 +2238,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2),
-                                          weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2),
+                                          WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #endif // WEOS_USE_CXX11
@@ -2260,10 +2257,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2),
-                               weos::forward<T3>(t3));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2),
+                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -2278,12 +2275,12 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2),
-                    weos::forward<T3>(t3));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 };
@@ -2317,11 +2314,11 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2),
-                weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2),
+                WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     template <typename TPointer,
@@ -2336,10 +2333,10 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 public:
@@ -2359,10 +2356,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #if WEOS_USE_CXX11
@@ -2378,10 +2375,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2),
-                                          weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2),
+                                          WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #endif // WEOS_USE_CXX11
@@ -2397,10 +2394,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2),
-                               weos::forward<T3>(t3));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2),
+                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -2415,12 +2412,12 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2),
-                    weos::forward<T3>(t3));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 };
@@ -2454,11 +2451,11 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::forward<TPointer>(object).*m_pm)(
-                weos::forward<T0>(t0),
-                weos::forward<T1>(t1),
-                weos::forward<T2>(t2),
-                weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)(
+                WEOS_NAMESPACE::forward<T0>(t0),
+                WEOS_NAMESPACE::forward<T1>(t1),
+                WEOS_NAMESPACE::forward<T2>(t2),
+                WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     template <typename TPointer,
@@ -2473,10 +2470,10 @@ private:
                      WEOS_FWD_REF(T2) t2,
                      WEOS_FWD_REF(T3) t3) const
     {
-        return ((*ptr).*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return ((*ptr).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 public:
@@ -2496,10 +2493,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object.*m_pm)(weos::forward<T0>(t0),
-                              weos::forward<T1>(t1),
-                              weos::forward<T2>(t2),
-                              weos::forward<T3>(t3));
+        return (object.*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                              WEOS_NAMESPACE::forward<T1>(t1),
+                              WEOS_NAMESPACE::forward<T2>(t2),
+                              WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #if WEOS_USE_CXX11
@@ -2515,10 +2512,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (weos::move(object).*m_pm)(weos::forward<T0>(t0),
-                                          weos::forward<T1>(t1),
-                                          weos::forward<T2>(t2),
-                                          weos::forward<T3>(t3));
+        return (WEOS_NAMESPACE::move(object).*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                                          WEOS_NAMESPACE::forward<T1>(t1),
+                                          WEOS_NAMESPACE::forward<T2>(t2),
+                                          WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 #endif // WEOS_USE_CXX11
@@ -2534,10 +2531,10 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return (object->*m_pm)(weos::forward<T0>(t0),
-                               weos::forward<T1>(t1),
-                               weos::forward<T2>(t2),
-                               weos::forward<T3>(t3));
+        return (object->*m_pm)(WEOS_NAMESPACE::forward<T0>(t0),
+                               WEOS_NAMESPACE::forward<T1>(t1),
+                               WEOS_NAMESPACE::forward<T2>(t2),
+                               WEOS_NAMESPACE::forward<T3>(t3));
     }
 
     // Smart pointer, reference/pointer to derived class
@@ -2552,12 +2549,12 @@ public:
                             WEOS_FWD_REF(T2) t2,
                             WEOS_FWD_REF(T3) t3) const
     {
-        return call(weos::forward<TPointer>(object),
+        return call(WEOS_NAMESPACE::forward<TPointer>(object),
                     &object,
-                    weos::forward<T0>(t0),
-                    weos::forward<T1>(t1),
-                    weos::forward<T2>(t2),
-                    weos::forward<T3>(t3));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 };
@@ -2590,12 +2587,12 @@ public:
 
     TResult&& operator()(TClass&& object) const WEOS_NOEXCEPT
     {
-        return weos::forward<TClass>(object).*m_pm;
+        return WEOS_NAMESPACE::forward<TClass>(object).*m_pm;
     }
 
     const TResult&& operator()(const TClass&& object) const WEOS_NOEXCEPT
     {
-        return weos::forward<const TClass>(object).*m_pm;
+        return WEOS_NAMESPACE::forward<const TClass>(object).*m_pm;
     }
 
 #endif // WEOS_USE_CXX11
@@ -2641,9 +2638,9 @@ struct BindResult<TResult, F()>
     }
 
     // Move construction
-    BindResult(BOOST_RV_REF(BindResult) other)
-        : m_functor(boost::move(other.m_functor)),
-          m_arguments(boost::move(other.m_arguments))
+    BindResult(WEOS_RV_REF(BindResult) other)
+        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
+          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
     {
     }
 
@@ -2660,103 +2657,103 @@ struct BindResult<TResult, F()>
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (WEOS_FWD_REF(T0) t0)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (WEOS_FWD_REF(T0) t0) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
 private:
@@ -2770,9 +2767,9 @@ private:
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -2783,9 +2780,9 @@ private:
     // Invoke function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -2796,9 +2793,9 @@ private:
     // Invoke function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value,
                 dispatch_tag>::type* = 0)
     {
         return m_functor();
@@ -2807,15 +2804,15 @@ private:
     // Invoke function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value,
                 dispatch_tag>::type* = 0) const
     {
         return m_functor();
     }
 
-    BOOST_COPYABLE_AND_MOVABLE(BindResult)
+    WEOS_COPYABLE_AND_MOVABLE(BindResult)
 };
 
 template <typename TResult, typename F,
@@ -2827,9 +2824,9 @@ struct BindResult<TResult, F(A0)>
     // Constructor with perfect forwarding
     template <typename T0>
     explicit BindResult(const F& f,
-                        BOOST_FWD_REF(T0) t0)
+                        WEOS_FWD_REF(T0) t0)
         : m_functor(f),
-          m_arguments(boost::forward<T0>(t0))
+          m_arguments(WEOS_NAMESPACE::forward<T0>(t0))
     {
     }
 
@@ -2841,9 +2838,9 @@ struct BindResult<TResult, F(A0)>
     }
 
     // Move construction
-    BindResult(BOOST_RV_REF(BindResult) other)
-        : m_functor(boost::move(other.m_functor)),
-          m_arguments(boost::move(other.m_arguments))
+    BindResult(WEOS_RV_REF(BindResult) other)
+        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
+          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
     {
     }
 
@@ -2860,103 +2857,103 @@ struct BindResult<TResult, F(A0)>
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (WEOS_FWD_REF(T0) t0)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (WEOS_FWD_REF(T0) t0) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
 private:
@@ -2970,10 +2967,10 @@ private:
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -2987,10 +2984,10 @@ private:
     // Invoke function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3004,10 +3001,10 @@ private:
     // Invoke member function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3020,10 +3017,10 @@ private:
     // Invoke member function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3036,10 +3033,10 @@ private:
     // Invoke function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return m_functor(
@@ -3051,10 +3048,10 @@ private:
     // Invoke function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return m_functor(
@@ -3066,10 +3063,10 @@ private:
     // Invoke member function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return (*unpack_argument<
@@ -3080,10 +3077,10 @@ private:
     // Invoke member function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return (*unpack_argument<
@@ -3091,7 +3088,7 @@ private:
                     get<0>(m_arguments), unbound_args).*m_functor)();
     }
 
-    BOOST_COPYABLE_AND_MOVABLE(BindResult)
+    WEOS_COPYABLE_AND_MOVABLE(BindResult)
 };
 
 template <typename TResult, typename F,
@@ -3105,11 +3102,11 @@ struct BindResult<TResult, F(A0, A1)>
     template <typename T0,
               typename T1>
     explicit BindResult(const F& f,
-                        BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1)
+                        WEOS_FWD_REF(T0) t0,
+                        WEOS_FWD_REF(T1) t1)
         : m_functor(f),
-          m_arguments(boost::forward<T0>(t0),
-                      boost::forward<T1>(t1))
+          m_arguments(WEOS_NAMESPACE::forward<T0>(t0),
+                      WEOS_NAMESPACE::forward<T1>(t1))
     {
     }
 
@@ -3121,9 +3118,9 @@ struct BindResult<TResult, F(A0, A1)>
     }
 
     // Move construction
-    BindResult(BOOST_RV_REF(BindResult) other)
-        : m_functor(boost::move(other.m_functor)),
-          m_arguments(boost::move(other.m_arguments))
+    BindResult(WEOS_RV_REF(BindResult) other)
+        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
+          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
     {
     }
 
@@ -3140,103 +3137,103 @@ struct BindResult<TResult, F(A0, A1)>
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (WEOS_FWD_REF(T0) t0)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (WEOS_FWD_REF(T0) t0) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
 private:
@@ -3250,10 +3247,10 @@ private:
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3270,10 +3267,10 @@ private:
     // Invoke function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3290,10 +3287,10 @@ private:
     // Invoke member function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3309,10 +3306,10 @@ private:
     // Invoke member function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3328,10 +3325,10 @@ private:
     // Invoke function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return m_functor(
@@ -3346,10 +3343,10 @@ private:
     // Invoke function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return m_functor(
@@ -3364,10 +3361,10 @@ private:
     // Invoke member function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return (*unpack_argument<
@@ -3381,10 +3378,10 @@ private:
     // Invoke member function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return (*unpack_argument<
@@ -3395,7 +3392,7 @@ private:
                     get<1>(m_arguments), unbound_args));
     }
 
-    BOOST_COPYABLE_AND_MOVABLE(BindResult)
+    WEOS_COPYABLE_AND_MOVABLE(BindResult)
 };
 
 template <typename TResult, typename F,
@@ -3411,13 +3408,13 @@ struct BindResult<TResult, F(A0, A1, A2)>
               typename T1,
               typename T2>
     explicit BindResult(const F& f,
-                        BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2)
+                        WEOS_FWD_REF(T0) t0,
+                        WEOS_FWD_REF(T1) t1,
+                        WEOS_FWD_REF(T2) t2)
         : m_functor(f),
-          m_arguments(boost::forward<T0>(t0),
-                      boost::forward<T1>(t1),
-                      boost::forward<T2>(t2))
+          m_arguments(WEOS_NAMESPACE::forward<T0>(t0),
+                      WEOS_NAMESPACE::forward<T1>(t1),
+                      WEOS_NAMESPACE::forward<T2>(t2))
     {
     }
 
@@ -3429,9 +3426,9 @@ struct BindResult<TResult, F(A0, A1, A2)>
     }
 
     // Move construction
-    BindResult(BOOST_RV_REF(BindResult) other)
-        : m_functor(boost::move(other.m_functor)),
-          m_arguments(boost::move(other.m_arguments))
+    BindResult(WEOS_RV_REF(BindResult) other)
+        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
+          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
     {
     }
 
@@ -3448,103 +3445,103 @@ struct BindResult<TResult, F(A0, A1, A2)>
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (WEOS_FWD_REF(T0) t0)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (WEOS_FWD_REF(T0) t0) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
 private:
@@ -3558,10 +3555,10 @@ private:
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3581,10 +3578,10 @@ private:
     // Invoke function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3604,10 +3601,10 @@ private:
     // Invoke member function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3626,10 +3623,10 @@ private:
     // Invoke member function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3648,10 +3645,10 @@ private:
     // Invoke function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return m_functor(
@@ -3669,10 +3666,10 @@ private:
     // Invoke function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return m_functor(
@@ -3690,10 +3687,10 @@ private:
     // Invoke member function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return (*unpack_argument<
@@ -3710,10 +3707,10 @@ private:
     // Invoke member function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return (*unpack_argument<
@@ -3727,7 +3724,7 @@ private:
                     get<2>(m_arguments), unbound_args));
     }
 
-    BOOST_COPYABLE_AND_MOVABLE(BindResult)
+    WEOS_COPYABLE_AND_MOVABLE(BindResult)
 };
 
 template <typename TResult, typename F,
@@ -3745,15 +3742,15 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
               typename T2,
               typename T3>
     explicit BindResult(const F& f,
-                        BOOST_FWD_REF(T0) t0,
-                        BOOST_FWD_REF(T1) t1,
-                        BOOST_FWD_REF(T2) t2,
-                        BOOST_FWD_REF(T3) t3)
+                        WEOS_FWD_REF(T0) t0,
+                        WEOS_FWD_REF(T1) t1,
+                        WEOS_FWD_REF(T2) t2,
+                        WEOS_FWD_REF(T3) t3)
         : m_functor(f),
-          m_arguments(boost::forward<T0>(t0),
-                      boost::forward<T1>(t1),
-                      boost::forward<T2>(t2),
-                      boost::forward<T3>(t3))
+          m_arguments(WEOS_NAMESPACE::forward<T0>(t0),
+                      WEOS_NAMESPACE::forward<T1>(t1),
+                      WEOS_NAMESPACE::forward<T2>(t2),
+                      WEOS_NAMESPACE::forward<T3>(t3))
     {
     }
 
@@ -3765,9 +3762,9 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
     }
 
     // Move construction
-    BindResult(BOOST_RV_REF(BindResult) other)
-        : m_functor(boost::move(other.m_functor)),
-          m_arguments(boost::move(other.m_arguments))
+    BindResult(WEOS_RV_REF(BindResult) other)
+        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
+          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
     {
     }
 
@@ -3784,103 +3781,103 @@ struct BindResult<TResult, F(A0, A1, A2, A3)>
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0)
+    result_type operator() (WEOS_FWD_REF(T0) t0)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0>
-    result_type operator() (BOOST_FWD_REF(T0) t0) const
+    result_type operator() (WEOS_FWD_REF(T0) t0) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0)));
+                    WEOS_NAMESPACE::forward<T0>(t0)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3)
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3)
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
     template <typename T0,
               typename T1,
               typename T2,
               typename T3>
-    result_type operator() (BOOST_FWD_REF(T0) t0,
-                            BOOST_FWD_REF(T1) t1,
-                            BOOST_FWD_REF(T2) t2,
-                            BOOST_FWD_REF(T3) t3) const
+    result_type operator() (WEOS_FWD_REF(T0) t0,
+                            WEOS_FWD_REF(T1) t1,
+                            WEOS_FWD_REF(T2) t2,
+                            WEOS_FWD_REF(T3) t3) const
     {
         return this->invoke<result_type>(
                 forward_as_argument_tuple(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3)));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3)));
     }
 
 private:
@@ -3894,10 +3891,10 @@ private:
     // Invoke function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3920,10 +3917,10 @@ private:
     // Invoke function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3946,10 +3943,10 @@ private:
     // Invoke member function pointer and return void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3971,10 +3968,10 @@ private:
     // Invoke member function pointer and return void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         // The bind expression returns void. Thus, ignore the return value
@@ -3996,10 +3993,10 @@ private:
     // Invoke function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return m_functor(
@@ -4020,10 +4017,10 @@ private:
     // Invoke function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && !boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return m_functor(
@@ -4044,10 +4041,10 @@ private:
     // Invoke member function pointer and return non-void (unqualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0)
     {
         return (*unpack_argument<
@@ -4067,10 +4064,10 @@ private:
     // Invoke member function pointer and return non-void (const qualified).
     template <typename TReturn, typename TUnbound>
     TReturn invoke(
-            BOOST_FWD_REF(TUnbound) unbound_args,
-            typename boost::enable_if_c<
-                !boost::is_same<TReturn, void>::value
-                && boost::is_member_function_pointer<F>::value,
+            WEOS_FWD_REF(TUnbound) unbound_args,
+            typename WEOS_NAMESPACE::enable_if<
+                !WEOS_NAMESPACE::is_same<TReturn, void>::value
+                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
                 dispatch_tag>::type* = 0) const
     {
         return (*unpack_argument<
@@ -4087,7 +4084,7 @@ private:
                     get<3>(m_arguments), unbound_args));
     }
 
-    BOOST_COPYABLE_AND_MOVABLE(BindResult)
+    WEOS_COPYABLE_AND_MOVABLE(BindResult)
 };
 
 
@@ -4101,12 +4098,12 @@ template <typename TResult,
           typename A3 = bind_helper_null_type>
 struct bind_helper
 {
-    typedef typename boost::decay<TCallable>::type functor_type;
+    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
-                       functor_type(typename boost::decay<A0>::type,
-                                    typename boost::decay<A1>::type,
-                                    typename boost::decay<A2>::type,
-                                    typename boost::decay<A3>::type)> type;
+                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
+                                    typename WEOS_NAMESPACE::decay<A1>::type,
+                                    typename WEOS_NAMESPACE::decay<A2>::type,
+                                    typename WEOS_NAMESPACE::decay<A3>::type)> type;
 };
 
 template <typename TResult,
@@ -4120,11 +4117,11 @@ struct bind_helper<TResult, TCallable,
                    A2,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TCallable>::type functor_type;
+    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
-                       functor_type(typename boost::decay<A0>::type,
-                                    typename boost::decay<A1>::type,
-                                    typename boost::decay<A2>::type)> type;
+                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
+                                    typename WEOS_NAMESPACE::decay<A1>::type,
+                                    typename WEOS_NAMESPACE::decay<A2>::type)> type;
 };
 
 template <typename TResult,
@@ -4137,10 +4134,10 @@ struct bind_helper<TResult, TCallable,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TCallable>::type functor_type;
+    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
-                       functor_type(typename boost::decay<A0>::type,
-                                    typename boost::decay<A1>::type)> type;
+                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
+                                    typename WEOS_NAMESPACE::decay<A1>::type)> type;
 };
 
 template <typename TResult,
@@ -4152,9 +4149,9 @@ struct bind_helper<TResult, TCallable,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TCallable>::type functor_type;
+    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
-                       functor_type(typename boost::decay<A0>::type)> type;
+                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type)> type;
 };
 
 template <typename TResult,
@@ -4165,7 +4162,7 @@ struct bind_helper<TResult, TCallable,
                    bind_helper_null_type,
                    bind_helper_null_type>
 {
-    typedef typename boost::decay<TCallable>::type functor_type;
+    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;
     typedef BindResult<TResult,
                        functor_type()> type;
 };
@@ -4193,11 +4190,11 @@ template <typename TCallable>
 inline
 typename detail::bind_helper<detail::unspecified_type,
                              TCallable>::type
-bind(BOOST_FWD_REF(TCallable) f)
+bind(WEOS_FWD_REF(TCallable) f)
 {
     typedef typename detail::bind_helper<detail::unspecified_type,
                                          TCallable>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f));
 }
 
 template <typename TCallable,
@@ -4206,14 +4203,14 @@ inline
 typename detail::bind_helper<detail::unspecified_type,
                              TCallable,
                              A0>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0)
 {
     typedef typename detail::bind_helper<detail::unspecified_type,
                                          TCallable,
                                          A0>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0));
 }
 
 template <typename TCallable,
@@ -4224,17 +4221,17 @@ typename detail::bind_helper<detail::unspecified_type,
                              TCallable,
                              A0,
                              A1>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0,
-     BOOST_FWD_REF(A1) a1)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0,
+     WEOS_FWD_REF(A1) a1)
 {
     typedef typename detail::bind_helper<detail::unspecified_type,
                                          TCallable,
                                          A0,
                                          A1>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0),
-                      boost::forward<A1>(a1));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0),
+                      WEOS_NAMESPACE::forward<A1>(a1));
 }
 
 template <typename TCallable,
@@ -4247,20 +4244,20 @@ typename detail::bind_helper<detail::unspecified_type,
                              A0,
                              A1,
                              A2>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0,
-     BOOST_FWD_REF(A1) a1,
-     BOOST_FWD_REF(A2) a2)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0,
+     WEOS_FWD_REF(A1) a1,
+     WEOS_FWD_REF(A2) a2)
 {
     typedef typename detail::bind_helper<detail::unspecified_type,
                                          TCallable,
                                          A0,
                                          A1,
                                          A2>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0),
-                      boost::forward<A1>(a1),
-                      boost::forward<A2>(a2));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0),
+                      WEOS_NAMESPACE::forward<A1>(a1),
+                      WEOS_NAMESPACE::forward<A2>(a2));
 }
 
 template <typename TCallable,
@@ -4275,11 +4272,11 @@ typename detail::bind_helper<detail::unspecified_type,
                              A1,
                              A2,
                              A3>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0,
-     BOOST_FWD_REF(A1) a1,
-     BOOST_FWD_REF(A2) a2,
-     BOOST_FWD_REF(A3) a3)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0,
+     WEOS_FWD_REF(A1) a1,
+     WEOS_FWD_REF(A2) a2,
+     WEOS_FWD_REF(A3) a3)
 {
     typedef typename detail::bind_helper<detail::unspecified_type,
                                          TCallable,
@@ -4287,11 +4284,11 @@ bind(BOOST_FWD_REF(TCallable) f,
                                          A1,
                                          A2,
                                          A3>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0),
-                      boost::forward<A1>(a1),
-                      boost::forward<A2>(a2),
-                      boost::forward<A3>(a3));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0),
+                      WEOS_NAMESPACE::forward<A1>(a1),
+                      WEOS_NAMESPACE::forward<A2>(a2),
+                      WEOS_NAMESPACE::forward<A3>(a3));
 }
 
 // template <typename R, typename F, typename... TArgs>
@@ -4301,11 +4298,11 @@ template <typename TResult,
 inline
 typename detail::bind_helper<TResult,
                              TCallable>::type
-bind(BOOST_FWD_REF(TCallable) f)
+bind(WEOS_FWD_REF(TCallable) f)
 {
     typedef typename detail::bind_helper<TResult,
                                          TCallable>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f));
 }
 
 template <typename TResult,
@@ -4315,14 +4312,14 @@ inline
 typename detail::bind_helper<TResult,
                              TCallable,
                              A0>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0)
 {
     typedef typename detail::bind_helper<TResult,
                                          TCallable,
                                          A0>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0));
 }
 
 template <typename TResult,
@@ -4334,17 +4331,17 @@ typename detail::bind_helper<TResult,
                              TCallable,
                              A0,
                              A1>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0,
-     BOOST_FWD_REF(A1) a1)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0,
+     WEOS_FWD_REF(A1) a1)
 {
     typedef typename detail::bind_helper<TResult,
                                          TCallable,
                                          A0,
                                          A1>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0),
-                      boost::forward<A1>(a1));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0),
+                      WEOS_NAMESPACE::forward<A1>(a1));
 }
 
 template <typename TResult,
@@ -4358,20 +4355,20 @@ typename detail::bind_helper<TResult,
                              A0,
                              A1,
                              A2>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0,
-     BOOST_FWD_REF(A1) a1,
-     BOOST_FWD_REF(A2) a2)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0,
+     WEOS_FWD_REF(A1) a1,
+     WEOS_FWD_REF(A2) a2)
 {
     typedef typename detail::bind_helper<TResult,
                                          TCallable,
                                          A0,
                                          A1,
                                          A2>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0),
-                      boost::forward<A1>(a1),
-                      boost::forward<A2>(a2));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0),
+                      WEOS_NAMESPACE::forward<A1>(a1),
+                      WEOS_NAMESPACE::forward<A2>(a2));
 }
 
 template <typename TResult,
@@ -4387,11 +4384,11 @@ typename detail::bind_helper<TResult,
                              A1,
                              A2,
                              A3>::type
-bind(BOOST_FWD_REF(TCallable) f,
-     BOOST_FWD_REF(A0) a0,
-     BOOST_FWD_REF(A1) a1,
-     BOOST_FWD_REF(A2) a2,
-     BOOST_FWD_REF(A3) a3)
+bind(WEOS_FWD_REF(TCallable) f,
+     WEOS_FWD_REF(A0) a0,
+     WEOS_FWD_REF(A1) a1,
+     WEOS_FWD_REF(A2) a2,
+     WEOS_FWD_REF(A3) a3)
 {
     typedef typename detail::bind_helper<TResult,
                                          TCallable,
@@ -4399,11 +4396,11 @@ bind(BOOST_FWD_REF(TCallable) f,
                                          A1,
                                          A2,
                                          A3>::type bound_type;
-    return bound_type(boost::forward<TCallable>(f),
-                      boost::forward<A0>(a0),
-                      boost::forward<A1>(a1),
-                      boost::forward<A2>(a2),
-                      boost::forward<A3>(a3));
+    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f),
+                      WEOS_NAMESPACE::forward<A0>(a0),
+                      WEOS_NAMESPACE::forward<A1>(a1),
+                      WEOS_NAMESPACE::forward<A2>(a2),
+                      WEOS_NAMESPACE::forward<A3>(a3));
 }
 
 // ====================================================================
@@ -4454,7 +4451,7 @@ struct BindAdapter
             T0 t0)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
-                    boost::forward<T0>(t0));
+                    WEOS_NAMESPACE::forward<T0>(t0));
     }
 
     template <typename T0,
@@ -4465,8 +4462,8 @@ struct BindAdapter
             T1 t1)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1));
     }
 
     template <typename T0,
@@ -4479,9 +4476,9 @@ struct BindAdapter
             T2 t2)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2));
     }
 
     template <typename T0,
@@ -4496,10 +4493,10 @@ struct BindAdapter
             T3 t3)
     {
         return (*static_cast<TBindResult*>(bindExpression))(
-                    boost::forward<T0>(t0),
-                    boost::forward<T1>(t1),
-                    boost::forward<T2>(t2),
-                    boost::forward<T3>(t3));
+                    WEOS_NAMESPACE::forward<T0>(t0),
+                    WEOS_NAMESPACE::forward<T1>(t1),
+                    WEOS_NAMESPACE::forward<T2>(t2),
+                    WEOS_NAMESPACE::forward<T3>(t3));
     }
 
 };
@@ -4672,7 +4669,7 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(m_storage,
-                            boost::forward<A0>(a0));
+                            WEOS_NAMESPACE::forward<A0>(a0));
     }
 
     function& operator= (nullptr_t)
@@ -4775,8 +4772,8 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(m_storage,
-                            boost::forward<A0>(a0),
-                            boost::forward<A1>(a1));
+                            WEOS_NAMESPACE::forward<A0>(a0),
+                            WEOS_NAMESPACE::forward<A1>(a1));
     }
 
     function& operator= (nullptr_t)
@@ -4883,9 +4880,9 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(m_storage,
-                            boost::forward<A0>(a0),
-                            boost::forward<A1>(a1),
-                            boost::forward<A2>(a2));
+                            WEOS_NAMESPACE::forward<A0>(a0),
+                            WEOS_NAMESPACE::forward<A1>(a1),
+                            WEOS_NAMESPACE::forward<A2>(a2));
     }
 
     function& operator= (nullptr_t)
@@ -4996,10 +4993,10 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(m_storage,
-                            boost::forward<A0>(a0),
-                            boost::forward<A1>(a1),
-                            boost::forward<A2>(a2),
-                            boost::forward<A3>(a3));
+                            WEOS_NAMESPACE::forward<A0>(a0),
+                            WEOS_NAMESPACE::forward<A1>(a1),
+                            WEOS_NAMESPACE::forward<A2>(a2),
+                            WEOS_NAMESPACE::forward<A3>(a3));
     }
 
     function& operator= (nullptr_t)
@@ -5076,8 +5073,8 @@ public:
     template <typename TSignature>
     static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
-        BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
-                                "The bind expression is too large for this function.");
+        static_assert(sizeof(expr) <= TStorageSize,
+                      "The bind expression is too large for this function.");
 
         typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
@@ -5109,7 +5106,7 @@ private:
     typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);
     typedef result_type (*invoker_type)(void*);
 
-    typename boost::aligned_storage<TStorageSize>::type m_storage;
+    typename WEOS_NAMESPACE::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
     invoker_type m_invoker;
 
@@ -5158,8 +5155,8 @@ public:
     template <typename TSignature>
     static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
-        BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
-                                "The bind expression is too large for this function.");
+        static_assert(sizeof(expr) <= TStorageSize,
+                      "The bind expression is too large for this function.");
 
         typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
@@ -5174,7 +5171,7 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
-                            boost::forward<A0>(a0));
+                            WEOS_NAMESPACE::forward<A0>(a0));
     }
 
     static_function& operator= (nullptr_t)
@@ -5193,7 +5190,7 @@ private:
     typedef result_type (*invoker_type)(void*,
                                         A0);
 
-    typename boost::aligned_storage<TStorageSize>::type m_storage;
+    typename WEOS_NAMESPACE::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
     invoker_type m_invoker;
 
@@ -5243,8 +5240,8 @@ public:
     template <typename TSignature>
     static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
-        BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
-                                "The bind expression is too large for this function.");
+        static_assert(sizeof(expr) <= TStorageSize,
+                      "The bind expression is too large for this function.");
 
         typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
@@ -5261,8 +5258,8 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
-                            boost::forward<A0>(a0),
-                            boost::forward<A1>(a1));
+                            WEOS_NAMESPACE::forward<A0>(a0),
+                            WEOS_NAMESPACE::forward<A1>(a1));
     }
 
     static_function& operator= (nullptr_t)
@@ -5282,7 +5279,7 @@ private:
                                         A0,
                                         A1);
 
-    typename boost::aligned_storage<TStorageSize>::type m_storage;
+    typename WEOS_NAMESPACE::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
     invoker_type m_invoker;
 
@@ -5333,8 +5330,8 @@ public:
     template <typename TSignature>
     static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
-        BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
-                                "The bind expression is too large for this function.");
+        static_assert(sizeof(expr) <= TStorageSize,
+                      "The bind expression is too large for this function.");
 
         typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
@@ -5353,9 +5350,9 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
-                            boost::forward<A0>(a0),
-                            boost::forward<A1>(a1),
-                            boost::forward<A2>(a2));
+                            WEOS_NAMESPACE::forward<A0>(a0),
+                            WEOS_NAMESPACE::forward<A1>(a1),
+                            WEOS_NAMESPACE::forward<A2>(a2));
     }
 
     static_function& operator= (nullptr_t)
@@ -5376,7 +5373,7 @@ private:
                                         A1,
                                         A2);
 
-    typename boost::aligned_storage<TStorageSize>::type m_storage;
+    typename WEOS_NAMESPACE::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
     invoker_type m_invoker;
 
@@ -5428,8 +5425,8 @@ public:
     template <typename TSignature>
     static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)
     {
-        BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,
-                                "The bind expression is too large for this function.");
+        static_assert(sizeof(expr) <= TStorageSize,
+                      "The bind expression is too large for this function.");
 
         typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
 
@@ -5450,10 +5447,10 @@ public:
     {
         WEOS_ASSERT(m_invoker);
         return (*m_invoker)(&m_storage,
-                            boost::forward<A0>(a0),
-                            boost::forward<A1>(a1),
-                            boost::forward<A2>(a2),
-                            boost::forward<A3>(a3));
+                            WEOS_NAMESPACE::forward<A0>(a0),
+                            WEOS_NAMESPACE::forward<A1>(a1),
+                            WEOS_NAMESPACE::forward<A2>(a2),
+                            WEOS_NAMESPACE::forward<A3>(a3));
     }
 
     static_function& operator= (nullptr_t)
@@ -5475,7 +5472,7 @@ private:
                                         A2,
                                         A3);
 
-    typename boost::aligned_storage<TStorageSize>::type m_storage;
+    typename WEOS_NAMESPACE::aligned_storage<TStorageSize>::type m_storage;
     manager_type m_manager;
     invoker_type m_invoker;
 

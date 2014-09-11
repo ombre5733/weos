@@ -67,10 +67,10 @@ def argumentTuple(numArgs, maxArgs):
         s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
         s += ">\n"
         s += "    explicit argument_tuple("
-        s += ",\n                            ".join(["BOOST_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
         s += ")\n"
         s += "        : "
-        s += ",\n          ".join(["m_a%d(boost::forward<T%d>(t%d))" % (i,i,i) for i in xrange(numArgs)])
+        s += ",\n          ".join(["m_a%d(WEOS_NAMESPACE::forward<T%d>(t%d))" % (i,i,i) for i in xrange(numArgs)])
         s += "\n    {\n    }\n\n"
 
     if numArgs:
@@ -82,16 +82,16 @@ def argumentTuple(numArgs, maxArgs):
 
     if numArgs:
         s += "    // Move constructor\n"
-        s += "    argument_tuple(BOOST_RV_REF(argument_tuple) other)\n"
+        s += "    argument_tuple(WEOS_RV_REF(argument_tuple) other)\n"
         s += "        : "
-        s += ",\n          ".join(["m_a%d(boost::forward<A%d>(other.m_a%d))" % (i,i,i) for i in xrange(numArgs)])
+        s += ",\n          ".join(["m_a%d(WEOS_NAMESPACE::forward<A%d>(other.m_a%d))" % (i,i,i) for i in xrange(numArgs)])
         s += "\n    {\n    }\n\n"
 
     if numArgs:
         s += "    // Accessors\n"
     for i in xrange(numArgs):
-        s += "    A%d& get(boost::integral_constant<std::size_t, %d>) { return m_a%d; }\n" % (i,i,i)
-        s += "    const A%d& get(boost::integral_constant<std::size_t, %d>) const { return m_a%d; }\n\n" % (i,i,i)
+        s += "    A%d& get(WEOS_NAMESPACE::integral_constant<std::size_t, %d>) { return m_a%d; }\n" % (i,i,i)
+        s += "    const A%d& get(WEOS_NAMESPACE::integral_constant<std::size_t, %d>) const { return m_a%d; }\n\n" % (i,i,i)
 
 
     s += "private:\n"
@@ -103,7 +103,7 @@ def argumentTuple(numArgs, maxArgs):
     #s += "    const argument_tuple& operator= (const argument_tuple&);\n\n"
 
     if numArgs:
-        s += "    BOOST_COPYABLE_AND_MOVABLE(argument_tuple)\n"
+        s += "    WEOS_COPYABLE_AND_MOVABLE(argument_tuple)\n"
 
     s += "};\n\n"
     return s
@@ -149,7 +149,7 @@ def argumentTupleNonMembers(maxArgs):
     s += "    typedef argument_tuple<"
     s += ", ".join(["A%d" % i for i in xrange(maxArgs)])
     s += "> tuple_type;\n"
-    s += "    typedef typename boost::add_const<\n"
+    s += "    typedef typename WEOS_NAMESPACE::add_const<\n"
     s += "        typename argument_tuple_element<TIndex, tuple_type>::type>::type type;\n"
     s += "};\n\n"
 
@@ -167,7 +167,7 @@ def argumentTupleNonMembers(maxArgs):
     s += ", ".join(["A%d" % i for i in xrange(maxArgs)])
     s += ">& t)\n"
     s += "{\n"
-    s += "    return t.get(boost::integral_constant<std::size_t, TIndex>());\n"
+    s += "    return t.get(WEOS_NAMESPACE::integral_constant<std::size_t, TIndex>());\n"
     s += "}\n\n"
     s += "template <std::size_t TIndex,\n          "
     s += ",\n          ".join(["typename A%d" % i for i in xrange(maxArgs)])
@@ -180,7 +180,7 @@ def argumentTupleNonMembers(maxArgs):
     s += ", ".join(["A%d" % i for i in xrange(maxArgs)])
     s += ">& t)\n"
     s += "{\n"
-    s += "    return t.get(boost::integral_constant<std::size_t, TIndex>());\n"
+    s += "    return t.get(WEOS_NAMESPACE::integral_constant<std::size_t, TIndex>());\n"
     s += "}\n\n"
 
     s += "// --------------------------------------------------------------------\n"
@@ -195,7 +195,7 @@ def argumentTupleNonMembers(maxArgs):
     s += "struct argument_tuple_size<argument_tuple<"
     s += ", ".join(["A%d" % i for i in xrange(maxArgs)])
     s += "> >\n"
-    s += "        : boost::integral_constant<\n"
+    s += "        : WEOS_NAMESPACE::integral_constant<\n"
     s += "              std::size_t,\n"
     s += "              argument_tuple<"
     s += ", ".join(["A%d" % i for i in xrange(maxArgs)])
@@ -208,7 +208,7 @@ def argumentTupleNonMembers(maxArgs):
     s += "struct argument_tuple_size<const argument_tuple<"
     s += ", ".join(["A%d" % i for i in xrange(maxArgs)])
     s += "> >\n"
-    s += "        : boost::integral_constant<\n"
+    s += "        : WEOS_NAMESPACE::integral_constant<\n"
     s += "              std::size_t,\n"
     s += "              argument_tuple<"
     s += ", ".join(["A%d" % i for i in xrange(maxArgs)])
@@ -232,15 +232,15 @@ def forwardAsArgumentTuple(numArgs):
     s += ">\n"
     s += "inline\n"
     s += "argument_tuple<"
-    s += ",\n               ".join(["BOOST_FWD_REF(A%d)" % i for i in xrange(numArgs)])
+    s += ",\n               ".join(["WEOS_FWD_REF(A%d)" % i for i in xrange(numArgs)])
     s += ">\n"
     s += "forward_as_argument_tuple("
-    s += ",\n                          ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
+    s += ",\n                          ".join(["WEOS_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n{\n"
     s += "    return argument_tuple<"
-    s += ",\n                          ".join(["BOOST_FWD_REF(A%d)" % i for i in xrange(numArgs)])
+    s += ",\n                          ".join(["WEOS_FWD_REF(A%d)" % i for i in xrange(numArgs)])
     s += ">(\n            "
-    s += ",\n            ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
+    s += ",\n            ".join(["WEOS_NAMESPACE::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "}\n\n"
 
@@ -255,10 +255,10 @@ def placeholders(maxArgs):
         s += "extern const placeholder<%d> _%d;\n" % (i+1,i+1)
     s += "} // namespace placeholders\n\n"
     s += "template <typename T>\n"
-    s += "struct is_placeholder : boost::integral_constant<int, 0>\n{\n};\n\n"
+    s += "struct is_placeholder : WEOS_NAMESPACE::integral_constant<int, 0>\n{\n};\n\n"
     s += "template <int TIndex>\n"
     s += "struct is_placeholder<placeholders::placeholder<TIndex> >\n"
-    s += "        : boost::integral_constant<int, TIndex>\n{\n};\n\n"
+    s += "        : WEOS_NAMESPACE::integral_constant<int, TIndex>\n{\n};\n\n"
     return s
 
 def unpackArgument():
@@ -289,17 +289,17 @@ def unpackArgument():
     s += "struct unpacked_argument_type<placeholders::placeholder<TIndex>, TUnbound>\n"
     s += "{\n"
     s += "    typedef typename placeholder_bounds_checker<TIndex - 1, TUnbound>::type temp_type;\n"
-    s += "    typedef typename boost::add_rvalue_reference<temp_type>::type type;\n"
+    s += "    typedef typename WEOS_NAMESPACE::add_rvalue_reference<temp_type>::type type;\n"
     s += "};\n\n"
 
     s += "template <typename TBound>\n"
     s += "struct unpack_argument\n"
     s += "{\n"
     s += "    template <typename TType, typename TUnbound>\n"
-    s += "    BOOST_FWD_REF(TType) operator() (BOOST_FWD_REF(TType) bound,\n"
+    s += "    WEOS_FWD_REF(TType) operator() (WEOS_FWD_REF(TType) bound,\n"
     s += "                                     TUnbound& unbound) const\n"
     s += "    {\n"
-    s += "        return boost::forward<TType>(bound);\n"
+    s += "        return WEOS_NAMESPACE::forward<TType>(bound);\n"
     s += "    }\n"
     s += "};\n\n"
 
@@ -311,7 +311,7 @@ def unpackArgument():
     s += "    typename unpacked_argument_type<bound_type, TUnbound>::type operator() (\n"
     s += "        const bound_type& /*bound*/, TUnbound& unbound) const\n"
     s += "    {\n"
-    s += "        return boost::forward<typename unpacked_argument_type<\n"
+    s += "        return WEOS_NAMESPACE::forward<typename unpacked_argument_type<\n"
     s += "                                  bound_type, TUnbound>::type>(\n"
     s += "                    get<TIndex - 1>(unbound));\n"
     s += "    }\n"
@@ -362,10 +362,10 @@ def memFnResult(numArgs, cv):
         s += ",\n                     ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
-    s += "        return (weos::forward<TPointer>(object).*m_pm)("
+    s += "        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)("
     if numArgs:
         s += "\n                "
-        s += ",\n                ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
 
@@ -383,7 +383,7 @@ def memFnResult(numArgs, cv):
     s += ") const\n"
     s += "    {\n"
     s += "        return ((*ptr).*m_pm)("
-    s += ",\n                              ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ",\n                              ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
 
@@ -407,7 +407,7 @@ def memFnResult(numArgs, cv):
     s += ") const\n"
     s += "    {\n"
     s += "        return (object.*m_pm)("
-    s += ",\n                              ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ",\n                              ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
 
@@ -425,8 +425,8 @@ def memFnResult(numArgs, cv):
         s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
-    s += "        return (weos::move(object).*m_pm)("
-    s += ",\n                                          ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += "        return (WEOS_NAMESPACE::move(object).*m_pm)("
+    s += ",\n                                          ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
     s += "#endif // WEOS_USE_CXX11\n\n"
@@ -445,7 +445,7 @@ def memFnResult(numArgs, cv):
     s += ") const\n"
     s += "    {\n"
     s += "        return (object->*m_pm)("
-    s += ",\n                               ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+    s += ",\n                               ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
 
@@ -463,11 +463,11 @@ def memFnResult(numArgs, cv):
         s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
-    s += "        return call(weos::forward<TPointer>(object),\n"
+    s += "        return call(WEOS_NAMESPACE::forward<TPointer>(object),\n"
     s += "                    &object"
     if numArgs:
         s += ",\n                    "
-        s += ",\n                    ".join(["weos::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                    ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
 
@@ -495,12 +495,12 @@ def bindResult(numArgs, maxArgs):
     s += "    explicit BindResult(const F& f"
     if numArgs:
         s += ",\n                        "
-        s += ",\n                        ".join(["BOOST_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                        ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n"
     s += "        : m_functor(f)"
     if numArgs:
         s += ",\n          m_arguments("
-        s += ",\n                      ".join(["boost::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                      ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
         s += ")"
     s += "\n    {\n    }\n\n"
 
@@ -511,9 +511,9 @@ def bindResult(numArgs, maxArgs):
     s += "    {\n    }\n\n"
 
     s += "    // Move construction\n"
-    s += "    BindResult(BOOST_RV_REF(BindResult) other)\n"
-    s += "        : m_functor(boost::move(other.m_functor)),\n"
-    s += "          m_arguments(boost::move(other.m_arguments))\n"
+    s += "    BindResult(WEOS_RV_REF(BindResult) other)\n"
+    s += "        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),\n"
+    s += "          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))\n"
     s += "    {\n    }\n\n"
 
     def operator(nargs, qualifier):
@@ -523,7 +523,7 @@ def bindResult(numArgs, maxArgs):
             s += ",\n              ".join(["typename T%d" % i for i in xrange(nargs)])
             s += ">\n"
         s += "    result_type operator() ("
-        s += ",\n                            ".join(["BOOST_FWD_REF(T%d) t%d" % (i,i) for i in xrange(nargs)])
+        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(nargs)])
         s += ")"
         if qualifier:
             s += " " + qualifier
@@ -533,7 +533,7 @@ def bindResult(numArgs, maxArgs):
         s += "                forward_as_argument_tuple("
         if nargs:
             s += "\n                    "
-            s += ",\n                    ".join(["boost::forward<T%d>(t%d)" % (i,i) for i in xrange(nargs)])
+            s += ",\n                    ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(nargs)])
         s += "));\n"
         s += "    }\n\n"
         return s
@@ -575,16 +575,16 @@ def bindResult(numArgs, maxArgs):
 
         s += "    template <typename TReturn, typename TUnbound>\n"
         s += "    TReturn invoke(\n"
-        s += "            BOOST_FWD_REF(TUnbound) unbound_args,\n"
-        s += "            typename boost::enable_if_c<\n"
+        s += "            WEOS_FWD_REF(TUnbound) unbound_args,\n"
+        s += "            typename WEOS_NAMESPACE::enable_if<\n"
         if void:
-            s += "                boost::is_same<TReturn, void>::value"
+            s += "                WEOS_NAMESPACE::is_same<TReturn, void>::value"
         else:
-            s += "                !boost::is_same<TReturn, void>::value"
+            s += "                !WEOS_NAMESPACE::is_same<TReturn, void>::value"
         if memberFunction:
-            s += "\n                && boost::is_member_function_pointer<F>::value"
+            s += "\n                && WEOS_NAMESPACE::is_member_function_pointer<F>::value"
         elif numArgs:
-            s += "\n                && !boost::is_member_function_pointer<F>::value"
+            s += "\n                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value"
         s += ",\n"
         s += "                dispatch_tag>::type* = 0)"
         if qualifier:
@@ -625,7 +625,7 @@ def bindResult(numArgs, maxArgs):
             s += invoke(returnsVoid, memFun, "")
             s += invoke(returnsVoid, memFun, "const")
 
-    s += "    BOOST_COPYABLE_AND_MOVABLE(BindResult)\n"
+    s += "    WEOS_COPYABLE_AND_MOVABLE(BindResult)\n"
 
     s += "};\n\n"
     return s
@@ -684,10 +684,10 @@ def bindHelper(numArgs, maxArgs):
                 ["bind_helper_null_type" for i in xrange(maxArgs - numArgs)])
         s += ">"
     s += "\n{\n"
-    s += "    typedef typename boost::decay<TCallable>::type functor_type;\n"
+    s += "    typedef typename WEOS_NAMESPACE::decay<TCallable>::type functor_type;\n"
     s += "    typedef BindResult<TResult,\n"
     s += "                       functor_type("
-    s += ",\n                                    ".join(["typename boost::decay<A%d>::type" % i for i in xrange(numArgs)])
+    s += ",\n                                    ".join(["typename WEOS_NAMESPACE::decay<A%d>::type" % i for i in xrange(numArgs)])
     s += ")> type;\n"
     s += "};\n\n"
     return s
@@ -713,10 +713,10 @@ def bind(numArgs, withResult):
         s += ",\n                             "
         s += ",\n                             ".join(["A%d" % i for i in xrange(numArgs)])
     s += ">::type\n"
-    s += "bind(BOOST_FWD_REF(TCallable) f"
+    s += "bind(WEOS_FWD_REF(TCallable) f"
     if numArgs:
         s += ",\n     "
-        s += ",\n     ".join(["BOOST_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n     ".join(["WEOS_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n{\n"
     s += "    typedef typename detail::bind_helper<%s,\n" % resultType
     s += "                                         TCallable"
@@ -724,10 +724,10 @@ def bind(numArgs, withResult):
         s += ",\n                                         "
         s += ",\n                                         ".join(["A%d" % i for i in xrange(numArgs)])
     s += ">::type bound_type;\n"
-    s += "    return bound_type(boost::forward<TCallable>(f)"
+    s += "    return bound_type(WEOS_NAMESPACE::forward<TCallable>(f)"
     if numArgs:
         s += ",\n                      "
-        s += ",\n                      ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                      ".join(["WEOS_NAMESPACE::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "}\n\n"
     return s
@@ -781,7 +781,7 @@ def typeErasedBindInvoker(maxArgs):
         s += "        return (*static_cast<TBindResult*>(bindExpression))("
         if nargs:
             s += "\n                    "
-            s += ",\n                    ".join(["boost::forward<T%d>(t%d)" % (i,i) for i in xrange(nargs)])
+            s += ",\n                    ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(nargs)])
         s += ");\n"
         s += "    }\n\n"
         return s
@@ -893,7 +893,7 @@ def function(numArgs):
     s += "        return (*m_invoker)(m_storage"
     if numArgs:
         s += ",\n                            "
-        s += ",\n                            ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["WEOS_NAMESPACE::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
 
@@ -973,8 +973,8 @@ def staticFunction(numArgs):
     s += "    template <typename TSignature>\n"
     s += "    static_function& operator= (const detail::BindResult<result_type, TSignature>& expr)\n"
     s += "    {\n"
-    s += "        BOOST_STATIC_ASSERT_MSG(sizeof(expr) <= TStorageSize,\n"
-    s += "                                \"The bind expression is too large for this function.\");\n\n"
+    s += "        static_assert(sizeof(expr) <= TStorageSize,\n"
+    s += "                      \"The bind expression is too large for this function.\");\n\n"
     s += "        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;\n\n"
     s += "        release();\n"
     s += "        m_manager = &adapter::manage;\n"
@@ -997,7 +997,7 @@ def staticFunction(numArgs):
     s += "        return (*m_invoker)(&m_storage"
     if numArgs:
         s += ",\n                            "
-        s += ",\n                            ".join(["boost::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["WEOS_NAMESPACE::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
 
@@ -1020,7 +1020,7 @@ def staticFunction(numArgs):
         s += ",\n                                        ".join(["A%d" % i for i in xrange(numArgs)])
     s += ");\n\n"
 
-    s += "    typename boost::aligned_storage<TStorageSize>::type m_storage;\n"
+    s += "    typename WEOS_NAMESPACE::aligned_storage<TStorageSize>::type m_storage;\n"
     s += "    manager_type m_manager;\n"
     s += "    invoker_type m_invoker;\n\n"
 
@@ -1050,11 +1050,9 @@ def generateHeader(maxArgs):
     s += "#define WEOS_COMMON_FUNCTIONAL_HPP\n\n"
 
     s += "#include \"../config.hpp\"\n\n"
-    s += "#include \"../utility.hpp\"\n\n"
 
-    s += "#include <boost/utility/enable_if.hpp>\n"
-    s += "#include <boost/move/move.hpp>\n"
-    s += "#include <boost/type_traits.hpp>\n\n"
+    s += "#include \"../type_traits.hpp\"\n"
+    s += "#include \"../utility.hpp\"\n\n"
 
     s += "#include <cstdlib>\n\n"
 
@@ -1135,12 +1133,12 @@ def generateHeader(maxArgs):
 
     s += "    TResult&& operator()(TClass&& object) const WEOS_NOEXCEPT\n"
     s += "    {\n"
-    s += "        return weos::forward<TClass>(object).*m_pm;\n"
+    s += "        return WEOS_NAMESPACE::forward<TClass>(object).*m_pm;\n"
     s += "    }\n\n"
 
     s += "    const TResult&& operator()(const TClass&& object) const WEOS_NOEXCEPT\n"
     s += "    {\n"
-    s += "        return weos::forward<const TClass>(object).*m_pm;\n"
+    s += "        return WEOS_NAMESPACE::forward<const TClass>(object).*m_pm;\n"
     s += "    }\n\n"
 
     s += "#endif // WEOS_USE_CXX11\n\n"
