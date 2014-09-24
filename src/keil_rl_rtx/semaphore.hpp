@@ -29,14 +29,15 @@
 #ifndef WEOS_KEIL_RL_RTX_SEMAPHORE_HPP
 #define WEOS_KEIL_RL_RTX_SEMAPHORE_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "chrono.hpp"
 #include "system_error.hpp"
 
 #include <cstdint>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 class semaphore
 {
@@ -44,20 +45,28 @@ public:
     //! The counter type used for the semaphore.
     typedef std::uint16_t value_type;
 
-    //! Creates a semaphore.
+    //! \brief Creates a semaphore.
+    //!
     //! Creates a semaphore with an initial number of \p value tokens.
     explicit semaphore(value_type value = 0)
     {
         os_sem_init(&m_semaphore, value);
     }
 
-    //! Releases a semaphore token.
+    //! \brief Releases a semaphore token.
+    //!
+    //! Increases the semaphore's value by one.
+    //! \note It is undefined behaviour to post() a semaphore which is already
+    //! full.
     void post()
     {
         os_sem_send(&m_semaphore);
     }
 
-    //! Waits until a semaphore token is available.
+    //! \brief Waits until a semaphore token is available.
+    //!
+    //! Blocks the calling thread until the semaphore's value is non-zero.
+    //! Then the semaphore is decreased by one and the thread returns.
     void wait()
     {
         OS_RESULT result = os_sem_wait(&m_semaphore, 0xFFFF);
@@ -68,7 +77,8 @@ public:
         }
     }
 
-    //! Tries to acquire a semaphore token.
+    //! \brief Tries to acquire a semaphore token.
+    //!
     //! Tries to acquire a semaphore token and returns \p true upon success.
     //! If no token is available, the calling thread is not blocked and
     //! \p false is returned.
@@ -78,18 +88,43 @@ public:
         return result != OS_R_TMO;
     }
 
-    //! Tries to acquire a semaphore token within a timeout.
+    //! \brief Tries to acquire a semaphore token within a timeout.
+    //!
     //! Tries for a timeout period \p d to acquire a semaphore token and returns
     //! \p true upon success or \p false in case of a timeout.
     template <typename RepT, typename PeriodT>
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
     {
-        try_waiter waiter(m_semaphore);
-        return chrono::detail::cmsis_wait<
-                RepT, PeriodT, try_waiter>::wait(d, waiter);
+        return try_wait_until(chrono::monotonic_clock::now() + d);
     }
 
-    //! Returns the numer of semaphore tokens.
+    //! \brief Tries to acquire token up to a time point.
+    //!
+    //! Tries to acquire a semaphore token up to the given \p timePoint. The
+    //! return value is \p true, if a token could be acquired before the
+    //! timeout.
+    template <typename ClockT, typename DurationT>
+    bool try_wait_until(const chrono::time_point<ClockT, DurationT>& timePoint)
+    {
+        typedef typename DurationT::rep rep_t;
+        do
+        {
+            rep_t ticks = chrono::duration_cast<chrono::milliseconds>(
+                              timePoint - ClockT::now());
+            if (ticks < 0)
+                ticks = 0;
+            else if (ticks > 0xFFFE)
+                ticks = 0xFFFE;
+
+            OS_RESULT result = os_sem_wait(&m_semaphore, ticks);
+            if (result != OS_R_TMO)
+                return true;
+        } while (ticks > 0);
+
+        return false;
+    }
+
+    //! \brief Returns the numer of semaphore tokens.
     value_type value() const
     {
         return semaphoreControlBlockHeader()->numTokens;
@@ -116,30 +151,8 @@ private:
         return reinterpret_cast<const SemaphoreControlBlockHeader*>(
                     &m_semaphore);
     }
-
-    // A helper to wait for a semaphore.
-    struct try_waiter
-    {
-        try_waiter(OS_SEM& semaphore)
-            : m_semaphore(semaphore)
-        {
-        }
-
-        // Waits up to \p ticks system ticks for a semaphore token. Returns
-        // \p true, if a token has been acquired and no further waiting is
-        // necessary.
-        bool operator() (std::int32_t ticks) const
-        {
-            WEOS_ASSERT(ticks < 0xFFFF);
-            OS_RESULT result = os_sem_wait(&m_semaphore, ticks);
-            return result != OS_R_TMO;
-        }
-
-    private:
-        OS_SEM& m_semaphore;
-    };
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_RL_RTX_SEMAPHORE_HPP

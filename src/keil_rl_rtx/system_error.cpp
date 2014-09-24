@@ -28,14 +28,14 @@
 
 #include "system_error.hpp"
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 //! An error category for RL RTX errors.
 class rl_rtx_error_category_impl : public error_category
 {
 public:
-    virtual const char* name() const BOOST_NOEXCEPT
+    virtual const char* name() const WEOS_NOEXCEPT
     {
         return "RL RTX";
     }
@@ -55,4 +55,4 @@ public:
     }
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE

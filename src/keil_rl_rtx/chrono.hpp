@@ -29,15 +29,17 @@
 #ifndef WEOS_KEIL_RL_RTX_CHRONO_HPP
 #define WEOS_KEIL_RL_RTX_CHRONO_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
 #include "hal.hpp"
 #include "../common/duration.hpp"
 #include "../common/timepoint.hpp"
 
 #include <cstdint>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
+
 namespace chrono
 {
 
@@ -56,7 +58,7 @@ public:
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<system_clock> time_point;
 
-    static BOOST_CONSTEXPR_OR_CONST bool is_steady = true;
+    static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
 
     static time_point now()
     {
@@ -80,7 +82,7 @@ public:
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<high_resolution_clock> time_point;
 
-    static BOOST_CONSTEXPR_OR_CONST bool is_steady = true;
+    static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
 
     static time_point now()
     {
@@ -135,8 +137,8 @@ struct rl_rtx_wait
 };
 
 } // namespace detail
-
 } // namespace chrono
-} // namespace weos
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_RL_RTX_CHRONO_HPP

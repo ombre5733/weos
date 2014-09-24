@@ -26,53 +26,11 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_RL_RTX_SYSTEM_ERROR_HPP
-#define WEOS_KEIL_RL_RTX_SYSTEM_ERROR_HPP
+#ifndef WEOS_KEIL_RL_RTX_UTILITY_HPP
+#define WEOS_KEIL_RL_RTX_UTILITY_HPP
 
 #include "core.hpp"
 
-#include "../common/system_error.hpp"
+#include "../common/utility.hpp"
 
-
-WEOS_BEGIN_NAMESPACE
-
-//! Returns the category for RL RTX errors.
-const error_category& rl_rtx_category();
-
-namespace rl_rtx_error
-{
-enum rl_rtx_error_t
-{
-    None  = OS_R_OK,
-    Timeout = OS_R_TMO,
-    Error = OS_R_NOK
-};
-
-//! Creates a RL RTX error code.
-//! Creates a RL RTX error code whose error value will be set to \p err. The
-//! category is the one returned by rl_rtx_category().
-inline
-WEOS_NAMESPACE::error_code make_error_code(rl_rtx_error_t err)
-{
-    return error_code(err, rl_rtx_category());
-}
-
-/*
-inline
-weos::error_code make_error_condition(rl_rtx_error_t err)
-{
-    return error_condition(err, rl_rtx_category());
-}
-*/
-
-} // namespace rl_rtx_error
-
-// Specialization for RL RTX error enum.
-template <>
-struct is_error_code_enum<rl_rtx_error::rl_rtx_error_t> : public true_type
-{
-};
-
-WEOS_END_NAMESPACE
-
-#endif // WEOS_KEIL_RL_RTX_SYSTEM_ERROR_HPP
+#endif // WEOS_KEIL_RL_RTX_UTILITY_HPP
