@@ -53,7 +53,7 @@ WEOS_END_NAMESPACE
 #elif defined(WEOS_USE_BOOST)
 
 // For armcc, we require that it is compiled with GNU compatibility. The other
-// option would be to tell Boost, that armcc is an EDG frontend.
+// option would be to tell Boost, that armcc uses an EDG frontend.
 #ifdef __CC_ARM
     #ifndef __GNUC__
         #error "Must be compiled in GNU mode. Use the '--gnu' command line argument."

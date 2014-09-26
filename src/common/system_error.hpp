@@ -35,6 +35,7 @@
 
 #include <exception>
 
+
 WEOS_BEGIN_NAMESPACE
 
 // ----=====================================================================----
@@ -123,7 +124,7 @@ public:
     //! <tt>weos::is_error_code_enum<ErrorCodeEnumT>::value == true</tt>.
     template <typename ErrorCodeEnumT>
     error_code(ErrorCodeEnumT value,
-               typename weos::enable_if<weos::is_error_code_enum<ErrorCodeEnumT>::value>::type* = 0) WEOS_NOEXCEPT
+               typename enable_if<WEOS_NAMESPACE::is_error_code_enum<ErrorCodeEnumT>::value>::type* = 0) WEOS_NOEXCEPT
         : m_value(value),
           m_category(&make_error_code(value).category())
     {
