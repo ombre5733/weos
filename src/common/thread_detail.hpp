@@ -30,6 +30,7 @@
 #define WEOS_COMMON_THREAD_DETAIL_HPP
 
 #include "../config.hpp"
+
 #include "functional.hpp"
 #include "system_error.hpp"
 #include "utility.hpp"
@@ -63,7 +64,7 @@ struct ThreadSharedData
     inline
     void invoke()
     {
-        m_invoker();
+        m_threadedFunction();
     }
 
     //! Allocates a ThreadData object from the global pool. An exception is
@@ -73,7 +74,7 @@ struct ThreadSharedData
 
 
     //! The bound function which will be called in the new thread.
-    static_function<void()> m_invoker;
+    function<void()> m_threadedFunction;
 
     //! This semaphore is increased by the threaded function when it's
     //! execution finishes. It is needed to implement thread::join().
@@ -92,7 +93,7 @@ struct ThreadSharedData
     semaphore m_initializationDone;
 
     //! The system-specific thread id.
-    weos::detail::native_thread_traits::thread_id_type m_threadId;
+    native_thread_traits::thread_id_type m_threadId;
 
 private:
     ThreadSharedData(const ThreadSharedData&);
@@ -122,7 +123,7 @@ public:
         {
         }
 
-        explicit id(weos::detail::native_thread_traits::thread_id_type _id) WEOS_NOEXCEPT
+        explicit id(detail::native_thread_traits::thread_id_type _id) WEOS_NOEXCEPT
             : m_id(_id)
         {
         }
@@ -135,7 +136,7 @@ public:
         friend bool operator> (id lhs, id rhs) WEOS_NOEXCEPT;
         friend bool operator>= (id lhs, id rhs) WEOS_NOEXCEPT;
 
-        weos::detail::native_thread_traits::thread_id_type m_id;
+        detail::native_thread_traits::thread_id_type m_id;
     };
 
     //! Thread attributes.
@@ -215,7 +216,7 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f));
+        m_data->m_threadedFunction = bind<void>(forward<F>(f));
 
         attributes attrs;
         invokeWithDefaultStack(attrs);
@@ -231,7 +232,7 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0));
 
         attributes attrs;
@@ -250,7 +251,7 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0),
                                        forward<A1>(a1));
 
@@ -272,7 +273,7 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0),
                                        forward<A1>(a1),
                                        forward<A2>(a2));
@@ -297,7 +298,7 @@ public:
            >::type* dummy = 0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0),
                                        forward<A1>(a1),
                                        forward<A2>(a2),
@@ -316,7 +317,7 @@ public:
            WEOS_FWD_REF(F) f)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f));
+        m_data->m_threadedFunction = bind<void>(forward<F>(f));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
             invokeWithCustomStack(attrs);
@@ -331,7 +332,7 @@ public:
            WEOS_FWD_REF(A0) a0)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0));
 
         if (attrs.m_customStack || attrs.m_customStackSize)
@@ -349,7 +350,7 @@ public:
            WEOS_FWD_REF(A1) a1)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0),
                                        forward<A1>(a1));
 
@@ -370,7 +371,7 @@ public:
            WEOS_FWD_REF(A2) a2)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0),
                                        forward<A1>(a1),
                                        forward<A2>(a2));
@@ -394,7 +395,7 @@ public:
            WEOS_FWD_REF(A3) a3)
         : m_data(detail::ThreadSharedData::allocate())
     {
-        m_data->m_invoker = bind<void>(forward<F>(f),
+        m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                        forward<A0>(a0),
                                        forward<A1>(a1),
                                        forward<A2>(a2),
@@ -500,16 +501,16 @@ public:
 
     //! Returns the number of signals in a set.
     inline
-    static int signals_count()
+    static int signals_count() WEOS_NOEXCEPT
     {
-        return detail::native_thread_traits::signals_count();
+        return detail::native_thread_traits::signals_count;
     }
 
     //! Returns a signal set with all flags being set.
     inline
-    static signal_set all_signals()
+    static signal_set all_signals() WEOS_NOEXCEPT
     {
-        return detail::native_thread_traits::all_signals();
+        return detail::native_thread_traits::all_signals;
     }
 
     //! Clears a set of signals.
