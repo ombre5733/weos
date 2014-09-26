@@ -164,11 +164,9 @@ public:
     inline
     void clear_signals(signal_set flags)
     {
-        WEOS_ASSERT(joinable());
         if (!joinable())
-        {
-            //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-        }
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "thread::clear_signals: no thread");
 
         std::lock_guard<std::mutex> lock(m_data->signalMutex);
         m_data->signalFlags &= ~flags;
@@ -180,11 +178,9 @@ public:
     inline
     void set_signals(signal_set flags)
     {
-        WEOS_ASSERT(joinable());
         if (!joinable())
-        {
-            //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-        }
+            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                    "thread::set_signals: no thread");
 
         std::lock_guard<std::mutex> lock(m_data->signalMutex);
         m_data->signalFlags |= flags;
@@ -216,6 +212,10 @@ using std::this_thread::sleep_for;
 using std::this_thread::sleep_until;
 using std::this_thread::yield;
 
+// ----=====================================================================----
+//     Waiting for signals
+// ----=====================================================================----
+
 //! Waits for any signal.
 //! Blocks the current thread until one or more signal flags have been set,
 //! returns these flags and resets them.
@@ -226,9 +226,9 @@ thread::signal_set wait_for_any_signal()
             = detail::ThreadDataManager::instance().find(get_id());
     WEOS_ASSERT(data);
     if (!data)
-    {
-        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "wait_for_any_signal: no thread");
+
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
     data->signalCv.wait(lock, [data]{ return data->signalFlags != 0; });
@@ -248,13 +248,13 @@ thread::signal_set try_wait_for_any_signal()
             = detail::ThreadDataManager::instance().find(get_id());
     WEOS_ASSERT(data);
     if (!data)
-    {
-        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "try_wait_for_any_signal: no thread");
 
-    std::unique_lock<std::mutex> lock(data->signalMutex);
+    data->signalMutex.lock();
     thread::signal_set temp = data->signalFlags;
     data->signalFlags = 0;
+    data->signalMutex.unlock();
     return temp;
 }
 
@@ -271,9 +271,9 @@ thread::signal_set try_wait_for_any_signal_for(
             = detail::ThreadDataManager::instance().find(get_id());
     WEOS_ASSERT(data);
     if (!data)
-    {
-        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "try_wait_for_any_signal_for: no thread");
+
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
     if (!data->signalCv.wait_for(
@@ -286,20 +286,20 @@ thread::signal_set try_wait_for_any_signal_for(
     return temp;
 }
 
+
 //! Waits for a set of signals.
 //! Blocks the current thread until all signal flags selected by \p flags have
 //! been set, returns these flags and resets them. Signal flags which are
 //! not selected by \p flags are not reset.
 inline
-thread::signal_set wait_for_all_signals(thread::signal_set flags)
+void wait_for_all_signals(thread::signal_set flags)
 {
     detail::ThreadData* data
             = detail::ThreadDataManager::instance().find(get_id());
     WEOS_ASSERT(data);
     if (!data)
-    {
-        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "wait_for_all_signals: no thread");
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
     data->signalCv.wait(
@@ -316,22 +316,21 @@ thread::signal_set wait_for_all_signals(thread::signal_set flags)
 //! If not all signal flags specified by \p flags are set, zero is returned
 //! and no flag is reset.
 inline
-thread::signal_set try_wait_for_all_signals(
-        thread::signal_set flags)
+bool try_wait_for_all_signals(thread::signal_set flags)
 {
     detail::ThreadData* data
             = detail::ThreadDataManager::instance().find(get_id());
     WEOS_ASSERT(data);
     if (!data)
-    {
-        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "try_wait_for_all_signals: no thread");
 
-    std::unique_lock<std::mutex> lock(data->signalMutex);
+    data->signalMutex.lock();
     thread::signal_set temp = (data->signalFlags & flags) == flags
                               ? flags : 0;
     data->signalFlags &= ~temp;
-    return temp;
+    data->signalMutex.unlock();
+    return temp != 0;
 }
 
 //! Blocks until a set of signals arrives or a timeout occurs.
@@ -341,7 +340,7 @@ thread::signal_set try_wait_for_all_signals(
 //! are not modified.
 template <typename RepT, typename PeriodT>
 inline
-thread::signal_set try_wait_for_all_signals_for(
+bool try_wait_for_all_signals_for(
         thread::signal_set flags,
         const chrono::duration<RepT, PeriodT>& duration)
 {
@@ -349,19 +348,18 @@ thread::signal_set try_wait_for_all_signals_for(
             = detail::ThreadDataManager::instance().find(get_id());
     WEOS_ASSERT(data);
     if (!data)
-    {
-        //::weos::throw_exception(system_error(-1, cmsis_category())); //! \todo Use correct value
-    }
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "try_wait_for_all_signals_for: no thread");
 
     std::unique_lock<std::mutex> lock(data->signalMutex);
     if (!data->signalCv.wait_for(
             lock, duration,
             [data, flags]{ return (data->signalFlags & flags) == flags; }))
     {
-        return 0;
+        return false;
     }
     data->signalFlags &= ~flags;
-    return flags;
+    return true;
 }
 
 } // namespace this_thread
