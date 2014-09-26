@@ -487,6 +487,9 @@ def bindResult(numArgs, maxArgs):
 
     s += "    typedef TResult result_type;\n\n"
 
+    s += "    // The bound functor. To be used internally only.\n"
+    s += "    typedef F _functor_type_;\n\n"
+
     s += "    // Constructor with perfect forwarding\n"
     if numArgs:
         s += "    template <"
@@ -749,37 +752,110 @@ def bind(numArgs, withResult):
     s += "}\n\n"
     return s
 
+## function<>
+
 def typeErasedBindInvoker(maxArgs):
     s = ""
+
+    s += "// Adapters for the implementation of the polymorphic function<>.\n"
+    s += "// Required members:\n"
+    s += "// static bool isEmpty(const F& f)\n"
+    s += "//     ... checks if f is empty\n"
+    s += "// static void init(SmallFunctorStorage& self, F&& f)\n"
+    s += "//     ... inits self from f\n"
+    s += "// static void manage(AdapterTask task, SmallFunctorStorage& self,\n"
+    s += "//                    const SmallFunctorStorage* other)\n"
+    s += "//     ... clones *other into self   if task == AdapterTask_Clone\n"
+    s += "//     ... destroys self             if task == AdapterTask_Destroy\n"
+    s += "// template <typename... TArgs>\n"
+    s += "// static /*undefined*/ invoke(const SmallFunctorStorage& self, TArgs... args)\n"
+    s += "//     ... invokes self with args\n"
+    s += "\n\n"
 
     s += "enum AdapterTask\n"
     s += "{\n"
     s += "    AdapterTask_Clone,\n"
-    s += "    AdapterTask_CloneInto,\n"
     s += "    AdapterTask_Destroy\n"
     s += "};\n\n"
 
-    s += "// An adapter which allows to erase the type of a bind expression.\n"
+    s += "typedef void (*manager_function)(AdapterTask task, SmallFunctorStorage& self, const SmallFunctorStorage* other);\n\n"
+
+    s += "// An adapter which allows to use a function pointer in function<>.\n"
+    s += "template <typename TSignature>\n"
+    s += "struct FunctionPointerAdapter\n"
+    s += "{\n"
+    s += "};\n\n"
+
+    s += "// An adapter which allows to use a bind expression in function<>.\n"
     s += "template <typename TBindResult>\n"
-    s += "struct BindAdapter\n"
+    s += "class BindAdapter\n"
     s += "{\n"
 
-    s += "    static void* manage(AdapterTask task, void* self, const void* other)\n"
+    s += "    static const std::size_t smallSize = sizeof(SmallFunctorStorage);\n"
+    s += "    static const std::size_t smallAlign = alignment_of<SmallFunctorStorage>::value;\n\n"
+
+    s += "    typedef typename TBindResult::_functor_type_ functor_type;\n"
+    s += "    static const bool can_store_inplace =\n"
+    s += "           sizeof(TBindResult) <= smallSize\n"
+    s += "        && alignment_of<TBindResult>::value <= smallAlign\n"
+    s += "        && (smallAlign % alignment_of<TBindResult>::value == 0);\n"
+    s += "    typedef integral_constant<bool, can_store_inplace> store_inplace;\n\n"
+
+    s += "    static void doInit(SmallFunctorStorage& self, const TBindResult& f, true_type)\n"
+    s += "    {\n"
+    s += "        new (self.get()) TBindResult(f);\n"
+    s += "    }\n\n"
+
+    s += "    static void doInit(SmallFunctorStorage& self, const TBindResult& f, false_type)\n"
+    s += "    {\n"
+    s += "        self.get<TBindResult*>() = new TBindResult(f);\n"
+    s += "    }\n\n"
+
+    s += "    // Clone a bind result which fits into the small functor storage.\n"
+    s += "    static void doClone(SmallFunctorStorage& self, const SmallFunctorStorage& other, true_type)\n"
+    s += "    {\n"
+    s += "        self.get<TBindResult*>() = new TBindResult(other.get<TBindResult>());\n"
+    s += "    }\n\n"
+
+    s += "    // Clone a bind result which does not fit into the small functor storage.\n"
+    s += "    static void doClone(SmallFunctorStorage& self, const SmallFunctorStorage& other, false_type)\n"
+    s += "    {\n"
+    s += "        new (self.get()) TBindResult(other.get<TBindResult>());\n"
+    s += "    }\n\n"
+
+    s += "    // Destroy a bind result which fits into the SFS.\n"
+    s += "    static void doDestroy(SmallFunctorStorage& self, true_type)\n"
+    s += "    {\n"
+    s += "        self.get<TBindResult>().~TBindResult();\n"
+    s += "    }\n\n"
+
+    s += "    // Destroy a bind result which doesn't fit into the SFS.\n"
+    s += "    static void doDestroy(SmallFunctorStorage& self, false_type)\n"
+    s += "    {\n"
+    s += "        delete self.get<TBindResult*>();\n"
+    s += "    }\n\n"
+
+    s += "public:\n"
+
+    s += "    static bool isEmpty(const TBindResult&)\n"
+    s += "    {\n"
+    s += "        return false;\n"
+    s += "    }\n\n"
+
+    s += "    static void init(SmallFunctorStorage& self, const TBindResult& f)\n"
+    s += "    {\n"
+    s += "        doInit(self, f, store_inplace());\n"
+    s += "    }\n\n"
+
+    s += "    static void manage(AdapterTask task, SmallFunctorStorage& self, const SmallFunctorStorage* other)\n"
     s += "    {\n"
     s += "        switch (task)\n"
     s += "        {\n"
     s += "        case AdapterTask_Clone:\n"
-    s += "            self = std::malloc(sizeof(TBindResult)); //! \\todo Hold in unique_ptr until copy construction is done\n"
-    s += "            new (self) TBindResult(*static_cast<const TBindResult*>(other));\n"
-    s += "            return self;\n"
-    s += "        case AdapterTask_CloneInto:\n"
-    s += "            new (self) TBindResult(*static_cast<const TBindResult*>(other));\n"
-    s += "            return self;\n"
+    s += "            doClone(self, *other, store_inplace());\n"
     s += "        case AdapterTask_Destroy:\n"
-    s += "            static_cast<TBindResult*>(self)->~TBindResult();\n"
-    s += "            return 0;\n"
+    s += "            doDestroy(self, store_inplace());\n"
     s += "        }\n"
-    s += "        return 0;\n"
     s += "    }\n\n"
 
     def invoke(nargs):
@@ -789,13 +865,14 @@ def typeErasedBindInvoker(maxArgs):
             s += ",\n              ".join(["typename T%d" % i for i in xrange(nargs)])
             s += ">\n"
         s += "    static typename TBindResult::result_type invoke(\n"
-        s += "            void* bindExpression"
+        s += "            const SmallFunctorStorage& self"
         if nargs:
             s += ",\n            "
             s += ",\n            ".join(["T%d t%d" % (i,i) for i in xrange(nargs)])
         s += ")\n"
         s += "    {\n"
-        s += "        return (*static_cast<TBindResult*>(bindExpression))("
+        s += "        const TBindResult* functor = can_store_inplace ? &self.get<TBindResult>() : self.get<TBindResult*>();\n"
+        s += "        return (*const_cast<TBindResult*>(functor))("
         if nargs:
             s += "\n                    "
             s += ",\n                    ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(nargs)])
@@ -847,6 +924,13 @@ def function(numArgs):
     s += "    {\n"
     s += "    }\n\n"
 
+    s += "    /*\n"
+    s += "    template <typename TCallable>\n"
+    s += "    %s(TCallable f)\n" % name
+    s += "    {\n"
+    s += "    }\n\n"
+    s += "    */\n\n"
+
     s += "    %s(nullptr_t) WEOS_NOEXCEPT\n" % name
     s += "        : m_invoker(0)\n"
     s += "    {\n"
@@ -878,7 +962,7 @@ def function(numArgs):
     s += "            if (other.m_invoker)\n"
     s += "            {\n"
     s += "                m_manager = other.m_manager;\n"
-    s += "                m_storage = m_manager(detail::AdapterTask_Clone, 0, other.m_storage);\n"
+    s += "                m_manager(detail::AdapterTask_Clone, m_storage, &other.m_storage);\n"
     s += "                m_invoker = other.m_invoker;\n"
     s += "            }\n"
     s += "        }\n"
@@ -890,8 +974,8 @@ def function(numArgs):
     s += "    {\n"
     s += "        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;\n\n"
     s += "        release();\n"
+    s += "        adapter::init(m_storage, expr);\n"
     s += "        m_manager = &adapter::manage;\n"
-    s += "        m_storage = m_manager(detail::AdapterTask_Clone, 0, &expr);\n"
     s += "        m_invoker = &adapter::"
     if numArgs == 0:
         s += "invoke;\n"
@@ -926,15 +1010,14 @@ def function(numArgs):
     s += "    }\n\n"
 
     s += "private:\n"
-    s += "    typedef void* (*manager_type)(detail::AdapterTask, void*, const void*);\n"
-    s += "    typedef result_type (*invoker_type)(void*"
+    s += "    typedef result_type (*invoker_type)(const detail::SmallFunctorStorage&"
     if numArgs:
         s += ",\n                                        "
         s += ",\n                                        ".join(["A%d" % i for i in xrange(numArgs)])
     s += ");\n\n"
 
-    s += "    void* m_storage;\n"
-    s += "    manager_type m_manager;\n"
+    s += "    detail::SmallFunctorStorage m_storage;\n"
+    s += "    detail::manager_function m_manager;\n"
     s += "    invoker_type m_invoker;\n\n"
 
     s += "    void release()\n"
@@ -943,7 +1026,6 @@ def function(numArgs):
     s += "        {\n"
     s += "            m_manager(detail::AdapterTask_Destroy, m_storage, 0);\n"
     s += "            m_invoker = 0;\n"
-    s += "            std::free(m_storage);\n"
     s += "        }\n"
     s += "    }\n"
 
@@ -995,7 +1077,7 @@ def staticFunction(numArgs):
     s += "        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;\n\n"
     s += "        release();\n"
     s += "        m_manager = &adapter::manage;\n"
-    s += "        m_manager(detail::AdapterTask_CloneInto, &m_storage, &expr);\n"
+    s += "        m_manager(detail::AdapterTask_Clone, &m_storage, &expr);\n"
     s += "        m_invoker = &adapter::"
     if numArgs == 0:
         s += "invoke;\n"
@@ -1071,8 +1153,6 @@ def generateHeader(maxArgs):
     s += "#include \"../type_traits.hpp\"\n"
     s += "#include \"../utility.hpp\"\n\n"
 
-    s += "#include <cstdlib>\n\n"
-
     s += "WEOS_BEGIN_NAMESPACE\n\n"
 
     s += placeholders(maxArgs)
@@ -1110,18 +1190,18 @@ def generateHeader(maxArgs):
     s += "// MemFnResult\n"
     s += "// ====================================================================\n\n"
 
-    ## Forward declaration of MemFnResult
+    # Forward declaration of MemFnResult
     s += "template <typename TMemberPointer>\n"
     s += "class MemFnResult;\n\n"
 
-    ## MemFnResult for pointer to (qualified) member functions
+    # MemFnResult for pointer to (qualified) member functions
     for i in xrange(maxArgs + 1):
         s += memFnResult(i, "")
         s += memFnResult(i, "const")
         s += memFnResult(i, "volatile")
         s += memFnResult(i, "const volatile")
 
-    ## MemFnResult for pointer to member objects
+    # MemFnResult for pointer to member objects
     s += "// Result of mem_fn(TResult TClass::*)\n"
     s += "template <typename TResult, typename TClass>\n"
     s += "class MemFnResult<TResult TClass::*>\n"
@@ -1236,6 +1316,10 @@ def generateHeader(maxArgs):
     s += "    typedef void type;\n"
     s += "};\n\n"
 
+    s += "// The result of a bind<>() call.\n"
+    s += "// The TSignature will be something of the form\n"
+    s += "// TFunctor(TBoundArg0, TBoundArg1, ...),\n"
+    s += "// where TFunctor can be a function pointer or a MemFnResult\n"
     s += "template <typename TResult, typename TSignature>\n"
     s += "struct BindResult;\n\n"
     for i in xrange(maxArgs + 1):
@@ -1278,6 +1362,46 @@ def generateHeader(maxArgs):
     s += "// ====================================================================\n\n"
 
     s += "namespace detail\n{\n\n"
+
+    s += "class AnonymousClass;\n\n"
+
+    s += "// A small functor.\n"
+    s += "// This type is just large enough to hold a member function pointer\n"
+    s += "// plus a pointer to an instance or a function pointer plus an\n"
+    s += "// argument of pointer size.\n"
+    s += "struct SmallFunctor\n"
+    s += "{\n"
+    s += "    union Callable\n"
+    s += "    {\n"
+    s += "        void* objectPointer;\n"
+    s += "        const void* constObjectPointer;\n"
+    s += "        void (*functionPointer)();\n"
+    s += "        void* AnonymousClass::*memberDataPointer;\n"
+    s += "        void (AnonymousClass::*memberFunctionPointer)();\n"
+    s += "    };\n"
+    s += "    union Argument\n"
+    s += "    {\n"
+    s += "        void* objectPointer;\n"
+    s += "        const void* constObjectPointer;\n"
+    s += "    };\n\n"
+    s += "    Callable callable;\n"
+    s += "    Argument argument;\n"
+    s += "};\n"
+
+    s += "struct SmallFunctorStorage\n"
+    s += "{\n"
+    s += "    void* get() { return &data; }\n"
+    s += "    const void* get() const { return &data; }\n\n"
+
+    s += "    template <typename T>\n"
+    s += "    T& get() { return *static_cast<T*>(get()); }\n\n"
+
+    s += "    template <typename T>\n"
+    s += "    const T& get() const { return *static_cast<const T*>(get()); }\n\n"
+
+    s += "    SmallFunctor data;\n"
+    s += "};\n\n"
+
     s += typeErasedBindInvoker(maxArgs)
     s += "} // namespace detail\n\n"
 
@@ -1295,8 +1419,8 @@ def generateHeader(maxArgs):
     s += "          std::size_t TStorageSize = WEOS_DEFAULT_STATIC_FUNCTION_SIZE>\n"
     s += "class static_function;\n\n"
 
-    for i in xrange(maxArgs + 1):
-        s += staticFunction(i)
+    #for i in xrange(maxArgs + 1):
+    #    s += staticFunction(i)
 
     s += "WEOS_END_NAMESPACE\n\n"
 
