@@ -39,34 +39,67 @@
 
 WEOS_BEGIN_NAMESPACE
 
+namespace detail
+{
+// Just enough memory to hold a CMSIS semaphore. This is the type to which
+// the macro osSemaphoreDef() defined in <cmsis_os.h> expands.
+struct SemaphoreControlBlock
+{
+    // The first 32-bit of a semaphore. The typedef can be found
+    // in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
+    struct Header
+    {
+        volatile std::uint8_t controlBlockType;
+        volatile std::uint8_t tokenMask;
+        volatile std::uint16_t numTokens;
+    };
+
+    std::uint32_t _[2];
+
+    inline
+    std::int16_t numTokens() const
+    {
+        return reinterpret_cast<const Header&>(_[0]).numTokens;
+    }
+};
+
+} // namespace detail
+
+
+//! \brief A semaphore.
 class semaphore
 {
 public:
     //! The counter type used for the semaphore.
     typedef std::uint16_t value_type;
 
-    //! Creates a semaphore.
+    //! \brief Creates a semaphore.
+    //!
     //! Creates a semaphore with an initial number of \p value tokens.
     explicit semaphore(value_type value = 0)
         : m_id(0)
     {
         // Keil's RTOS wants a zero'ed control block type for initialization.
-        m_cmsisSemaphoreControlBlock[0] = 0;
-        osSemaphoreDef_t semaphoreDef = { m_cmsisSemaphoreControlBlock };
+        m_controlBlock._[0] = 0;
+        osSemaphoreDef_t semaphoreDef = { m_controlBlock._ };
         m_id = osSemaphoreCreate(&semaphoreDef, value);
         if (m_id == 0)
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
                                     "semaphore::semaphore failed");
     }
 
-    //! Destroys the semaphore.
+    //! \brief Destroys a semaphore.
     ~semaphore()
     {
         if (m_id)
             osSemaphoreDelete(m_id);
     }
 
-    //! Releases a semaphore token.
+    //! \brief Releases a semaphore token.
+    //!
+    //! Increases the semaphore's value by one.
+    //! \note It is undefined behaviour to post() a semaphore which is already
+    //! full.
     void post()
     {
         osStatus status = osSemaphoreRelease(m_id);
@@ -75,95 +108,93 @@ public:
                                     "semaphore::post failed");
     }
 
-    //! Waits until a semaphore token is available.
+    //! \brief Waits until a semaphore token is available.
+    //!
+    //! Blocks the calling thread until the semaphore's value is non-zero.
+    //! Then the semaphore is decreased by one and the thread returns.
     void wait()
     {
-        std::int32_t numTokens = osSemaphoreWait(m_id, osWaitForever);
-        if (numTokens <= 0)
+        std::int32_t result = osSemaphoreWait(m_id, osWaitForever);
+        if (result <= 0)
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
                                     "semaphore::wait failed");
     }
 
-    //! Tries to acquire a semaphore token.
+    //! \brief Tries to acquire a semaphore token.
+    //!
     //! Tries to acquire a semaphore token and returns \p true upon success.
     //! If no token is available, the calling thread is not blocked and
     //! \p false is returned.
     bool try_wait()
     {
-        std::int32_t numTokens = osSemaphoreWait(m_id, 0);
-        if (numTokens < 0)
+        std::int32_t result = osSemaphoreWait(m_id, 0);
+        if (result < 0)
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
                                     "semaphore::try_wait failed");
 
-        return numTokens != 0;
+        return result != 0;
     }
 
-    //! Tries to acquire a semaphore token within a timeout.
-    //! Tries for a timeout period \p d to acquire a semaphore token and returns
-    //! \p true upon success or \p false in case of a timeout.
+    //! \brief Tries to acquire a semaphore token within a timeout.
+    //!
+    //! Tries acquire a semaphore token within the given \p timeout. The return
+    //! value is \p true if a token could be acquired.
     template <typename RepT, typename PeriodT>
-    bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
+    inline
+    bool try_wait_for(const chrono::duration<RepT, PeriodT>& timeout)
     {
-        try_waiter waiter(m_id);
-        return chrono::detail::cmsis_wait<
-                RepT, PeriodT, try_waiter>::wait(d, waiter);
+        return try_wait_until(chrono::steady_clock::now() + timeout);
+    }
+
+    //! \brief Tries to acquire token up to a time point.
+    //!
+    //! Tries to acquire a semaphore token up to the given \p time point. The
+    //! return value is \p true, if a token could be acquired before the
+    //! timeout.
+    template <typename ClockT, typename DurationT>
+    bool try_wait_until(const chrono::time_point<ClockT, DurationT>& time)
+    {
+        typedef typename WEOS_NAMESPACE::common_type<
+                             typename ClockT::duration,
+                             DurationT>::type difference_type;
+        typedef chrono::detail::internal_time_cast<difference_type> caster;
+
+        while (true)
+        {
+            typename caster::type millisecs
+                    = caster::convert_and_clip(time - ClockT::now());
+
+            std::int32_t result = osSemaphoreWait(m_id, millisecs);
+            if (result > 0)
+                return true;
+
+            if (result < 0)
+            {
+                WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                        "semaphore::try_wait_until failed");
+            }
+
+            if (millisecs == 0)
+                return false;
+        }
     }
 
     //! Returns the numer of semaphore tokens.
     value_type value() const
     {
-        return semaphoreControlBlockHeader()->numTokens;
+        return m_controlBlock.numTokens();
     }
 
 private:
-    // Just enough memory to hold a CMSIS semaphore. The typedef can be found
-    // in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
-    std::uint32_t m_cmsisSemaphoreControlBlock[2];
+    //! The native semaphore.
+    detail::SemaphoreControlBlock m_controlBlock;
+    //! The native semaphore handle.
     osSemaphoreId m_id;
+
+    // ---- Hidden methods.
 
     semaphore(const semaphore&);
     const semaphore& operator= (const semaphore&);
-
-    // The header (first 32 bits) of the semaphore control block. The full
-    // definition can be found in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
-    struct SemaphoreControlBlockHeader
-    {
-        std::uint8_t controlBlockType;
-        std::uint8_t tokenMask;
-        std::uint16_t numTokens;
-    };
-
-    const SemaphoreControlBlockHeader* semaphoreControlBlockHeader() const
-    {
-        return reinterpret_cast<const SemaphoreControlBlockHeader*>(
-                    &m_cmsisSemaphoreControlBlock);
-    }
-
-    // A helper to wait for a semaphore.
-    struct try_waiter
-    {
-        try_waiter(osSemaphoreId& id)
-            : m_id(id)
-        {
-        }
-
-        // Waits up to \p millisec milliseconds for a semaphore token. Returns
-        // \p true, if a token has been acquired and no further waiting is
-        // necessary.
-        bool operator() (std::int32_t millisec) const
-        {
-            std::int32_t numTokens = osSemaphoreWait(m_id, millisec);
-            if (numTokens < 0)
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                        "semaphore::try_waiter failed");
-
-            return numTokens != 0;
-        }
-
-    private:
-        // The semaphore from which a token shall be acquired.
-        osSemaphoreId& m_id;
-    };
 };
 
 WEOS_END_NAMESPACE

@@ -102,10 +102,11 @@ const weos::semaphore::value_type maxValue
 
 TEST(semaphore, test_preconditions)
 {
+    // This condition must hold. Otherwise, the tests below will fail.
     ASSERT_TRUE(maxValue < std::numeric_limits<std::uint64_t>::max());
 }
 
-TEST(semaphore, Constructor)
+TEST(semaphore, construct_and_destruct)
 {
     {
         weos::semaphore s;

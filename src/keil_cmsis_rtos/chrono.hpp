@@ -31,12 +31,12 @@
 
 #include "core.hpp"
 
-#include "../common/duration.hpp"
-#include "../common/ratio.hpp"
-#include "../common/timepoint.hpp"
-#include "../type_traits.hpp"
+#include "../common/chrono.hpp"
+#include "ratio.hpp"
+#include "type_traits.hpp"
 
 #include <cstdint>
+
 
 // Declaration from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
 extern "C" std::uint32_t rt_time_get(void);
@@ -108,47 +108,53 @@ namespace detail
 // milliseconds, unless the SysTick period is 1 ms, in which case the number of
 // ticks is equal to the number of milliseconds).
 // If we want to block longer, we have to call the wait function multiple
-// times. This helper contains the necessary boilerplate code.
-template <typename RepT, typename PeriodT, typename FunctorT>
-struct cmsis_wait
+// times. This helper class contains the necessary conversion.
+template <typename TDuration>
+struct internal_time_cast
 {
+    static_assert(!treat_as_floating_point<TDuration>::value,
+                  "Floating point durations are not supported, yet.");
+
     // Create the ratio for converting from a duration d to another duration
     // t which is in milliseconds (t = d / 1e-3).
-    typedef typename ratio_divide<PeriodT, milli>::type ratio;
-    typedef typename common_type<RepT, cast_least_int_type>::type
-        common_type;
+    typedef typename WEOS_NAMESPACE::ratio_divide<typename TDuration::period,
+                                                  WEOS_NAMESPACE::milli>::type
+                ratio;
+    typedef typename WEOS_NAMESPACE::common_type<typename TDuration::rep,
+                                                 std::int32_t>::type
+                type;
 
-    // Compute the maximum number of milliseconds which correspond to a SysTick
-    // value of less than 0xFFFF.
-    static const common_type maxMillisecs =
-            static_cast<common_type>(0xFFFE * 1000)
-            / static_cast<common_type>(WEOS_SYSTICK_FREQUENCY);
+    // Compute the maximum number of milliseconds such that the number of
+    // ticks is <= 0xFFFE.
+    static const type maxMillisecs =
+            static_cast<type>(0xFFFE * 1000)
+            / static_cast<type>(WEOS_SYSTICK_FREQUENCY);
 
-    static bool wait(const chrono::duration<RepT, PeriodT>& d, FunctorT& fun)
+    static type convert_and_clip(const TDuration& d)
     {
         if (d.count() <= 0)
-            return fun(0);
+            return type(0);
 
         // Convert the duration d to millisecs (the conversion ceils the ratio).
-        common_type delay
-                = (static_cast<common_type>(d.count())
-                   * static_cast<common_type>(ratio::num)
-                   + static_cast<common_type>(ratio::den - 1))
-                  / static_cast<common_type>(ratio::den);
-        // Note: A tick of 1 will wake the thread at the beginning of the next
-        // period. However, some time has already passed in the current period,
-        // so the actual delay is less than a tick.
-        // Thus, we increase the delay by 1 ms to ensure that our delay time
-        // is a lower bound.
-        delay += common_type(1);
-        while (delay > maxMillisecs)
-        {
-            bool success = fun(maxMillisecs);
-            if (success)
-                return true;
-            delay -= maxMillisecs;
-        }
-        return fun(delay);
+        type delay = (static_cast<type>(d.count())
+                      * static_cast<type>(ratio::num)
+                      + static_cast<type>(ratio::den - 1))
+                     / static_cast<type>(ratio::den);
+
+        return (delay < maxMillisecs) ? delay : maxMillisecs;
+    }
+
+    static type convert_and_clip_below(const TDuration& d)
+    {
+        if (d.count() <= 0)
+            return type(0);
+
+        // Convert the duration d to millisecs (the conversion ceils the ratio).
+        type delay = (static_cast<type>(d.count())
+                      * static_cast<type>(ratio::num)
+                      + static_cast<type>(ratio::den - 1))
+                     / static_cast<type>(ratio::den);
+        return delay;
     }
 };
 

@@ -38,6 +38,7 @@
 
 #include <cstdint>
 
+
 WEOS_BEGIN_NAMESPACE
 
 namespace detail
@@ -110,25 +111,29 @@ WEOS_NAMESPACE::thread::id get_id()
 template <typename RepT, typename PeriodT>
 void sleep_for(const chrono::duration<RepT, PeriodT>& d) WEOS_NOEXCEPT
 {
-    //! \todo Convert to the true amount of ticks, even if the
-    //! system does not run with a 1ms tick.
-    RepT ticks = chrono::duration_cast<chrono::milliseconds>(d).count();
-    if (ticks <= 0)
-        ticks = 0;
-    else
-        ++ticks;
+    typedef chrono::detail::internal_time_cast<chrono::duration<RepT, PeriodT> >
+                caster;
+
+    typename caster::type millisecs = caster::convert_and_clip_below(d);
+
+    // The delay passed to this function has to be a lower bound. If we sleep
+    // for 1ms, the OS will wake us at the beginning of the next slot, which
+    // is too early since some time has already passed in the current slot.
+    millisecs += 1;
 
     while (true)
     {
-        RepT delay = ticks;
-        if (delay > 0xFFFE)
-            delay = 0xFFFE;
-        ticks -= delay;
+        typename caster::type delay = millisecs;
+        if (delay > caster::maxMillisecs)
+            delay = caster::maxMillisecs;
+        millisecs -= delay;
 
-        osStatus status = osDelay(delay);
-        WEOS_ASSERT(   (ticks == 0 && status == osOK)
-                    || (ticks != 0 && status == osEventTimeout));
-        (void)status;
+        osStatus result = osDelay(delay);
+        if (result != osOK && result != osEventTimeout)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+                                    "sleep_for failed");
+        }
 
         if (delay == 0)
             return;
@@ -137,29 +142,28 @@ void sleep_for(const chrono::duration<RepT, PeriodT>& d) WEOS_NOEXCEPT
 
 //! \brief Puts the current thread to sleep.
 //!
-//! Blocks the execution of the current thread until the given \p timePoint.
+//! Blocks the execution of the current thread until the given \p time point.
 template <typename ClockT, typename DurationT>
-void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) WEOS_NOEXCEPT
+void sleep_until(const chrono::time_point<ClockT, DurationT>& time) WEOS_NOEXCEPT
 {
-    typedef typename DurationT::rep rep_t;
+    typedef typename WEOS_NAMESPACE::common_type<
+                         typename ClockT::duration,
+                         DurationT>::type difference_type;
+    typedef chrono::detail::internal_time_cast<difference_type> caster;
 
     while (true)
     {
-        //! \todo Convert to the true amount of ticks, even if the
-        //! system does not run with a 1ms tick.
-        rep_t ticks = chrono::duration_cast<chrono::milliseconds>(
-                          timePoint - ClockT::now());
-        if (ticks < 0)
-            ticks = 0;
-        else if (ticks > 0xFFFE)
-            ticks = 0xFFFE;
+        typename caster::type millisecs
+                = caster::convert_and_clip(time - ClockT::now());
 
-        osStatus status = osDelay(ticks);
-        WEOS_ASSERT(   (ticks == 0 && status == osOK)
-                    || (ticks != 0 && status == osEventTimeout));
-        (void)status;
+        osStatus result = osDelay(millisecs);
+        if (result != osOK && result != osEventTimeout)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+                                    "sleep_until failed");
+        }
 
-        if (ticks == 0)
+        if (millisecs == 0)
             return;
     }
 }

@@ -98,7 +98,7 @@ void sparring(SparringData* data)
 
 } // anonymous namespace
 
-TEST(mutex, Constructor)
+TEST(mutex, construct_and_destruct)
 {
     weos::mutex m;
 }

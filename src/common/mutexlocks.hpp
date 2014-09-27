@@ -29,6 +29,12 @@
 #ifndef WEOS_COMMON_MUTEXLOCKS_HPP
 #define WEOS_COMMON_MUTEXLOCKS_HPP
 
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
+
 #include "system_error.hpp"
 
 // -----------------------------------------------------------------------------
@@ -53,6 +59,7 @@ using std::lock_guard;
 using std::unique_lock;
 
 WEOS_END_NAMESPACE
+
 
 // -----------------------------------------------------------------------------
 // Boost
@@ -357,6 +364,7 @@ void swap(WEOS_NAMESPACE_NAME::unique_lock<MutexT>& x,
 }
 
 } // namespace std
+
 
 // -----------------------------------------------------------------------------
 // Unknown
