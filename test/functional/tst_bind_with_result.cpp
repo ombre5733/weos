@@ -295,7 +295,7 @@ TEST(bind_with_result, return_from_function_pointer2)
 }
 
 // ----=====================================================================----
-//     Member functions
+//     Member function pointers
 // ----=====================================================================----
 
 namespace
@@ -729,4 +729,34 @@ TEST(bind_with_result, return_from_member_function_pointer)
                                    &m, weos::placeholders::_1) (ofs);
         ASSERT_EQ(37, sum3);
     }
+}
+
+// ----=====================================================================----
+//     Member data pointers
+// ----=====================================================================----
+
+struct MemberData
+{
+    MemberData()
+        : data(0)
+    {
+    }
+
+    int data;
+};
+
+TEST(bind_with_result, member_data_pointer)
+{
+    int x;
+    MemberData m;
+    ASSERT_TRUE(m.data == 0);
+
+    x = weos::bind<int>(&MemberData::data, &m) ();
+    ASSERT_EQ(0, x);
+
+    weos::bind<int&>(&MemberData::data, &m) () = 22;
+    ASSERT_EQ(22, m.data);
+
+    x = weos::bind<int>(&MemberData::data, &m) ();
+    ASSERT_EQ(22, x);
 }
