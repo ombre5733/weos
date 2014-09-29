@@ -74,9 +74,9 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "ARM")
 
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} --cpu=Cortex-M4 --apcs=interwork")
 
-    set(COMMON_FLAGS "--cpu=Cortex-M4 -O2 --no_rtti --no_rtti_data --apcs=interwork")
+    set(COMMON_FLAGS "--cpu=Cortex-M4 -O2 --apcs=interwork --exceptions")
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} --gnu")
 
     # Link against Keil's CMSIS-RTOS library.
     set(CMSIS_RTX_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/keil_cmsis_rtos/LIB/ARM/RTX_CM4.lib")
@@ -96,7 +96,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${COMMON_FLAGS}")
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} -std=gnu++11")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${COMMON_FLAGS}")
 
