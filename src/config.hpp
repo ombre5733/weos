@@ -128,7 +128,7 @@
         WEOS_END_NAMESPACE
     #endif // WEOS_CUSTOM_THROW_EXCEPTION
 
-    #define WEOS_THROW_SYSTEM_ERROR(err, msg)                                       \
+    #define WEOS_THROW_SYSTEM_ERROR(err, msg)                                  \
         WEOS_NAMESPACE::throw_exception(system_error(err))
 
 #else
