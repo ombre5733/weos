@@ -43,9 +43,12 @@ WEOS_BEGIN_NAMESPACE
 
 namespace detail
 {
-    // Just enough memory to hold a CMSIS mutex. The typedef can be found in
-    // ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
-    struct mutex_control_block_type { std::uint32_t _[4]; };
+// Just enough memory to hold a CMSIS mutex. This is the type to which
+// the macro osMutexDef() defined in <cmsis_os.h> expands.
+struct mutex_control_block_type
+{
+    std::uint32_t _[4];
+};
 
 } // namespace detail
 
@@ -77,7 +80,10 @@ public:
     ~mutex()
     {
         if (m_id)
+        {
+            WEOS_ASSERT(!m_locked);
             osMutexDelete(m_id);
+        }
     }
 
     //! Locks the mutex.
@@ -345,7 +351,6 @@ private:
     recursive_mutex(const recursive_mutex&);
     const recursive_mutex& operator= (const recursive_mutex&);
 };
-
 
 //! A recursive mutex with timeout support.
 class recursive_timed_mutex : public recursive_mutex

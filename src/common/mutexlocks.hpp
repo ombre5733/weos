@@ -66,6 +66,8 @@ WEOS_END_NAMESPACE
 // -----------------------------------------------------------------------------
 #elif defined(WEOS_USE_BOOST)
 
+#include "../utility.hpp"
+
 WEOS_BEGIN_NAMESPACE
 
 struct defer_lock_t {};
@@ -112,6 +114,7 @@ private:
     //! The mutex which is guarded.
     mutex_type& m_mutex;
 
+    // ---- Hidden methods.
     lock_guard(const lock_guard&);
     lock_guard& operator= (const lock_guard&);
 };
@@ -124,7 +127,7 @@ public:
     typedef MutexT mutex_type;
 
     //! Creates a lock which is not associated with a mutex.
-    unique_lock() BOOST_NOEXCEPT
+    unique_lock() WEOS_NOEXCEPT
         : m_mutex(0),
           m_locked(false)
     {
@@ -142,7 +145,7 @@ public:
     //! Creates a unique lock without locking.
     //! Creates a unique lock which will be tied to the given \p mutex but
     //! does not lock this mutex.
-    unique_lock(mutex_type& mutex, defer_lock_t /*tag*/) BOOST_NOEXCEPT
+    unique_lock(mutex_type& mutex, defer_lock_t /*tag*/) WEOS_NOEXCEPT
         : m_mutex(&mutex),
           m_locked(false)
     {
@@ -188,7 +191,7 @@ public:
     //! Move construction.
     //!
     //! Creates a unique lock by moving from the \p other lock.
-    unique_lock(BOOST_RV_REF(unique_lock) other) BOOST_NOEXCEPT
+    unique_lock(WEOS_RV_REF(unique_lock) other) WEOS_NOEXCEPT
         : m_mutex(other.m_mutex),
           m_locked(other.m_locked)
     {
@@ -209,7 +212,7 @@ public:
     //!
     //! Moves the \p other lock to this lock. If this lock owns a mutex, it
     //! will be released.
-    unique_lock& operator= (BOOST_RV_REF(unique_lock) other) BOOST_NOEXCEPT
+    unique_lock& operator= (WEOS_RV_REF(unique_lock) other) WEOS_NOEXCEPT
     {
         if (m_locked)
             m_mutex->unlock();
@@ -240,7 +243,7 @@ public:
     //! Returns a pointer to the associated mutex.
     //! Returns a pointer to the mutex to which this lock is tied. This may
     //! be a null-pointer, if no mutex has been supplied so far.
-    mutex_type* mutex() const BOOST_NOEXCEPT
+    mutex_type* mutex() const WEOS_NOEXCEPT
     {
         return m_mutex;
     }
@@ -248,7 +251,7 @@ public:
     //! Checks if this lock owns a locked mutex.
     //! Returns \p true, if a mutex is tied to this lock and the lock has
     //! ownership of it.
-    bool owns_lock() const BOOST_NOEXCEPT
+    bool owns_lock() const WEOS_NOEXCEPT
     {
         return m_locked;
     }
@@ -258,7 +261,7 @@ public:
     //! by this function). The lock won't interact with the mutex any longer
     //! (it won't even unlock the mutex). Instead the responsibility is
     //! transfered to the caller.
-    mutex_type* release() BOOST_NOEXCEPT
+    mutex_type* release() WEOS_NOEXCEPT
     {
         mutex_type* m = m_mutex;
         m_mutex = 0;
@@ -268,7 +271,7 @@ public:
 
     //! Swaps two locks.
     //! Swaps this lock with the \p other lock.
-    void swap(unique_lock& other) BOOST_NOEXCEPT
+    void swap(unique_lock& other) WEOS_NOEXCEPT
     {
         std::swap(m_mutex, other.m_mutex);
         std::wap(m_locked, other.m_locked);
@@ -291,7 +294,10 @@ public:
         return m_locked;
     }
 
-    //! \todo Document
+    //! Tries to lock the associated mutex within a certain timeout.
+    //!
+    //! Tries to lock the associated mutex within the given \p duration. The
+    //! method returns \p true, if the mutex could be locked.
     template <typename RepT, typename PeriodT>
     bool try_lock_for(const chrono::duration<RepT, PeriodT>& duration)
     {
@@ -306,7 +312,10 @@ public:
         return m_locked;
     }
 
-    //! \todo Document
+    //! Tries to lock the associated mutex before a certain time point.
+    //!
+    //! Tries to lock the associated mutex up to the given \p timePoint. The
+    //! method returns \p true, if the mutex could be locked.
     template <typename ClockT, typename DurationT>
     bool try_lock_until(const chrono::time_point<ClockT, DurationT>& timePoint)
     {
@@ -332,7 +341,11 @@ public:
         m_locked = false;
     }
 
-    /*explicit*/ operator bool() const BOOST_NOEXCEPT
+    //! Checks if the lock ows the mutex.
+    //!
+    //! Checks if this lock owns the mutex. This is equivalent to calling
+    //! owns_lock().
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
     {
         return m_locked;
     }
@@ -344,7 +357,7 @@ private:
     bool m_locked;
 
 
-    BOOST_MOVABLE_BUT_NOT_COPYABLE(unique_lock)
+    WEOS_MOVABLE_BUT_NOT_COPYABLE(unique_lock)
 };
 
 WEOS_END_NAMESPACE
@@ -358,7 +371,7 @@ namespace std
 template <typename MutexT>
 inline
 void swap(WEOS_NAMESPACE_NAME::unique_lock<MutexT>& x,
-          WEOS_NAMESPACE_NAME::unique_lock<MutexT>& y) BOOST_NOEXCEPT
+          WEOS_NAMESPACE_NAME::unique_lock<MutexT>& y) WEOS_NOEXCEPT
 {
     x.swap(y);
 }
