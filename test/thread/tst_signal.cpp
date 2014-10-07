@@ -85,25 +85,35 @@ void sparring(SparringData* data)
         data->busy = true;
         switch (data->action)
         {
-            case SparringData::TryWaitForAnySignal:
-                data->caughtSignals
-                        = weos::this_thread::try_wait_for_any_signal();
-                break;
-            case SparringData::TryWaitForAllSignals:
-                data->caughtSignals
-                        = weos::this_thread::try_wait_for_all_signals(
-                              data->waitFlags);
-                break;
-            case SparringData::WaitForAnySignal:
-                data->caughtSignals = weos::this_thread::wait_for_any_signal();
-                break;
-            case SparringData::WaitForAllSignals:
-                data->caughtSignals = weos::this_thread::wait_for_all_signals(
-                                          data->waitFlags);
-                break;
-            default:
-                break;
+        case SparringData::TryWaitForAnySignal:
+        {
+            data->caughtSignals
+                    = weos::this_thread::try_wait_for_any_signal();
+        } break;
+
+        case SparringData::TryWaitForAllSignals:
+        {
+            data->caughtSignals = 0;
+            if (weos::this_thread::try_wait_for_all_signals(
+                    data->waitFlags))
+                data->caughtSignals = data->waitFlags;
+        } break;
+
+        case SparringData::WaitForAnySignal:
+        {
+            data->caughtSignals = weos::this_thread::wait_for_any_signal();
+        } break;
+
+        case SparringData::WaitForAllSignals:
+        {
+            weos::this_thread::wait_for_all_signals(data->waitFlags);
+            data->caughtSignals = data->waitFlags;
+        } break;
+
+        default:
+            break;
         }
+
         data->busy = false;
         data->action = SparringData::None;
     }
