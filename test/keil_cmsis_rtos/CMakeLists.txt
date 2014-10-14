@@ -131,6 +131,7 @@ macro(add_test_directory _dir)
 endmacro()
 
 # Recurse into the "subdirectories" which contain the actual tests.
+add_test_directory(atomic)
 add_test_directory(functional)
 add_test_directory(memorypool)
 add_test_directory(mutex)

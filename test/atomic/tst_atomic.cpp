@@ -26,39 +26,29 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_ATOMIC_HPP
-#define WEOS_COMMON_ATOMIC_HPP
+#include <atomic.hpp>
 
+#include "../common/testutils.hpp"
+#include "gtest/gtest.h"
 
-#ifndef WEOS_CONFIG_HPP
-    #error "Do not include this file directly."
-#endif // WEOS_CONFIG_HPP
+TEST(atomic_flag, default_construction)
+{
+    weos::atomic_flag flag;
+    (void)flag;
+}
 
+TEST(atomic_flag, initialization)
+{
+    weos::atomic_flag flag = ATOMIC_FLAG_INIT;
+    (void)flag;
+}
 
-// -----------------------------------------------------------------------------
-// C++11
-// -----------------------------------------------------------------------------
-#if defined(WEOS_USE_CXX11)
-
-#include <atomic>
-
-WEOS_BEGIN_NAMESPACE
-
-using std::atomic_flag;
-
-WEOS_END_NAMESPACE
-
-// -----------------------------------------------------------------------------
-// Non-C++11
-// -----------------------------------------------------------------------------
-#else
-
-#ifndef __CC_ARM
-#error "Compiler not supported."
-#endif // __CC_ARM
-
-#include "atomic_impl_armcc.hpp"
-
-#endif
-
-#endif // WEOS_COMMON_ATOMIC_HPP
+TEST(atomic_flag, test_and_set)
+{
+    weos::atomic_flag flag = ATOMIC_FLAG_INIT;
+    ASSERT_FALSE(flag.test_and_set());
+    ASSERT_TRUE(flag.test_and_set());
+    flag.clear();
+    ASSERT_FALSE(flag.test_and_set());
+    ASSERT_TRUE(flag.test_and_set());
+}
