@@ -42,6 +42,7 @@
 
 #include <chrono>
 #define WEOS_IMPL_NAMESPACE   std::chrono
+#define WEOS_NEED_IMPORT      1
 
 
 // -----------------------------------------------------------------------------
@@ -49,8 +50,19 @@
 // -----------------------------------------------------------------------------
 #elif defined(WEOS_USE_BOOST)
 
-#include <boost/chrono.hpp>
-#define WEOS_IMPL_NAMESPACE   boost::chrono
+#ifdef __CC_ARM
+
+    #include "duration.hpp"
+    #include "timepoint.hpp"
+    #define WEOS_NEED_IMPORT      0
+
+#else
+
+    #include <boost/chrono.hpp>
+    #define WEOS_IMPL_NAMESPACE   boost::chrono
+    #define WEOS_NEED_IMPORT      1
+
+#endif // __CC_ARM
 
 
 // -----------------------------------------------------------------------------
@@ -60,30 +72,35 @@
     #error "No chrono.hpp available."
 #endif
 
+#if WEOS_NEED_IMPORT
 
-WEOS_BEGIN_NAMESPACE
+    WEOS_BEGIN_NAMESPACE
 
-namespace chrono
-{
+    namespace chrono
+    {
 
-using WEOS_IMPL_NAMESPACE::duration;
-using WEOS_IMPL_NAMESPACE::duration_cast;
-using WEOS_IMPL_NAMESPACE::duration_values;
-using WEOS_IMPL_NAMESPACE::time_point;
-using WEOS_IMPL_NAMESPACE::treat_as_floating_point;
+    using WEOS_IMPL_NAMESPACE::duration;
+    using WEOS_IMPL_NAMESPACE::duration_cast;
+    using WEOS_IMPL_NAMESPACE::duration_values;
+    using WEOS_IMPL_NAMESPACE::time_point;
+    using WEOS_IMPL_NAMESPACE::treat_as_floating_point;
 
-using WEOS_IMPL_NAMESPACE::nanoseconds;
-using WEOS_IMPL_NAMESPACE::microseconds;
-using WEOS_IMPL_NAMESPACE::milliseconds;
-using WEOS_IMPL_NAMESPACE::seconds;
-using WEOS_IMPL_NAMESPACE::minutes;
-using WEOS_IMPL_NAMESPACE::hours;
+    using WEOS_IMPL_NAMESPACE::nanoseconds;
+    using WEOS_IMPL_NAMESPACE::microseconds;
+    using WEOS_IMPL_NAMESPACE::milliseconds;
+    using WEOS_IMPL_NAMESPACE::seconds;
+    using WEOS_IMPL_NAMESPACE::minutes;
+    using WEOS_IMPL_NAMESPACE::hours;
 
-} // namespace chrono
+    } // namespace chrono
 
 WEOS_END_NAMESPACE
 
+#endif // WEOS_NEED_IMPORT
+
+
 #undef WEOS_IMPL_NAMESPACE
+#undef WEOS_NEED_IMPORT
 
 
 #endif // WEOS_COMMON_CHRONO_HPP
