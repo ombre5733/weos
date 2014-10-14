@@ -370,8 +370,8 @@ namespace std
 // Overload for swapping two mutexes \p x and \p y.
 template <typename MutexT>
 inline
-void swap(WEOS_NAMESPACE_NAME::unique_lock<MutexT>& x,
-          WEOS_NAMESPACE_NAME::unique_lock<MutexT>& y) WEOS_NOEXCEPT
+void swap(WEOS_NAMESPACE::unique_lock<MutexT>& x,
+          WEOS_NAMESPACE::unique_lock<MutexT>& y) WEOS_NOEXCEPT
 {
     x.swap(y);
 }
