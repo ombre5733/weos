@@ -51,7 +51,7 @@ enum memory_order
 //     atomic_flag
 // ----=====================================================================----
 
-#define ATOMIC_FLAG_INIT { 0 }
+#define ATOMIC_FLAG_INIT   0
 
 class atomic_flag
 {
@@ -89,7 +89,7 @@ public:
 private:
     volatile int m_value;
 
-    int fetch_and_set(int newValue) WEOS_NOEXCEPT
+    int fetch_and_set(int newValue) volatile WEOS_NOEXCEPT
     {
         int status, oldValue;
         do
@@ -175,7 +175,8 @@ namespace detail
 template <typename T>
 class atomic_base
 {
-    static_assert(sizeof(T) <= sizeof(int));
+    static_assert(sizeof(T) <= sizeof(int),
+                  "Atomics are only implemented up to the size of int.");
 
 public:
     atomic_base() WEOS_NOEXCEPT
@@ -185,6 +186,16 @@ public:
     WEOS_CONSTEXPR atomic_base(T value) WEOS_NOEXCEPT
         : m_value(value)
     {
+    }
+
+    bool is_lock_free() const WEOS_NOEXCEPT
+    {
+        return true;
+    }
+
+    bool is_lock_free() const volatile WEOS_NOEXCEPT
+    {
+        return true;
     }
 
     T load(memory_order mo = memory_order_seq_cst) const WEOS_NOEXCEPT
@@ -245,6 +256,54 @@ public:
         }
         __dmb(0xF);
         return old;
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    {
+        while (1)
+        {
+            T old = (T)__ldrex(&m_value);
+            if (old == expected)
+            {
+                if (__strex((int)desired, &m_value) == 0)
+                {
+                    __dmb(0xF);
+                    return true;
+                }
+            }
+            else
+            {
+                __clrex();
+                expected = old;
+                __dmb(0xF);
+                return false;
+            }
+        }
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    {
+        while (1)
+        {
+            T old = (T)__ldrex(&m_value);
+            if (old == expected)
+            {
+                if (__strex((int)desired, &m_value) == 0)
+                {
+                    __dmb(0xF);
+                    return true;
+                }
+            }
+            else
+            {
+                __clrex();
+                expected = old;
+                __dmb(0xF);
+                return false;
+            }
+        }
     }
 
     T fetch_add(T arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT

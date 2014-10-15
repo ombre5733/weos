@@ -44,6 +44,7 @@
 
 WEOS_BEGIN_NAMESPACE
 
+using std::memory_order;
 using std::atomic_flag;
 
 WEOS_END_NAMESPACE
