@@ -368,6 +368,46 @@ public:
         return value;
     }
 
+    T operator++() WEOS_NOEXCEPT
+    {
+        return fetch_add(1) + 1;
+    }
+
+    T operator++() volatile WEOS_NOEXCEPT
+    {
+        return fetch_add(1) + 1;
+    }
+
+    T operator++ (int) WEOS_NOEXCEPT
+    {
+        return fetch_add(1);
+    }
+
+    T operator++ (int) volatile WEOS_NOEXCEPT
+    {
+        return fetch_add(1);
+    }
+
+    T operator--() WEOS_NOEXCEPT
+    {
+        return fetch_sub(1) - 1;
+    }
+
+    T operator--() volatile WEOS_NOEXCEPT
+    {
+        return fetch_sub(1) - 1;
+    }
+
+    T operator-- (int) WEOS_NOEXCEPT
+    {
+        return fetch_sub(1);
+    }
+
+    T operator-- (int) volatile WEOS_NOEXCEPT
+    {
+        return fetch_sub(1);
+    }
+
     operator T() const WEOS_NOEXCEPT
     {
         return load();
@@ -381,6 +421,7 @@ public:
 private:
     T m_value;
 
+protected:
     // ---- Hidden methods
     atomic_base(const atomic_base&);
     atomic_base& operator=(const atomic_base&);
@@ -389,22 +430,108 @@ private:
 
 } // namespace detail
 
-
-typedef detail::atomic_base<int>          atomic_int;
-typedef detail::atomic_base<unsigned int> atomic_uint;
+typedef detail::atomic_base<char>           atomic_char;
+typedef detail::atomic_base<signed char>    atomic_schar;
+typedef detail::atomic_base<unsigned char>  atomic_uchar;
+typedef detail::atomic_base<short>          atomic_short;
+typedef detail::atomic_base<unsigned short> atomic_ushort;
+typedef detail::atomic_base<int>            atomic_int;
+typedef detail::atomic_base<unsigned int>   atomic_uint;
+typedef detail::atomic_base<long>           atomic_long;
+typedef detail::atomic_base<unsigned long>  atomic_ulong;
 
 
 template <typename T>
 class atomic;
 
 template <>
+struct atomic<char> : public atomic_char
+{
+    typedef char T;
+    typedef atomic_char base;
+
+public:
+    using base::operator=;
+};
+
+template <>
+class atomic<signed char> : public atomic_schar
+{
+    typedef signed char T;
+    typedef atomic_schar base;
+
+public:
+    using base::operator=;
+};
+
+template <>
+class atomic<unsigned char> : public atomic_uchar
+{
+    typedef unsigned char T;
+    typedef atomic_uchar base;
+
+public:
+    using base::operator=;
+};
+
+template <>
+class atomic<short> : public atomic_short
+{
+    typedef short T;
+    typedef atomic_short base;
+
+public:
+    using base::operator=;
+};
+
+template <>
+class atomic<unsigned short> : public atomic_ushort
+{
+    typedef unsigned short T;
+    typedef atomic_ushort base;
+
+public:
+    using base::operator=;
+};
+
+template <>
 class atomic<int> : public atomic_int
 {
+    typedef int T;
+    typedef atomic_int base;
+
+public:
+    using base::operator=;
 };
 
 template <>
 class atomic<unsigned int> : public atomic_uint
 {
+    typedef unsigned int T;
+    typedef atomic_uint base;
+
+public:
+    using base::operator=;
+};
+
+template <>
+class atomic<long> : public atomic_long
+{
+    typedef long T;
+    typedef atomic_long base;
+
+public:
+    using base::operator=;
+};
+
+template <>
+class atomic<unsigned long> : public atomic_ulong
+{
+    typedef unsigned long T;
+    typedef atomic_ulong base;
+
+public:
+    using base::operator=;
 };
 
 WEOS_END_NAMESPACE
