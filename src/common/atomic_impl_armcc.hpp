@@ -265,6 +265,46 @@ public:
         return old;
     }
 
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order success,
+                               memory_order failure) WEOS_NOEXCEPT
+    {
+        return compare_exchange_weak(expected, desired);
+    }
+
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order success,
+                               memory_order failure) volatile WEOS_NOEXCEPT
+    {
+        return compare_exchange_weak(expected, desired);
+    }
+
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired, mo);
+    }
+
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired, mo);
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order success,
+                                 memory_order failure) WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired);
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order success,
+                                 memory_order failure) volatile WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired);
+    }
+
     bool compare_exchange_strong(T& expected, T desired,
                                  memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
     {
@@ -413,6 +453,56 @@ public:
     T operator-- (int) volatile WEOS_NOEXCEPT
     {
         return fetch_sub(1);
+    }
+
+    T operator+= (T value) WEOS_NOEXCEPT
+    {
+        return fetch_add(value) + value;
+    }
+
+    T operator+= (T value) volatile WEOS_NOEXCEPT
+    {
+        return fetch_add(value) + value;
+    }
+
+    T operator-= (T value) WEOS_NOEXCEPT
+    {
+        return fetch_sub(value) - value;
+    }
+
+    T operator-= (T value) volatile WEOS_NOEXCEPT
+    {
+        return fetch_sub(value) - value;
+    }
+
+    T operator&= (T value) WEOS_NOEXCEPT
+    {
+        return fetch_and(value) & value;
+    }
+
+    T operator&= (T value) volatile WEOS_NOEXCEPT
+    {
+        return fetch_and(value) & value;
+    }
+
+    T operator|= (T value) WEOS_NOEXCEPT
+    {
+        return fetch_or(value) | value;
+    }
+
+    T operator|= (T value) volatile WEOS_NOEXCEPT
+    {
+        return fetch_or(value) | value;
+    }
+
+    T operator^= (T value) WEOS_NOEXCEPT
+    {
+        return fetch_xor(value) ^ value;
+    }
+
+    T operator^= (T value) volatile WEOS_NOEXCEPT
+    {
+        return fetch_xor(value) ^ value;
     }
 
     operator T() const WEOS_NOEXCEPT
