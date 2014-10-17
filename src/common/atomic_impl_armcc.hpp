@@ -112,43 +112,50 @@ private:
     atomic_flag& operator=(const atomic_flag&) volatile;
 };
 
+inline
 void atomic_flag_clear(atomic_flag* flag) WEOS_NOEXCEPT
 {
     flag->clear();
 }
 
+inline
 void atomic_flag_clear(volatile atomic_flag* flag) WEOS_NOEXCEPT
 {
     flag->clear();
 }
 
+inline
 void atomic_flag_clear_explicit(atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
 {
     flag->clear(mo);
 }
 
+inline
 void atomic_flag_clear_explicit(volatile atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
 {
     flag->clear(mo);
 }
 
+inline
 bool atomic_flag_test_and_set(atomic_flag* flag) WEOS_NOEXCEPT
 {
     return flag->test_and_set();
 }
 
+inline
 bool atomic_flag_test_and_set(volatile atomic_flag* flag) WEOS_NOEXCEPT
 {
     return flag->test_and_set();
 }
 
+inline
 bool atomic_flag_test_and_set_explicit(atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
 {
     return flag->test_and_set(mo);
 }
 
-bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag,
-                                       memory_order mo) WEOS_NOEXCEPT
+inline
+bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
 {
     return flag->test_and_set(mo);
 }
