@@ -820,7 +820,7 @@ def typeErasedBindInvoker(maxArgs):
     s += "    // Clone a bind result which does not fit into the small functor storage.\n"
     s += "    static void doClone(SmallFunctorStorage& self, const SmallFunctorStorage& other, false_type)\n"
     s += "    {\n"
-    s += "        self.get<TBindResult*>() = new TBindResult(other.get<TBindResult>());\n"
+    s += "        self.get<TBindResult*>() = new TBindResult(*other.get<TBindResult*>());\n"
     s += "    }\n\n"
 
     s += "    // Destroy a bind result which fits into the SFS.\n"

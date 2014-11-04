@@ -4922,7 +4922,7 @@ class BindAdapter
     // Clone a bind result which does not fit into the small functor storage.
     static void doClone(SmallFunctorStorage& self, const SmallFunctorStorage& other, false_type)
     {
-        self.get<TBindResult*>() = new TBindResult(other.get<TBindResult>());
+        self.get<TBindResult*>() = new TBindResult(*other.get<TBindResult*>());
     }
 
     // Destroy a bind result which fits into the SFS.
