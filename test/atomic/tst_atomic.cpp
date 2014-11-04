@@ -52,3 +52,92 @@ TEST(atomic_flag, test_and_set)
     ASSERT_FALSE(flag.test_and_set());
     ASSERT_TRUE(flag.test_and_set());
 }
+
+
+
+TEST(atomic_int, default_construction)
+{
+    weos::atomic_int x;
+    (void)x;
+}
+
+TEST(atomic_int, construct_with_value)
+{
+    int value;
+    weos::atomic_int x(68);
+
+    value = x;
+    ASSERT_EQ(68, value);
+}
+
+TEST(atomic_int, load_and_store)
+{
+    int value;
+    weos::atomic_int x(68);
+
+    value = x.load();
+    ASSERT_EQ(68, value);
+    x.store(21);
+    value = x.load();
+    ASSERT_EQ(21, value);
+    value = x;
+    ASSERT_EQ(21, value);
+}
+
+TEST(atomic_int, exchange)
+{
+    int value;
+    weos::atomic_int x(68);
+
+    value = x.load();
+    ASSERT_EQ(68, value);
+    value = x.exchange(21);
+    ASSERT_EQ(68, value);
+    value = x;
+    ASSERT_EQ(21, value);
+}
+
+TEST(atomic_int, fetch_X)
+{
+    int value;
+    weos::atomic_int x(68);
+
+    value = x.fetch_add(3);
+    ASSERT_EQ(68, value);
+    value = x.fetch_sub(5);
+    ASSERT_EQ(71, value);
+    value = x.fetch_and(64);
+    ASSERT_EQ(66, value);
+    value = x.fetch_or(17);
+    ASSERT_EQ(64, value);
+    value = x.fetch_xor(66);
+    ASSERT_EQ(81, value);
+    value = x;
+    ASSERT_EQ(19, value);
+}
+
+TEST(atomic_int, compare_exchange_strong)
+{
+    int expected = 66;
+    bool exchanged;
+    weos::atomic_int x(68);
+
+    exchanged = x.compare_exchange_strong(expected, 77);
+    ASSERT_FALSE(exchanged);
+    ASSERT_EQ(68, expected);
+    ASSERT_EQ(68, int(x));
+
+    exchanged = x.compare_exchange_strong(expected, 77);
+    ASSERT_TRUE(exchanged);
+    ASSERT_EQ(68, expected);
+    ASSERT_EQ(77, int(x));
+}
+
+TEST(atomic_int, operators)
+{
+    weos::atomic_int x(68);
+
+    ASSERT_EQ(68, int(x));
+    x = 77;
+    ASSERT_EQ(77, int(x));
+}
