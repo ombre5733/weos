@@ -69,8 +69,8 @@ private:
 
 //! \brief A scope guard.
 //!
-//! The ScopeGuard is type which shall be used to hold the result returned by
-//! makeScopeGuard().
+//! The ScopeGuard is the type which shall be used to hold the result returned
+//! by makeScopeGuard().
 typedef const ScopeGuardBase& ScopeGuard;
 
 
