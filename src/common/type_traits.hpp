@@ -93,9 +93,11 @@ using WEOS_IMPL_NAMESPACE::conditional;
 using WEOS_IMPL_NAMESPACE::decay;
 using WEOS_IMPL_NAMESPACE::false_type;
 using WEOS_IMPL_NAMESPACE::integral_constant;
+using WEOS_IMPL_NAMESPACE::is_convertible;
 using WEOS_IMPL_NAMESPACE::is_member_function_pointer;
 using WEOS_IMPL_NAMESPACE::is_pointer;
 using WEOS_IMPL_NAMESPACE::is_same;
+using WEOS_IMPL_NAMESPACE::remove_reference;
 using WEOS_IMPL_NAMESPACE::true_type;
 
 WEOS_END_NAMESPACE
