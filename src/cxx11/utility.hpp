@@ -31,11 +31,6 @@
 
 #include "core.hpp"
 
-WEOS_BEGIN_NAMESPACE
-
-using std::forward;
-using std::move;
-
-WEOS_END_NAMESPACE
+#include "../common/utility.hpp"
 
 #endif // WEOS_CXX11_UTILITY_HPP
