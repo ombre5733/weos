@@ -85,6 +85,7 @@ WEOS_END_NAMESPACE
 WEOS_BEGIN_NAMESPACE
 
 using WEOS_IMPL_NAMESPACE::add_const;
+using WEOS_IMPL_NAMESPACE::add_lvalue_reference;
 using WEOS_IMPL_NAMESPACE::add_rvalue_reference;
 using WEOS_IMPL_NAMESPACE::aligned_storage;
 using WEOS_IMPL_NAMESPACE::alignment_of;

@@ -136,20 +136,20 @@ public:
             pointer;
 
     //! Creates a unique pointer equivalent to nullptr.
-    unique_ptr()
+    unique_ptr() WEOS_NOEXCEPT
         : m_pointer(0)
     {
     }
 
     //! Creates a unique pointer which owns the given \p ptr.
-    explicit unique_ptr(pointer ptr)
+    explicit unique_ptr(pointer ptr) WEOS_NOEXCEPT
         : m_pointer(ptr)
     {
     }
 
     //! Move construction.
     //! Creates a unique pointer by moving from the \p other pointer.
-    unique_ptr(BOOST_RV_REF(unique_ptr) other)
+    unique_ptr(BOOST_RV_REF(unique_ptr) other) WEOS_NOEXCEPT
         :  m_pointer(other.release())
     {
     }
@@ -162,7 +162,7 @@ public:
 
     //! Move assignment.
     //! Moves the \p other pointer to this pointer.
-    unique_ptr& operator= (BOOST_RV_REF(unique_ptr) other)
+    unique_ptr& operator= (BOOST_RV_REF(unique_ptr) other) WEOS_NOEXCEPT
     {
         reset(other.release());
         return *this;
@@ -171,14 +171,14 @@ public:
     //! Returns a plain pointer to the owned object.
     //! Returns a plain pointer to the owned object without giving up the
     //! ownership.
-    pointer get() const
+    pointer get() const WEOS_NOEXCEPT
     {
         return m_pointer;
     }
 
     //! Releases the ownership.
     //! Transfers the ownership of the stored object to the caller.
-    pointer release()
+    pointer release() WEOS_NOEXCEPT
     {
         pointer temp = m_pointer;
         m_pointer = 0;
@@ -186,7 +186,7 @@ public:
     }
 
     //! Destroys the owned object and takes the ownership of the given \p ptr.
-    void reset(pointer ptr = pointer())
+    void reset(pointer ptr = pointer()) WEOS_NOEXCEPT
     {
         // Watch out for self-assignment.
         if (m_pointer != ptr)
@@ -198,23 +198,21 @@ public:
     }
 
     //! Swaps this unique_ptr with the \p other unique_ptr.
-    void swap(unique_ptr& other)
+    void swap(unique_ptr& other) WEOS_NOEXCEPT
     {
         using std::swap;
         swap(m_pointer, other.m_pointer);
     }
 
     //! Returns a reference to the owned object.
-    //!
-    //! \todo The return type should be std::add_lvalue_reference<T>::type.
-    TPointee& operator*() const
+    typename add_lvalue_reference<TPointee>::type operator*() const
     {
         WEOS_ASSERT(m_pointer != 0);
         return *m_pointer;
     }
 
     //! Accesses the owned object.
-    pointer operator->() const
+    pointer operator->() const WEOS_NOEXCEPT
     {
         WEOS_ASSERT(m_pointer != 0);
         return m_pointer;
@@ -222,7 +220,7 @@ public:
 
     //! Checks if the smart pointer owns an object.
     //! Returns \p true, if this smart pointer owns an object.
-    /*explicit*/ operator bool() const
+    /*explicit*/ operator bool() const WEOS_NOEXCEPT
     {
         return get() != 0;
     }
