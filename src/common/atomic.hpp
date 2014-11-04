@@ -46,6 +46,16 @@ WEOS_BEGIN_NAMESPACE
 
 using std::memory_order;
 using std::atomic_flag;
+using std::atomic;
+using std::atomic_char;
+using std::atomic_schar;
+using std::atomic_uchar;
+using std::atomic_short;
+using std::atomic_ushort;
+using std::atomic_int;
+using std::atomic_uint;
+using std::atomic_long;
+using std::atomic_ulong;
 
 WEOS_END_NAMESPACE
 
