@@ -132,7 +132,8 @@ public:
     typedef TPointee element_type;
     typedef TDeleter deleter_type;
     typedef typename detail::deleter_pointer_or_fallback<
-                TPointee, typename remove_reference<TDeleter>::type>::type
+                element_type,
+                typename remove_reference<deleter_type>::type>::type
             pointer;
 
     //! Creates a unique pointer equivalent to nullptr.
@@ -192,7 +193,7 @@ public:
         if (m_pointer != ptr)
         {
             if (m_pointer)
-                TDeleter::operator()(m_pointer);
+                deleter_type::operator()(m_pointer);
             m_pointer = ptr;
         }
     }
@@ -205,7 +206,7 @@ public:
     }
 
     //! Returns a reference to the owned object.
-    typename add_lvalue_reference<TPointee>::type operator*() const
+    typename add_lvalue_reference<element_type>::type operator*() const
     {
         WEOS_ASSERT(m_pointer != 0);
         return *m_pointer;
