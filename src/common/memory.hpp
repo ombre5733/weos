@@ -56,6 +56,8 @@ WEOS_END_NAMESPACE
 // -----------------------------------------------------------------------------
 #elif defined(WEOS_USE_BOOST)
 
+#include "../type_traits.hpp"
+
 #include <boost/move/move.hpp>
 
 WEOS_BEGIN_NAMESPACE
