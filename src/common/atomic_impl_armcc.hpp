@@ -631,6 +631,210 @@ public:
     using base::operator=;
 };
 
+
+template <>
+class atomic<bool>
+{
+public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(bool value) WEOS_NOEXCEPT
+        : m_value(value)
+    {
+    }
+
+    bool is_lock_free() const WEOS_NOEXCEPT
+    {
+        return true;
+    }
+
+    bool is_lock_free() const volatile WEOS_NOEXCEPT
+    {
+        return true;
+    }
+
+    bool load(memory_order mo = memory_order_seq_cst) const WEOS_NOEXCEPT
+    {
+        __dmb(0xF);
+        return (bool)m_value;
+    }
+
+    bool load(memory_order mo = memory_order_seq_cst) const volatile WEOS_NOEXCEPT
+    {
+        __dmb(0xF);
+        return (bool)m_value;
+    }
+
+    void store(bool value, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    {
+        while (1)
+        {
+            __ldrex(&m_value);
+            if (__strex((int)value, &m_value) == 0)
+                break;
+        }
+        __dmb(0xF);
+    }
+
+    void store(bool value, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    {
+        while (1)
+        {
+            __ldrex(&m_value);
+            if (__strex((int)value, &m_value) == 0)
+                break;
+        }
+        __dmb(0xF);
+    }
+
+    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    {
+        bool old;
+        while (1)
+        {
+            old = (bool)__ldrex(&m_value);
+            if (__strex((int)desired, &m_value) == 0)
+                break;
+        }
+        __dmb(0xF);
+        return old;
+    }
+
+    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    {
+        bool old;
+        while (1)
+        {
+            old = (bool)__ldrex(&m_value);
+            if (__strex((int)desired, &m_value) == 0)
+                break;
+        }
+        __dmb(0xF);
+        return old;
+    }
+
+    bool compare_exchange_weak(bool& expected, bool desired,
+                               memory_order success,
+                               memory_order failure) WEOS_NOEXCEPT
+    {
+        return compare_exchange_weak(expected, desired);
+    }
+
+    bool compare_exchange_weak(bool& expected, bool desired,
+                               memory_order success,
+                               memory_order failure) volatile WEOS_NOEXCEPT
+    {
+        return compare_exchange_weak(expected, desired);
+    }
+
+    bool compare_exchange_weak(bool& expected, bool desired,
+                               memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired, mo);
+    }
+
+    bool compare_exchange_weak(bool& expected, bool desired,
+                               memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired, mo);
+    }
+
+    bool compare_exchange_strong(bool& expected, bool desired,
+                                 memory_order success,
+                                 memory_order failure) WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired);
+    }
+
+    bool compare_exchange_strong(bool& expected, bool desired,
+                                 memory_order success,
+                                 memory_order failure) volatile WEOS_NOEXCEPT
+    {
+        return compare_exchange_strong(expected, desired);
+    }
+
+    bool compare_exchange_strong(bool& expected, bool desired,
+                                 memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    {
+        while (1)
+        {
+            bool old = (bool)__ldrex(&m_value);
+            if (old == expected)
+            {
+                if (__strex((int)desired, &m_value) == 0)
+                {
+                    __dmb(0xF);
+                    return true;
+                }
+            }
+            else
+            {
+                __clrex();
+                expected = old;
+                __dmb(0xF);
+                return false;
+            }
+        }
+    }
+
+    bool compare_exchange_strong(bool& expected, bool desired,
+                                 memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    {
+        while (1)
+        {
+            bool old = (bool)__ldrex(&m_value);
+            if (old == expected)
+            {
+                if (__strex((int)desired, &m_value) == 0)
+                {
+                    __dmb(0xF);
+                    return true;
+                }
+            }
+            else
+            {
+                __clrex();
+                expected = old;
+                __dmb(0xF);
+                return false;
+            }
+        }
+    }
+
+    bool operator= (bool value) WEOS_NOEXCEPT
+    {
+        store(value);
+        return value;
+    }
+
+    bool operator= (bool value) volatile WEOS_NOEXCEPT
+    {
+        store(value);
+        return value;
+    }
+
+    operator bool() const WEOS_NOEXCEPT
+    {
+        return load();
+    }
+
+    operator bool() const volatile WEOS_NOEXCEPT
+    {
+        return load();
+    }
+
+private:
+    int m_value;
+
+protected:
+    // ---- Hidden methods
+    atomic(const atomic&);
+    atomic& operator=(const atomic&);
+    atomic& operator=(const atomic&) volatile;
+};
+
 WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_ATOMIC_IMPL_ARMCC_HPP
