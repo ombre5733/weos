@@ -36,9 +36,7 @@ endif()
 
 # The source files which are necessary for this wrapper.
 set(_sources
-        "${WEOS_ROOT_DIR}/common/functional.cpp"
-        "${WEOS_ROOT_DIR}/keil_cmsis_rtos/system_error.cpp"
-        "${WEOS_ROOT_DIR}/keil_cmsis_rtos/thread.cpp")
+        "${WEOS_ROOT_DIR}/weos.cpp")
 
 # If a TARGET is specified, we create a static library from the wrapper's
 # sources and link with it.
