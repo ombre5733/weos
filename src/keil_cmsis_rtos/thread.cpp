@@ -27,7 +27,7 @@
 *******************************************************************************/
 
 #include "thread.hpp"
-#include "memorypool.hpp"
+#include "../memorypool.hpp"
 
 // The function which actually creates a thread. The signature can be found
 // in ../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h.
