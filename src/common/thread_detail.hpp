@@ -164,24 +164,26 @@ public:
         {
         }
 
+        //! Sets the priority.
+        //! Sets the thread priority to \p priority.
+        //!
+        //! The default value is Priority::Normal.
+        attributes& setPriority(Priority priority)
+        {
+            m_priority = priority;
+            return *this;
+        }
+
         //! Provides a custom stack.
         //! Makes the thread use the memory pointed to by \p stack whose size
         //! in bytes is passed in \p stackSize rather than the default stack.
         //!
         //! The default is a null-pointer for the stack and zero for its size.
-        void setCustomStack(void* stack, std::size_t stackSize)
+        attributes& setStack(void* stack, std::size_t stackSize)
         {
             m_customStack = stack;
             m_customStackSize = stackSize;
-        }
-
-        //! Sets the priority.
-        //! Sets the thread priority to \p priority.
-        //!
-        //! The default value is Priority::Normal.
-        void setPriority(Priority priority)
-        {
-            m_priority = priority;
+            return *this;
         }
 
     private:
