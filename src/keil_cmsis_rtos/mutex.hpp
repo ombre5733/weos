@@ -61,30 +61,10 @@ public:
 
 
     //! Creates a mutex.
-    mutex()
-        : m_id(0),
-          m_locked(false)
-    {
-        // Keil's RTOS wants a zero'ed control block type for initialization.
-        m_cmsisMutexControlBlock._[0] = 0;
-        osMutexDef_t mutexDef = { m_cmsisMutexControlBlock._ };
-        m_id = osMutexCreate(&mutexDef);
-        if (m_id == 0)
-        {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                    "mutex::mutex failed");
-        }
-    }
+    mutex();
 
     //! Destroys the mutex.
-    ~mutex()
-    {
-        if (m_id)
-        {
-            WEOS_ASSERT(!m_locked);
-            osMutexDelete(m_id);
-        }
-    }
+    ~mutex();
 
     //! Locks the mutex.
     //! Blocks the current thread until this mutex has been locked by it.
@@ -92,80 +72,18 @@ public:
     //! the mutex and wants to lock it again.
     //!
     //! \sa try_lock()
-    void lock()
-    {
-        osStatus result = osMutexWait(m_id, osWaitForever);
-        if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "mutex::lock failed");
-
-        if (!m_locked)
-        {
-            m_locked = true;
-        }
-        else
-        {
-            // The mutex has been locked twice. Undo one lock and throw an
-            // exception.
-            result = osMutexRelease(m_id);
-            if (result != osOK)
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                        "mutex::lock failed");
-            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
-                                    "deadlock in mutex::lock");
-        }
-    }
+    void lock();
 
     //! Tests and locks the mutex if it is available.
     //! If this mutex is available, it is locked by the calling thread and
     //! \p true is returned. If the mutex is already locked, the method
     //! returns \p false without blocking.
-    bool try_lock()
-    {
-        osStatus result = osMutexWait(m_id, 0);
-
-        // If osMutexWait(mutex, millisec) fails to acquire a mutex within the
-        // timeout, the error code is
-        //   osErrorTimeoutResource if millisec != 0
-        //   osErrorResource if millisec == 0
-        if (result == osErrorResource)
-        {
-            // The mutex is owned by another thread.
-            return false;
-        }
-        if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "mutex::try_lock failed");
-
-        if (!m_locked)
-        {
-            m_locked = true;
-            return true;
-        }
-        else
-        {
-            // The mutex has already been locked by the current thread. Unlock
-            // it once and pretend that try_lock() failed.
-            result = osMutexRelease(m_id);
-            if (result != osOK)
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                        "mutex::try_lock failed");
-            return false;
-        }
-    }
+    bool try_lock();
 
     //! Unlocks the mutex.
     //! Unlocks this mutex which must have been locked previously by the
     //! calling thread.
-    void unlock()
-    {
-        WEOS_ASSERT(m_locked);
-        m_locked = false;
-        osStatus result = osMutexRelease(m_id);
-        if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "mutex::unlock failed");
-    }
+    void unlock();
 
     //! Returns a native mutex handle.
     native_handle_type native_handle()
@@ -261,26 +179,10 @@ public:
 
 
     //! Creates a mutex.
-    recursive_mutex()
-        : m_id(0)
-    {
-        // Keil's RTOS wants a zero'ed control block type for initialization.
-        m_cmsisMutexControlBlock._[0] = 0;
-        osMutexDef_t mutexDef = { m_cmsisMutexControlBlock._ };
-        m_id = osMutexCreate(&mutexDef);
-        if (m_id == 0)
-        {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                    "recursive_mutex::recursive_mutex failed");
-        }
-    }
+    recursive_mutex();
 
     //! Destroys the mutex.
-    ~recursive_mutex()
-    {
-        if (m_id)
-            osMutexDelete(m_id);
-    }
+    ~recursive_mutex();
 
     //! Locks the mutex.
     //!
@@ -289,13 +191,7 @@ public:
     //! as often as it has been locked before.
     //!
     //! \sa try_lock()
-    void lock()
-    {
-        osStatus result = osMutexWait(m_id, osWaitForever);
-        if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "recursive_mutex::lock failed");
-    }
+    void lock();
 
     //! Tests and locks the mutex if it is available.
     //!
@@ -303,36 +199,12 @@ public:
     //! \p true is returned. Locking may be done recursively.
     //!
     //! \sa lock()
-    bool try_lock()
-    {
-        osStatus result = osMutexWait(m_id, 0);
-
-        // If osMutexWait(mutex, millisec) fails to acquire a mutex within the
-        // timeout, the error code is
-        //   osErrorTimeoutResource if millisec != 0
-        //   osErrorResource if millisec == 0
-        if (result == osErrorResource)
-        {
-            // The mutex is owned by another thread.
-            return false;
-        }
-        if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "recursive_mutex::try_lock failed");
-
-        return true;
-    }
+    bool try_lock();
 
     //! Unlocks the mutex.
     //! Unlocks this mutex which must have been locked previously by the
     //! calling thread.
-    void unlock()
-    {
-        osStatus result = osMutexRelease(m_id);
-        if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "recursive_mutex::unlock failed");
-    }
+    void unlock();
 
     //! Returns a native mutex handle.
     native_handle_type native_handle()
