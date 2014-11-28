@@ -190,7 +190,7 @@ thread::signal_set wait_for_any_signal()
     osEvent result = osSignalWait(0, osWaitForever);
     if (result.status != osEventSignal)
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                "wait_for_signalflags failed");
+                                "wait_for_any_signal failed");
 
     return result.value.signals;
 }
@@ -212,42 +212,27 @@ thread::signal_set try_wait_for_any_signal()
         && result.status != osEventTimeout)
     {
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                "try_wait_for_any_signal_until failed");
+                                "try_wait_for_any_signal failed");
     }
 
     return 0;
 }
 
-//! Waits until any signal arrives or a timeout occurs.
-//! Waits up to the timeout period \p d for one or more signals to be set for
-//! the current thread. The set signals will be returned. If the timeout
-//! expires, zero is returned.
-template <typename RepT, typename PeriodT>
-inline
-thread::signal_set try_wait_for_any_signal_for(
-            const chrono::duration<RepT, PeriodT>& d)
-{
-    return try_wait_for_any_signal_until(chrono::steady_clock::now() + d);
-}
-
 template <typename ClockT, typename DurationT>
 thread::signal_set try_wait_for_any_signal_until(
-            const chrono::time_point<ClockT, DurationT>& timePoint)
+            const chrono::time_point<ClockT, DurationT>& time)
 {
-    typedef typename DurationT::rep rep_t;
-
     while (1)
     {
-        //! \todo Convert to the true amount of ticks, even if the
-        //! system does not run with a 1ms tick.
-        rep_t ticks = chrono::duration_cast<chrono::milliseconds>(
-                          timePoint - ClockT::now());
-        if (ticks < 0)
-            ticks = 0;
-        else if (ticks > 0xFFFE)
-            ticks = 0xFFFE;
+        typedef typename WEOS_NAMESPACE::common_type<
+                             typename ClockT::duration,
+                             DurationT>::type difference_type;
+        typedef chrono::detail::internal_time_cast<difference_type> caster;
 
-        osEvent result = osSignalWait(0, ticks);
+        typename caster::type millisecs
+                = caster::convert_and_clip(time - ClockT::now());
+
+        osEvent result = osSignalWait(0, millisecs);
         if (result.status == osEventSignal)
         {
             return result.value.signals;
@@ -260,9 +245,21 @@ thread::signal_set try_wait_for_any_signal_until(
                                     "try_wait_for_any_signal_until failed");
         }
 
-        if (ticks == 0)
+        if (millisecs == 0)
             return 0;
     }
+}
+
+//! Waits until any signal arrives or a timeout occurs.
+//! Waits up to the timeout period \p d for one or more signals to be set for
+//! the current thread. The set signals will be returned. If the timeout
+//! expires, zero is returned.
+template <typename RepT, typename PeriodT>
+inline
+thread::signal_set try_wait_for_any_signal_for(
+            const chrono::duration<RepT, PeriodT>& d)
+{
+    return try_wait_for_any_signal_until(chrono::steady_clock::now() + d);
 }
 
 
@@ -305,6 +302,41 @@ bool try_wait_for_all_signals(thread::signal_set flags)
     return false;
 }
 
+template <typename ClockT, typename DurationT>
+bool try_wait_for_all_signals_until(
+            thread::signal_set flags,
+            const chrono::time_point<ClockT, DurationT>& time)
+{
+    WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
+
+    while (true)
+    {
+        typedef typename WEOS_NAMESPACE::common_type<
+                             typename ClockT::duration,
+                             DurationT>::type difference_type;
+        typedef chrono::detail::internal_time_cast<difference_type> caster;
+
+        typename caster::type millisecs
+                = caster::convert_and_clip(time - ClockT::now());
+
+        osEvent result = osSignalWait(flags, millisecs);
+        if (result.status == osEventSignal)
+        {
+            return true;
+        }
+
+        if (   result.status != osOK
+            && result.status != osEventTimeout)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                    "try_wait_for_all_signals_until failed");
+        }
+
+        if (millisecs == 0)
+            return false;
+    }
+}
+
 //! Blocks until a set of signals arrives or a timeout occurs.
 //! Waits up to the timeout duration \p d for all signals specified by the
 //! \p flags to be set. If these signals are set, they are returned and
@@ -319,44 +351,6 @@ bool try_wait_for_all_signals_for(
     return try_wait_for_all_signals_until(
                 flags,
                 chrono::steady_clock::now() + d);
-}
-
-template <typename ClockT, typename DurationT>
-bool try_wait_for_all_signals_until(
-            thread::signal_set flags,
-            const chrono::time_point<ClockT, DurationT>& timePoint)
-{
-    WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
-
-    typedef typename DurationT::rep rep_t;
-
-    while (true)
-    {
-        //! \todo Convert to the true amount of ticks, even if the
-        //! system does not run with a 1ms tick.
-        rep_t ticks = chrono::duration_cast<chrono::milliseconds>(
-                          timePoint - ClockT::now());
-        if (ticks < 0)
-            ticks = 0;
-        else if (ticks > 0xFFFE)
-            ticks = 0xFFFE;
-
-        osEvent result = osSignalWait(flags, ticks);
-        if (result.status == osEventSignal)
-        {
-            return true;
-        }
-
-        if (   result.status != osOK
-            && result.status != osEventTimeout)
-        {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                    "try_wait_for_all_signals_until failed");
-        }
-
-        if (ticks == 0)
-            return false;
-    }
 }
 
 } // namespace this_thread
