@@ -202,4 +202,63 @@ void thread::invokeWithDefaultStack(const attributes& attrs)
     }
 }
 
+// ----=====================================================================----
+//     Waiting for signals
+// ----=====================================================================----
+
+thread::signal_set wait_for_any_signal()
+{
+    osEvent result = osSignalWait(0, osWaitForever);
+    if (result.status != osEventSignal)
+        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                "wait_for_any_signal failed");
+
+    return result.value.signals;
+}
+
+thread::signal_set try_wait_for_any_signal()
+{
+    osEvent result = osSignalWait(0, 0);
+    if (result.status == osEventSignal)
+    {
+        return result.value.signals;
+    }
+
+    if (   result.status != osOK
+        && result.status != osEventTimeout)
+    {
+        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                "try_wait_for_any_signal failed");
+    }
+
+    return 0;
+}
+
+void wait_for_all_signals(thread::signal_set flags)
+{
+    WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
+    osEvent result = osSignalWait(flags, osWaitForever);
+    if (result.status != osEventSignal)
+        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                "wait_for_signalflags failed");
+}
+
+bool try_wait_for_all_signals(thread::signal_set flags)
+{
+    osEvent result = osSignalWait(flags, 0);
+    if (result.status == osEventSignal)
+    {
+        return true;
+    }
+
+    if (   result.status != osOK
+        && result.status != osEventTimeout)
+    {
+        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                "try_wait_for_all_signals failed");
+    }
+
+    return false;
+}
+
 WEOS_END_NAMESPACE

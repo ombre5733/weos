@@ -184,39 +184,13 @@ void yield()
 //! Waits for any signal.
 //! Blocks the current thread until one or more signal flags have been set,
 //! returns these flags and resets them.
-inline
-thread::signal_set wait_for_any_signal()
-{
-    osEvent result = osSignalWait(0, osWaitForever);
-    if (result.status != osEventSignal)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                "wait_for_any_signal failed");
-
-    return result.value.signals;
-}
+thread::signal_set wait_for_any_signal();
 
 //! Checks if any signal has arrived.
 //! Checks if one or more signal flags have been set for the current thread,
 //! returns these flags and resets them. If no signal is set, zero
 //! is returned.
-inline
-thread::signal_set try_wait_for_any_signal()
-{
-    osEvent result = osSignalWait(0, 0);
-    if (result.status == osEventSignal)
-    {
-        return result.value.signals;
-    }
-
-    if (   result.status != osOK
-        && result.status != osEventTimeout)
-    {
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                "try_wait_for_any_signal failed");
-    }
-
-    return 0;
-}
+thread::signal_set try_wait_for_any_signal();
 
 template <typename ClockT, typename DurationT>
 thread::signal_set try_wait_for_any_signal_until(
@@ -262,20 +236,11 @@ thread::signal_set try_wait_for_any_signal_for(
     return try_wait_for_any_signal_until(chrono::steady_clock::now() + d);
 }
 
-
 //! Waits for a set of signals.
 //! Blocks the current thread until all signal flags selected by \p flags have
 //! been set, returns those flags and resets them. Signal flags which are
 //! not selected by \p flags are not reset.
-inline
-void wait_for_all_signals(thread::signal_set flags)
-{
-    WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
-    osEvent result = osSignalWait(flags, osWaitForever);
-    if (result.status != osEventSignal)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                "wait_for_signalflags failed");
-}
+void wait_for_all_signals(thread::signal_set flags);
 
 //! Checks if a set of signals has been set.
 //! Checks if all signal flags selected by \p flags have been set, returns
@@ -283,24 +248,7 @@ void wait_for_all_signals(thread::signal_set flags)
 //! through \p flags are not reset.
 //! If not all signal flags specified by \p flags are set, zero is returned
 //! and no flag is reset.
-inline
-bool try_wait_for_all_signals(thread::signal_set flags)
-{
-    osEvent result = osSignalWait(flags, 0);
-    if (result.status == osEventSignal)
-    {
-        return true;
-    }
-
-    if (   result.status != osOK
-        && result.status != osEventTimeout)
-    {
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                "try_wait_for_all_signals failed");
-    }
-
-    return false;
-}
+bool try_wait_for_all_signals(thread::signal_set flags);
 
 template <typename ClockT, typename DurationT>
 bool try_wait_for_all_signals_until(
