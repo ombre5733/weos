@@ -279,7 +279,7 @@ void f4(int* a, double* b, int c, float d)
     f4_d = d;
 }
 
-} // anonymouse namespace
+} // anonymous namespace
 
 TEST(thread, function_pointer_0_args)
 {
@@ -537,7 +537,7 @@ TEST(thread, const_member_function_1_arg)
 TEST(thread, member_function_2_args)
 {
     MemberFunction2 m;
-    ASSERT_EQ(0.0, m.m_a);
+    ASSERT_EQ(0.0f, m.m_a);
     ASSERT_FALSE(m.m_b);
     for (int counter = 0; counter < 100; ++counter)
     {
@@ -554,7 +554,7 @@ TEST(thread, member_function_2_args)
 TEST(thread, const_member_function_2_args)
 {
     MemberFunction2 m;
-    ASSERT_EQ(0.0, m.m_a);
+    ASSERT_EQ(0.0f, m.m_a);
     ASSERT_FALSE(m.m_b);
     for (int counter = 0; counter < 100; ++counter)
     {

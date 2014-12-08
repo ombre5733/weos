@@ -79,7 +79,7 @@ void f4(int* a, double* b, int c, float d)
     f4_d = d;
 }
 
-} // anonymouse namespace
+} // anonymous namespace
 
 TEST(bind_with_result, function_pointer_0_args)
 {
@@ -464,7 +464,7 @@ TEST(bind_with_result, const_member_function_1_arg)
 TEST(bind_with_result, member_function_2_args)
 {
     MemberFunction2 m;
-    ASSERT_EQ(0.0, m.m_a);
+    ASSERT_EQ(0.0f, m.m_a);
     ASSERT_FALSE(m.m_b);
     for (int counter = 0; counter < 100; ++counter)
     {
@@ -484,7 +484,7 @@ TEST(bind_with_result, member_function_2_args)
 TEST(bind_with_result, const_member_function_2_args)
 {
     const MemberFunction2 m;
-    ASSERT_EQ(0.0, m.m_a);
+    ASSERT_EQ(0.0f, m.m_a);
     ASSERT_FALSE(m.m_b);
     for (int counter = 0; counter < 100; ++counter)
     {
