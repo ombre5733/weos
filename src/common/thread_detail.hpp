@@ -31,9 +31,8 @@
 
 #include "../config.hpp"
 
-#include "functional.hpp"
-#include "system_error.hpp"
-#include "utility.hpp"
+#include "../atomic.hpp"
+#include "../utility.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
@@ -50,8 +49,6 @@ struct ThreadSharedData
 {
     //! Creates the shared thread data with a reference count of 1.
     ThreadSharedData();
-    //! Destroys the shared data.
-    virtual ~ThreadSharedData() {}
 
     //! Decreases the reference counter by one. If the reference counter reaches
     //! zero, this ThreadData is destructed and returned to the pool.
@@ -59,13 +56,6 @@ struct ThreadSharedData
 
     //! Increases the reference counter by one.
     void ref();
-
-    //! Invokes the callable in the new thread.
-    inline
-    void invoke()
-    {
-        m_threadedFunction();
-    }
 
     //! Allocates a ThreadData object from the global pool. An exception is
     //! thrown if the pool is empty.
@@ -80,12 +70,6 @@ struct ThreadSharedData
     //! execution finishes. It is needed to implement thread::join().
     semaphore m_finished;
 
-    //! A poor man's atomic integer.
-    struct atomic_int
-    {
-        mutex mtx;
-        int value;
-    };
     atomic_int m_referenceCount;
 
     //! This semaphore is increased by the thread creator when it has
@@ -103,7 +87,7 @@ private:
 } // namespace detail
 
 //! A thread handle.
-class thread
+class thread : private detail::thread_base
 {
     WEOS_MOVABLE_BUT_NOT_COPYABLE(thread)
 
@@ -115,87 +99,11 @@ public:
     //! A representation of a thread identifier.
     //! This class is a wrapper around a thread identifier. It has a small
     //! memory footprint such that it is inexpensive to pass copies around.
-    class id
-    {
-    public:
-        id() WEOS_NOEXCEPT
-            : m_id(0)
-        {
-        }
+    typedef detail::native_thread_traits::id id;
 
-        explicit id(detail::native_thread_traits::thread_id_type _id) WEOS_NOEXCEPT
-            : m_id(_id)
-        {
-        }
+    //! The thread attributes.
+    typedef detail::native_thread_traits::attributes attributes;
 
-    private:
-        friend bool operator== (id lhs, id rhs) WEOS_NOEXCEPT;
-        friend bool operator!= (id lhs, id rhs) WEOS_NOEXCEPT;
-        friend bool operator< (id lhs, id rhs) WEOS_NOEXCEPT;
-        friend bool operator<= (id lhs, id rhs) WEOS_NOEXCEPT;
-        friend bool operator> (id lhs, id rhs) WEOS_NOEXCEPT;
-        friend bool operator>= (id lhs, id rhs) WEOS_NOEXCEPT;
-
-        detail::native_thread_traits::thread_id_type m_id;
-    };
-
-    //! Thread attributes.
-    class attributes
-    {
-    public:
-        //! An enumeration of thread priorities.
-        enum Priority
-        {
-            Idle = osPriorityIdle,
-            Low = osPriorityLow,
-            BelowNormal = osPriorityBelowNormal,
-            Normal = osPriorityNormal,
-            AboveNormal = osPriorityAboveNormal,
-            High = osPriorityHigh,
-            Realtime = osPriorityRealtime,
-            Error = osPriorityError
-        };
-
-        //! Creates default thread attributes.
-        attributes()
-            : m_priority(Normal),
-              m_customStackSize(0),
-              m_customStack(0)
-        {
-        }
-
-        //! Sets the priority.
-        //! Sets the thread priority to \p priority.
-        //!
-        //! The default value is Priority::Normal.
-        attributes& setPriority(Priority priority)
-        {
-            m_priority = priority;
-            return *this;
-        }
-
-        //! Provides a custom stack.
-        //! Makes the thread use the memory pointed to by \p stack whose size
-        //! in bytes is passed in \p stackSize rather than the default stack.
-        //!
-        //! The default is a null-pointer for the stack and zero for its size.
-        attributes& setStack(void* stack, std::size_t stackSize)
-        {
-            m_customStack = stack;
-            m_customStackSize = stackSize;
-            return *this;
-        }
-
-    private:
-        //! The thread's priority.
-        Priority m_priority;
-        //! The size of the custom stack.
-        std::size_t m_customStackSize;
-        //! A pointer to the custom stack.
-        void* m_customStack;
-
-        friend class thread;
-    };
 
     //! Creates a thread handle without a thread.
     //! Creates a thread handle which is not associated with any thread. The
@@ -220,8 +128,7 @@ public:
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f));
 
-        attributes attrs;
-        invokeWithDefaultStack(attrs);
+        invoke(attributes());
     }
 
     template <typename F,
@@ -235,10 +142,9 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0));
+                                                forward<A0>(a0));
 
-        attributes attrs;
-        invokeWithDefaultStack(attrs);
+        invoke(attributes());
     }
 
     template <typename F,
@@ -254,11 +160,10 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0),
-                                       forward<A1>(a1));
+                                                forward<A0>(a0),
+                                                forward<A1>(a1));
 
-        attributes attrs;
-        invokeWithDefaultStack(attrs);
+        invoke(attributes());
     }
 
     template <typename F,
@@ -276,12 +181,11 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0),
-                                       forward<A1>(a1),
-                                       forward<A2>(a2));
+                                                forward<A0>(a0),
+                                                forward<A1>(a1),
+                                                forward<A2>(a2));
 
-        attributes attrs;
-        invokeWithDefaultStack(attrs);
+        invoke(attributes());
     }
 
     template <typename F,
@@ -301,13 +205,12 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0),
-                                       forward<A1>(a1),
-                                       forward<A2>(a2),
-                                       forward<A3>(a3));
+                                                forward<A0>(a0),
+                                                forward<A1>(a1),
+                                                forward<A2>(a2),
+                                                forward<A3>(a3));
 
-        attributes attrs;
-        invokeWithDefaultStack(attrs);
+        invoke(attributes());
     }
 
     // -------------------------------------------------------------------------
@@ -321,10 +224,7 @@ public:
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f));
 
-        if (attrs.m_customStack || attrs.m_customStackSize)
-            invokeWithCustomStack(attrs);
-        else
-            invokeWithDefaultStack(attrs);
+        invoke(attrs);
     }
 
     template <typename F,
@@ -335,12 +235,9 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0));
+                                                forward<A0>(a0));
 
-        if (attrs.m_customStack || attrs.m_customStackSize)
-            invokeWithCustomStack(attrs);
-        else
-            invokeWithDefaultStack(attrs);
+        invoke(attrs);
     }
 
     template <typename F,
@@ -353,13 +250,10 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0),
-                                       forward<A1>(a1));
+                                                forward<A0>(a0),
+                                                forward<A1>(a1));
 
-        if (attrs.m_customStack || attrs.m_customStackSize)
-            invokeWithCustomStack(attrs);
-        else
-            invokeWithDefaultStack(attrs);
+        invoke(attrs);
     }
 
     template <typename F,
@@ -374,14 +268,11 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0),
-                                       forward<A1>(a1),
-                                       forward<A2>(a2));
+                                                forward<A0>(a0),
+                                                forward<A1>(a1),
+                                                forward<A2>(a2));
 
-        if (attrs.m_customStack || attrs.m_customStackSize)
-            invokeWithCustomStack(attrs);
-        else
-            invokeWithDefaultStack(attrs);
+        invoke(attrs);
     }
 
     template <typename F,
@@ -398,15 +289,12 @@ public:
         : m_data(detail::ThreadSharedData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                       forward<A0>(a0),
-                                       forward<A1>(a1),
-                                       forward<A2>(a2),
-                                       forward<A3>(a3));
+                                                forward<A0>(a0),
+                                                forward<A1>(a1),
+                                                forward<A2>(a2),
+                                                forward<A3>(a3));
 
-        if (attrs.m_customStack || attrs.m_customStackSize)
-            invokeWithCustomStack(attrs);
-        else
-            invokeWithDefaultStack(attrs);
+        invoke(attrs);
     }
 
     //! Move constructor.
@@ -463,18 +351,7 @@ public:
     //! Blocks until the associated thread has been finished.
     //! Blocks the calling thread until the thread which is associated with
     //! this thread handle has been finished.
-    void join()
-    {
-        if (!joinable())
-            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
-                                    "thread::join: thread is not joinable");
-
-        m_data->m_finished.wait();
-
-        // The thread data is not needed any longer.
-        m_data->deref();
-        m_data = 0;
-    }
+    void join();
 
     //! Checks if the thread is joinable.
     //! Returns \p true, if the thread is joinable.
@@ -517,46 +394,16 @@ public:
 
     //! Clears a set of signals.
     //! Clears the signals which are specified by the \p flags.
-    inline
-    void clear_signals(signal_set flags)
-    {
-        if (!joinable())
-        {
-            WEOS_THROW_SYSTEM_ERROR(
-                        errc::operation_not_permitted,
-                        "thread::clear_signals: thread is not joinable");
-        }
-
-        detail::native_thread_traits::clear_signals(m_data->m_threadId, flags);
-    }
+    void clear_signals(signal_set flags);
 
     //! Sets a set of signals.
     //! Sets the signals which are specified by the \p flags.
-    inline
-    void set_signals(signal_set flags)
-    {
-        if (!joinable())
-        {
-            WEOS_THROW_SYSTEM_ERROR(
-                        errc::operation_not_permitted,
-                        "thread::set_signals: thread is not joinable");
-        }
-
-        detail::native_thread_traits::set_signals(m_data->m_threadId, flags);
-    }
+    void set_signals(signal_set flags);
 
 protected:
     //! Invokes the function which is stored in the shared data in a new
     //! thread which is created with the attributes \p attrs.
-    //! This method may only be called if \p attrs contains a valid custom
-    //! stack configuration.
-    void invokeWithCustomStack(const attributes& attrs);
-
-    //! Invokes the function which is stored in the shared data in a new
-    //! thread which is created with the attributes \p attrs.
-    //! This method may only be called if \p attrs does not contain a custom
-    //! stack configuration.
-    void invokeWithDefaultStack(const attributes& attrs);
+    void invoke(const attributes& attrs);
 
 private:
     //! The thread-data which is shared by this class and the invoker

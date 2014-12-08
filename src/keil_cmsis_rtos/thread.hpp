@@ -31,27 +31,32 @@
 
 #include "core.hpp"
 
-#include "chrono.hpp"
-#include "mutex.hpp"
-#include "semaphore.hpp"
-#include "system_error.hpp"
+#include "../atomic.hpp"
+#include "../functional.hpp"
+#include "../chrono.hpp"
+#include "../mutex.hpp"
+#include "../semaphore.hpp"
+#include "../system_error.hpp"
 
 #include <cstdint>
 
 
 WEOS_BEGIN_NAMESPACE
 
+class thread;
+
 namespace detail
 {
+
+struct thread_base
+{
+};
 
 //! Traits for native threads.
 struct native_thread_traits
 {
     // The native type for a thread ID.
     typedef osThreadId thread_id_type;
-
-    // The stack must be able to hold the registers R0-R15.
-    static const std::size_t minimum_custom_stack_size = 64;
 
     static_assert(osFeature_Signals > 0 && osFeature_Signals <= 16,
                   "The wrapper supports only up 16 signals.");
@@ -64,25 +69,84 @@ struct native_thread_traits
 
     // A signal set with all flags being set.
     static const signal_set all_signals
-                = (std::uint32_t(1) << osFeature_Signals) - 1;
+    = (std::uint32_t(1) << osFeature_Signals) - 1;
 
-    // Clears the given signal flags of the thread selected by the threadId.
-    static void clear_signals(thread_id_type threadId, signal_set flags)
-    {
-        WEOS_ASSERT(flags <= all_signals);
-        std::int32_t result = osSignalClear(threadId, flags);
-        WEOS_ASSERT(result >= 0);
-        (void)result;
-    }
 
-    // Sets the given signal flags of the thread selected by the threadId.
-    static void set_signals(thread_id_type threadId, signal_set flags)
+    //! A thread id.
+    class id
     {
-        WEOS_ASSERT(flags <= all_signals);
-        std::int32_t result = osSignalSet(threadId, flags);
-        WEOS_ASSERT(result >= 0);
-        (void)result;
-    }
+    public:
+        id() WEOS_NOEXCEPT
+            : m_id(0)
+        {
+        }
+
+        explicit id(thread_id_type _id) WEOS_NOEXCEPT
+            : m_id(_id)
+        {
+        }
+
+        thread_id_type m_id;
+    };
+
+
+    //! Thread attributes.
+    class attributes
+    {
+    public:
+        //! An enumeration of thread priorities.
+        enum Priority
+        {
+            Idle = osPriorityIdle,
+            Low = osPriorityLow,
+            BelowNormal = osPriorityBelowNormal,
+            Normal = osPriorityNormal,
+            AboveNormal = osPriorityAboveNormal,
+            High = osPriorityHigh,
+            Realtime = osPriorityRealtime,
+            Error = osPriorityError
+        };
+
+        //! Creates default thread attributes.
+        attributes()
+            : m_priority(Normal),
+              m_customStackSize(0),
+              m_customStack(0)
+        {
+        }
+
+        //! Sets the priority.
+        //! Sets the thread priority to \p priority.
+        //!
+        //! The default value is Priority::Normal.
+        attributes& setPriority(Priority priority)
+        {
+            m_priority = priority;
+            return *this;
+        }
+
+        //! Provides a custom stack.
+        //! Makes the thread use the memory pointed to by \p stack whose size
+        //! in bytes is passed in \p stackSize rather than the default stack.
+        //!
+        //! The default is a null-pointer for the stack and zero for its size.
+        attributes& setStack(void* stack, std::size_t stackSize)
+        {
+            m_customStack = stack;
+            m_customStackSize = stackSize;
+            return *this;
+        }
+
+    private:
+        //! The thread's priority.
+        Priority m_priority;
+        //! The size of the custom stack.
+        std::size_t m_customStackSize;
+        //! A pointer to the custom stack.
+        void* m_customStack;
+
+        friend class WEOS_NAMESPACE::thread;
+    };
 };
 
 } // namespace detail

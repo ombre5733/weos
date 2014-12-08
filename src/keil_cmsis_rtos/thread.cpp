@@ -29,11 +29,61 @@
 #include "thread.hpp"
 #include "../memorypool.hpp"
 
+#include <cstdint>
+
+
+// The stack must be able to hold the registers R0-R15.
+static const std::size_t minimum_custom_stack_size = 64;
+
+
+using namespace std;
+
+#if defined(__CC_ARM)
+
+#define SVC_4(fun, retType, A0, A1, A2, A3)                                    \
+    __svc_indirect(0)                                                          \
+    extern retType fun##_svc(retType (*)(A0, A1, A2, A3), A0, A1, A2, A3);     \
+                                                                               \
+    __attribute__((always_inline)) static inline                               \
+    retType fun##_indirect(A0 a0, A1 a1, A2 a2, A3 a3)                         \
+    {                                                                          \
+        return fun##_svc(&fun, a0, a1, a2, a3);                                \
+    }
+
+#elif defined(__GNUC__)
+
+#define SVC_Args4(A0, A1, A2, A3)                                              \
+    register A0 arg0 __asm("r0") = a0;                                         \
+    register A1 arg1 __asm("r1") = a1;                                         \
+    register A2 arg2 __asm("r2") = a2;                                         \
+    register A3 arg3 __asm("r3") = a3;
+
+#define SVC_Call(fun)                                                          \
+    __asm volatile(                                                            \
+        "ldr r12,=" #fun "\n\t"                                                \
+        "svc 0"                                                                \
+        : "=r"(arg0), "=r"(arg1), "=r"(arg2), "=r"(arg3)                       \
+        :  "r"(arg0),  "r"(arg1),  "r"(arg2),  "r"(arg3)                       \
+        : "r12", "lr", "cc");
+
+#define SVC_4(fun, retType, A0, A1, A2, A3) \
+    __attribute__((always_inline)) static inline                               \
+    retType fun##_indirect(A0 a0, A1 a1, A2 a2, A3 a3)                         \
+    {                                                                          \
+        SVC_Args4(A0, A1, A2, A3)                                              \
+        SVC_Call(fun)                                                          \
+        return (retType)arg0;                                                  \
+    }
+
+#else
+  #error "Compiler not supported"
+#endif
+
 // The function which actually creates a thread. The signature can be found
 // in ../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h.
-extern "C" std::uint32_t rt_tsk_create(void(*task)(void),
-                                       std::uint32_t prio_stksz,
-                                       void* stk, void* argv);
+extern "C" uint32_t rt_tsk_create(void(*task)(void),
+                                  uint32_t prio_stksz,
+                                  void* stk, void* argv);
 
 // The function which is called when a thread exits. This function has to
 // be set as return address for every new thread.
@@ -45,6 +95,13 @@ extern void* os_active_TCB[];
 
 namespace
 {
+
+//! Converts a weos priority to a CMSIS priority.
+static inline
+osPriority toNativePriority(weos::thread::attributes::Priority priority)
+{
+    return static_cast<osPriority>(priority);
+}
 
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
@@ -59,22 +116,45 @@ extern "C" void weos_threadInvoker(const void* arg)
     // Wait until the caller has initialized the shared data.
     data->m_initializationDone.wait();
     // Call the threaded function.
-    data->invoke();
+    data->m_threadedFunction();
     // Use the semaphore to signal that the thread has been completed.
     data->m_finished.post();
     data->deref();
 }
 
+void* weos_createTask(uint32_t priority, void* stack, uint32_t stackSize,
+                      void* data)
+{
+    uint32_t taskId = rt_tsk_create(
+                          (void (*)(void))weos_threadInvoker,
+                          (priority - osPriorityIdle + 1)
+                          | (stackSize << 8),
+                          stack,
+                          data);
+    if (taskId)
+    {
+        // Set R13 to the address of osThreadExit, which has to be invoked
+        // when the thread exits.
+        static_cast<uint32_t*>(stack)[13] = (uint32_t)&osThreadExit;
+        return os_active_TCB[taskId - 1];
+    }
+
+    return 0;
+}
+
 } // anonymous namespace
 
-WEOS_BEGIN_NAMESPACE
+SVC_4(weos_createTask, void*, uint32_t, void*, uint32_t, void*)
 
-namespace detail
-{
+
+WEOS_BEGIN_NAMESPACE
 
 // ----=====================================================================----
 //     ThreadSharedData
 // ----=====================================================================----
+
+namespace detail
+{
 
 namespace
 {
@@ -90,20 +170,14 @@ ThreadSharedDataPool& threadSharedDataPool()
 } // anonymous namespace
 
 ThreadSharedData::ThreadSharedData()
-    : m_threadId(0)
+    : m_referenceCount(1),
+      m_threadId(0)
 {
-    m_referenceCount.value = 1;
 }
 
 void ThreadSharedData::deref()
 {
-    int newValue;
-    {
-        lock_guard<mutex> lock(m_referenceCount.mtx);
-        --m_referenceCount.value;
-        newValue = m_referenceCount.value;
-    }
-    if (newValue == 0)
+    if (--m_referenceCount == 0)
     {
         this->~ThreadSharedData();
         threadSharedDataPool().free(this);
@@ -112,8 +186,7 @@ void ThreadSharedData::deref()
 
 void ThreadSharedData::ref()
 {
-    lock_guard<mutex> lock(m_referenceCount.mtx);
-    ++m_referenceCount.value;
+    ++m_referenceCount;
 }
 
 ThreadSharedData* ThreadSharedData::allocate()
@@ -133,37 +206,85 @@ ThreadSharedData* ThreadSharedData::allocate()
 //     thread
 // ----=====================================================================----
 
-void thread::invokeWithCustomStack(const attributes& attrs)
+void thread::join()
 {
-    if (   attrs.m_customStack == 0
-        || attrs.m_customStackSize < detail::native_thread_traits::minimum_custom_stack_size
-        || attrs.m_customStackSize >= (std::uint32_t(1) << 24))
+    if (!joinable())
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "thread::join: thread is not joinable");
+
+    m_data->m_finished.wait();
+
+    // The thread data is not needed any longer.
+    m_data->deref();
+    m_data = 0;
+}
+
+void thread::clear_signals(signal_set flags)
+{
+    if (!joinable())
+    {
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::operation_not_permitted,
+                    "thread::clear_signals: thread is not joinable");
+    }
+
+    WEOS_ASSERT(flags <= thread::all_signals());
+    std::int32_t result = osSignalClear(m_data->m_threadId, flags);
+    WEOS_ASSERT(result >= 0);
+    (void)result;
+}
+
+void thread::set_signals(signal_set flags)
+{
+    if (!joinable())
+    {
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::operation_not_permitted,
+                    "thread::set_signals: thread is not joinable");
+    }
+
+    WEOS_ASSERT(flags <= thread::all_signals());
+    std::int32_t result = osSignalSet(m_data->m_threadId, flags);
+    WEOS_ASSERT(result >= 0);
+    (void)result;
+}
+
+void thread::invoke(const attributes& attrs)
+{
+    if (attrs.m_customStack != 0
+        && (   attrs.m_customStackSize < minimum_custom_stack_size
+            || attrs.m_customStackSize >= (std::uint32_t(1) << 24)))
     {
         WEOS_THROW_SYSTEM_ERROR(
                     errc::invalid_argument,
-                    "thread::invokeWithCustomStack: invalid thread attributes");
+                    "thread::invoke: invalid thread attributes");
     }
 
     // Increase the reference count before creating the new thread.
     m_data->ref();
-    // Start the new thread with a custom stack.
-    std::uint32_t taskId = rt_tsk_create(
-                               (void (*)(void))weos_threadInvoker,
-                               (attrs.m_priority - osPriorityIdle + 1)
-                               | (attrs.m_customStackSize << 8),
-                               attrs.m_customStack,
-                               m_data);
-    if (taskId)
+
+    // Start the new thread.
+    if (attrs.m_customStack)
     {
-        // Set R13 to the address of osThreadExit, which has to be invoked
-        // when the thread exits.
-        *(static_cast<std::uint32_t*>(attrs.m_customStack) + 13)
-                = (std::uint32_t)&osThreadExit;
-        m_data->m_threadId = (osThreadId)os_active_TCB[taskId - 1];
+        void* taskId = weos_createTask_indirect(
+                           toNativePriority(attrs.m_priority),
+                           attrs.m_customStack, attrs.m_customStackSize,
+                           m_data);
+        m_data->m_threadId = static_cast<osThreadId>(taskId);
+    }
+    else
+    {
+        osThreadDef_t threadDef = { weos_threadInvoker,
+                                    toNativePriority(attrs.m_priority),
+                                    1, 0 };
+        m_data->m_threadId = osThreadCreate(&threadDef, m_data);
+    }
+
+    if (m_data->m_threadId)
+    {
         m_data->m_initializationDone.post();
     }
-
-    if (!m_data->m_threadId)
+    else
     {
         // Destroy the thread-data.
         m_data->deref();
@@ -172,33 +293,7 @@ void thread::invokeWithCustomStack(const attributes& attrs)
 
         WEOS_THROW_SYSTEM_ERROR(
                     errc::no_child_process,
-                    "thread::invokeWithCustomStack: new thread was not created");
-    }
-}
-
-void thread::invokeWithDefaultStack(const attributes& attrs)
-{
-    WEOS_ASSERT(attrs.m_customStack == 0 && attrs.m_customStackSize == 0);
-
-    // Increase the reference count before creating the new thread.
-    m_data->ref();
-    // Start the new thread.
-    osThreadDef_t threadDef = { weos_threadInvoker,
-                                static_cast<osPriority>(attrs.m_priority),
-                                1, 0 };
-    m_data->m_threadId = osThreadCreate(&threadDef, m_data);
-    m_data->m_initializationDone.post();
-
-    if (!m_data->m_threadId)
-    {
-        // Destroy the thread-data.
-        m_data->deref();
-        m_data->deref();
-        m_data = 0;
-
-        WEOS_THROW_SYSTEM_ERROR(
-                    errc::no_child_process,
-                    "thread::invokeWithDefaultStack: new thread was not created");
+                    "thread::invoke: new thread was not created");
     }
 }
 
