@@ -32,7 +32,7 @@
 #include "core.hpp"
 
 #include "../common/chrono.hpp"
-#include "ratio.hpp"
+#include "../ratio.hpp"
 #include "type_traits.hpp"
 
 #include <cstdint>
