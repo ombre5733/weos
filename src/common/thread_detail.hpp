@@ -41,25 +41,25 @@ namespace detail
 {
 
 // ----=====================================================================----
-//     ThreadSharedData
+//     SharedThreadData
 // ----=====================================================================----
 
 //! Data which is shared between the threaded function and the thread handle.
-struct ThreadSharedData
+struct SharedThreadData
 {
-    //! Creates the shared thread data with a reference count of 1.
-    ThreadSharedData();
-
-    //! Decreases the reference counter by one. If the reference counter reaches
-    //! zero, this ThreadData is destructed and returned to the pool.
-    void deref();
+    //! Destroys the shared thread data.
+    ~SharedThreadData();
 
     //! Increases the reference counter by one.
-    void ref();
+    void addRef();
+
+    //! Decreases the reference counter by one. If the reference counter reaches
+    //! zero, this object is destructed and returned to the pool.
+    void release();
 
     //! Allocates a ThreadData object from the global pool. An exception is
     //! thrown if the pool is empty.
-    static ThreadSharedData* allocate();
+    static SharedThreadData* allocate();
 
 
 
@@ -76,18 +76,102 @@ struct ThreadSharedData
     //! initialized the shared data, i.e. it is abused for sending a signal.
     semaphore m_initializationDone;
 
-    //! The system-specific thread id.
+    //! The native thread id.
     native_thread_traits::thread_id_type m_threadId;
 
 private:
-    ThreadSharedData(const ThreadSharedData&);
-    const ThreadSharedData& operator= (const ThreadSharedData&);
+    //! Creates the shared thread data.
+    SharedThreadData();
+
+    SharedThreadData(const SharedThreadData&);
+    const SharedThreadData& operator= (const SharedThreadData&);
+};
+
+class SharedThreadDataPointer
+{
+public:
+    SharedThreadDataPointer() WEOS_NOEXCEPT
+        : m_data(0)
+    {
+    }
+
+    explicit SharedThreadDataPointer(SharedThreadData* data)
+        : m_data(data)
+    {
+        if (m_data != 0)
+            m_data->addRef();
+    }
+
+    SharedThreadDataPointer(const SharedThreadDataPointer& other)
+        : m_data(other.m_data)
+    {
+        if (m_data != 0)
+            m_data->addRef();
+    }
+
+    ~SharedThreadDataPointer()
+    {
+        if (m_data != 0)
+            m_data->release();
+    }
+
+    SharedThreadDataPointer& operator= (const SharedThreadDataPointer& other)
+    {
+        if (this != &other)
+        {
+            if (m_data != 0)
+                m_data->release();
+            m_data = other.m_data;
+            if (m_data != 0)
+                m_data->addRef();
+        }
+        return *this;
+    }
+
+    SharedThreadData* get() const WEOS_NOEXCEPT
+    {
+        return m_data;
+    }
+
+    void reset()
+    {
+        if (m_data != 0)
+            m_data->release();
+        m_data = 0;
+    }
+
+    void swap(SharedThreadDataPointer& other) WEOS_NOEXCEPT
+    {
+        SharedThreadData* tmp = m_data;
+        m_data = other.m_data;
+        other.m_data = tmp;
+    }
+
+    SharedThreadData& operator* () const WEOS_NOEXCEPT
+    {
+        WEOS_ASSERT(m_data != 0);
+        return *m_data;
+    }
+
+    SharedThreadData* operator-> () const WEOS_NOEXCEPT
+    {
+        WEOS_ASSERT(m_data != 0);
+        return m_data;
+    }
+
+    operator bool() const WEOS_NOEXCEPT
+    {
+        return m_data != 0;
+    }
+
+private:
+    SharedThreadData* m_data;
 };
 
 } // namespace detail
 
 //! A thread handle.
-class thread : private detail::thread_base
+class thread
 {
     WEOS_MOVABLE_BUT_NOT_COPYABLE(thread)
 
@@ -124,7 +208,7 @@ public:
                !is_same<typename decay<F>::type, thread>::value,
                _guard_type
            >::type* dummy = 0)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f));
 
@@ -139,7 +223,7 @@ public:
                !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0));
@@ -157,7 +241,7 @@ public:
                !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0),
@@ -178,7 +262,7 @@ public:
                !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0),
@@ -202,7 +286,7 @@ public:
                !is_same<typename decay<F>::type, attributes>::value,
                _guard_type
            >::type* dummy = 0)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0),
@@ -220,7 +304,7 @@ public:
     template <typename F>
     thread(const attributes& attrs,
            WEOS_FWD_REF(F) f)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f));
 
@@ -232,7 +316,7 @@ public:
     thread(const attributes& attrs,
            WEOS_FWD_REF(F) f,
            WEOS_FWD_REF(A0) a0)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0));
@@ -247,7 +331,7 @@ public:
            WEOS_FWD_REF(F) f,
            WEOS_FWD_REF(A0) a0,
            WEOS_FWD_REF(A1) a1)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0),
@@ -265,7 +349,7 @@ public:
            WEOS_FWD_REF(A0) a0,
            WEOS_FWD_REF(A1) a1,
            WEOS_FWD_REF(A2) a2)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0),
@@ -286,7 +370,7 @@ public:
            WEOS_FWD_REF(A1) a1,
            WEOS_FWD_REF(A2) a2,
            WEOS_FWD_REF(A3) a3)
-        : m_data(detail::ThreadSharedData::allocate())
+        : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
                                                 forward<A0>(a0),
@@ -302,7 +386,7 @@ public:
     thread(WEOS_RV_REF(thread) other)
         : m_data(other.m_data)
     {
-        other.m_data = 0;
+        other.m_data.reset();
     }
 
     //! Destroys the thread handle.
@@ -323,7 +407,7 @@ public:
         if (this != &other)
         {
             m_data = other.m_data;
-            other.m_data = 0;
+            other.m_data.reset();
         }
         return *this;
     }
@@ -335,8 +419,7 @@ public:
             WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                     "thread::detach: thread is not joinable");
 
-        m_data->deref();
-        m_data = 0;
+        m_data.reset();
     }
 
     //! Returns the id of the thread.
@@ -408,7 +491,7 @@ protected:
 private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
-    detail::ThreadSharedData* m_data;
+    detail::SharedThreadDataPointer m_data;
 };
 
 //! Compares two thread ids for equality.

@@ -48,10 +48,6 @@ class thread;
 namespace detail
 {
 
-struct thread_base
-{
-};
-
 //! Traits for native threads.
 struct native_thread_traits
 {
@@ -69,7 +65,7 @@ struct native_thread_traits
 
     // A signal set with all flags being set.
     static const signal_set all_signals
-    = (std::uint32_t(1) << osFeature_Signals) - 1;
+                = (std::uint32_t(1) << osFeature_Signals) - 1;
 
 
     //! A thread id.

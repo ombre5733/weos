@@ -106,12 +106,13 @@ osPriority toNativePriority(weos::thread::attributes::Priority priority)
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
 //! helper function adhers to this specification. The \p arg is a pointer to
-//! a weos::ThreadSharedData object which contains thread-specific data such as
+//! a weos::SharedThreadData object which contains thread-specific data such as
 //! the actual function to start.
 extern "C" void weos_threadInvoker(const void* arg)
 {
-    weos::detail::ThreadSharedData* data
-            = static_cast<weos::detail::ThreadSharedData*>(const_cast<void*>(arg));
+    WEOS_NAMESPACE::detail::SharedThreadDataPointer data(
+                static_cast<WEOS_NAMESPACE::detail::SharedThreadData*>(
+                    const_cast<void*>(arg)));
 
     // Wait until the caller has initialized the shared data.
     data->m_initializationDone.wait();
@@ -119,7 +120,6 @@ extern "C" void weos_threadInvoker(const void* arg)
     data->m_threadedFunction();
     // Use the semaphore to signal that the thread has been completed.
     data->m_finished.post();
-    data->deref();
 }
 
 void* weos_createTask(uint32_t priority, void* stack, uint32_t stackSize,
@@ -150,7 +150,7 @@ SVC_4(weos_createTask, void*, uint32_t, void*, uint32_t, void*)
 WEOS_BEGIN_NAMESPACE
 
 // ----=====================================================================----
-//     ThreadSharedData
+//     SharedThreadData
 // ----=====================================================================----
 
 namespace detail
@@ -158,46 +158,50 @@ namespace detail
 
 namespace
 {
-typedef shared_memory_pool<ThreadSharedData, WEOS_MAX_NUM_CONCURRENT_THREADS>
-    ThreadSharedDataPool;
+typedef shared_memory_pool<SharedThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS>
+    SharedThreadDataPool;
 
-ThreadSharedDataPool& threadSharedDataPool()
+SharedThreadDataPool& sharedThreadDataPool()
 {
-    static ThreadSharedDataPool pool;
+    static SharedThreadDataPool pool;
     return pool;
 }
 
 } // anonymous namespace
 
-ThreadSharedData::ThreadSharedData()
-    : m_referenceCount(1),
+SharedThreadData::SharedThreadData()
+    : m_referenceCount(0),
       m_threadId(0)
 {
 }
 
-void ThreadSharedData::deref()
+SharedThreadData::~SharedThreadData()
 {
-    if (--m_referenceCount == 0)
-    {
-        this->~ThreadSharedData();
-        threadSharedDataPool().free(this);
-    }
 }
 
-void ThreadSharedData::ref()
+void SharedThreadData::addRef()
 {
     ++m_referenceCount;
 }
 
-ThreadSharedData* ThreadSharedData::allocate()
+void SharedThreadData::release()
 {
-    void* mem = threadSharedDataPool().try_allocate();
+    if (--m_referenceCount == 0)
+    {
+        this->~SharedThreadData();
+        sharedThreadDataPool().free(this);
+    }
+}
+
+SharedThreadData* SharedThreadData::allocate()
+{
+    void* mem = sharedThreadDataPool().try_allocate();
     if (!mem)
         WEOS_THROW_SYSTEM_ERROR(
                     errc::not_enough_memory,
-                    "ThreadSharedData::allocate: no more thread handle");
+                    "SharedThreadData::allocate: no more thread handle");
 
-    return new (mem) ThreadSharedData;
+    return new (mem) SharedThreadData;
 }
 
 } // namespace detail
@@ -215,8 +219,7 @@ void thread::join()
     m_data->m_finished.wait();
 
     // The thread data is not needed any longer.
-    m_data->deref();
-    m_data = 0;
+    m_data.reset();
 }
 
 void thread::clear_signals(signal_set flags)
@@ -260,16 +263,13 @@ void thread::invoke(const attributes& attrs)
                     "thread::invoke: invalid thread attributes");
     }
 
-    // Increase the reference count before creating the new thread.
-    m_data->ref();
-
     // Start the new thread.
     if (attrs.m_customStack)
     {
         void* taskId = weos_createTask_indirect(
                            toNativePriority(attrs.m_priority),
                            attrs.m_customStack, attrs.m_customStackSize,
-                           m_data);
+                           m_data.get());
         m_data->m_threadId = static_cast<osThreadId>(taskId);
     }
     else
@@ -277,7 +277,7 @@ void thread::invoke(const attributes& attrs)
         osThreadDef_t threadDef = { weos_threadInvoker,
                                     toNativePriority(attrs.m_priority),
                                     1, 0 };
-        m_data->m_threadId = osThreadCreate(&threadDef, m_data);
+        m_data->m_threadId = osThreadCreate(&threadDef, m_data.get());
     }
 
     if (m_data->m_threadId)
@@ -287,9 +287,7 @@ void thread::invoke(const attributes& attrs)
     else
     {
         // Destroy the thread-data.
-        m_data->deref();
-        m_data->deref();
-        m_data = 0;
+        m_data.reset();
 
         WEOS_THROW_SYSTEM_ERROR(
                     errc::no_child_process,
