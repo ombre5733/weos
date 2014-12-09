@@ -29,190 +29,32 @@
 #ifndef WEOS_KEIL_RL_RTX_MUTEX_HPP
 #define WEOS_KEIL_RL_RTX_MUTEX_HPP
 
-#include "../config.hpp"
-#include "chrono.hpp"
-#include "system_error.hpp"
+#include "core.hpp"
+
+#include "../chrono.hpp"
+#include "../system_error.hpp"
 #include "../common/mutexlocks.hpp"
 
-#include <boost/config.hpp>
 
-#include <cstdint>
+WEOS_BEGIN_NAMESPACE
 
-namespace weos
-{
 
-namespace detail
-{
-
-// The header (first 32 bits) of the mutex control block. The full definition
-// can be found in $/RL/RTX/SRC/rt_TypeDef.h.
-struct MutexControlBlockHeader
-{
-    std::uint8_t controlBlockType;
-    std::uint8_t ownerPriority;
-    std::uint16_t nestingLevel;
-};
-
-template <typename DerivedT>
-class basic_mutex : boost::noncopyable
-{
-public:
-    // Create a generic mutex.
-    basic_mutex()
-    {
-        os_mut_init(&m_mutex);
-    }
-
-    // Locks the mutex. Calls post_lock_check() after a successful lock.
-    void lock()
-    {
-        OS_RESULT result = os_mut_wait(&m_mutex, 0xFFFF);
-        if (result == OS_R_TMO)
-        {
-            ::weos::throw_exception(weos::system_error(result, rl_rtx_category()));
-        }
-        derived()->post_lock_check(mutexControlBlockHeader());
-    }
-
-    // Tries to lock the mutex. If successful, returns the result of calling
-    // post_try_lock_correction().
-    bool try_lock()
-    {
-        OS_RESULT result = os_mut_wait(&m_mutex, 0);
-        if (result == OS_R_OK)
-        {
-            return derived()->post_try_lock_correction(
-                        m_mutex, mutexControlBlockHeader());
-        }
-
-        return false;
-    }
-
-    void unlock()
-    {
-        OS_RESULT result = os_mut_release(&m_mutex);
-        // Just check the return code but do not throw because unlock is
-        // called from the destructor of lock_guard, for example.
-        //! \todo I think, we can throw exceptions, too.
-        WEOS_ASSERT(result == OS_R_OK);
-    }
-
-protected:
-    OS_MUT m_mutex;
-
-    MutexControlBlockHeader* mutexControlBlockHeader()
-    {
-        return reinterpret_cast<MutexControlBlockHeader*>(&m_mutex);
-    }
-
-    DerivedT* derived()
-    {
-        return static_cast<DerivedT*>(this);
-    }
-
-    void post_lock_check(MutexControlBlockHeader* /*mucb*/)
-    {
-    }
-
-    bool post_try_lock_correction(OS_MUT& /*mutex*/,
-                                  MutexControlBlockHeader* /*mucb*/)
-    {
-        return true;
-    }
-};
-
-// A helper to lock a mutex.
-struct mutex_try_locker
-{
-    mutex_try_locker(OS_MUT& mutex)
-        : m_mutex(mutex)
-    {
-    }
-
-    // Tries to lock a mutex up to \p ticks system ticks. If a mutex
-    // has been locked, the method returns \p true to signal that no further
-    // waiting is necessary.
-    bool operator() (std::int32_t ticks) const
-    {
-        WEOS_ASSERT(ticks < 0xFFFF);
-        OS_RESULT result = os_mut_wait(&m_mutex, ticks);
-        return result != OS_R_TMO;
-    }
-
-private:
-    // The RL RTX mutex which should be locked.
-    OS_MUT& m_mutex;
-};
-
-template <typename DerivedT>
-class basic_timed_mutex : public basic_mutex<DerivedT>
-{
-    typedef basic_mutex<DerivedT> base;
-
-public:
-    //! Tries to lock the mutex.
-    //! Tries to lock the mutex and returns either when it has been locked or
-    //! the duration \p d has expired. The method returns \p true, if the
-    //! mutex has been locked.
-    template <typename RepT, typename PeriodT>
-    bool try_lock_for(const chrono::duration<RepT, PeriodT>& d)
-    {
-        mutex_try_locker locker(base::m_mutex);
-        if (chrono::detail::cmsis_wait<
-                RepT, PeriodT, mutex_try_locker>::wait(d, locker))
-        {
-            return base::derived()->post_try_lock_correction(
-                        base::m_mutex, base::mutexControlBlockHeader());
-        }
-
-        return false;
-    }
-
-    template <typename ClockT, typename DurationT>
-    bool try_lock_until(const chrono::time_point<ClockT, DurationT>& timePoint)
-    {
-        // Not implemented, yet.
-        WEOS_ASSERT(false);
-        return false;
-    }
-};
-
-//! This adapter turns a recursive mutex into a non-recursive one.
-template <typename BaseT>
-class nonrecursive_adapter : public BaseT
-{
-public:
-    void post_lock_check(MutexControlBlockHeader* mucb)
-    {
-        WEOS_ASSERT(mucb->nestingLevel == 1);
-    }
-
-    bool post_try_lock_correction(OS_MUT& mutex, MutexControlBlockHeader* mucb)
-    {
-        if (mucb->nestingLevel == 1)
-            return true;
-
-        WEOS_ASSERT(mucb->nestingLevel == 2);
-        OS_RESULT result = os_mut_release(&mutex);
-        WEOS_ASSERT(result == OS_R_OK);
-        return false;
-    }
-};
-
-} // namespace detail
+TODO: check all return codes once again
 
 //! A plain mutex.
 class mutex
-#ifndef WEOS_DOXYGEN_RUN
-        : public detail::nonrecursive_adapter<detail::basic_mutex<mutex> >
-#endif // WEOS_DOXYGEN_RUN
 {
 public:
-#ifdef WEOS_DOXYGEN_RUN
+    //! The type of the native mutex handle.
+    typedef OS_MUT native_handle_type;
+
+
     //! Creates a mutex.
     mutex();
+
     //! Destroys the mutex.
     ~mutex();
+
     //! Locks the mutex.
     //! Blocks the current thread until this mutex has been locked by it.
     //! It is undefined behaviour, if the calling thread has already acquired
@@ -220,68 +62,202 @@ public:
     //!
     //! \sa try_lock()
     void lock();
+
     //! Tests and locks the mutex if it is available.
     //! If this mutex is available, it is locked by the calling thread and
     //! \p true is returned. If the mutex is already locked, the method
     //! returns \p false without blocking.
     bool try_lock();
+
     //! Unlocks the mutex.
     //! Unlocks this mutex which must have been locked previously by the
     //! calling thread.
     void unlock();
-#endif // WEOS_DOXYGEN_RUN
+
+    //! Returns a native mutex handle.
+    native_handle_type native_handle()
+    {
+        return &m_mutex;
+    }
+
+protected:
+    //! The native mutex.
+    OS_MUT m_mutex;
+    //! Keep track, if the mutex has already been locked by the current thread.
+    bool m_locked;
+
+private:
+    // ---- Hidden methods.
+    mutex(const mutex&);
+    mutex& operator= (const mutex&);
 };
 
-//! A plain mutex with timeout.
-class timed_mutex
-#ifndef WEOS_DOXYGEN_RUN
-        : public detail::nonrecursive_adapter<
-                     detail::basic_timed_mutex<timed_mutex> >
-#endif // WEOS_DOXYGEN_RUN
+//! A mutex with timeout support.
+class timed_mutex : public mutex
 {
 public:
-#ifdef WEOS_DOXYGEN_RUN
-    //! Creates a mutex with support for timeout.
-    timed_mutex();
-    //! Destroys the mutex.
-    ~timed_mutex();
-    //! Locks the mutex.
-    //! Blocks the current thread until this mutex has been locked by it.
-    //! It is undefined behaviour, if the calling thread has already acquired
-    //! the mutex and wants to lock it again.
+    //! Tries to lock the mutex.
     //!
-    //! \sa try_lock()
-    void lock();
-    //! Tests and locks the mutex if it is available.
-    //! If this mutex is available, it is locked by the calling thread and
-    //! \p true is returned. If the mutex is already locked, the method
-    //! returns \p false without blocking.
-    bool try_lock();
-    //! Unlocks the mutex.
-    //! Unlocks this mutex which must have been locked previously by the
-    //! calling thread.
-    void unlock();
-#endif // WEOS_DOXYGEN_RUN
+    //! Tries to lock the mutex and returns either when it has been locked or
+    //! the duration \p timeout has expired. The method returns \p true, if the
+    //! mutex has been locked.
+    template <typename TRep, typename TPeriod>
+    inline
+    bool try_lock_for(const chrono::duration<TRep, TPeriod>& timeout)
+    {
+        return try_lock_until(chrono::steady_clock::now() + timeout);
+    }
+
+    //! Tries to lock the mutex.
+    //!
+    //! Tries to lock the mutex before the given \p time point. The return
+    //! value is \p true, if the mutex has been locked.
+    template <typename TClock, typename TDuration>
+    bool try_lock_until(const chrono::time_point<TClock, TDuration>& time)
+    {
+        typedef typename WEOS_NAMESPACE::common_type<
+                             typename TClock::duration,
+                             TDuration>::type difference_type;
+        typedef chrono::detail::internal_time_cast<difference_type> caster;
+
+        while (true)
+        {
+            typename caster::type ticks
+                    = caster::convert_and_clip(time - TClock::now());
+
+            OS_RESULT result = os_mut_wait(&m_mutex, ticks);
+            if (result != OS_R_TMO)
+            {
+                if (!m_locked)
+                {
+                    m_locked = true;
+                    return true;
+                }
+                else
+                {
+                    // The mutex has been locked by the same thread again.
+                    result = os_mut_release(&m_mutex);
+                    if (result != OS_R_OK)
+                    {
+                        WEOS_THROW_SYSTEM_ERROR(result,
+                                                "timed_mutex::try_lock_until failed");
+                    }
+                }
+            }
+
+            if (failure)
+                throw;
+
+            if (ticks == 0)
+                return false;
+        }
+    }
 };
 
 //! A recursive mutex.
 class recursive_mutex
-#ifndef WEOS_DOXYGEN_RUN
-        : public detail::basic_mutex<recursive_mutex>
-#endif // WEOS_DOXYGEN_RUN
 {
 public:
+    //! The type of the native mutex handle.
+    typedef OS_MUT native_handle_type;
+
+
+    //! Creates a recursive mutex.
+    recursive_mutex();
+
+    //! Destroys the mutex.
+    ~recursive_mutex();
+
+    //! Locks the mutex.
+    //!
+    //! Blocks the current thread until this mutex has been locked by it.
+    //! The mutex can be locked recursively by one thread and must be unlocked
+    //! as often as it has been locked before.
+    //!
+    //! \sa try_lock()
+    void lock();
+
+    //! Tests and locks the mutex if it is available.
+    //!
+    //! If this mutex is available, it is locked by the calling thread and
+    //! \p true is returned. Locking may be done recursively.
+    //!
+    //! \sa lock()
+    bool try_lock();
+
+    //! Unlocks the mutex.
+    //!
+    //! Unlocks this mutex which must have been locked previously by the
+    //! calling thread. The owning thread must call unlock() as often as
+    //! lock() or try_lock() has been called before.
+    void unlock();
+
+    //! Returns a native mutex handle.
+    native_handle_type native_handle()
+    {
+        return &m_mutex;
+    }
+
+protected:
+    //! The native mutex.
+    OS_MUT m_mutex;
+
+private:
+    // ---- Hidden methods.
+    recursive_mutex(const recursive_mutex&);
+    recursive_mutex& operator= (const recursive_mutex&);
 };
 
 //! A recursive mutex with support for timeout.
-class recursive_timed_mutex
-#ifndef WEOS_DOXYGEN_RUN
-        : public detail::basic_timed_mutex<recursive_timed_mutex>
-#endif // WEOS_DOXYGEN_RUN
+class recursive_timed_mutex : public recursive_mutex
 {
 public:
+    //! Tries to lock the mutex.
+    //!
+    //! Tries to lock the mutex and returns either when it has been locked or
+    //! the duration \p timeout has expired. The method returns \p true, if the
+    //! mutex has been locked.
+    template <typename TRep, typename TPeriod>
+    inline
+    bool try_lock_for(const chrono::duration<TRep, TPeriod>& timeout)
+    {
+        return try_lock_until(chrono::monotonic_clock::now() + timeout);
+    }
+
+    //! Tries to lock the mutex.
+    //!
+    //! Tries to lock the mutex before the given \p time point. The return
+    //! value is \p true, if the mutex has been locked.
+    template <typename TClock, typename TDuration>
+    bool try_lock_until(const chrono::time_point<TClock, TDuration>& time)
+    {
+        typedef typename WEOS_NAMESPACE::common_type<
+                             typename TClock::duration,
+                             TDuration>::type difference_type;
+        typedef chrono::detail::internal_time_cast<difference_type> caster;
+
+        while (true)
+        {
+            typename caster::type ticks
+                    = caster::convert_and_clip(time - TClock::now());
+
+            OS_RESULT result = os_mut_wait(&m_mutex, ticks);
+            if (result != OS_R_TMO)
+                return true;
+
+            if (failure)
+            {
+                WEOS_THROW_SYSTEM_ERROR(
+                            result,
+                            "recursive_timed_mutex::try_lock_until failed");
+            }
+
+            if (ticks == 0)
+                return false;
+        }
+    }
 };
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_RL_RTX_MUTEX_HPP

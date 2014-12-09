@@ -28,42 +28,4 @@
 
 #include "core.hpp"
 
-#include "chrono.cpp"
 #include "mutex.cpp"
-#include "system_error.cpp"
-#include "thread.cpp"
-#include "../common/functional.cpp"
-
-
-WEOS_BEGIN_NAMESPACE
-
-class Weos
-{
-public:
-    Weos();
-    ~Weos();
-
-private:
-    thread m_precisionTimeReader;
-
-    // ---- Deleted methods.
-    Weos(const Weos&);
-    Weos& operator=(const Weos&);
-};
-
-Weos::Weos()
-    : m_precisionTimeReader(
-          thread::attributes().setPriority(thread::attributes::Low)
-                              .setStack(&precisionTimeReaderStack,
-                                        sizeof(precisionTimeReaderStack)),
-          readPrecisionTimePeriodically)
-{
-}
-
-Weos::~Weos()
-{
-    m_precisionTimeReader.set_signals(1);
-    m_precisionTimeReader.join();
-}
-
-WEOS_END_NAMESPACE
