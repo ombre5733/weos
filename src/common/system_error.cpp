@@ -35,7 +35,7 @@ namespace weos
 class generic_category_impl : public error_category
 {
 public:
-    virtual const char* name() const BOOST_NOEXCEPT
+    virtual const char* name() const WEOS_NOEXCEPT
     {
         return "generic";
     }
@@ -44,10 +44,18 @@ public:
     {
         switch (err_val)
         {
-            case errc::operation_not_permitted:
-                return "Operation not permitted";
-            case errc::resource_deadlock_would_occur:
-                return "Resource deadlock would occur";
+        case errc::invalid_argument:
+            return "Invalid argument";
+        case errc::no_child_process:
+            return "No child process";
+        case errc::not_enough_memory:
+            return "Not enough memory";
+        case errc::operation_not_permitted:
+            return "Operation not permitted";
+        case errc::resource_deadlock_would_occur:
+            return "Resource deadlock would occur";
+        default:
+            return "Unknown error";
         }
     }
 };
