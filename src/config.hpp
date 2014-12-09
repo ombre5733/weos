@@ -84,7 +84,7 @@
             do {                                                               \
                 if (!(cond))                                                   \
                     WEOS_NAMESPACE::assert_failed(#cond, __PRETTY_FUNCTION__,  \
-                                                  __FILE__, __LINE__)          \
+                                                  __FILE__, __LINE__);         \
             } while (0)
     #else
         #include <cassert>
