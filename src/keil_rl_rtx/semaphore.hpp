@@ -39,6 +39,8 @@
 
 WEOS_BEGIN_NAMESPACE
 
+
+//! \brief A semaphore.
 class semaphore
 {
 public:
@@ -71,10 +73,8 @@ public:
     {
         OS_RESULT result = os_sem_wait(&m_semaphore, 0xFFFF);
         if (result == OS_R_TMO)
-        {
-            ::weos::throw_exception(::weos::system_error(
-                                        result, keil_rl_rtx_category()));
-        }
+            WEOS_THROW_SYSTEM_ERROR(rl_rtx_error::rl_rtx_error_t(result),
+                                    "semaphore::wait failed");
     }
 
     //! \brief Tries to acquire a semaphore token.
@@ -90,38 +90,44 @@ public:
 
     //! \brief Tries to acquire a semaphore token within a timeout.
     //!
-    //! Tries for a timeout period \p d to acquire a semaphore token and returns
-    //! \p true upon success or \p false in case of a timeout.
+    //! Tries to acquire a semaphore token within the given \p timeout. The
+    //! return value is \p true if a token could be acquired.
     template <typename RepT, typename PeriodT>
-    bool try_wait_for(const chrono::duration<RepT, PeriodT>& d)
+    inline
+    bool try_wait_for(const chrono::duration<RepT, PeriodT>& timeout)
     {
-        return try_wait_until(chrono::monotonic_clock::now() + d);
+        return try_wait_until(chrono::monotonic_clock::now() + timeout);
     }
 
     //! \brief Tries to acquire token up to a time point.
     //!
-    //! Tries to acquire a semaphore token up to the given \p timePoint. The
+    //! Tries to acquire a semaphore token up to the given \p time point. The
     //! return value is \p true, if a token could be acquired before the
     //! timeout.
     template <typename ClockT, typename DurationT>
-    bool try_wait_until(const chrono::time_point<ClockT, DurationT>& timePoint)
+    bool try_wait_until(const chrono::time_point<ClockT, DurationT>& time)
     {
-        typedef typename DurationT::rep rep_t;
-        do
+        typedef typename WEOS_NAMESPACE::common_type<
+                             typename ClockT::duration,
+                             DurationT>::type difference_type;
+        typedef chrono::detail::internal_time_cast<difference_type> caster;
+
+        while (true)
         {
-            rep_t ticks = chrono::duration_cast<chrono::milliseconds>(
-                              timePoint - ClockT::now());
-            if (ticks < 0)
-                ticks = 0;
-            else if (ticks > 0xFFFE)
-                ticks = 0xFFFE;
+            typename caster::type ticks
+                    = caster::convert_and_clip(time - ClockT::now());
 
             OS_RESULT result = os_sem_wait(&m_semaphore, ticks);
-            if (result != OS_R_TMO)
+            if (result == OS_R_OK)
                 return true;
-        } while (ticks > 0);
 
-        return false;
+            if (result != OS_R_TMO)
+                WEOS_THROW_SYSTEM_ERROR(rl_rtx_error::rl_rtx_error_t(result),
+                                        "semaphore::try_wait_until failed");
+
+            if (ticks == 0)
+                return false;
+        }
     }
 
     //! \brief Returns the numer of semaphore tokens.
@@ -138,12 +144,13 @@ private:
     const semaphore& operator= (const semaphore&);
 
     // The header (first 32 bits) of the semaphore control block. The full
-    // definition can be found in $/RL/RTX/SRC/rt_TypeDef.h.
+    // definition can be found in ${Keil-RL-RTX}/SRC/rt_TypeDef.h.
     struct SemaphoreControlBlockHeader
     {
-        std::uint8_t controlBlockType;
-        std::uint16_t numTokens;
-        std::uint8_t unused;
+        todo: check this again because it is not well aligned
+        volatile std::uint8_t controlBlockType;
+        volatile std::uint16_t numTokens;
+        volatile std::uint8_t unused;
     };
 
     const SemaphoreControlBlockHeader* semaphoreControlBlockHeader() const
