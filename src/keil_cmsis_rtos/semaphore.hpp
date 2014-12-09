@@ -137,8 +137,8 @@ public:
 
     //! \brief Tries to acquire a semaphore token within a timeout.
     //!
-    //! Tries acquire a semaphore token within the given \p timeout. The return
-    //! value is \p true if a token could be acquired.
+    //! Tries to acquire a semaphore token within the given \p timeout. The
+    //! return value is \p true if a token could be acquired.
     template <typename RepT, typename PeriodT>
     inline
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& timeout)
