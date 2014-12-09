@@ -76,6 +76,9 @@ struct SharedThreadData
     //! initialized the shared data, i.e. it is abused for sending a signal.
     semaphore m_initializationDone;
 
+    //! The native thread handle.
+    native_thread_traits::thread_handle_type m_threadHandle;
+
     //! The native thread id.
     native_thread_traits::thread_id_type m_threadId;
 

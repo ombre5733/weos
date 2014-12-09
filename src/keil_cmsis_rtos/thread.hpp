@@ -51,6 +51,10 @@ namespace detail
 //! Traits for native threads.
 struct native_thread_traits
 {
+    // The native type for a thread handle. This is a dummy type as CMSIS
+    // makes no use of it.
+    typedef void* thread_handle_type;
+
     // The native type for a thread ID.
     typedef osThreadId thread_id_type;
 
