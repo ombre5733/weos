@@ -37,14 +37,17 @@
 // Declaration from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
 extern "C" std::uint32_t rt_time_get(void);
 
+
 WEOS_BEGIN_NAMESPACE
+
+// ----=====================================================================----
+//     Internals
+// ----=====================================================================----
 
 static atomic<std::uint32_t> weos_chrono_overflowData(0);
 
-std::int64_t getPrecisionTicks()
+static std::pair<std::int64_t, std::uint32_t> weos_chrono_getTimeAndTicks()
 {
-    static const std::uint64_t ticks_per_time_interval = 1000/*TODO*/;
-
     // Dealing with the precision time is a bit tricky:
     // - The resultant time is made up by combining the OS time
     //   (a low frequency counter) with the SysTick (a high frequency counter).
@@ -139,10 +142,12 @@ std::int64_t getPrecisionTicks()
 
     // By combining the time with its overflow counter, we can create a
     // 60-bit time.
-    std::uint64_t longTime = (std::uint64_t(timeOverflows) << 32) + time;
-    return longTime * ticks_per_time_interval + ticks;
+    std::int64_t longTime = (std::uint64_t(timeOverflows) << 32) + time;
+    return std::pair<std::int64_t, std::uint32_t>(longTime, ticks);
 }
 
+// The precision time has to be read periodically at least once before it
+// reaches 2^28 in order to track the overflows correctly.
 static aligned_storage<200>::type precisionTimeReaderStack;
 
 static void readPrecisionTimePeriodically()
@@ -153,8 +158,40 @@ static void readPrecisionTimePeriodically()
                                         chrono::seconds(1));
         if (signal)
             break;
-        getPrecisionTicks();
+        weos_chrono_getTimeAndTicks();
     }
 }
+
+namespace chrono
+{
+
+// ----=====================================================================----
+//     system_clock
+// ----=====================================================================----
+
+system_clock::time_point system_clock::now()
+{
+    std::pair<std::int64_t, std::uint32_t> result = weos_chrono_getTimeAndTicks();
+    return time_point(duration(result.first));
+}
+
+// ----=====================================================================----
+//     high_resolution_clock
+// ----=====================================================================----
+
+high_resolution_clock::time_point high_resolution_clock::now()
+{
+    static_assert(WEOS_SYSTEM_CLOCK_FREQUENCY % WEOS_SYSTICK_FREQUENCY == 0,
+                  "The system clock must be an integer multiple of the SysTick");
+
+    static const std::uint64_t ticks_per_time_interval
+            = WEOS_SYSTEM_CLOCK_FREQUENCY / WEOS_SYSTICK_FREQUENCY;
+
+    std::pair<std::int64_t, std::uint32_t> result = weos_chrono_getTimeAndTicks();
+    return time_point(duration(result.first * ticks_per_time_interval
+                               + result.second));
+}
+
+} // namespace chrono
 
 WEOS_END_NAMESPACE

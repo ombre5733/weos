@@ -38,10 +38,6 @@
 #include <cstdint>
 
 
-// Declaration from ../3rdparty/keil_cmsis_rtos/SRC/rt_Time.h.
-extern "C" std::uint32_t rt_time_get(void);
-
-
 WEOS_BEGIN_NAMESPACE
 
 namespace chrono
@@ -57,17 +53,14 @@ namespace chrono
 class system_clock
 {
 public:
-    typedef std::int32_t rep;
+    typedef std::int64_t rep;
     typedef ratio<1, WEOS_SYSTICK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<system_clock> time_point;
 
     static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
 
-    static time_point now()
-    {
-        return time_point(duration(rt_time_get()));
-    }
+    static time_point now();
 };
 
 // ----=====================================================================----
@@ -81,17 +74,14 @@ public:
 class high_resolution_clock
 {
 public:
-    typedef std::int32_t rep;
+    typedef std::int64_t rep;
     typedef ratio<1, WEOS_SYSTEM_CLOCK_FREQUENCY> period;
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<high_resolution_clock> time_point;
 
     static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
 
-    static time_point now()
-    {
-        return time_point(duration(osKernelSysTick()));
-    }
+    static time_point now();
 };
 
 // ----=====================================================================----
