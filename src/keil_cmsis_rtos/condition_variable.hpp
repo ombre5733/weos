@@ -83,49 +83,22 @@ namespace cv_status
 class condition_variable
 {
 public:
-    condition_variable()
-        : m_waitingThreads(0)
-    {
-    }
+    //! Creates a condition variable.
+    condition_variable();
 
     //! Destroys the condition variable.
     //!
     //! \note The condition variable must not be destroyed if a thread is
     //! waiting on it.
-    ~condition_variable()
-    {
-        WEOS_ASSERT(m_waitingThreads == 0);
-    }
+    ~condition_variable();
 
     //! Notifies a thread waiting on this condition variable.
     //! Notifies one thread which is waiting on this condition variable.
-    void notify_one() WEOS_NOEXCEPT
-    {
-        lock_guard<mutex> locker(m_mutex);
-
-        if (m_waitingThreads != 0)
-        {
-            WaitingThread* next = m_waitingThreads->next;
-            m_waitingThreads->dequeued = true;
-            m_waitingThreads->signal.post();
-            m_waitingThreads = next;
-        }
-    }
+    void notify_one() WEOS_NOEXCEPT;
 
     //! Notifies all threads waiting on this condition variable.
     //! Notifies all threads which are waiting on this condition variable.
-    void notify_all() WEOS_NOEXCEPT
-    {
-        lock_guard<mutex> locker(m_mutex);
-
-        while (m_waitingThreads)
-        {
-            WaitingThread* next = m_waitingThreads->next;
-            m_waitingThreads->dequeued = true;
-            m_waitingThreads->signal.post();
-            m_waitingThreads = next;
-        }
-    }
+    void notify_all() WEOS_NOEXCEPT;
 
     //! Waits on this condition variable.
     //! The given \p lock is released and the current thread is added to a
@@ -133,20 +106,7 @@ public:
     //! blocked until a notification is sent via notify() or notify_all()
     //! or a spurious wakeup occurs. The \p lock is reacquired when the
     //! function exits (either due to a notification or due to an exception).
-    void wait(unique_lock<mutex>& lock)
-    {
-        // First enqueue ourselfs in the list of waiters.
-        WaitingThread w;
-        enqueue(w);
-
-        // We can only release the lock when we are sure that a signal will
-        // reach our thread.
-        {
-            detail::lock_releaser<unique_lock<mutex> > releaser(lock);
-            // Wait until we receive a signal, then re-lock the lock.
-            w.signal.wait();
-        }
-    }
+    void wait(unique_lock<mutex>& lock);
 
     //! Waits on this condition variable with a timeout.
     //! Releases the given \p lock and adds the calling thread to a list
@@ -158,7 +118,7 @@ public:
     cv_status::cv_status wait_for(unique_lock<mutex>& lock,
                                   const chrono::duration<RepT, PeriodT>& d)
     {
-        // First enqueue ourselfs in the list of waiters.
+        // First enqueue ourselves in the list of waiters.
         WaitingThread w;
         enqueue(w);
 
@@ -178,6 +138,10 @@ public:
         }
         return cv_status::no_timeout;
     }
+
+    // TODO: wait_until()
+
+    // TODO: native_handle_type native_handle();
 
 private:
     //! An object to wait on a signal.
@@ -241,6 +205,7 @@ private:
     WaitingThread* m_waitingThreads;
 
 
+    // ---- Deleted methods.
     condition_variable(const condition_variable&);
     condition_variable& operator= (const condition_variable&);
 };

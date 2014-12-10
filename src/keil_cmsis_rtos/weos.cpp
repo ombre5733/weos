@@ -28,6 +28,7 @@
 
 #include "core.hpp"
 
+#include "condition_variable.cpp"
 #include "chrono.cpp"
 #include "mutex.cpp"
 #include "semaphore.cpp"
