@@ -1,3 +1,6 @@
+# Ignore the OSAL wrapper.
+src/osal
+
 CMakeLists.txt.user
 CMakeLists.txt.user.*
 
