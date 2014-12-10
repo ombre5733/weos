@@ -30,6 +30,7 @@
 
 #include "chrono.cpp"
 #include "mutex.cpp"
+#include "semaphore.cpp"
 #include "system_error.cpp"
 #include "thread.cpp"
 #include "../common/functional.cpp"

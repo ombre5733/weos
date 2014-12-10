@@ -76,64 +76,30 @@ public:
     //! \brief Creates a semaphore.
     //!
     //! Creates a semaphore with an initial number of \p value tokens.
-    explicit semaphore(value_type value = 0)
-        : m_id(0)
-    {
-        // Keil's RTOS wants a zero'ed control block type for initialization.
-        m_controlBlock._[0] = 0;
-        osSemaphoreDef_t semaphoreDef = { m_controlBlock._ };
-        m_id = osSemaphoreCreate(&semaphoreDef, value);
-        if (m_id == 0)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                    "semaphore::semaphore failed");
-    }
+    explicit semaphore(value_type value = 0);
 
     //! \brief Destroys a semaphore.
-    ~semaphore()
-    {
-        if (m_id)
-            osSemaphoreDelete(m_id);
-    }
+    ~semaphore();
 
     //! \brief Releases a semaphore token.
     //!
     //! Increases the semaphore's value by one.
     //! \note It is undefined behaviour to post() a semaphore which is already
     //! full.
-    void post()
-    {
-        osStatus status = osSemaphoreRelease(m_id);
-        if (status != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
-                                    "semaphore::post failed");
-    }
+    void post();
 
     //! \brief Waits until a semaphore token is available.
     //!
     //! Blocks the calling thread until the semaphore's value is non-zero.
     //! Then the semaphore is decreased by one and the thread returns.
-    void wait()
-    {
-        std::int32_t result = osSemaphoreWait(m_id, osWaitForever);
-        if (result <= 0)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                    "semaphore::wait failed");
-    }
+    void wait();
 
     //! \brief Tries to acquire a semaphore token.
     //!
     //! Tries to acquire a semaphore token and returns \p true upon success.
     //! If no token is available, the calling thread is not blocked and
     //! \p false is returned.
-    bool try_wait()
-    {
-        std::int32_t result = osSemaphoreWait(m_id, 0);
-        if (result < 0)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                    "semaphore::try_wait failed");
-
-        return result != 0;
-    }
+    bool try_wait();
 
     //! \brief Tries to acquire a semaphore token within a timeout.
     //!
@@ -180,10 +146,7 @@ public:
     }
 
     //! Returns the numer of semaphore tokens.
-    value_type value() const
-    {
-        return m_controlBlock.numTokens();
-    }
+    value_type value() const;
 
 private:
     //! The native semaphore.
