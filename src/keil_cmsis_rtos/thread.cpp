@@ -93,9 +93,6 @@ extern "C" void osThreadExit(void);
 // from ../3rdparty/keil_cmsis_rtos/INC/RTX_Config.h.
 extern void* os_active_TCB[];
 
-namespace
-{
-
 //! Converts a weos priority to a CMSIS priority.
 static inline
 osPriority toNativePriority(weos::thread::attributes::Priority priority)
@@ -122,8 +119,8 @@ extern "C" void weos_threadInvoker(const void* arg)
     data->m_finished.post();
 }
 
-void* weos_createTask(uint32_t priority, void* stack, uint32_t stackSize,
-                      void* data)
+extern "C" void* weos_createTask(
+        uint32_t priority, void* stack, uint32_t stackSize, void* data)
 {
     uint32_t taskId = rt_tsk_create(
                           (void (*)(void))weos_threadInvoker,
@@ -141,8 +138,6 @@ void* weos_createTask(uint32_t priority, void* stack, uint32_t stackSize,
 
     return 0;
 }
-
-} // anonymous namespace
 
 SVC_4(weos_createTask, void*, uint32_t, void*, uint32_t, void*)
 
@@ -299,6 +294,9 @@ void thread::invoke(const attributes& attrs)
 //     Waiting for signals
 // ----=====================================================================----
 
+namespace this_thread
+{
+
 thread::signal_set wait_for_any_signal()
 {
     osEvent result = osSignalWait(0, osWaitForever);
@@ -353,5 +351,7 @@ bool try_wait_for_all_signals(thread::signal_set flags)
 
     return false;
 }
+
+} // namespace this_thread
 
 WEOS_END_NAMESPACE
