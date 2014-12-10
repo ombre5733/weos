@@ -62,11 +62,11 @@ using namespace std;
     __asm volatile(                                                            \
         "ldr r12,=" #fun "\n\t"                                                \
         "svc 0"                                                                \
-        : "=r"(arg0), "=r"(arg1), "=r"(arg2), "=r"(arg3)                       \
-        :  "r"(arg0),  "r"(arg1),  "r"(arg2),  "r"(arg3)                       \
+        : "=r" (arg0), "=r" (arg1), "=r" (arg2), "=r" (arg3)                   \
+        :  "r" (arg0),  "r" (arg1),  "r" (arg2),  "r" (arg3)                   \
         : "r12", "lr", "cc");
 
-#define SVC_4(fun, retType, A0, A1, A2, A3) \
+#define SVC_4(fun, retType, A0, A1, A2, A3)                                    \
     __attribute__((always_inline)) static inline                               \
     retType fun##_indirect(A0 a0, A1 a1, A2 a2, A3 a3)                         \
     {                                                                          \

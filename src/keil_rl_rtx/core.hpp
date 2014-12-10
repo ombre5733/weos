@@ -26,44 +26,28 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_RL_RTX_HAL_HPP
-#define WEOS_KEIL_RL_RTX_HAL_HPP
+#ifndef WEOS_KEIL_RL_RTX_CORE_HPP
+#define WEOS_KEIL_RL_RTX_CORE_HPP
 
 #include "../config.hpp"
 
-#include <cstdint>
+#include <RTL.h>
 
+#if osCMSIS_RTX < ((4<<16) | 70) || osCMSIS_RTX > ((4<<16) | 74)
+    #error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.74."
+#endif
 
-WEOS_BEGIN_NAMESPACE
+#ifdef __CC_ARM
 
-//! Hardware abstraction layer.
-//! The hal namespace contains functions and classes which are
-//! hardware-specific.
-namespace hal
-{
+#define WEOS_USE_BOOST
+#include <boost/config.hpp>
 
-//! Returns the current value of the SysTick timer. When the SysTick timer
-//! reaches zero, it triggers the RL RTX kernel.
-inline std::uint32_t getSysTickValue()
-{
-    return os_trv - NVIC_ST_CURRENT;
-}
+#else
 
-//! Returns \p true, if the processor is in an interrupt service routine.
-inline bool isInIsr()
-{
-    return __get_IPSR() != 0;
-}
+#define WEOS_USE_CXX11
 
-//! Returns \p true, if the processor is in an interrupt service routine or
-//! in privileged mode.
-inline bool isInIsrOrPrivileged()
-{
-    return __get_IPSR() != 0 || (__get_CONTROL() & 1) == 0;
-}
+#endif // __CC_ARM
 
-} // namespace hal
+#include "../common/core.hpp"
 
-WEOS_END_NAMESPACE
-
-#endif // WEOS_KEIL_RL_RTX_HAL_HPP
+#endif // WEOS_KEIL_RL_RTX_CORE_HPP

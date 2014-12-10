@@ -31,14 +31,13 @@
 
 #include "core.hpp"
 
-#include "chrono.hpp"
-#include "system_error.hpp"
+#include "../chrono.hpp"
+#include "../system_error.hpp"
 
 #include <cstdint>
 
 
 WEOS_BEGIN_NAMESPACE
-
 
 //! \brief A semaphore.
 class semaphore
@@ -50,43 +49,27 @@ public:
     //! \brief Creates a semaphore.
     //!
     //! Creates a semaphore with an initial number of \p value tokens.
-    explicit semaphore(value_type value = 0)
-    {
-        os_sem_init(&m_semaphore, value);
-    }
+    explicit semaphore(value_type value = 0);
 
     //! \brief Releases a semaphore token.
     //!
     //! Increases the semaphore's value by one.
     //! \note It is undefined behaviour to post() a semaphore which is already
     //! full.
-    void post()
-    {
-        os_sem_send(&m_semaphore);
-    }
+    void post();
 
     //! \brief Waits until a semaphore token is available.
     //!
     //! Blocks the calling thread until the semaphore's value is non-zero.
     //! Then the semaphore is decreased by one and the thread returns.
-    void wait()
-    {
-        OS_RESULT result = os_sem_wait(&m_semaphore, 0xFFFF);
-        if (result == OS_R_TMO)
-            WEOS_THROW_SYSTEM_ERROR(rl_rtx_error::rl_rtx_error_t(result),
-                                    "semaphore::wait failed");
-    }
+    void wait();
 
     //! \brief Tries to acquire a semaphore token.
     //!
     //! Tries to acquire a semaphore token and returns \p true upon success.
     //! If no token is available, the calling thread is not blocked and
     //! \p false is returned.
-    bool try_wait()
-    {
-        OS_RESULT result = os_sem_wait(&m_semaphore, 0);
-        return result != OS_R_TMO;
-    }
+    bool try_wait();
 
     //! \brief Tries to acquire a semaphore token within a timeout.
     //!
@@ -131,33 +114,15 @@ public:
     }
 
     //! \brief Returns the numer of semaphore tokens.
-    value_type value() const
-    {
-        return semaphoreControlBlockHeader()->numTokens;
-    }
+    value_type value() const;
 
 private:
     //! The underlying RL RTX semaphore.
     OS_SEM m_semaphore;
 
+    // ---- Deleted methods.
     semaphore(const semaphore&);
     const semaphore& operator= (const semaphore&);
-
-    // The header (first 32 bits) of the semaphore control block. The full
-    // definition can be found in ${Keil-RL-RTX}/SRC/rt_TypeDef.h.
-    struct SemaphoreControlBlockHeader
-    {
-        todo: check this again because it is not well aligned
-        volatile std::uint8_t controlBlockType;
-        volatile std::uint16_t numTokens;
-        volatile std::uint8_t unused;
-    };
-
-    const SemaphoreControlBlockHeader* semaphoreControlBlockHeader() const
-    {
-        return reinterpret_cast<const SemaphoreControlBlockHeader*>(
-                    &m_semaphore);
-    }
 };
 
 WEOS_END_NAMESPACE

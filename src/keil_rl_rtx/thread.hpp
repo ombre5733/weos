@@ -29,266 +29,109 @@
 #ifndef WEOS_KEIL_RL_RTX_THREAD_HPP
 #define WEOS_KEIL_RL_RTX_THREAD_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
+
+#include "../atomic.hpp"
 #include "chrono.hpp"
 #include "mutex.hpp"
 #include "semaphore.hpp"
 #include "system_error.hpp"
 #include "../objectpool.hpp"
 
-#include <boost/config.hpp>
-#include <boost/utility.hpp>
-
 #include <cstdint>
-#include <exception>
-#include <utility>
 
-//! A helper function to invoke a thread.
-//! A RL RTX thread is a C function taking a <tt>void*</tt> argument. This
-//! helper function adhers to this specification. The \p arg is a pointer to
-//! a weos::ThreadData object which contains thread-specifica data such as
-//! the actual function to start.
-extern "C" void weos_threadInvoker(void* arg);
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
+
 class thread;
 
 namespace detail
 {
 
+//! Traits for native threads.
 struct native_thread_traits
 {
+    // The native type for a thread handle. This is a dummy type as CMSIS
+    // makes no use of it.
+    typedef void* thread_handle_type;
+
     // The native type for a thread ID.
     typedef OS_TID thread_id_type;
 
-    // The stack must be able to hold the registers R0-R13.
-    const std::size_t minimum_custom_stack_size = 14 * 4;
-};
+    // Represents a set of signals.
+    typedef std::uint16_t signal_set;
 
-} // namespace detail
-} // namespace weos
+    // The number of signals in a set.
+    static const int signals_count = 16;
 
-
-//! Data which is shared between the thread and its handle.
-class ThreadData : boost::noncopyable
-{
-    typedef object_pool<ThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS,
-                        mutex> pool_t;
-
-public:
-    ThreadData();
-
-    //! Decreases the reference counter by one. If the reference counter reaches
-    //! zero, this ThreadData is returned to the pool.
-    void deref();
-    //! Increases the reference counter by one.
-    void ref();
-
-    //! Returns the global pool from which thread-data objects are allocated.
-    static pool_t& pool();
-
-private:
-    //! The function to execute in the new thread.
-    void (*m_function)(void*);
-    //! The argument which is supplied to the threaded function.
-    void* m_arg;
-
-    //! This semaphore is increased by the thread when it's execution finishes.
-    //! It is needed to implement thread::join().
-    semaphore m_finished;
-    volatile int m_referenceCount;
-    //! The system-specific thread id.
-    OS_TID m_threadId;
-
-    friend class ::weos::thread;
-    friend void ::weos_threadInvoker(void* m_arg);
+    // A signal set with all flags being set.
+    static const signal_set all_signals = 0xFFFF;
 };
 
 } // namespace detail
 
-#define WEOS_THREAD_INVOKER_ARGUMENT_QUALIFIER
+WEOS_END_NAMESPACE
 
-#include "../common/thread.hpp"
+#include "../common/thread_detail.hpp"
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
+
 namespace this_thread
 {
 
 //! Returns the id of the current thread.
 inline
-weos::thread::id get_id()
+WEOS_NAMESPACE::thread::id get_id()
 {
-    return weos::thread::id(os_tsk_self());
+    return WEOS_NAMESPACE::thread::id(os_tsk_self());
 }
 
-namespace detail
-{
-// A helper to put a thread to sleep.
-struct thread_sleeper
-{
-    // Waits for millisec milliseconds. The method always returns false because
-    // we cannot shortcut a delay.
-    bool operator() (std::int32_t millisec) const
-    {
-        osStatus status = osDelay(millisec);
-        WEOS_ASSERT(   (millisec == 0 && status == osOK)
-                    || (millisec != 0 && status == osEventTimeout));
-        return false;
-    }
-};
-
-// A helper to wait for a signal.
-struct signal_waiter
-{
-    // Creates an object which waits for a signal specified by the \p mask.
-    explicit signal_waiter(std::uint32_t mask)
-        : m_mask(mask)
-    {
-    }
-
-    // Waits up to \p millisec milliseconds for a signal. Returns \p true,
-    // if a signal has arrived and no further waiting is necessary.
-    bool operator() (std::int32_t ticks)
-    {
-        osEvent result = osSignalWait(m_mask, millisec);
-        if (result.status == osEventSignal)
-        {
-            m_mask = result.value.signals;
-            return true;
-        }
-
-        if (   result.status != osOK
-            && result.status != osEventTimeout)
-        {
-            ::weos::throw_exception(weos::system_error(
-                                        result.status, cmsis_category()));
-        }
-
-        return false;
-    }
-
-    std::uint32_t mask() const
-    {
-        return m_mask;
-    }
-
-private:
-    std::uint32_t m_mask;
-};
-
-inline
-std::uint32_t wait_for_signal(std::uint32_t mask)
-{
-    osEvent result = osSignalWait(mask, osWaitForever);
-    if (result.status != osEventSignal)
-    {
-        ::weos::throw_exception(weos::system_error(
-                                    result.status, cmsis_category()));
-    }
-    return result.value.signals;
-}
-
-inline
-std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
-{
-    osEvent result = osSignalWait(mask, 0);
-    if (result.status == osOK)
-    {
-        return std::pair<bool, std::uint32_t>(false, 0);
-    }
-    else if (result.status != osEventSignal)
-    {
-        ::weos::throw_exception(weos::system_error(
-                                    result.status, cmsis_category()));
-    }
-    return std::pair<bool, std::uint32_t>(true, result.value.signals);
-}
-
-template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> try_wait_for_signal_for(
-        std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
-{
-    signal_waiter waiter(mask);
-    if (chrono::detail::cmsis_wait<
-            RepT, PeriodT, signal_waiter>::wait(d, waiter))
-    {
-        return std::pair<bool, std::uint32_t>(true, waiter.mask());
-    }
-
-    return std::pair<bool, std::uint32_t>(false, 0);
-}
-
-} // namespace detail
-
-//! Puts the current thread to sleep.
+//! \brief Puts the current thread to sleep.
+//!
 //! Blocks the execution of the current thread for the given duration \p d.
 template <typename RepT, typename PeriodT>
-void sleep_for(const chrono::duration<RepT, PeriodT>& d) BOOST_NOEXCEPT
+void sleep_for(const chrono::duration<RepT, PeriodT>& d) WEOS_NOEXCEPT
 {
-    detail::thread_sleeper sleeper;
-    chrono::detail::cmsis_wait<RepT, PeriodT, detail::thread_sleeper>::wait(
-                d, sleeper);
+    //! \todo Convert to the true amound of ticks, even if the
+    //! system does not run with a 1ms tick.
+    RepT ticks = chrono::duration_cast<chrono::milliseconds>(d);
+    if (ticks <= 0)
+        ticks = 0;
+    else
+        ++ticks;
+
+    do
+    {
+        RepT delay = ticks;
+        if (delay > 0xFFFE)
+            delay = 0xFFFE;
+        ticks -= delay;
+        os_dly_wait(delay);
+    } while (delay);
 }
 
+//! \brief Puts the current thread to sleep.
+//!
+//! Blocks the execution of the current thread until the given \p timePoint.
 template <typename ClockT, typename DurationT>
-void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) BOOST_NOEXCEPT;
-
-//! Waits for a signal.
-//! Blocks the current thread until it receives any signal(s) and returns the
-//! signals.
-inline
-std::uint32_t wait_for_signal()
+void sleep_until(const chrono::time_point<ClockT, DurationT>& timePoint) WEOS_NOEXCEPT
 {
-    return detail::wait_for_signal(0);
-}
+    typedef typename DurationT::rep rep_t;
+    do
+    {
+        //! \todo Convert to the true amound of ticks, even if the
+        //! system does not run with a 1ms tick.
+        rep_t ticks = chrono::duration_cast<chrono::milliseconds>(
+                          timePoint - ClockT::now());
+        if (ticks < 0)
+            ticks = 0;
+        else if (ticks > 0xFFFE)
+            ticks = 0xFFFE;
 
-//! Checks if a signal has arrived.
-//! Checks if any signal has reached the current thread. If so, the boolean
-//! in the returned pair is set to \p true and the second member contains
-//! the signal flags. Otherwise, the boolean is set to \p false.
-inline
-std::pair<bool, std::uint32_t> try_wait_for_signal()
-{
-    return detail::try_wait_for_signal(0);
-}
+        os_dly_wait(ticks);
 
-//! Waits until any signal arrives or a timeout occurs.
-//! Waits until any signal reaches the current thread or the timeout period
-//! \p d expires. The boolean in the returned pair is set to \p true if a
-//! signal was present. In this case, the second member contains the signal
-//! flags. If the timeout expired, the boolean is set to \p false.
-template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> try_wait_for_signal_for(
-        const chrono::duration<RepT, PeriodT>& d)
-{
-    return detail::try_wait_for_signal_for(0, d);
-}
-
-//! Waits for a signal or a set of signals.
-//! Blocks the current thread until the signals specified by the \p mask have
-//! arrived. Then the signal flags are returned.
-inline
-std::uint32_t wait_for_signal(std::uint32_t mask)
-{
-    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::wait_for_signal(mask);
-}
-
-inline
-std::pair<bool, std::uint32_t> try_wait_for_signal(std::uint32_t mask)
-{
-    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::try_wait_for_signal(mask);
-}
-
-template <typename RepT, typename PeriodT>
-std::pair<bool, std::uint32_t> try_wait_for_signal_for(
-        std::uint32_t mask, const chrono::duration<RepT, PeriodT>& d)
-{
-    WEOS_ASSERT(mask > 0 && mask < (std::uint32_t(1) << (osFeature_Signals)));
-    return detail::try_wait_for_signal_for(mask, d);
+    } while (ticks > 0);
 }
 
 //! Triggers a rescheduling of the executing threads.
@@ -298,8 +141,72 @@ void yield()
     os_tsk_pass();
 }
 
+// ----=====================================================================----
+//     Waiting for signals
+// ----=====================================================================----
+
+//! Waits until any signal arrives or a timeout occurs.
+//! Waits up to the timeout period \p d for one or more signals to be set for
+//! the current thread. The set signals will be returned. If the timeout
+//! expires, zero is returned.
+template <typename RepT, typename PeriodT>
+inline
+thread::signal_set try_wait_for_any_signal_for(
+            const chrono::duration<RepT, PeriodT>& d)
+{
+    return detail::try_wait_for_signalflags_for(0, d);
+}
+
+template <typename ClockT, typename DurationT>
+inline
+thread::signal_set try_wait_for_any_signal_until(
+            const chrono::time_point<ClockT, DurationT>& timePoint)
+{
+????????????
+}
+
+//! Waits for a set of signals.
+//! Blocks the current thread until all signal flags selected by \p flags have
+//! been set, returns those flags and resets them. Signal flags which are
+//! not selected by \p flags are not reset.
+inline
+thread::signal_set wait_for_all_signals(thread::signal_set flags)
+{
+    WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::wait_for_signalflags(flags);
+}
+
+//! Checks if a set of signals has been set.
+//! Checks if all signal flags selected by \p flags have been set, returns
+//! those flags and resets them. Signal flags which are not selected
+//! through \p flags are not reset.
+//! If not all signal flags specified by \p flags are set, zero is returned
+//! and no flag is reset.
+inline
+thread::signal_set try_wait_for_all_signals(
+        thread::signal_set flags)
+{
+    WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::try_wait_for_signalflags(flags);
+}
+
+//! Blocks until a set of signals arrives or a timeout occurs.
+//! Waits up to the timeout duration \p d for all signals specified by the
+//! \p flags to be set. If these signals are set, they are returned and
+//! reset. In the case of a timeout, zero is returned and the signal flags
+//! are not modified.
+template <typename RepT, typename PeriodT>
+inline
+thread::signal_set try_wait_for_all_signals_for(
+        thread::signal_set flags,
+        const chrono::duration<RepT, PeriodT>& d)
+{
+    WEOS_ASSERT(flags > 0 && flags < (std::uint32_t(1) << (osFeature_Signals)));
+    return detail::try_wait_for_signalflags_for(flags, d);
+}
+
 } // namespace this_thread
 
-} // namespace weos
+WEOS_END_NAMESPACE
 
 #endif // WEOS_KEIL_RL_RTX_THREAD_HPP

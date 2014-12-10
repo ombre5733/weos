@@ -26,44 +26,11 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_RL_RTX_HAL_HPP
-#define WEOS_KEIL_RL_RTX_HAL_HPP
+#ifndef WEOS_KEIL_RL_RTX_FUNCTIONAL_HPP
+#define WEOS_KEIL_RL_RTX_FUNCTIONAL_HPP
 
-#include "../config.hpp"
+#include "core.hpp"
 
-#include <cstdint>
+#include "../common/functional.hpp"
 
-
-WEOS_BEGIN_NAMESPACE
-
-//! Hardware abstraction layer.
-//! The hal namespace contains functions and classes which are
-//! hardware-specific.
-namespace hal
-{
-
-//! Returns the current value of the SysTick timer. When the SysTick timer
-//! reaches zero, it triggers the RL RTX kernel.
-inline std::uint32_t getSysTickValue()
-{
-    return os_trv - NVIC_ST_CURRENT;
-}
-
-//! Returns \p true, if the processor is in an interrupt service routine.
-inline bool isInIsr()
-{
-    return __get_IPSR() != 0;
-}
-
-//! Returns \p true, if the processor is in an interrupt service routine or
-//! in privileged mode.
-inline bool isInIsrOrPrivileged()
-{
-    return __get_IPSR() != 0 || (__get_CONTROL() & 1) == 0;
-}
-
-} // namespace hal
-
-WEOS_END_NAMESPACE
-
-#endif // WEOS_KEIL_RL_RTX_HAL_HPP
+#endif // WEOS_KEIL_RL_RTX_FUNCTIONAL_HPP

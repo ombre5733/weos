@@ -26,44 +26,59 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_RL_RTX_HAL_HPP
-#define WEOS_KEIL_RL_RTX_HAL_HPP
+#include "semaphore.hpp"
 
-#include "../config.hpp"
-
-#include <cstdint>
+#include "hal.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
 
-//! Hardware abstraction layer.
-//! The hal namespace contains functions and classes which are
-//! hardware-specific.
-namespace hal
+semaphore::semaphore(value_type value)
 {
-
-//! Returns the current value of the SysTick timer. When the SysTick timer
-//! reaches zero, it triggers the RL RTX kernel.
-inline std::uint32_t getSysTickValue()
-{
-    return os_trv - NVIC_ST_CURRENT;
+    os_sem_init(&m_semaphore, value);
 }
 
-//! Returns \p true, if the processor is in an interrupt service routine.
-inline bool isInIsr()
+void semaphore::post()
 {
-    return __get_IPSR() != 0;
+    if (hal::isInIsr())
+    {
+        isr_sem_send(&m_semaphore);
+    }
+    else
+    {
+        OS_RESULT result = os_sem_send(&m_semaphore);
+        if (result != OS_R_OK) todo: is this the correct return code?
+            WEOS_THROW_SYSTEM_ERROR(result, "semaphore::post failed");
+    }
 }
 
-//! Returns \p true, if the processor is in an interrupt service routine or
-//! in privileged mode.
-inline bool isInIsrOrPrivileged()
+void semaphore::wait()
 {
-    return __get_IPSR() != 0 || (__get_CONTROL() & 1) == 0;
+    OS_RESULT result = os_sem_wait(&m_semaphore, 0xFFFF);
+    if (result == OS_R_TMO)
+        WEOS_THROW_SYSTEM_ERROR(result, "semaphore::wait failed");
 }
 
-} // namespace hal
+bool semaphore::try_wait()
+{
+    OS_RESULT result = os_sem_wait(&m_semaphore, 0);
+    return result != OS_R_TMO;
+}
+
+// The header (first 32 bits) of the semaphore control block. The full
+// definition can be found in ${Keil-RL-RTX}/SRC/rt_TypeDef.h.
+struct SemaphoreControlBlockHeader
+{
+    todo: check this again because it is not well aligned
+    volatile std::uint8_t controlBlockType;
+    volatile std::uint16_t numTokens;
+    volatile std::uint8_t unused;
+};
+
+semaphore::value_type semaphore::value()
+{
+    return reinterpret_cast<const SemaphoreControlBlockHeader*>(
+                &m_semaphore)->numTokens;
+}
 
 WEOS_END_NAMESPACE
-
-#endif // WEOS_KEIL_RL_RTX_HAL_HPP
