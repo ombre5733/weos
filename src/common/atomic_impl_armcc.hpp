@@ -527,6 +527,11 @@ protected:
 
 } // namespace detail
 
+
+template <typename T>
+class atomic;
+
+typedef atomic<bool>                        atomic_bool;
 typedef detail::atomic_base<char>           atomic_char;
 typedef detail::atomic_base<signed char>    atomic_schar;
 typedef detail::atomic_base<unsigned char>  atomic_uchar;
@@ -537,10 +542,6 @@ typedef detail::atomic_base<unsigned int>   atomic_uint;
 typedef detail::atomic_base<long>           atomic_long;
 typedef detail::atomic_base<unsigned long>  atomic_ulong;
 
-
-template <typename T>
-class atomic;
-
 template <>
 struct atomic<char> : public atomic_char
 {
@@ -548,6 +549,15 @@ struct atomic<char> : public atomic_char
     typedef atomic_char base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -558,6 +568,15 @@ class atomic<signed char> : public atomic_schar
     typedef atomic_schar base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -568,6 +587,15 @@ class atomic<unsigned char> : public atomic_uchar
     typedef atomic_uchar base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -578,6 +606,15 @@ class atomic<short> : public atomic_short
     typedef atomic_short base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -588,6 +625,15 @@ class atomic<unsigned short> : public atomic_ushort
     typedef atomic_ushort base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -598,6 +644,15 @@ class atomic<int> : public atomic_int
     typedef atomic_int base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -608,6 +663,15 @@ class atomic<unsigned int> : public atomic_uint
     typedef atomic_uint base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -618,6 +682,15 @@ class atomic<long> : public atomic_long
     typedef atomic_long base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
@@ -628,10 +701,19 @@ class atomic<unsigned long> : public atomic_ulong
     typedef atomic_ulong base;
 
 public:
+    atomic() WEOS_NOEXCEPT
+    {
+    }
+
+    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+        : base(value)
+    {
+    }
+
     using base::operator=;
 };
 
-
+// Specialization for bool.
 template <>
 class atomic<bool>
 {
