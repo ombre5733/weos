@@ -37,13 +37,21 @@
 
 namespace
 {
+
+typedef std::int64_t test_type;
+
 volatile bool f0_flag = false;
 void f0()
 {
     f0_flag = !f0_flag;
 }
 
-int sum4(int a0, int a1, int a2, int a3)
+char addOne(char x)
+{
+    return 1 + x;
+}
+
+test_type sum4(test_type a0, test_type a1, test_type a2, test_type a3)
 {
     return a0 + a1 + a2 + a3;
 }
@@ -65,30 +73,63 @@ TEST(function, function_pointer_0_args)
     }
 }
 
+TEST(function, small_function_optimization)
+{
+    {
+        char result;
+        weos::function<char()> f = weos::bind<char>(&addOne, 7);
+        result = f();
+        ASSERT_EQ(8, result);
+        weos::function<char()> g(f);
+        result = g();
+        ASSERT_EQ(8, result);
+        weos::function<char()> h;
+        h = f;
+        result = h();
+        ASSERT_EQ(8, result);
+    }
+    {
+        char result;
+        weos::function<char(char)> f
+                = weos::bind<char>(&addOne, weos::placeholders::_1);
+        result = f(1);
+        ASSERT_EQ(2, result);
+        weos::function<char(char)> g(f);
+        result = g(2);
+        ASSERT_EQ(3, result);
+        weos::function<char(char)> h;
+        h = f;
+        result = h(3);
+        ASSERT_EQ(4, result);
+    }
+}
+
 TEST(function, sum)
 {
     {
-        int sum;
-        weos::function<int()> f = weos::bind<int>(&sum4, 1, 2, 3, 4);
+        test_type sum;
+        weos::function<test_type()> f
+                = weos::bind<test_type>(&sum4, 1, 2, 3, 4);
         sum = f();
         ASSERT_EQ(10, sum);
-        weos::function<int()> g(f);
+        weos::function<test_type()> g(f);
         sum = g();
         ASSERT_EQ(10, sum);
-        weos::function<int()> h;
+        weos::function<test_type()> h;
         h = f;
         sum = h();
         ASSERT_EQ(10, sum);
     }
     {
-        int sum;
-        weos::function<int(int)> f = weos::bind<int>(&sum4, weos::placeholders::_1, 2, 3, 4);
+        test_type sum;
+        weos::function<test_type(test_type)> f
+                = weos::bind<test_type>(&sum4, weos::placeholders::_1, 2, 3, 4);
         sum = f(1);
         ASSERT_EQ(10, sum);
-        weos::function<int(int)> g(f);
+        weos::function<test_type(test_type)> g(f);
         sum = g(2);
         ASSERT_EQ(11, sum);
-        weos::function<int(int)> h;
+        weos::function<test_type(test_type)> h;
         h = f;
         sum = h(3);
         ASSERT_EQ(12, sum);
