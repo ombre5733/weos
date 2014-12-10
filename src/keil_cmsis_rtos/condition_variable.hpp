@@ -31,9 +31,9 @@
 
 #include "core.hpp"
 
-#include "chrono.hpp"
-#include "mutex.hpp"
-#include "semaphore.hpp"
+#include "../chrono.hpp"
+#include "../mutex.hpp"
+#include "../semaphore.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
