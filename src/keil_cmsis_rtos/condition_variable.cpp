@@ -50,6 +50,11 @@ void condition_variable::notify_one() WEOS_NOEXCEPT
         WaitingThread* next = m_waitingThreads->next;
         m_waitingThreads->dequeued = true;
         m_waitingThreads->signal.post();
+
+        // Do not access a waiter after sending a signal to it. If the other
+        // thread has received a signal, the WaitingThread instance, which
+        // is located on the stack, will go out of scope and is not accessible
+        // anymore.
         m_waitingThreads = next;
     }
 }
@@ -63,6 +68,11 @@ void condition_variable::notify_all() WEOS_NOEXCEPT
         WaitingThread* next = m_waitingThreads->next;
         m_waitingThreads->dequeued = true;
         m_waitingThreads->signal.post();
+
+        // Do not access a waiter after sending a signal to it. If the other
+        // thread has received a signal, the WaitingThread instance, which
+        // is located on the stack, will go out of scope and is not accessible
+        // anymore.
         m_waitingThreads = next;
     }
 }
@@ -75,10 +85,52 @@ void condition_variable::wait(unique_lock<mutex>& lock)
 
     // We can only release the lock when we are sure that a signal will
     // reach our thread.
+    detail::lock_releaser<unique_lock<mutex> > releaser(lock);
+    // Wait until we receive a signal, then re-lock the lock.
+    w.signal.wait();
+}
+
+// -----------------------------------------------------------------------------
+// Private methods
+// -----------------------------------------------------------------------------
+
+inline
+void condition_variable::enqueue(WaitingThread& w)
+{
+    lock_guard<mutex> locker(m_mutex);
+
+    if (!m_waitingThreads)
+        m_waitingThreads = &w;
+    else
     {
-        detail::lock_releaser<unique_lock<mutex> > releaser(lock);
-        // Wait until we receive a signal, then re-lock the lock.
-        w.signal.wait();
+        //! \todo enqueue using priorities
+        WaitingThread* iter = m_waitingThreads;
+        while (iter->next)
+            iter = iter->next;
+        iter->next = &w;
+    }
+}
+
+inline
+void condition_variable::maybeDequeue(WaitingThread& w)
+{
+    lock_guard<mutex> locker(m_mutex);
+    if (w.dequeued)
+        return;
+
+    WEOS_ASSERT(m_waitingThreads);
+
+    if (m_waitingThreads == &w)
+        m_waitingThreads = w.next;
+    else
+    {
+        WaitingThread* iter = m_waitingThreads;
+        while (iter->next != &w)
+        {
+            iter = iter->next;
+            WEOS_ASSERT(iter);
+        }
+        iter->next = w.next;
     }
 }
 

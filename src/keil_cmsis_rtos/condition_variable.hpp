@@ -124,18 +124,19 @@ public:
 
         // We can only unlock the lock when we are sure that a signal will
         // reach our thread.
+        detail::lock_releaser<unique_lock<mutex> > releaser(lock);
+        // Wait until we receive a signal, then re-lock the lock.
+        bool gotSignal = w.signal.try_wait_for(d);
+
+        // If we have received a signal, we have _always_ been dequeued.
+        // If the other case, we might have been dequeued or might have
+        // been not. In that case, we have to check the dequeued flag.
+        if (!gotSignal)
         {
-            detail::lock_releaser<unique_lock<mutex> > releaser(lock);
-            // Wait until we receive a signal, then re-lock the lock.
-            bool gotSignal = w.signal.try_wait_for(d);
-            if (!gotSignal)
-            {
-                lock_guard<mutex> locker(m_mutex);
-                if (!w.dequeued)
-                    dequeue(w);
-                return cv_status::timeout;
-            }
+            maybeDequeue(w);
+            return cv_status::timeout;
         }
+
         return cv_status::no_timeout;
     }
 
@@ -164,40 +165,10 @@ private:
     };
 
     //! Adds the waiter \p w to the queue.
-    void enqueue(WaitingThread& w)
-    {
-        lock_guard<mutex> locker(m_mutex);
-
-        if (!m_waitingThreads)
-            m_waitingThreads = &w;
-        else
-        {
-            //! \todo enqueue using priorities
-            WaitingThread* iter = m_waitingThreads;
-            while (iter->next)
-                iter = iter->next;
-            iter->next = &w;
-        }
-    }
+    void enqueue(WaitingThread& w);
 
     //! Removes the waiter \p w from the queue.
-    void dequeue(WaitingThread& w)
-    {
-        WEOS_ASSERT(m_waitingThreads);
-
-        if (m_waitingThreads == &w)
-            m_waitingThreads = w.next;
-        else
-        {
-            WaitingThread* iter = m_waitingThreads;
-            while (iter->next != &w)
-            {
-                iter = iter->next;
-                WEOS_ASSERT(iter);
-            }
-            iter->next = w.next;
-        }
-    }
+    void maybeDequeue(WaitingThread& w);
 
     //! A mutex to protect the list of waiters from concurrent modifications.
     mutex m_mutex;
