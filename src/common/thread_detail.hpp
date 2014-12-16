@@ -183,6 +183,9 @@ class thread
     struct _guard_type;
 
 public:
+    //! The type of the native thread handle.
+    typedef detail::native_thread_traits::thread_handle_type* native_handle_type;
+
     //! A representation of a thread identifier.
     //! This class is a wrapper around a thread identifier. It has a small
     //! memory footprint such that it is inexpensive to pass copies around.
@@ -456,6 +459,9 @@ public:
     {
         return 1;
     }
+
+    //! Returns the native thread handle.
+    native_handle_type native_handle();
 
     // -------------------------------------------------------------------------
     // Signal management
