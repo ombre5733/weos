@@ -29,59 +29,31 @@
 #ifndef WEOS_COMMON_CORE_HPP
 #define WEOS_COMMON_CORE_HPP
 
-// -----------------------------------------------------------------------------
-// C++11
-// -----------------------------------------------------------------------------
-#if defined(WEOS_USE_CXX11)
-
-#include <cstddef>
-
-#define WEOS_CONSTEXPR_OR_CONST   constexpr
-#define WEOS_CONSTEXPR            constexpr
-#define WEOS_NOEXCEPT             noexcept
-
-
-WEOS_BEGIN_NAMESPACE
-
-using std::nullptr_t;
-
-WEOS_END_NAMESPACE
-
-// -----------------------------------------------------------------------------
-// Boost
-// -----------------------------------------------------------------------------
-#elif defined(WEOS_USE_BOOST)
-
-// For armcc, we require that it is compiled with GNU compatibility. The other
-// option would be to tell Boost, that armcc uses an EDG frontend.
 #ifdef __CC_ARM
-    #ifndef __GNUC__
-        #error "Must be compiled in GNU mode. Use the '--gnu' command line argument."
-    #endif // __GNU__
-#endif // __CC_ARM
+// -----------------------------------------------------------------------------
+// ARMCC
+// -----------------------------------------------------------------------------
 
-#include <boost/config.hpp>
-#include <boost/static_assert.hpp>
+#if __ARMCC_VERSION < 5050000 // Format is Mmmbbbb
+    #error "Only armcc 5.05 and greater is supported."
+#endif
 
-#define WEOS_CONSTEXPR_OR_CONST   BOOST_CONSTEXPR_OR_CONST
-#define WEOS_CONSTEXPR            BOOST_CONSTEXPR
-#define WEOS_NOEXCEPT             BOOST_NOEXCEPT
+#if __cplusplus < 201103L
+    #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument."
+#endif
 
-#define static_assert(cond, msg)   BOOST_STATIC_ASSERT_MSG(cond, msg)
 
 WEOS_BEGIN_NAMESPACE
 
-struct nullptr_t {};
+typedef decltype(nullptr) nullptr_t;
 
 WEOS_END_NAMESPACE
 
-WEOS_CONSTEXPR_OR_CONST weos::nullptr_t nullptr = weos::nullptr_t();
-
-// -----------------------------------------------------------------------------
-// Unknown
-// -----------------------------------------------------------------------------
 #else
-    #error "No core.hpp available."
-#endif
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#endif // __CC_ARM
 
 #endif // WEOS_COMMON_CORE_HPP
