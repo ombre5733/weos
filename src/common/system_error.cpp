@@ -28,8 +28,8 @@
 
 #include "system_error.hpp"
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 //! The generic error category.
 class generic_category_impl : public error_category
@@ -66,4 +66,4 @@ const error_category& generic_category()
     return categoryInstance;
 }
 
-} // namespace weos
+WEOS_END_NAMESPACE
