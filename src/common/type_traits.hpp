@@ -35,25 +35,10 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#ifdef __CC_ARM
 // -----------------------------------------------------------------------------
-// C++11
+// ARMCC
 // -----------------------------------------------------------------------------
-#if defined(WEOS_USE_CXX11)
-
-#include <type_traits>
-#define WEOS_IMPL_NAMESPACE   std
-
-
-WEOS_BEGIN_NAMESPACE
-
-using std::enable_if;
-
-WEOS_END_NAMESPACE
-
-// -----------------------------------------------------------------------------
-// Boost
-// -----------------------------------------------------------------------------
-#elif defined(WEOS_USE_BOOST)
 
 #include <boost/type_traits.hpp>
 #define WEOS_IMPL_NAMESPACE   boost
@@ -74,12 +59,22 @@ struct enable_if<true, TType>
 
 WEOS_END_NAMESPACE
 
-// -----------------------------------------------------------------------------
-// Unknown
-// -----------------------------------------------------------------------------
 #else
-    #error "No type_traits.hpp available."
-#endif
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#include <type_traits>
+#define WEOS_IMPL_NAMESPACE   std
+
+
+WEOS_BEGIN_NAMESPACE
+
+using std::enable_if;
+
+WEOS_END_NAMESPACE
+
+#endif // __CC_ARM
 
 
 WEOS_BEGIN_NAMESPACE

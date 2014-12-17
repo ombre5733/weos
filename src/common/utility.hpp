@@ -35,20 +35,42 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#ifdef __CC_ARM
 // -----------------------------------------------------------------------------
-// C++11
+// ARMCC
 // -----------------------------------------------------------------------------
-#if defined(WEOS_USE_CXX11)
+
+#include "../type_traits.hpp"
+
+
+WEOS_BEGIN_NAMESPACE
+
+template <typename T>
+constexpr typename remove_reference<T>::type&& move(T&& t) noexcept
+{
+    return static_cast<typename remove_reference<T>::type&&>(t);
+}
+
+template <typename T>
+constexpr T&& forward(typename remove_reference<T>::type& t) noexcept
+{
+    return static_cast<T&&>(t);
+}
+
+template <typename T>
+constexpr T&& forward(typename remove_reference<T>::type&& t) noexcept
+{
+    return static_cast<T&&>(t);
+}
+
+WEOS_END_NAMESPACE
+
+#else
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
 
 #include <utility>
-
-#define WEOS_COPYABLE_AND_MOVABLE(type)
-#define WEOS_MOVABLE_BUT_NOT_COPYABLE(type)                                    \
-    type(const type&) = delete;                                                \
-    type& operator= (const type&) = delete;
-
-#define WEOS_FWD_REF(type)   type&&
-#define WEOS_RV_REF(type)    type&&
 
 
 WEOS_BEGIN_NAMESPACE
@@ -58,34 +80,6 @@ using std::move;
 
 WEOS_END_NAMESPACE
 
-// -----------------------------------------------------------------------------
-// Boost
-// -----------------------------------------------------------------------------
-#elif defined(WEOS_USE_BOOST)
-
-#include <boost/move/move.hpp>
-
-#define WEOS_COPYABLE_AND_MOVABLE(type)                                        \
-    BOOST_COPYABLE_AND_MOVABLE(type)
-#define WEOS_MOVABLE_BUT_NOT_COPYABLE(type)                                    \
-    BOOST_MOVABLE_BUT_NOT_COPYABLE(type)
-
-#define WEOS_FWD_REF(type)   BOOST_FWD_REF(type)
-#define WEOS_RV_REF(type)    BOOST_RV_REF(type)
-
-
-WEOS_BEGIN_NAMESPACE
-
-using boost::forward;
-using boost::move;
-
-WEOS_END_NAMESPACE
-
-// -----------------------------------------------------------------------------
-// Unknown
-// -----------------------------------------------------------------------------
-#else
-    #error "No utility.hpp available."
-#endif
+#endif // __CC_ARM
 
 #endif // WEOS_COMMON_UTILITY_HPP

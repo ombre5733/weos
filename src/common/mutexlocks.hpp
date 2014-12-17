@@ -37,36 +37,11 @@
 
 #include "system_error.hpp"
 
+#ifdef __CC_ARM
 // -----------------------------------------------------------------------------
-// C++11
+// ARMCC
 // -----------------------------------------------------------------------------
-#if defined(WEOS_USE_CXX11)
 
-#include <mutex>
-
-WEOS_BEGIN_NAMESPACE
-
-using std::adopt_lock_t;
-using std::adopt_lock;
-
-using std::defer_lock_t;
-using std::defer_lock;
-
-using std::try_to_lock_t;
-using std::try_to_lock;
-
-using std::lock_guard;
-using std::unique_lock;
-
-WEOS_END_NAMESPACE
-
-
-// -----------------------------------------------------------------------------
-// Boost
-// -----------------------------------------------------------------------------
-#elif defined(WEOS_USE_BOOST)
-
-#include "../utility.hpp"
 
 WEOS_BEGIN_NAMESPACE
 
@@ -74,9 +49,13 @@ struct defer_lock_t {};
 struct try_to_lock_t {};
 struct adopt_lock_t {};
 
-WEOS_CONSTEXPR_OR_CONST defer_lock_t defer_lock = defer_lock_t();
-WEOS_CONSTEXPR_OR_CONST try_to_lock_t try_to_lock = try_to_lock_t();
-WEOS_CONSTEXPR_OR_CONST adopt_lock_t adopt_lock = adopt_lock_t();
+//! A tag to defer the acquisition of a mutex.
+constexpr defer_lock_t defer_lock = defer_lock_t();
+//! A tag to try to acquire the ownership of a mutex without blocking the thread.
+constexpr try_to_lock_t try_to_lock = try_to_lock_t();
+//! A tag to assume that the caller has already acquired the ownership of
+//! a mutex.
+constexpr adopt_lock_t adopt_lock = adopt_lock_t();
 
 //! A lock guard for RAII-style mutex locking.
 template <typename MutexT>
@@ -114,9 +93,9 @@ private:
     //! The mutex which is guarded.
     mutex_type& m_mutex;
 
-    // ---- Hidden methods.
-    lock_guard(const lock_guard&);
-    lock_guard& operator= (const lock_guard&);
+
+    lock_guard(const lock_guard&) = delete;
+    lock_guard& operator= (const lock_guard&) = delete;
 };
 
 //! A unique lock for a mutex.
@@ -127,8 +106,8 @@ public:
     typedef MutexT mutex_type;
 
     //! Creates a lock which is not associated with a mutex.
-    unique_lock() WEOS_NOEXCEPT
-        : m_mutex(0),
+    unique_lock() noexcept
+        : m_mutex(nullptr),
           m_locked(false)
     {
     }
@@ -145,7 +124,7 @@ public:
     //! Creates a unique lock without locking.
     //! Creates a unique lock which will be tied to the given \p mutex but
     //! does not lock this mutex.
-    unique_lock(mutex_type& mutex, defer_lock_t /*tag*/) WEOS_NOEXCEPT
+    unique_lock(mutex_type& mutex, defer_lock_t /*tag*/) noexcept
         : m_mutex(&mutex),
           m_locked(false)
     {
@@ -191,11 +170,11 @@ public:
     //! Move construction.
     //!
     //! Creates a unique lock by moving from the \p other lock.
-    unique_lock(WEOS_RV_REF(unique_lock) other) WEOS_NOEXCEPT
+    unique_lock(unique_lock&& other) noexcept
         : m_mutex(other.m_mutex),
           m_locked(other.m_locked)
     {
-        other.m_mutex = 0;
+        other.m_mutex = nullptr;
         other.m_locked = false;
     }
 
@@ -212,7 +191,7 @@ public:
     //!
     //! Moves the \p other lock to this lock. If this lock owns a mutex, it
     //! will be released.
-    unique_lock& operator= (WEOS_RV_REF(unique_lock) other) WEOS_NOEXCEPT
+    unique_lock& operator= (unique_lock&& other) noexcept
     {
         if (m_locked)
             m_mutex->unlock();
@@ -220,7 +199,7 @@ public:
         m_mutex = other.m_mutex;
         m_locked = other.m_locked;
 
-        other.m_mutex = 0;
+        other.m_mutex = nullptr;
         other.m_locked = false;
 
         return *this;
@@ -229,7 +208,7 @@ public:
     //! Locks the associated mutex.
     void lock()
     {
-        if (m_mutex == 0)
+        if (m_mutex == nullptr)
             WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                     "unique_lock::lock: no mutex");
         if (m_locked)
@@ -243,7 +222,7 @@ public:
     //! Returns a pointer to the associated mutex.
     //! Returns a pointer to the mutex to which this lock is tied. This may
     //! be a null-pointer, if no mutex has been supplied so far.
-    mutex_type* mutex() const WEOS_NOEXCEPT
+    mutex_type* mutex() const noexcept
     {
         return m_mutex;
     }
@@ -251,7 +230,7 @@ public:
     //! Checks if this lock owns a locked mutex.
     //! Returns \p true, if a mutex is tied to this lock and the lock has
     //! ownership of it.
-    bool owns_lock() const WEOS_NOEXCEPT
+    bool owns_lock() const noexcept
     {
         return m_locked;
     }
@@ -261,20 +240,20 @@ public:
     //! by this function). The lock won't interact with the mutex any longer
     //! (it won't even unlock the mutex). Instead the responsibility is
     //! transfered to the caller.
-    mutex_type* release() WEOS_NOEXCEPT
+    mutex_type* release() noexcept
     {
         mutex_type* m = m_mutex;
-        m_mutex = 0;
+        m_mutex = nullptr;
         m_locked = false;
         return m;
     }
 
     //! Swaps two locks.
     //! Swaps this lock with the \p other lock.
-    void swap(unique_lock& other) WEOS_NOEXCEPT
+    void swap(unique_lock& other) noexcept
     {
         std::swap(m_mutex, other.m_mutex);
-        std::wap(m_locked, other.m_locked);
+        std::swap(m_locked, other.m_locked);
     }
 
     //! Tries to lock the associated mutex.
@@ -283,7 +262,7 @@ public:
     //! be locked and \p false otherwise.
     bool try_lock()
     {
-        if (m_mutex == 0)
+        if (m_mutex == nullptr)
             WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                     "unique_lock::try_lock: no mutex");
         if (m_locked)
@@ -301,7 +280,7 @@ public:
     template <typename RepT, typename PeriodT>
     bool try_lock_for(const chrono::duration<RepT, PeriodT>& duration)
     {
-        if (m_mutex == 0)
+        if (m_mutex == nullptr)
             WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                     "unique_lock::try_lock_for: no mutex");
         if (m_locked)
@@ -319,7 +298,7 @@ public:
     template <typename ClockT, typename DurationT>
     bool try_lock_until(const chrono::time_point<ClockT, DurationT>& timePoint)
     {
-        if (m_mutex == 0)
+        if (m_mutex == nullptr)
             WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                     "unique_lock::try_lock_until: no mutex");
         if (m_locked)
@@ -345,7 +324,7 @@ public:
     //!
     //! Checks if this lock owns the mutex. This is equivalent to calling
     //! owns_lock().
-    /*explicit*/ operator bool() const WEOS_NOEXCEPT
+    explicit operator bool() const noexcept
     {
         return m_locked;
     }
@@ -356,8 +335,8 @@ private:
     //! A flag indicating if the mutex has been locked.
     bool m_locked;
 
-
-    WEOS_MOVABLE_BUT_NOT_COPYABLE(unique_lock)
+    unique_lock(const unique_lock&) = delete;
+    unique_lock& operator=(const unique_lock&) = delete;
 };
 
 WEOS_END_NAMESPACE
@@ -371,19 +350,37 @@ namespace std
 template <typename MutexT>
 inline
 void swap(WEOS_NAMESPACE::unique_lock<MutexT>& x,
-          WEOS_NAMESPACE::unique_lock<MutexT>& y) WEOS_NOEXCEPT
+          WEOS_NAMESPACE::unique_lock<MutexT>& y) noexcept
 {
     x.swap(y);
 }
 
 } // namespace std
 
-
-// -----------------------------------------------------------------------------
-// Unknown
-// -----------------------------------------------------------------------------
 #else
-    #error "No mutexlocks.hpp available."
-#endif
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#include <mutex>
+
+
+WEOS_BEGIN_NAMESPACE
+
+using std::adopt_lock_t;
+using std::adopt_lock;
+
+using std::defer_lock_t;
+using std::defer_lock;
+
+using std::try_to_lock_t;
+using std::try_to_lock;
+
+using std::lock_guard;
+using std::unique_lock;
+
+WEOS_END_NAMESPACE
+
+#endif // __CC_ARM
 
 #endif // WEOS_COMMON_MUTEXLOCKS_HPP

@@ -56,32 +56,32 @@ enum memory_order
 class atomic_flag
 {
 public:
-    atomic_flag() WEOS_NOEXCEPT
+    atomic_flag() noexcept
     {
     }
 
     // Construction from ATOMIC_FLAG_INIT.
-    WEOS_CONSTEXPR atomic_flag(bool value) WEOS_NOEXCEPT
+    constexpr atomic_flag(bool value) noexcept
       : m_value(value)
     {
     }
 
-    void clear(memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    void clear(memory_order mo = memory_order_seq_cst) noexcept
     {
         fetch_and_set(0);
     }
 
-    void clear(memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    void clear(memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         fetch_and_set(0);
     }
 
-    bool test_and_set(memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    bool test_and_set(memory_order mo = memory_order_seq_cst) noexcept
     {
         return fetch_and_set(1);
     }
 
-    bool test_and_set(memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    bool test_and_set(memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         return fetch_and_set(1);
     }
@@ -89,7 +89,7 @@ public:
 private:
     volatile int m_value;
 
-    int fetch_and_set(int newValue) volatile WEOS_NOEXCEPT
+    int fetch_and_set(int newValue) volatile noexcept
     {
         int status, oldValue;
         do
@@ -113,49 +113,49 @@ private:
 };
 
 inline
-void atomic_flag_clear(atomic_flag* flag) WEOS_NOEXCEPT
+void atomic_flag_clear(atomic_flag* flag) noexcept
 {
     flag->clear();
 }
 
 inline
-void atomic_flag_clear(volatile atomic_flag* flag) WEOS_NOEXCEPT
+void atomic_flag_clear(volatile atomic_flag* flag) noexcept
 {
     flag->clear();
 }
 
 inline
-void atomic_flag_clear_explicit(atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
+void atomic_flag_clear_explicit(atomic_flag* flag, memory_order mo) noexcept
 {
     flag->clear(mo);
 }
 
 inline
-void atomic_flag_clear_explicit(volatile atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
+void atomic_flag_clear_explicit(volatile atomic_flag* flag, memory_order mo) noexcept
 {
     flag->clear(mo);
 }
 
 inline
-bool atomic_flag_test_and_set(atomic_flag* flag) WEOS_NOEXCEPT
+bool atomic_flag_test_and_set(atomic_flag* flag) noexcept
 {
     return flag->test_and_set();
 }
 
 inline
-bool atomic_flag_test_and_set(volatile atomic_flag* flag) WEOS_NOEXCEPT
+bool atomic_flag_test_and_set(volatile atomic_flag* flag) noexcept
 {
     return flag->test_and_set();
 }
 
 inline
-bool atomic_flag_test_and_set_explicit(atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
+bool atomic_flag_test_and_set_explicit(atomic_flag* flag, memory_order mo) noexcept
 {
     return flag->test_and_set(mo);
 }
 
 inline
-bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag, memory_order mo) WEOS_NOEXCEPT
+bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag, memory_order mo) noexcept
 {
     return flag->test_and_set(mo);
 }
@@ -186,38 +186,38 @@ class atomic_base
                   "Atomics are only implemented up to the size of int.");
 
 public:
-    atomic_base() WEOS_NOEXCEPT
+    atomic_base() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic_base(T value) WEOS_NOEXCEPT
+    constexpr atomic_base(T value) noexcept
         : m_value(value)
     {
     }
 
-    bool is_lock_free() const WEOS_NOEXCEPT
+    bool is_lock_free() const noexcept
     {
         return true;
     }
 
-    bool is_lock_free() const volatile WEOS_NOEXCEPT
+    bool is_lock_free() const volatile noexcept
     {
         return true;
     }
 
-    T load(memory_order mo = memory_order_seq_cst) const WEOS_NOEXCEPT
+    T load(memory_order mo = memory_order_seq_cst) const noexcept
     {
         __dmb(0xF);
         return (T)m_value;
     }
 
-    T load(memory_order mo = memory_order_seq_cst) const volatile WEOS_NOEXCEPT
+    T load(memory_order mo = memory_order_seq_cst) const volatile noexcept
     {
         __dmb(0xF);
         return (T)m_value;
     }
 
-    void store(T value, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    void store(T value, memory_order mo = memory_order_seq_cst) noexcept
     {
         while (1)
         {
@@ -228,7 +228,7 @@ public:
         __dmb(0xF);
     }
 
-    void store(T value, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    void store(T value, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         while (1)
         {
@@ -239,7 +239,7 @@ public:
         __dmb(0xF);
     }
 
-    T exchange(T desired, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    T exchange(T desired, memory_order mo = memory_order_seq_cst) noexcept
     {
         T old;
         while (1)
@@ -252,7 +252,7 @@ public:
         return old;
     }
 
-    T exchange(T desired, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    T exchange(T desired, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         T old;
         while (1)
@@ -267,46 +267,46 @@ public:
 
     bool compare_exchange_weak(T& expected, T desired,
                                memory_order success,
-                               memory_order failure) WEOS_NOEXCEPT
+                               memory_order failure) noexcept
     {
         return compare_exchange_weak(expected, desired);
     }
 
     bool compare_exchange_weak(T& expected, T desired,
                                memory_order success,
-                               memory_order failure) volatile WEOS_NOEXCEPT
+                               memory_order failure) volatile noexcept
     {
         return compare_exchange_weak(expected, desired);
     }
 
     bool compare_exchange_weak(T& expected, T desired,
-                               memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+                               memory_order mo = memory_order_seq_cst) noexcept
     {
         return compare_exchange_strong(expected, desired, mo);
     }
 
     bool compare_exchange_weak(T& expected, T desired,
-                               memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+                               memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         return compare_exchange_strong(expected, desired, mo);
     }
 
     bool compare_exchange_strong(T& expected, T desired,
                                  memory_order success,
-                                 memory_order failure) WEOS_NOEXCEPT
+                                 memory_order failure) noexcept
     {
         return compare_exchange_strong(expected, desired);
     }
 
     bool compare_exchange_strong(T& expected, T desired,
                                  memory_order success,
-                                 memory_order failure) volatile WEOS_NOEXCEPT
+                                 memory_order failure) volatile noexcept
     {
         return compare_exchange_strong(expected, desired);
     }
 
     bool compare_exchange_strong(T& expected, T desired,
-                                 memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+                                 memory_order mo = memory_order_seq_cst) noexcept
     {
         while (1)
         {
@@ -330,7 +330,7 @@ public:
     }
 
     bool compare_exchange_strong(T& expected, T desired,
-                                 memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+                                 memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         while (1)
         {
@@ -353,164 +353,164 @@ public:
         }
     }
 
-    T fetch_add(T arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    T fetch_add(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, +, arg);
     }
 
-    T fetch_add(T arg, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    T fetch_add(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, +, arg);
     }
 
-    T fetch_sub(T arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    T fetch_sub(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, -, arg);
     }
 
-    T fetch_sub(T arg, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    T fetch_sub(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, -, arg);
     }
 
-    T fetch_and(T arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    T fetch_and(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, &, arg);
     }
 
-    T fetch_and(T arg, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    T fetch_and(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, &, arg);
     }
 
-    T fetch_or(T arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    T fetch_or(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, |, arg);
     }
 
-    T fetch_or(T arg, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    T fetch_or(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, |, arg);
     }
 
-    T fetch_xor(T arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    T fetch_xor(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, ^, arg);
     }
 
-    T fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    T fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, ^, arg);
     }
 
-    T operator= (T value) WEOS_NOEXCEPT
+    T operator= (T value) noexcept
     {
         store(value);
         return value;
     }
 
-    T operator= (T value) volatile WEOS_NOEXCEPT
+    T operator= (T value) volatile noexcept
     {
         store(value);
         return value;
     }
 
-    T operator++() WEOS_NOEXCEPT
+    T operator++() noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    T operator++() volatile WEOS_NOEXCEPT
+    T operator++() volatile noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    T operator++ (int) WEOS_NOEXCEPT
+    T operator++ (int) noexcept
     {
         return fetch_add(1);
     }
 
-    T operator++ (int) volatile WEOS_NOEXCEPT
+    T operator++ (int) volatile noexcept
     {
         return fetch_add(1);
     }
 
-    T operator--() WEOS_NOEXCEPT
+    T operator--() noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    T operator--() volatile WEOS_NOEXCEPT
+    T operator--() volatile noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    T operator-- (int) WEOS_NOEXCEPT
+    T operator-- (int) noexcept
     {
         return fetch_sub(1);
     }
 
-    T operator-- (int) volatile WEOS_NOEXCEPT
+    T operator-- (int) volatile noexcept
     {
         return fetch_sub(1);
     }
 
-    T operator+= (T value) WEOS_NOEXCEPT
+    T operator+= (T value) noexcept
     {
         return fetch_add(value) + value;
     }
 
-    T operator+= (T value) volatile WEOS_NOEXCEPT
+    T operator+= (T value) volatile noexcept
     {
         return fetch_add(value) + value;
     }
 
-    T operator-= (T value) WEOS_NOEXCEPT
+    T operator-= (T value) noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    T operator-= (T value) volatile WEOS_NOEXCEPT
+    T operator-= (T value) volatile noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    T operator&= (T value) WEOS_NOEXCEPT
+    T operator&= (T value) noexcept
     {
         return fetch_and(value) & value;
     }
 
-    T operator&= (T value) volatile WEOS_NOEXCEPT
+    T operator&= (T value) volatile noexcept
     {
         return fetch_and(value) & value;
     }
 
-    T operator|= (T value) WEOS_NOEXCEPT
+    T operator|= (T value) noexcept
     {
         return fetch_or(value) | value;
     }
 
-    T operator|= (T value) volatile WEOS_NOEXCEPT
+    T operator|= (T value) volatile noexcept
     {
         return fetch_or(value) | value;
     }
 
-    T operator^= (T value) WEOS_NOEXCEPT
+    T operator^= (T value) noexcept
     {
         return fetch_xor(value) ^ value;
     }
 
-    T operator^= (T value) volatile WEOS_NOEXCEPT
+    T operator^= (T value) volatile noexcept
     {
         return fetch_xor(value) ^ value;
     }
 
-    operator T() const WEOS_NOEXCEPT
+    operator T() const noexcept
     {
         return load();
     }
 
-    operator T() const volatile WEOS_NOEXCEPT
+    operator T() const volatile noexcept
     {
         return load();
     }
@@ -519,10 +519,9 @@ private:
     int m_value;
 
 protected:
-    // ---- Hidden methods
-    atomic_base(const atomic_base&);
-    atomic_base& operator=(const atomic_base&);
-    atomic_base& operator=(const atomic_base&) volatile;
+    atomic_base(const atomic_base&) = delete;
+    atomic_base& operator=(const atomic_base&) = delete;
+    atomic_base& operator=(const atomic_base&) volatile = delete;
 };
 
 } // namespace detail
@@ -549,11 +548,11 @@ struct atomic<char> : public atomic_char
     typedef atomic_char base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -568,11 +567,11 @@ class atomic<signed char> : public atomic_schar
     typedef atomic_schar base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -587,11 +586,11 @@ class atomic<unsigned char> : public atomic_uchar
     typedef atomic_uchar base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -606,11 +605,11 @@ class atomic<short> : public atomic_short
     typedef atomic_short base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -625,11 +624,11 @@ class atomic<unsigned short> : public atomic_ushort
     typedef atomic_ushort base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -644,11 +643,11 @@ class atomic<int> : public atomic_int
     typedef atomic_int base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -663,11 +662,11 @@ class atomic<unsigned int> : public atomic_uint
     typedef atomic_uint base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -682,11 +681,11 @@ class atomic<long> : public atomic_long
     typedef atomic_long base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -701,11 +700,11 @@ class atomic<unsigned long> : public atomic_ulong
     typedef atomic_ulong base;
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(T value) WEOS_NOEXCEPT
+    constexpr atomic(T value) noexcept
         : base(value)
     {
     }
@@ -718,38 +717,38 @@ template <>
 class atomic<bool>
 {
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(bool value) WEOS_NOEXCEPT
+    constexpr atomic(bool value) noexcept
         : m_value(value)
     {
     }
 
-    bool is_lock_free() const WEOS_NOEXCEPT
+    bool is_lock_free() const noexcept
     {
         return true;
     }
 
-    bool is_lock_free() const volatile WEOS_NOEXCEPT
+    bool is_lock_free() const volatile noexcept
     {
         return true;
     }
 
-    bool load(memory_order mo = memory_order_seq_cst) const WEOS_NOEXCEPT
+    bool load(memory_order mo = memory_order_seq_cst) const noexcept
     {
         __dmb(0xF);
         return (bool)m_value;
     }
 
-    bool load(memory_order mo = memory_order_seq_cst) const volatile WEOS_NOEXCEPT
+    bool load(memory_order mo = memory_order_seq_cst) const volatile noexcept
     {
         __dmb(0xF);
         return (bool)m_value;
     }
 
-    void store(bool value, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    void store(bool value, memory_order mo = memory_order_seq_cst) noexcept
     {
         while (1)
         {
@@ -760,7 +759,7 @@ public:
         __dmb(0xF);
     }
 
-    void store(bool value, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    void store(bool value, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         while (1)
         {
@@ -771,7 +770,7 @@ public:
         __dmb(0xF);
     }
 
-    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) noexcept
     {
         bool old;
         while (1)
@@ -784,7 +783,7 @@ public:
         return old;
     }
 
-    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         bool old;
         while (1)
@@ -799,46 +798,46 @@ public:
 
     bool compare_exchange_weak(bool& expected, bool desired,
                                memory_order success,
-                               memory_order failure) WEOS_NOEXCEPT
+                               memory_order failure) noexcept
     {
         return compare_exchange_weak(expected, desired);
     }
 
     bool compare_exchange_weak(bool& expected, bool desired,
                                memory_order success,
-                               memory_order failure) volatile WEOS_NOEXCEPT
+                               memory_order failure) volatile noexcept
     {
         return compare_exchange_weak(expected, desired);
     }
 
     bool compare_exchange_weak(bool& expected, bool desired,
-                               memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+                               memory_order mo = memory_order_seq_cst) noexcept
     {
         return compare_exchange_strong(expected, desired, mo);
     }
 
     bool compare_exchange_weak(bool& expected, bool desired,
-                               memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+                               memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         return compare_exchange_strong(expected, desired, mo);
     }
 
     bool compare_exchange_strong(bool& expected, bool desired,
                                  memory_order success,
-                                 memory_order failure) WEOS_NOEXCEPT
+                                 memory_order failure) noexcept
     {
         return compare_exchange_strong(expected, desired);
     }
 
     bool compare_exchange_strong(bool& expected, bool desired,
                                  memory_order success,
-                                 memory_order failure) volatile WEOS_NOEXCEPT
+                                 memory_order failure) volatile noexcept
     {
         return compare_exchange_strong(expected, desired);
     }
 
     bool compare_exchange_strong(bool& expected, bool desired,
-                                 memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+                                 memory_order mo = memory_order_seq_cst) noexcept
     {
         while (1)
         {
@@ -862,7 +861,7 @@ public:
     }
 
     bool compare_exchange_strong(bool& expected, bool desired,
-                                 memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+                                 memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         while (1)
         {
@@ -885,24 +884,24 @@ public:
         }
     }
 
-    bool operator= (bool value) WEOS_NOEXCEPT
+    bool operator= (bool value) noexcept
     {
         store(value);
         return value;
     }
 
-    bool operator= (bool value) volatile WEOS_NOEXCEPT
+    bool operator= (bool value) volatile noexcept
     {
         store(value);
         return value;
     }
 
-    operator bool() const WEOS_NOEXCEPT
+    operator bool() const noexcept
     {
         return load();
     }
 
-    operator bool() const volatile WEOS_NOEXCEPT
+    operator bool() const volatile noexcept
     {
         return load();
     }
@@ -911,10 +910,9 @@ private:
     int m_value;
 
 protected:
-    // ---- Hidden methods
-    atomic(const atomic&);
-    atomic& operator=(const atomic&);
-    atomic& operator=(const atomic&) volatile;
+    atomic(const atomic&) = delete;
+    atomic& operator=(const atomic&) = delete;
+    atomic& operator=(const atomic&) volatile = delete;
 };
 
 // Partial specialization for pointer types.
@@ -927,38 +925,38 @@ struct atomic<T*>
                   "Atomics are only implemented up to the size of int.");
 
 public:
-    atomic() WEOS_NOEXCEPT
+    atomic() noexcept
     {
     }
 
-    WEOS_CONSTEXPR atomic(pointer_type value) WEOS_NOEXCEPT
+    constexpr atomic(pointer_type value) noexcept
         : m_value((int)value)
     {
     }
 
-    bool is_lock_free() const WEOS_NOEXCEPT
+    bool is_lock_free() const noexcept
     {
         return true;
     }
 
-    bool is_lock_free() const volatile WEOS_NOEXCEPT
+    bool is_lock_free() const volatile noexcept
     {
         return true;
     }
 
-    pointer_type load(memory_order mo = memory_order_seq_cst) const WEOS_NOEXCEPT
+    pointer_type load(memory_order mo = memory_order_seq_cst) const noexcept
     {
         __dmb(0xF);
         return (pointer_type)m_value;
     }
 
-    pointer_type load(memory_order mo = memory_order_seq_cst) const volatile WEOS_NOEXCEPT
+    pointer_type load(memory_order mo = memory_order_seq_cst) const volatile noexcept
     {
         __dmb(0xF);
         return (pointer_type)m_value;
     }
 
-    void store(pointer_type value, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    void store(pointer_type value, memory_order mo = memory_order_seq_cst) noexcept
     {
         while (1)
         {
@@ -969,7 +967,7 @@ public:
         __dmb(0xF);
     }
 
-    void store(pointer_type value, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    void store(pointer_type value, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         while (1)
         {
@@ -980,7 +978,7 @@ public:
         __dmb(0xF);
     }
 
-    pointer_type exchange(pointer_type desired, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    pointer_type exchange(pointer_type desired, memory_order mo = memory_order_seq_cst) noexcept
     {
         pointer_type old;
         while (1)
@@ -993,7 +991,7 @@ public:
         return old;
     }
 
-    pointer_type exchange(pointer_type desired, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    pointer_type exchange(pointer_type desired, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         pointer_type old;
         while (1)
@@ -1008,46 +1006,46 @@ public:
 
     bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
                                memory_order success,
-                               memory_order failure) WEOS_NOEXCEPT
+                               memory_order failure) noexcept
     {
         return compare_exchange_weak(expected, desired);
     }
 
     bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
                                memory_order success,
-                               memory_order failure) volatile WEOS_NOEXCEPT
+                               memory_order failure) volatile noexcept
     {
         return compare_exchange_weak(expected, desired);
     }
 
     bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
-                               memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+                               memory_order mo = memory_order_seq_cst) noexcept
     {
         return compare_exchange_strong(expected, desired, mo);
     }
 
     bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
-                               memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+                               memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         return compare_exchange_strong(expected, desired, mo);
     }
 
     bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
                                  memory_order success,
-                                 memory_order failure) WEOS_NOEXCEPT
+                                 memory_order failure) noexcept
     {
         return compare_exchange_strong(expected, desired);
     }
 
     bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
                                  memory_order success,
-                                 memory_order failure) volatile WEOS_NOEXCEPT
+                                 memory_order failure) volatile noexcept
     {
         return compare_exchange_strong(expected, desired);
     }
 
     bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
-                                 memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+                                 memory_order mo = memory_order_seq_cst) noexcept
     {
         while (1)
         {
@@ -1071,7 +1069,7 @@ public:
     }
 
     bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
-                                 memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+                                 memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         while (1)
         {
@@ -1094,104 +1092,104 @@ public:
         }
     }
 
-    pointer_type fetch_add(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    pointer_type fetch_add(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(pointer_type, +, arg);
     }
 
-    pointer_type fetch_add(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    pointer_type fetch_add(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(pointer_type, +, arg);
     }
 
-    pointer_type fetch_sub(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) WEOS_NOEXCEPT
+    pointer_type fetch_sub(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(pointer_type, -, arg);
     }
 
-    pointer_type fetch_sub(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) volatile WEOS_NOEXCEPT
+    pointer_type fetch_sub(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(pointer_type, -, arg);
     }
 
-    pointer_type operator= (pointer_type value) WEOS_NOEXCEPT
+    pointer_type operator= (pointer_type value) noexcept
     {
         store(value);
         return value;
     }
 
-    pointer_type operator= (pointer_type value) volatile WEOS_NOEXCEPT
+    pointer_type operator= (pointer_type value) volatile noexcept
     {
         store(value);
         return value;
     }
 
-    pointer_type operator++() WEOS_NOEXCEPT
+    pointer_type operator++() noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    pointer_type operator++() volatile WEOS_NOEXCEPT
+    pointer_type operator++() volatile noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    pointer_type operator++ (int) WEOS_NOEXCEPT
+    pointer_type operator++ (int) noexcept
     {
         return fetch_add(1);
     }
 
-    pointer_type operator++ (int) volatile WEOS_NOEXCEPT
+    pointer_type operator++ (int) volatile noexcept
     {
         return fetch_add(1);
     }
 
-    pointer_type operator--() WEOS_NOEXCEPT
+    pointer_type operator--() noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    pointer_type operator--() volatile WEOS_NOEXCEPT
+    pointer_type operator--() volatile noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    pointer_type operator-- (int) WEOS_NOEXCEPT
+    pointer_type operator-- (int) noexcept
     {
         return fetch_sub(1);
     }
 
-    pointer_type operator-- (int) volatile WEOS_NOEXCEPT
+    pointer_type operator-- (int) volatile noexcept
     {
         return fetch_sub(1);
     }
 
-    pointer_type operator+= (std::ptrdiff_t value) WEOS_NOEXCEPT
+    pointer_type operator+= (std::ptrdiff_t value) noexcept
     {
         return fetch_add(value) + value;
     }
 
-    pointer_type operator+= (std::ptrdiff_t value) volatile WEOS_NOEXCEPT
+    pointer_type operator+= (std::ptrdiff_t value) volatile noexcept
     {
         return fetch_add(value) + value;
     }
 
-    pointer_type operator-= (std::ptrdiff_t value) WEOS_NOEXCEPT
+    pointer_type operator-= (std::ptrdiff_t value) noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    pointer_type operator-= (std::ptrdiff_t value) volatile WEOS_NOEXCEPT
+    pointer_type operator-= (std::ptrdiff_t value) volatile noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    operator pointer_type() const WEOS_NOEXCEPT
+    operator pointer_type() const noexcept
     {
         return load();
     }
 
-    operator pointer_type() const volatile WEOS_NOEXCEPT
+    operator pointer_type() const volatile noexcept
     {
         return load();
     }
@@ -1200,10 +1198,9 @@ private:
     int m_value;
 
 protected:
-    // ---- Hidden methods
-    atomic(const atomic&);
-    atomic& operator=(const atomic&);
-    atomic& operator=(const atomic&) volatile;
+    atomic(const atomic&) = delete;
+    atomic& operator=(const atomic&) = delete;
+    atomic& operator=(const atomic&) volatile = delete;
 };
 
 WEOS_END_NAMESPACE

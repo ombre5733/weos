@@ -42,6 +42,8 @@
     #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument."
 #endif
 
+#include <boost/config.hpp>
+
 
 WEOS_BEGIN_NAMESPACE
 

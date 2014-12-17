@@ -58,7 +58,7 @@ public:
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<system_clock> time_point;
 
-    static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
+    static constexpr bool is_steady = true;
 
     static time_point now();
 };
@@ -79,7 +79,7 @@ public:
     typedef chrono::duration<rep, period> duration;
     typedef chrono::time_point<high_resolution_clock> time_point;
 
-    static WEOS_CONSTEXPR_OR_CONST bool is_steady = true;
+    static constexpr bool is_steady = true;
 
     static time_point now();
 };

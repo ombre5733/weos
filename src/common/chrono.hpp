@@ -35,72 +35,43 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#ifdef __CC_ARM
 // -----------------------------------------------------------------------------
-// C++11
+// ARMCC
 // -----------------------------------------------------------------------------
-#if defined(WEOS_USE_CXX11)
+
+#include "duration.hpp"
+#include "timepoint.hpp"
+
+#else
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
 
 #include <chrono>
-#define WEOS_IMPL_NAMESPACE   std::chrono
-#define WEOS_NEED_IMPORT      1
 
+WEOS_BEGIN_NAMESPACE
 
-// -----------------------------------------------------------------------------
-// Boost
-// -----------------------------------------------------------------------------
-#elif defined(WEOS_USE_BOOST)
+namespace chrono
+{
 
-#ifdef __CC_ARM
+using std::chrono::duration;
+using std::chrono::duration_cast;
+using std::chrono::duration_values;
+using std::chrono::time_point;
+using std::chrono::treat_as_floating_point;
 
-    #include "duration.hpp"
-    #include "timepoint.hpp"
-    #define WEOS_NEED_IMPORT      0
+using std::chrono::nanoseconds;
+using std::chrono::microseconds;
+using std::chrono::milliseconds;
+using std::chrono::seconds;
+using std::chrono::minutes;
+using std::chrono::hours;
 
-#else
-
-    #include <boost/chrono.hpp>
-    #define WEOS_IMPL_NAMESPACE   boost::chrono
-    #define WEOS_NEED_IMPORT      1
-
-#endif // __CC_ARM
-
-
-// -----------------------------------------------------------------------------
-// Unknown
-// -----------------------------------------------------------------------------
-#else
-    #error "No chrono.hpp available."
-#endif
-
-#if WEOS_NEED_IMPORT
-
-    WEOS_BEGIN_NAMESPACE
-
-    namespace chrono
-    {
-
-    using WEOS_IMPL_NAMESPACE::duration;
-    using WEOS_IMPL_NAMESPACE::duration_cast;
-    using WEOS_IMPL_NAMESPACE::duration_values;
-    using WEOS_IMPL_NAMESPACE::time_point;
-    using WEOS_IMPL_NAMESPACE::treat_as_floating_point;
-
-    using WEOS_IMPL_NAMESPACE::nanoseconds;
-    using WEOS_IMPL_NAMESPACE::microseconds;
-    using WEOS_IMPL_NAMESPACE::milliseconds;
-    using WEOS_IMPL_NAMESPACE::seconds;
-    using WEOS_IMPL_NAMESPACE::minutes;
-    using WEOS_IMPL_NAMESPACE::hours;
-
-    } // namespace chrono
+} // namespace chrono
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_NEED_IMPORT
-
-
-#undef WEOS_IMPL_NAMESPACE
-#undef WEOS_NEED_IMPORT
-
+#endif // __CC_ARM
 
 #endif // WEOS_COMMON_CHRONO_HPP

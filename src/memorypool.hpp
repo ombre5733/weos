@@ -78,7 +78,7 @@ private:
 public:
     //! Creates a memory pool.
     //! Creates a memory pool with statically allocated storage.
-    memory_pool() WEOS_NOEXCEPT
+    memory_pool() noexcept
         : m_first(&m_chunks[0])
     {
         chunk_type* iter = &m_chunks[TNumElem - 1];
@@ -95,14 +95,14 @@ public:
 
     //! Returns the number of pool elements.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const WEOS_NOEXCEPT
+    std::size_t capacity() const noexcept
     {
         return TNumElem;
     }
 
     //! Checks if the memory pool is empty.
     //! Returns \p true, if the memory pool is empty.
-    bool empty() const WEOS_NOEXCEPT
+    bool empty() const noexcept
     {
         return m_first == 0;
     }
@@ -112,7 +112,7 @@ public:
     //! If the pool is already empty, a null-pointer is returned.
     //!
     //! \sa free()
-    void* try_allocate() WEOS_NOEXCEPT
+    void* try_allocate() noexcept
     {
         if (m_first == 0)
             return 0;
@@ -127,7 +127,7 @@ public:
     //! to the pool.
     //!
     //! \sa allocate()
-    void free(void* const chunk) WEOS_NOEXCEPT
+    void free(void* const chunk) noexcept
     {
         next(chunk) = m_first;
         m_first = chunk;
@@ -174,7 +174,7 @@ public:
 
     //! Returns the number of pool elements.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const WEOS_NOEXCEPT
+    std::size_t capacity() const noexcept
     {
         return TNumElem;
     }

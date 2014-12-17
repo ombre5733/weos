@@ -70,14 +70,11 @@ private:
 
 
 
-namespace cv_status
+enum class cv_status
 {
-    enum cv_status
-    {
-        no_timeout,
-        timeout
-    };
-} // namespace cv_status
+    no_timeout,
+    timeout
+};
 
 //! A condition variable.
 class condition_variable
@@ -94,11 +91,11 @@ public:
 
     //! Notifies a thread waiting on this condition variable.
     //! Notifies one thread which is waiting on this condition variable.
-    void notify_one() WEOS_NOEXCEPT;
+    void notify_one() noexcept;
 
     //! Notifies all threads waiting on this condition variable.
     //! Notifies all threads which are waiting on this condition variable.
-    void notify_all() WEOS_NOEXCEPT;
+    void notify_all() noexcept;
 
     //! Waits on this condition variable.
     //! The given \p lock is released and the current thread is added to a
@@ -115,8 +112,8 @@ public:
     //! period \p d expires. When the function returns, the \p lock is
     //! reacquired no matter what has caused the wakeup.
     template <typename RepT, typename PeriodT>
-    cv_status::cv_status wait_for(unique_lock<mutex>& lock,
-                                  const chrono::duration<RepT, PeriodT>& d)
+    cv_status wait_for(unique_lock<mutex>& lock,
+                       const chrono::duration<RepT, PeriodT>& d)
     {
         // First enqueue ourselves in the list of waiters.
         WaitingThread w;
@@ -176,9 +173,8 @@ private:
     WaitingThread* m_waitingThreads;
 
 
-    // ---- Deleted methods.
-    condition_variable(const condition_variable&);
-    condition_variable& operator= (const condition_variable&);
+    condition_variable(const condition_variable&) = delete;
+    condition_variable& operator=(const condition_variable&) = delete;
 };
 
 WEOS_END_NAMESPACE

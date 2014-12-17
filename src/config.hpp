@@ -108,8 +108,7 @@
         WEOS_BEGIN_NAMESPACE
 
         template <typename ExceptionT>
-        /*[[noreturn]]*/
-        inline
+        [[noreturn]] inline
         void throw_exception(const ExceptionT& exception)
         {
             throw exception;
@@ -123,7 +122,7 @@
 
         // This is only a declaration - the definition has to be provided
         // by the user.
-        void throw_exception(const std::exception& exception);
+        [[noreturn]] void throw_exception(const std::exception& exception);
 
         WEOS_END_NAMESPACE
     #endif // WEOS_CUSTOM_THROW_EXCEPTION
@@ -133,7 +132,7 @@
 
 #else
 
-    #define WEOS_THROW_SYSTEM_ERROR(err, msg)   WEOS_ASSERT(0 && err && msg)
+    #define WEOS_THROW_SYSTEM_ERROR(err, msg)   WEOS_ASSERT(0 && bool(err) && msg)
 
 #endif // WEOS_ENABLE_EXCEPTIONS
 

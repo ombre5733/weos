@@ -35,30 +35,13 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#ifdef __CC_ARM
 // -----------------------------------------------------------------------------
-// C++11
+// ARMCC
 // -----------------------------------------------------------------------------
-#if defined(WEOS_USE_CXX11)
-
-#include <memory>
-
-
-WEOS_BEGIN_NAMESPACE
-
-using std::default_delete;
-using std::unique_ptr;
-
-WEOS_END_NAMESPACE
-
-
-// -----------------------------------------------------------------------------
-// Boost
-// -----------------------------------------------------------------------------
-#elif defined(WEOS_USE_BOOST)
 
 #include "../type_traits.hpp"
 
-#include <boost/move/move.hpp>
 
 WEOS_BEGIN_NAMESPACE
 
@@ -69,13 +52,11 @@ WEOS_BEGIN_NAMESPACE
 template <typename T>
 struct default_delete
 {
-    WEOS_CONSTEXPR default_delete()
-    {
-    }
+    constexpr default_delete() noexcept = default;
 
     template <typename U>
     default_delete(const default_delete<U>&,
-                   typename enable_if<is_convertible<U*, T*>::value>::type* = 0)
+                   typename enable_if<is_convertible<U*, T*>::value>::type* = 0) noexcept
     {
     }
 
@@ -84,6 +65,8 @@ struct default_delete
         delete ptr;
     }
 };
+
+// TODO: add a default_delete specialization for arrays
 
 namespace detail
 {
@@ -139,69 +122,91 @@ public:
             pointer;
 
     //! Creates a unique pointer equivalent to nullptr.
-    unique_ptr() WEOS_NOEXCEPT
-        : m_pointer(0)
+    constexpr unique_ptr() noexcept
+        : m_pointer()
+    {
+    }
+
+    //! Creates a unique pointer equivalent to nullptr.
+    constexpr unique_ptr(nullptr_t) noexcept
+        : m_pointer()
     {
     }
 
     //! Creates a unique pointer which owns the given \p ptr.
-    explicit unique_ptr(pointer ptr) WEOS_NOEXCEPT
+    explicit unique_ptr(pointer ptr) noexcept
         : m_pointer(ptr)
     {
     }
 
+    // TODO: add unique_ptr(pointer ptr, deleter_type);
+
     //! Move construction.
     //! Creates a unique pointer by moving from the \p other pointer.
-    unique_ptr(BOOST_RV_REF(unique_ptr) other) WEOS_NOEXCEPT
+    unique_ptr(unique_ptr&& other) noexcept
         :  m_pointer(other.release())
     {
     }
 
+    // TODO: add missing move constructor which converts deleter_type's
+
     //! Destroys the pointer and the managed packet.
-    ~unique_ptr()
+    ~unique_ptr() // TODO: noexcept?
     {
         reset();
     }
 
+    //! Assigns a nullptr.
+    //! Resets this pointer to a nullptr.
+    unique_ptr& operator=(nullptr_t) noexcept
+    {
+        reset();
+        return *this;
+    }
+
     //! Move assignment.
     //! Moves the \p other pointer to this pointer.
-    unique_ptr& operator= (BOOST_RV_REF(unique_ptr) other) WEOS_NOEXCEPT
+    unique_ptr& operator=(unique_ptr&& other) noexcept
     {
         reset(other.release());
         return *this;
     }
 
+    // TODO: move assignment which converts deleter_type's
+
     //! Returns a plain pointer to the owned object.
     //! Returns a plain pointer to the owned object without giving up the
     //! ownership.
-    pointer get() const WEOS_NOEXCEPT
+    pointer get() const noexcept
     {
         return m_pointer;
     }
 
+    // TODO: get_deleter()
+
     //! Releases the ownership.
     //! Transfers the ownership of the stored object to the caller.
-    pointer release() WEOS_NOEXCEPT
+    pointer release() noexcept
     {
         pointer temp = m_pointer;
-        m_pointer = 0;
+        m_pointer = pointer();
         return temp;
     }
 
     //! Destroys the owned object and takes the ownership of the given \p ptr.
-    void reset(pointer ptr = pointer()) WEOS_NOEXCEPT
+    void reset(pointer ptr = pointer()) noexcept
     {
         // Watch out for self-assignment.
         if (m_pointer != ptr)
         {
-            if (m_pointer)
+            if (m_pointer != pointer())
                 deleter_type::operator()(m_pointer);
             m_pointer = ptr;
         }
     }
 
     //! Swaps this unique_ptr with the \p other unique_ptr.
-    void swap(unique_ptr& other) WEOS_NOEXCEPT
+    void swap(unique_ptr& other) noexcept
     {
         using std::swap;
         swap(m_pointer, other.m_pointer);
@@ -210,30 +215,33 @@ public:
     //! Returns a reference to the owned object.
     typename add_lvalue_reference<element_type>::type operator*() const
     {
-        WEOS_ASSERT(m_pointer != 0);
+        WEOS_ASSERT(m_pointer != pointer());
         return *m_pointer;
     }
 
     //! Accesses the owned object.
-    pointer operator->() const WEOS_NOEXCEPT
+    pointer operator->() const noexcept
     {
-        WEOS_ASSERT(m_pointer != 0);
+        WEOS_ASSERT(m_pointer != pointer());
         return m_pointer;
     }
 
     //! Checks if the smart pointer owns an object.
     //! Returns \p true, if this smart pointer owns an object.
-    /*explicit*/ operator bool() const WEOS_NOEXCEPT
+    explicit operator bool() const noexcept
     {
-        return get() != 0;
+        return get() != pointer();
     }
 
 private:
     //! A pointer to the owned object.
     pointer m_pointer;
 
-    BOOST_MOVABLE_BUT_NOT_COPYABLE(unique_ptr)
+    unique_ptr(const unique_ptr&) = delete;
+    unique_ptr& operator=(const unique_ptr&) = delete;
 };
+
+// TODO: add unique_ptr for arrays
 
 WEOS_END_NAMESPACE
 
@@ -253,12 +261,21 @@ void swap(WEOS_NAMESPACE::unique_ptr<TPointee, TDeleter>& a,
 
 } // namespace std
 
-
-// -----------------------------------------------------------------------------
-// Unknown
-// -----------------------------------------------------------------------------
 #else
-    #error "No memory.hpp available."
-#endif
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#include <memory>
+
+
+WEOS_BEGIN_NAMESPACE
+
+using std::default_delete;
+using std::unique_ptr;
+
+WEOS_END_NAMESPACE
+
+#endif // __CC_ARM
 
 #endif // WEOS_COMMON_MEMORY_HPP

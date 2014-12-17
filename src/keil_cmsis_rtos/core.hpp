@@ -37,17 +37,6 @@
     #error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.74."
 #endif
 
-#ifdef __CC_ARM
-
-#define WEOS_USE_BOOST
-#include <boost/config.hpp>
-
-#else
-
-#define WEOS_USE_CXX11
-
-#endif // __CC_ARM
-
 #include "../common/core.hpp"
 
 #endif // WEOS_KEIL_CMSIS_RTOS_CORE_HPP

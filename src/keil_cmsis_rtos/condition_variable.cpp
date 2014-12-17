@@ -41,7 +41,7 @@ condition_variable::~condition_variable()
     WEOS_ASSERT(m_waitingThreads == 0);
 }
 
-void condition_variable::notify_one() WEOS_NOEXCEPT
+void condition_variable::notify_one() noexcept
 {
     lock_guard<mutex> locker(m_mutex);
 
@@ -59,7 +59,7 @@ void condition_variable::notify_one() WEOS_NOEXCEPT
     }
 }
 
-void condition_variable::notify_all() WEOS_NOEXCEPT
+void condition_variable::notify_all() noexcept
 {
     lock_guard<mutex> locker(m_mutex);
 

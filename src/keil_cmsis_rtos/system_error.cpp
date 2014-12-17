@@ -35,7 +35,7 @@ WEOS_BEGIN_NAMESPACE
 class cmsis_category_impl : public error_category
 {
 public:
-    virtual const char* name() const WEOS_NOEXCEPT
+    virtual const char* name() const noexcept
     {
         return "CMSIS";
     }

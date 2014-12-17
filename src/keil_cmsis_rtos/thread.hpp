@@ -76,12 +76,12 @@ struct native_thread_traits
     class id
     {
     public:
-        id() WEOS_NOEXCEPT
+        id() noexcept
             : m_id(0)
         {
         }
 
-        explicit id(thread_id_type _id) WEOS_NOEXCEPT
+        explicit id(thread_id_type _id) noexcept
             : m_id(_id)
         {
         }
@@ -173,7 +173,7 @@ WEOS_NAMESPACE::thread::id get_id()
 //!
 //! Blocks the execution of the current thread for the given duration \p d.
 template <typename RepT, typename PeriodT>
-void sleep_for(const chrono::duration<RepT, PeriodT>& d) WEOS_NOEXCEPT
+void sleep_for(const chrono::duration<RepT, PeriodT>& d) noexcept
 {
     typedef chrono::detail::internal_time_cast<chrono::duration<RepT, PeriodT> >
                 caster;
@@ -208,7 +208,7 @@ void sleep_for(const chrono::duration<RepT, PeriodT>& d) WEOS_NOEXCEPT
 //!
 //! Blocks the execution of the current thread until the given \p time point.
 template <typename ClockT, typename DurationT>
-void sleep_until(const chrono::time_point<ClockT, DurationT>& time) WEOS_NOEXCEPT
+void sleep_until(const chrono::time_point<ClockT, DurationT>& time) noexcept
 {
     typedef typename WEOS_NAMESPACE::common_type<
                          typename ClockT::duration,

@@ -67,7 +67,7 @@ def argumentTuple(numArgs, maxArgs):
         s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
         s += ">\n"
         s += "    explicit argument_tuple("
-        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
         s += ")\n"
         s += "        : "
         s += ",\n          ".join(["m_a%d(WEOS_NAMESPACE::forward<T%d>(t%d))" % (i,i,i) for i in xrange(numArgs)])
@@ -82,7 +82,7 @@ def argumentTuple(numArgs, maxArgs):
 
     if numArgs:
         s += "    // Move constructor\n"
-        s += "    argument_tuple(WEOS_RV_REF(argument_tuple) other)\n"
+        s += "    argument_tuple(argument_tuple&& other)\n"
         s += "        : "
         s += ",\n          ".join(["m_a%d(WEOS_NAMESPACE::forward<A%d>(other.m_a%d))" % (i,i,i) for i in xrange(numArgs)])
         s += "\n    {\n    }\n\n"
@@ -101,9 +101,6 @@ def argumentTuple(numArgs, maxArgs):
         s += "\n\n"
 
     #s += "    const argument_tuple& operator= (const argument_tuple&);\n\n"
-
-    if numArgs:
-        s += "    WEOS_COPYABLE_AND_MOVABLE(argument_tuple)\n"
 
     s += "};\n\n"
     return s
@@ -232,13 +229,13 @@ def forwardAsArgumentTuple(numArgs):
     s += ">\n"
     s += "inline\n"
     s += "argument_tuple<"
-    s += ",\n               ".join(["WEOS_FWD_REF(A%d)" % i for i in xrange(numArgs)])
+    s += ",\n               ".join(["A%d&&" % i for i in xrange(numArgs)])
     s += ">\n"
     s += "forward_as_argument_tuple("
-    s += ",\n                          ".join(["WEOS_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
+    s += ",\n                          ".join(["A%d&& a%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n{\n"
     s += "    return argument_tuple<"
-    s += ",\n                          ".join(["WEOS_FWD_REF(A%d)" % i for i in xrange(numArgs)])
+    s += ",\n                          ".join(["A%d&&" % i for i in xrange(numArgs)])
     s += ">(\n            "
     s += ",\n            ".join(["WEOS_NAMESPACE::forward<A%d>(a%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
@@ -296,8 +293,8 @@ def unpackArgument():
     s += "struct unpack_argument\n"
     s += "{\n"
     s += "    template <typename TType, typename TUnbound>\n"
-    s += "    WEOS_FWD_REF(TType) operator() (WEOS_FWD_REF(TType) bound,\n"
-    s += "                                     TUnbound& unbound) const\n"
+    s += "    TType&& operator() (TType&& bound,\n"
+    s += "                        TUnbound& unbound) const\n"
     s += "    {\n"
     s += "        return WEOS_NAMESPACE::forward<TType>(bound);\n"
     s += "    }\n"
@@ -355,11 +352,11 @@ def memFnResult(numArgs, cv):
         s += ",\n              "
         s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
     s += ">\n"
-    s += "    result_type call(WEOS_FWD_REF(TPointer) object,\n"
+    s += "    result_type call(TPointer&& object,\n"
     s += "                     const volatile TClass*"
     if numArgs:
         s += ",\n                     "
-        s += ",\n                     ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                     ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
     s += "        return (WEOS_NAMESPACE::forward<TPointer>(object).*m_pm)("
@@ -375,11 +372,11 @@ def memFnResult(numArgs, cv):
         s += ",\n              "
         s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
     s += ">\n"
-    s += "    result_type call(WEOS_FWD_REF(TPointer) ptr,\n"
+    s += "    result_type call(TPointer&& ptr,\n"
     s += "                     const volatile void*"
     if numArgs:
         s += ",\n                     "
-        s += ",\n                     ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                     ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
     s += "        return ((*ptr).*m_pm)("
@@ -389,7 +386,7 @@ def memFnResult(numArgs, cv):
 
     s += "public:\n"
 
-    s += "    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm)\n"
+    s += "    explicit constexpr MemFnResult(mem_fn_t pm)\n"
     s += "        : m_pm(pm)\n"
     s += "    {\n    }\n\n"
 
@@ -403,7 +400,7 @@ def memFnResult(numArgs, cv):
     s += "    result_type operator() (%s TClass& object" % cv
     if numArgs:
         s += ",\n                            "
-        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
     s += "        return (object.*m_pm)("
@@ -413,7 +410,6 @@ def memFnResult(numArgs, cv):
 
     ## template <typename T>
     ## result_type operator() (TClass&& object, T&&... t);
-    s += "#if defined(WEOS_USE_CXX11)\n\n"
     s += "    // Reference to movable object\n"
     if numArgs:
         s += "    template <"
@@ -422,14 +418,13 @@ def memFnResult(numArgs, cv):
     s += "    result_type operator() (%s TClass&& object" % cv
     if numArgs:
         s += ",\n                            "
-        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
     s += "        return (WEOS_NAMESPACE::move(object).*m_pm)("
     s += ",\n                                          ".join(["WEOS_NAMESPACE::forward<T%d>(t%d)" % (i,i) for i in xrange(numArgs)])
     s += ");\n"
     s += "    }\n\n"
-    s += "#endif // WEOS_USE_CXX11\n\n"
 
     ## template <typename T>
     ## result_type operator() (TClass* object, T&&... t);
@@ -441,7 +436,7 @@ def memFnResult(numArgs, cv):
     s += "    result_type operator() (%s TClass* object" % cv
     if numArgs:
         s += ",\n                            "
-        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
     s += "        return (object->*m_pm)("
@@ -457,10 +452,10 @@ def memFnResult(numArgs, cv):
         s += ",\n              "
         s += ",\n              ".join(["typename T%d" % i for i in xrange(numArgs)])
     s += ">\n"
-    s += "    result_type operator() (WEOS_FWD_REF(TPointer) object"
+    s += "    result_type operator() (TPointer&& object"
     if numArgs:
         s += ",\n                            "
-        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                            ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
     s += ") const\n"
     s += "    {\n"
     s += "        return call(WEOS_NAMESPACE::forward<TPointer>(object),\n"
@@ -498,7 +493,7 @@ def bindResult(numArgs, maxArgs):
     s += "    explicit BindResult(const F& f"
     if numArgs:
         s += ",\n                        "
-        s += ",\n                        ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n                        ".join(["T%d&& t%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n"
     s += "        : m_functor(f)"
     if numArgs:
@@ -514,7 +509,7 @@ def bindResult(numArgs, maxArgs):
     s += "    {\n    }\n\n"
 
     s += "    // Move construction\n"
-    s += "    BindResult(WEOS_RV_REF(BindResult) other)\n"
+    s += "    BindResult(BindResult&& other)\n"
     s += "        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),\n"
     s += "          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))\n"
     s += "    {\n    }\n\n"
@@ -526,7 +521,7 @@ def bindResult(numArgs, maxArgs):
             s += ",\n              ".join(["typename T%d" % i for i in xrange(nargs)])
             s += ">\n"
         s += "    result_type operator() ("
-        s += ",\n                            ".join(["WEOS_FWD_REF(T%d) t%d" % (i,i) for i in xrange(nargs)])
+        s += ",\n                            ".join(["T%d&& t%d" % (i,i) for i in xrange(nargs)])
         s += ")"
         if qualifier:
             s += " " + qualifier
@@ -583,7 +578,7 @@ def bindResult(numArgs, maxArgs):
 
         s += "    template <typename TReturn, typename TUnbound>\n"
         s += "    TReturn invoke(\n"
-        s += "            WEOS_FWD_REF(TUnbound) unbound_args,\n"
+        s += "            TUnbound&& unbound_args,\n"
         s += "            typename WEOS_NAMESPACE::enable_if<\n"
         if void:
             s += "                WEOS_NAMESPACE::is_same<TReturn, void>::value"
@@ -632,8 +627,6 @@ def bindResult(numArgs, maxArgs):
         for memFun in [False, True]:
             s += invoke(returnsVoid, memFun, "")
             s += invoke(returnsVoid, memFun, "const")
-
-    s += "    WEOS_COPYABLE_AND_MOVABLE(BindResult)\n"
 
     s += "};\n\n"
     return s
@@ -730,10 +723,10 @@ def bind(numArgs, withResult):
         s += ",\n                             "
         s += ",\n                             ".join(["A%d" % i for i in xrange(numArgs)])
     s += ">::type\n"
-    s += "bind(WEOS_FWD_REF(TCallable) f"
+    s += "bind(TCallable&& f"
     if numArgs:
         s += ",\n     "
-        s += ",\n     ".join(["WEOS_FWD_REF(A%d) a%d" % (i,i) for i in xrange(numArgs)])
+        s += ",\n     ".join(["A%d&& a%d" % (i,i) for i in xrange(numArgs)])
     s += ")\n{\n"
     s += "    typedef detail::bind_helper<%s,\n" % resultType
     s += "                                TCallable"
@@ -919,7 +912,7 @@ def function(numArgs):
     s += "public:\n"
     s += "    typedef TResult result_type;\n\n"
 
-    s += "    %s() WEOS_NOEXCEPT\n" % name
+    s += "    %s() noexcept\n" % name
     s += "        : m_invoker(0)\n"
     s += "    {\n"
     s += "    }\n\n"
@@ -931,7 +924,7 @@ def function(numArgs):
     s += "    }\n\n"
     s += "    */\n\n"
 
-    s += "    %s(nullptr_t) WEOS_NOEXCEPT\n" % name
+    s += "    %s(nullptr_t) noexcept\n" % name
     s += "        : m_invoker(0)\n"
     s += "    {\n"
     s += "    }\n\n"
@@ -1004,7 +997,7 @@ def function(numArgs):
     s += "        return *this;\n"
     s += "    }\n\n"
 
-    s += "    /*explicit*/ operator bool() const WEOS_NOEXCEPT\n"
+    s += "    /*explicit*/ operator bool() const noexcept\n"
     s += "    {\n"
     s += "        return m_invoker != 0;\n"
     s += "    }\n\n"
@@ -1047,12 +1040,12 @@ def staticFunction(numArgs):
     s += "public:\n"
     s += "    typedef TResult result_type;\n\n"
 
-    s += "    static_function() WEOS_NOEXCEPT\n"
+    s += "    static_function() noexcept\n"
     s += "        : m_invoker(0)\n"
     s += "    {\n"
     s += "    }\n\n"
 
-    s += "    static_function(nullptr_t) WEOS_NOEXCEPT\n"
+    s += "    static_function(nullptr_t) noexcept\n"
     s += "        : m_invoker(0)\n"
     s += "    {\n"
     s += "    }\n\n"
@@ -1106,7 +1099,7 @@ def staticFunction(numArgs):
     s += "        return *this;\n"
     s += "    }\n\n"
 
-    s += "    /*explicit*/ operator bool() const WEOS_NOEXCEPT\n"
+    s += "    /*explicit*/ operator bool() const noexcept\n"
     s += "    {\n"
     s += "        return m_invoker != 0;\n"
     s += "    }\n\n"
@@ -1212,42 +1205,38 @@ def generateHeader(maxArgs):
 
     s += "public:\n"
 
-    s += "    explicit WEOS_CONSTEXPR MemFnResult(mem_fn_t pm) WEOS_NOEXCEPT\n"
+    s += "    explicit constexpr MemFnResult(mem_fn_t pm) noexcept\n"
     s += "        : m_pm(pm)\n"
     s += "    {\n    }\n\n"
 
-    s += "    TResult& operator() (TClass& object) const WEOS_NOEXCEPT\n"
+    s += "    TResult& operator() (TClass& object) const noexcept\n"
     s += "    {\n"
     s += "        return object.*m_pm;\n"
     s += "    }\n\n"
 
-    s += "    WEOS_CONSTEXPR\n"
-    s += "    const TResult& operator() (const TClass& object) const WEOS_NOEXCEPT\n"
+    s += "    constexpr\n"
+    s += "    const TResult& operator() (const TClass& object) const noexcept\n"
     s += "    {\n"
     s += "        return object.*m_pm;\n"
     s += "    }\n\n"
 
-    s += "#if defined(WEOS_USE_CXX11)\n\n"
-
-    s += "    TResult&& operator()(TClass&& object) const WEOS_NOEXCEPT\n"
+    s += "    TResult&& operator()(TClass&& object) const noexcept\n"
     s += "    {\n"
     s += "        return WEOS_NAMESPACE::forward<TClass>(object).*m_pm;\n"
     s += "    }\n\n"
 
-    s += "    const TResult&& operator()(const TClass&& object) const WEOS_NOEXCEPT\n"
+    s += "    const TResult&& operator()(const TClass&& object) const noexcept\n"
     s += "    {\n"
     s += "        return WEOS_NAMESPACE::forward<const TClass>(object).*m_pm;\n"
     s += "    }\n\n"
 
-    s += "#endif // WEOS_USE_CXX11\n\n"
-
-    s += "    TResult& operator() (TClass* object) const WEOS_NOEXCEPT\n"
+    s += "    TResult& operator() (TClass* object) const noexcept\n"
     s += "    {\n"
     s += "        return object->*m_pm;\n"
     s += "    }\n\n"
 
-    s += "    WEOS_CONSTEXPR\n"
-    s += "    const TResult& operator() (const TClass* object) const WEOS_NOEXCEPT\n"
+    s += "    constexpr\n"
+    s += "    const TResult& operator() (const TClass* object) const noexcept\n"
     s += "    {\n"
     s += "        return object->*m_pm;\n"
     s += "    }\n\n"
@@ -1286,12 +1275,10 @@ def generateHeader(maxArgs):
     s += "    {\n"
     s += "        return t;\n"
     s += "    }\n\n"
-    s += "#if defined(WEOS_USE_CXX11)\n"
     s += "    static TType&& wrap(TType&& t)\n"
     s += "    {\n"
     s += "        return static_cast<TType&&>(t);\n"
     s += "    }\n"
-    s += "#endif // WEOS_USE_CXX11\n"
     s += "};\n\n"
 
     s += "// In the special case of a member pointer, mem_fn<> is applied.\n"
@@ -1338,7 +1325,7 @@ def generateHeader(maxArgs):
 
     s += "template <typename TResult, typename TClass>\n"
     s += "inline\n"
-    s += "detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) WEOS_NOEXCEPT\n"
+    s += "detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) noexcept\n"
     s += "{\n"
     s += "    return detail::MemFnResult<TResult TClass::*>(pm);\n"
     s += "}\n\n"

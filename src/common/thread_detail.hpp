@@ -93,7 +93,7 @@ private:
 class SharedThreadDataPointer
 {
 public:
-    SharedThreadDataPointer() WEOS_NOEXCEPT
+    SharedThreadDataPointer() noexcept
         : m_data(0)
     {
     }
@@ -131,7 +131,7 @@ public:
         return *this;
     }
 
-    SharedThreadData* get() const WEOS_NOEXCEPT
+    SharedThreadData* get() const noexcept
     {
         return m_data;
     }
@@ -143,26 +143,26 @@ public:
         m_data = 0;
     }
 
-    void swap(SharedThreadDataPointer& other) WEOS_NOEXCEPT
+    void swap(SharedThreadDataPointer& other) noexcept
     {
         SharedThreadData* tmp = m_data;
         m_data = other.m_data;
         other.m_data = tmp;
     }
 
-    SharedThreadData& operator* () const WEOS_NOEXCEPT
+    SharedThreadData& operator* () const noexcept
     {
         WEOS_ASSERT(m_data != 0);
         return *m_data;
     }
 
-    SharedThreadData* operator-> () const WEOS_NOEXCEPT
+    SharedThreadData* operator-> () const noexcept
     {
         WEOS_ASSERT(m_data != 0);
         return m_data;
     }
 
-    operator bool() const WEOS_NOEXCEPT
+    /*TODO: explicit*/ operator bool() const noexcept
     {
         return m_data != 0;
     }
@@ -176,8 +176,6 @@ private:
 //! A thread handle.
 class thread
 {
-    WEOS_MOVABLE_BUT_NOT_COPYABLE(thread)
-
     // An internal helper type for the enable_if machinery. Using a void pointer
     // is no good idea as it would match a user-supplied void pointer.
     struct _guard_type;
@@ -198,7 +196,7 @@ public:
     //! Creates a thread handle without a thread.
     //! Creates a thread handle which is not associated with any thread. The
     //! new thread handle is not joinable.
-    thread() WEOS_NOEXCEPT
+    thread() noexcept
         : m_data(0)
     {
     }
@@ -207,13 +205,10 @@ public:
     // Constructors without attributes
     // -------------------------------------------------------------------------
 
-    template <typename F>
+    template <typename F,
+              typename _ = typename enable_if<!is_same<typename decay<F>::type, thread>::value>::type>
     explicit
-    thread(WEOS_FWD_REF(F) f,
-           typename enable_if<
-               !is_same<typename decay<F>::type, thread>::value,
-               _guard_type
-           >::type* dummy = 0)
+    thread(F&& f)
         : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f));
@@ -221,84 +216,13 @@ public:
         invoke(attributes());
     }
 
-    template <typename F,
-              typename A0>
-    thread(WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0,
-           typename enable_if<
-               !is_same<typename decay<F>::type, attributes>::value,
-               _guard_type
-           >::type* dummy = 0)
+    template <typename F, typename... TArgs,
+              typename _ = typename enable_if<!is_same<typename decay<F>::type, attributes>::value>::type>
+    thread(F&& f, TArgs&&... args)
         : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0));
-
-        invoke(attributes());
-    }
-
-    template <typename F,
-              typename A0,
-              typename A1>
-    thread(WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0,
-           WEOS_FWD_REF(A1) a1,
-           typename enable_if<
-               !is_same<typename decay<F>::type, attributes>::value,
-               _guard_type
-           >::type* dummy = 0)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0),
-                                                forward<A1>(a1));
-
-        invoke(attributes());
-    }
-
-    template <typename F,
-              typename A0,
-              typename A1,
-              typename A2>
-    thread(WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0,
-           WEOS_FWD_REF(A1) a1,
-           WEOS_FWD_REF(A2) a2,
-           typename enable_if<
-               !is_same<typename decay<F>::type, attributes>::value,
-               _guard_type
-           >::type* dummy = 0)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0),
-                                                forward<A1>(a1),
-                                                forward<A2>(a2));
-
-        invoke(attributes());
-    }
-
-    template <typename F,
-              typename A0,
-              typename A1,
-              typename A2,
-              typename A3>
-    thread(WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0,
-           WEOS_FWD_REF(A1) a1,
-           WEOS_FWD_REF(A2) a2,
-           WEOS_FWD_REF(A3) a3,
-           typename enable_if<
-               !is_same<typename decay<F>::type, attributes>::value,
-               _guard_type
-           >::type* dummy = 0)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0),
-                                                forward<A1>(a1),
-                                                forward<A2>(a2),
-                                                forward<A3>(a3));
+                                                forward<TArgs>(args)...);
 
         invoke(attributes());
     }
@@ -307,89 +231,20 @@ public:
     // Constructors with attributes
     // -------------------------------------------------------------------------
 
-    template <typename F>
+    template <typename F, typename... TArgs>
     thread(const attributes& attrs,
-           WEOS_FWD_REF(F) f)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f));
-
-        invoke(attrs);
-    }
-
-    template <typename F,
-              typename A0>
-    thread(const attributes& attrs,
-           WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0)
+           F&& f, TArgs&&... args)
         : m_data(detail::SharedThreadData::allocate())
     {
         m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0));
-
-        invoke(attrs);
-    }
-
-    template <typename F,
-              typename A0,
-              typename A1>
-    thread(const attributes& attrs,
-           WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0,
-           WEOS_FWD_REF(A1) a1)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0),
-                                                forward<A1>(a1));
-
-        invoke(attrs);
-    }
-
-    template <typename F,
-              typename A0,
-              typename A1,
-              typename A2>
-    thread(const attributes& attrs,
-           WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0,
-           WEOS_FWD_REF(A1) a1,
-           WEOS_FWD_REF(A2) a2)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0),
-                                                forward<A1>(a1),
-                                                forward<A2>(a2));
-
-        invoke(attrs);
-    }
-
-    template <typename F,
-              typename A0,
-              typename A1,
-              typename A2,
-              typename A3>
-    thread(const attributes& attrs,
-           WEOS_FWD_REF(F) f,
-           WEOS_FWD_REF(A0) a0,
-           WEOS_FWD_REF(A1) a1,
-           WEOS_FWD_REF(A2) a2,
-           WEOS_FWD_REF(A3) a3)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<A0>(a0),
-                                                forward<A1>(a1),
-                                                forward<A2>(a2),
-                                                forward<A3>(a3));
+                                                forward<TArgs>(args)...);
 
         invoke(attrs);
     }
 
     //! Move constructor.
     //! Constructs a thread by moving from the \p other thread.
-    thread(WEOS_RV_REF(thread) other)
+    thread(thread&& other)
         : m_data(other.m_data)
     {
         other.m_data.reset();
@@ -408,7 +263,7 @@ public:
 
     //! Move assignment.
     //! Move-assigns the \p other thread to this thread.
-    thread& operator= (WEOS_RV_REF(thread) other)
+    thread& operator=(thread&& other)
     {
         if (this != &other)
         {
@@ -429,7 +284,7 @@ public:
     }
 
     //! Returns the id of the thread.
-    id get_id() const WEOS_NOEXCEPT
+    id get_id() const noexcept
     {
         if (m_data)
             return id(m_data->m_threadId);
@@ -447,7 +302,7 @@ public:
     //! \note If a thread is joinable, either join() or detach() must be
     //! called before the destructor is executed.
     inline
-    bool joinable() WEOS_NOEXCEPT
+    bool joinable() noexcept
     {
         return m_data != 0;
     }
@@ -455,13 +310,13 @@ public:
     //! Returns the number of threads which can run concurrently on this
     //! hardware.
     inline
-    static unsigned hardware_concurrency() WEOS_NOEXCEPT
+    static unsigned hardware_concurrency() noexcept
     {
         return 1;
     }
 
     //! Returns the native thread handle.
-    native_handle_type native_handle();
+    native_handle_type native_handle(); // TODO: noexcept?
 
     // -------------------------------------------------------------------------
     // Signal management
@@ -472,14 +327,14 @@ public:
 
     //! Returns the number of signals in a set.
     inline
-    static int signals_count() WEOS_NOEXCEPT
+    static int signals_count() noexcept
     {
         return detail::native_thread_traits::signals_count;
     }
 
     //! Returns a signal set with all flags being set.
     inline
-    static signal_set all_signals() WEOS_NOEXCEPT
+    static signal_set all_signals() noexcept
     {
         return detail::native_thread_traits::all_signals;
     }
@@ -501,12 +356,16 @@ private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
     detail::SharedThreadDataPointer m_data;
+
+
+    thread(const thread&) = delete;
+    thread& operator=(const thread&) = delete;
 };
 
 //! Compares two thread ids for equality.
 //! Returns \p true, if \p lhs and \p rhs are equal.
 inline
-bool operator== (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
+bool operator== (thread::id lhs, thread::id rhs) noexcept
 {
     return lhs.m_id == rhs.m_id;
 }
@@ -514,7 +373,7 @@ bool operator== (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 //! Compares two thread ids for inequality.
 //! Returns \p true, if \p lhs and \p rhs are not equal.
 inline
-bool operator!= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
+bool operator!= (thread::id lhs, thread::id rhs) noexcept
 {
     return lhs.m_id != rhs.m_id;
 }
@@ -522,7 +381,7 @@ bool operator!= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 //! Less-than comparison for thread ids.
 //! Returns \p true, if \p lhs is less than \p rhs.
 inline
-bool operator< (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
+bool operator< (thread::id lhs, thread::id rhs) noexcept
 {
     return lhs.m_id < rhs.m_id;
 }
@@ -530,7 +389,7 @@ bool operator< (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 //! Less-than or equal comparison for thread ids.
 //! Returns \p true, if \p lhs is less than or equal to \p rhs.
 inline
-bool operator<= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
+bool operator<= (thread::id lhs, thread::id rhs) noexcept
 {
     return lhs.m_id <= rhs.m_id;
 }
@@ -538,7 +397,7 @@ bool operator<= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 //! Greater-than comparison for thread ids.
 //! Returns \p true, if \p lhs is greater than \p rhs.
 inline
-bool operator> (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
+bool operator> (thread::id lhs, thread::id rhs) noexcept
 {
     return lhs.m_id > rhs.m_id;
 }
@@ -546,7 +405,7 @@ bool operator> (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
 //! Greater-than or equal comparison for thread ids.
 //! Returns \p true, if \p lhs is greater than or equal to \p rhs.
 inline
-bool operator>= (thread::id lhs, thread::id rhs) WEOS_NOEXCEPT
+bool operator>= (thread::id lhs, thread::id rhs) noexcept
 {
     return lhs.m_id >= rhs.m_id;
 }
