@@ -176,10 +176,6 @@ private:
 //! A thread handle.
 class thread
 {
-    // An internal helper type for the enable_if machinery. Using a void pointer
-    // is no good idea as it would match a user-supplied void pointer.
-    struct _guard_type;
-
 public:
     //! The type of the native thread handle.
     typedef detail::native_thread_traits::thread_handle_type* native_handle_type;
