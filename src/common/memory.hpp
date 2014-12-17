@@ -243,6 +243,29 @@ private:
 
 // TODO: add unique_ptr for arrays
 
+template <typename T1, typename D1, typename T2, typename D2>
+inline
+bool operator==(const unique_ptr<T1, D1>& x, const unique_ptr<T2, D2>& y)
+{
+    return x.get() == y.get();
+}
+
+template <typename T1, typename D1>
+inline
+bool operator==(const unique_ptr<T1, D1>& x, nullptr_t) noexcept
+{
+    return !x;
+}
+
+template <typename T1, typename D1>
+inline
+bool operator==(nullptr_t, const unique_ptr<T1, D1>& x) noexcept
+{
+    return !x;
+}
+
+// TODO: add other operators
+
 WEOS_END_NAMESPACE
 
 
