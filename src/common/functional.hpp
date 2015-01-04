@@ -2534,85 +2534,28 @@ struct deduce_result_type
 };
 
 // Function
-template <typename R>
-struct deduce_result_type<detail::unspecified_type,
-                          R  () >
-{
-    typedef R type;
-};
-
-// Function reference
-template <typename R>
-struct deduce_result_type<detail::unspecified_type,
-                          R (&) () >
-{
-    typedef R type;
-};
-
-// Function pointer
-template <typename R>
-struct deduce_result_type<detail::unspecified_type,
-                          R (*) () >
-{
-    typedef R type;
-};
-
-// Member function pointer
 template <typename R,
-          typename C>
+          typename... TArgs>
 struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) () >
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) () const>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) () volatile>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) () const volatile>
-{
-    typedef R type;
-};
-
-// Function
-template <typename R,
-          typename A0>
-struct deduce_result_type<detail::unspecified_type,
-                          R  (A0) >
+                          R  (TArgs...) >
 {
     typedef R type;
 };
 
 // Function reference
 template <typename R,
-          typename A0>
+          typename... TArgs>
 struct deduce_result_type<detail::unspecified_type,
-                          R (&) (A0) >
+                          R (&) (TArgs...) >
 {
     typedef R type;
 };
 
 // Function pointer
 template <typename R,
-          typename A0>
+          typename... TArgs>
 struct deduce_result_type<detail::unspecified_type,
-                          R (*) (A0) >
+                          R (*) (TArgs...) >
 {
     typedef R type;
 };
@@ -2620,185 +2563,36 @@ struct deduce_result_type<detail::unspecified_type,
 // Member function pointer
 template <typename R,
           typename C,
-          typename A0>
+          typename... TArgs>
 struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0) >
+                          R (C::*) (TArgs...) >
 {
     typedef R type;
 };
 
 template <typename R,
           typename C,
-          typename A0>
+          typename... TArgs>
 struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0) const>
+                          R (C::*) (TArgs...) const>
 {
     typedef R type;
 };
 
 template <typename R,
           typename C,
-          typename A0>
+          typename... TArgs>
 struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0) volatile>
+                          R (C::*) (TArgs...) volatile>
 {
     typedef R type;
 };
 
 template <typename R,
           typename C,
-          typename A0>
+          typename... TArgs>
 struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0) const volatile>
-{
-    typedef R type;
-};
-
-// Function
-template <typename R,
-          typename A0,
-          typename A1>
-struct deduce_result_type<detail::unspecified_type,
-                          R  (A0, A1) >
-{
-    typedef R type;
-};
-
-// Function reference
-template <typename R,
-          typename A0,
-          typename A1>
-struct deduce_result_type<detail::unspecified_type,
-                          R (&) (A0, A1) >
-{
-    typedef R type;
-};
-
-// Function pointer
-template <typename R,
-          typename A0,
-          typename A1>
-struct deduce_result_type<detail::unspecified_type,
-                          R (*) (A0, A1) >
-{
-    typedef R type;
-};
-
-// Member function pointer
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1) >
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1) const>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1) volatile>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1) const volatile>
-{
-    typedef R type;
-};
-
-// Function
-template <typename R,
-          typename A0,
-          typename A1,
-          typename A2>
-struct deduce_result_type<detail::unspecified_type,
-                          R  (A0, A1, A2) >
-{
-    typedef R type;
-};
-
-// Function reference
-template <typename R,
-          typename A0,
-          typename A1,
-          typename A2>
-struct deduce_result_type<detail::unspecified_type,
-                          R (&) (A0, A1, A2) >
-{
-    typedef R type;
-};
-
-// Function pointer
-template <typename R,
-          typename A0,
-          typename A1,
-          typename A2>
-struct deduce_result_type<detail::unspecified_type,
-                          R (*) (A0, A1, A2) >
-{
-    typedef R type;
-};
-
-// Member function pointer
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1,
-          typename A2>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1, A2) >
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1,
-          typename A2>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1, A2) const>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1,
-          typename A2>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1, A2) volatile>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename A0,
-          typename A1,
-          typename A2>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (A0, A1, A2) const volatile>
+                          R (C::*) (TArgs...) const volatile>
 {
     typedef R type;
 };
