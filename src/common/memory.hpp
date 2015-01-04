@@ -73,7 +73,7 @@ namespace detail
 
 // Checks if T has a member named 'pointer', i.e. if T::pointer exists.
 template <typename T>
-struct has_pointer_member
+class has_pointer_member
 {
     struct two
     {
@@ -87,6 +87,7 @@ struct has_pointer_member
     template <typename U>
     static two test(...);
 
+public:
     static const bool value = sizeof(test<T>(0)) == 1;
 };
 
