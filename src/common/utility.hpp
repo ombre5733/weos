@@ -45,6 +45,11 @@
 
 WEOS_BEGIN_NAMESPACE
 
+// "Creates" a reference type from T. Note that there is no definition for
+// declval, it may only be used in an unevaluated context, e.g. a decltype().
+template <typename T>
+typename add_rvalue_reference<T>::type declval() noexcept;
+
 template <typename T>
 constexpr typename remove_reference<T>::type&& move(T&& t) noexcept
 {
@@ -75,6 +80,7 @@ WEOS_END_NAMESPACE
 
 WEOS_BEGIN_NAMESPACE
 
+using std::declval;
 using std::forward;
 using std::move;
 
