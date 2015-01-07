@@ -198,33 +198,23 @@ public:
     }
 
     // -------------------------------------------------------------------------
-    // Constructors without attributes
+    // Constructor without attributes
     // -------------------------------------------------------------------------
 
-    template <typename F,
-              typename _ = typename enable_if<!is_same<typename decay<F>::type, thread>::value>::type>
-    explicit
-    thread(F&& f)
-        : m_data(detail::SharedThreadData::allocate())
-    {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f));
-
-        invoke(attributes());
-    }
-
     template <typename F, typename... TArgs,
-              typename _ = typename enable_if<!is_same<typename decay<F>::type, attributes>::value>::type>
+              typename _ = typename enable_if<!is_same<typename decay<F>::type, thread>::value &&
+                                              !is_same<typename decay<F>::type, attributes>::value>::type>
+    explicit
     thread(F&& f, TArgs&&... args)
         : m_data(detail::SharedThreadData::allocate())
     {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<TArgs>(args)...);
+        m_data->m_threadedFunction = bind(forward<F>(f), forward<TArgs>(args)...);
 
         invoke(attributes());
     }
 
     // -------------------------------------------------------------------------
-    // Constructors with attributes
+    // Constructor with attributes
     // -------------------------------------------------------------------------
 
     template <typename F, typename... TArgs>
@@ -232,8 +222,7 @@ public:
            F&& f, TArgs&&... args)
         : m_data(detail::SharedThreadData::allocate())
     {
-        m_data->m_threadedFunction = bind<void>(forward<F>(f),
-                                                forward<TArgs>(args)...);
+        m_data->m_threadedFunction = bind(forward<F>(f), forward<TArgs>(args)...);
 
         invoke(attrs);
     }
