@@ -39,6 +39,9 @@
 #include "../utility.hpp"
 
 
+#define WEOS_CONSTEXPR_FROM_CXX14
+
+
 WEOS_BEGIN_NAMESPACE
 
 template <typename... TTypes>
@@ -148,7 +151,7 @@ struct make_tuple_types
 // Stores one element of a tuple. The index of the tuple element is held as
 // template parameter. If TType is empty and not final, we can apply the
 // empty-base class optimization.
-template <std::size_t TIndex, typename TType,
+template <size_t TIndex, typename TType,
           bool TIsEmptyAndNotFinal = is_empty<TType>::value>
 struct IndexedTupleElement;
 
@@ -161,7 +164,7 @@ void swap(IndexedTupleElement<TIndex, TType, TIsEmptyAndNotFinal>& a,
     swap(a.get(), b.get());
 }
 
-template <std::size_t TIndex, typename TType>
+template <size_t TIndex, typename TType>
 struct IndexedTupleElement<TIndex, TType, true> : private TType
 {
     // Creates a tuple element by value-initializing the underlying type.
@@ -198,7 +201,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     }
 
     // Accesses the element.
-    /*constexpr*/ TType& get() noexcept
+    WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
     {
         return static_cast<TType&>(*this);
     }
@@ -221,7 +224,7 @@ private:
     IndexedTupleElement& operator=(const IndexedTupleElement&) = delete;
 };
 
-template <std::size_t TIndex, typename TType>
+template <size_t TIndex, typename TType>
 struct IndexedTupleElement<TIndex, TType, false>
 {
     // Creates a tuple element by value-initializing the underlying type.
@@ -243,13 +246,23 @@ struct IndexedTupleElement<TIndex, TType, false>
     IndexedTupleElement(const IndexedTupleElement& other) = default;
 
     // Move-constructs a tuple element.
-    IndexedTupleElement(IndexedTupleElement&& other)
+    template <typename U = TType>
+    IndexedTupleElement(typename enable_if<!is_lvalue_reference<U>::value,
+                                           IndexedTupleElement>::type&& other)
         : m_value(WEOS_NAMESPACE::move(other.m_value))
     {
     }
 
+    // Move-constructs a tuple element. Specialization for lvalue references.
+    template <typename U = TType>
+    IndexedTupleElement(typename enable_if<is_lvalue_reference<U>::value,
+                                           IndexedTupleElement>::type&& other)
+        : m_value(other.m_value)
+    {
+    }
+
     // Accesses the element.
-    /*constexpr*/ TType& get() noexcept
+    WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
     {
         return m_value;
     }
@@ -286,7 +299,7 @@ void variadicCall(T&&...) noexcept
 template <typename TIndices, typename... TTypes>
 struct TupleImpl;
 
-template <std::size_t... TIndices, typename... TTypes>
+template <size_t... TIndices, typename... TTypes>
 struct TupleImpl<TupleIndices<TIndices...>, TTypes...>
         : public IndexedTupleElement<TIndices, TTypes>...
 {
@@ -320,7 +333,7 @@ public:
 
     TupleImpl(const TupleImpl&) = default;
 
-    TupleImpl(TupleImpl&&) = default;
+    TupleImpl(TupleImpl&&) = default; // TODO: for ARMCC we have to define this
 
     // Swaps this tuple with the other tuple.
     void swap(TupleImpl& other) /* noexcept if TFirst noexcept swappable && rest_type noexcept swappable */
@@ -343,13 +356,13 @@ class tuple
 
 
     template <std::size_t I, typename... T>
-    friend typename tuple_element<I, tuple<T...> >::type& get(tuple<T...>&) noexcept;
+    friend constexpr typename tuple_element<I, tuple<T...> >::type& get(tuple<T...>&) noexcept;
 
     template <std::size_t I, typename...T>
-    friend const typename tuple_element<I, tuple<T...> >::type& get(const tuple<T...>&) noexcept;
+    friend constexpr const typename tuple_element<I, tuple<T...> >::type& get(const tuple<T...>&) noexcept;
 
     template <std::size_t I, typename... T>
-    friend typename tuple_element<I, tuple<T...> >::type&& get(tuple<T...>&&) noexcept;
+    friend constexpr typename tuple_element<I, tuple<T...> >::type&& get(tuple<T...>&&) noexcept;
 
 public:
     //! Constructs a tuple by value-initializing its elements.
@@ -474,7 +487,7 @@ class tuple_element <TIndex, volatile TTuple>
 };
 
 //! Returns the \p TIndex-th type of a const volatile tuple.
-template< std::size_t TIndex, class TTuple>
+template <std::size_t TIndex, class TTuple>
 class tuple_element <TIndex, const volatile TTuple>
 {
     typedef typename add_cv<
@@ -513,22 +526,22 @@ class tuple_size<const volatile TTuple> : public integral_constant<std::size_t, 
 // ----=====================================================================----
 
 template <std::size_t TIndex, typename... TTypes>
-/*constexpr*/ typename tuple_element<TIndex, tuple<TTypes...> >::type& get(tuple<TTypes...>& t) noexcept
+constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type& get(tuple<TTypes...>& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
     return static_cast<detail::IndexedTupleElement<TIndex, type>&>(t.m_base).get();
 }
 
 template <std::size_t TIndex, typename... TTypes>
-/*constexpr*/ typename tuple_element<TIndex, tuple<TTypes...> >::type&& get(tuple<TTypes...>&& t) noexcept
+constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type&& get(tuple<TTypes...>&& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
     return static_cast<type&&>(
                 static_cast<detail::IndexedTupleElement<TIndex, type>&&>(t.m_base).get());
 }
 
-template< std::size_t TIndex, typename... TTypes>
-/*constexpr*/ const typename tuple_element<TIndex, tuple<TTypes...> >::type& get(const tuple<TTypes...>& t) noexcept
+template <std::size_t TIndex, typename... TTypes>
+constexpr const typename tuple_element<TIndex, tuple<TTypes...> >::type& get(const tuple<TTypes...>& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
     return static_cast<const detail::IndexedTupleElement<TIndex, type>&>(t.m_base).get();
