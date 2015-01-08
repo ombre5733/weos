@@ -31,7 +31,7 @@
 
 #include "core.hpp"
 
-#include "error.hpp"
+#include "../system_error.hpp"
 #include "../objectpool.hpp"
 
 
