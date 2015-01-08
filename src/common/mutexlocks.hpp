@@ -42,6 +42,8 @@
 // ARMCC
 // -----------------------------------------------------------------------------
 
+#include <algorithm> // for swap()
+
 
 WEOS_BEGIN_NAMESPACE
 
@@ -252,8 +254,9 @@ public:
     //! Swaps this lock with the \p other lock.
     void swap(unique_lock& other) noexcept
     {
-        std::swap(m_mutex, other.m_mutex);
-        std::swap(m_locked, other.m_locked);
+        using std::swap;
+        swap(m_mutex, other.m_mutex);
+        swap(m_locked, other.m_locked);
     }
 
     //! Tries to lock the associated mutex.
@@ -339,23 +342,15 @@ private:
     unique_lock& operator=(const unique_lock&) = delete;
 };
 
-WEOS_END_NAMESPACE
-
-
-
-namespace std
-{
-
-// Overload for swapping two mutexes \p x and \p y.
+//! Swap two unique locks \p x and \p y.
 template <typename MutexT>
 inline
-void swap(WEOS_NAMESPACE::unique_lock<MutexT>& x,
-          WEOS_NAMESPACE::unique_lock<MutexT>& y) noexcept
+void swap(unique_lock<MutexT>& x, unique_lock<MutexT>& y) noexcept
 {
     x.swap(y);
 }
 
-} // namespace std
+WEOS_END_NAMESPACE
 
 #else
 // -----------------------------------------------------------------------------
