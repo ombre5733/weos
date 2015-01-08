@@ -161,23 +161,22 @@ bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag, memory_order 
 }
 
 // ----=====================================================================----
-//     atomic_base
+//     atomic_base & atomic_integral
 // ----=====================================================================----
-
-namespace detail
-{
 
 #define WEOS_ATOMIC_MODIFY(type, op, arg)                                      \
     type old;                                                                  \
     while (1)                                                                  \
     {                                                                          \
-        old = (type)__ldrex(&m_value);                                         \
-        if (__strex((int)(old op arg), &m_value) == 0)                         \
+        old = (type)__ldrex(&this->m_value);                                   \
+        if (__strex((int)(old op arg), &this->m_value) == 0)                   \
             break;                                                             \
     }                                                                          \
     __dmb(0xF);                                                                \
     return old
 
+namespace detail
+{
 
 template <typename T>
 class atomic_base
@@ -191,9 +190,11 @@ public:
     }
 
     constexpr atomic_base(T value) noexcept
-        : m_value(value)
+        : m_value((int)value)
     {
     }
+
+    atomic_base(const atomic_base&) = delete;
 
     bool is_lock_free() const noexcept
     {
@@ -203,18 +204,6 @@ public:
     bool is_lock_free() const volatile noexcept
     {
         return true;
-    }
-
-    T load(memory_order mo = memory_order_seq_cst) const noexcept
-    {
-        __dmb(0xF);
-        return (T)m_value;
-    }
-
-    T load(memory_order mo = memory_order_seq_cst) const volatile noexcept
-    {
-        __dmb(0xF);
-        return (T)m_value;
     }
 
     void store(T value, memory_order mo = memory_order_seq_cst) noexcept
@@ -237,6 +226,28 @@ public:
                 break;
         }
         __dmb(0xF);
+    }
+
+    T load(memory_order mo = memory_order_seq_cst) const noexcept
+    {
+        __dmb(0xF);
+        return (T)m_value;
+    }
+
+    T load(memory_order mo = memory_order_seq_cst) const volatile noexcept
+    {
+        __dmb(0xF);
+        return (T)m_value;
+    }
+
+    operator T() const noexcept
+    {
+        return load();
+    }
+
+    operator T() const volatile noexcept
+    {
+        return load();
     }
 
     T exchange(T desired, memory_order mo = memory_order_seq_cst) noexcept
@@ -279,18 +290,6 @@ public:
         return compare_exchange_weak(expected, desired);
     }
 
-    bool compare_exchange_weak(T& expected, T desired,
-                               memory_order mo = memory_order_seq_cst) noexcept
-    {
-        return compare_exchange_strong(expected, desired, mo);
-    }
-
-    bool compare_exchange_weak(T& expected, T desired,
-                               memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        return compare_exchange_strong(expected, desired, mo);
-    }
-
     bool compare_exchange_strong(T& expected, T desired,
                                  memory_order success,
                                  memory_order failure) noexcept
@@ -303,6 +302,18 @@ public:
                                  memory_order failure) volatile noexcept
     {
         return compare_exchange_strong(expected, desired);
+    }
+
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order mo = memory_order_seq_cst) noexcept
+    {
+        return compare_exchange_strong(expected, desired, mo);
+    }
+
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        return compare_exchange_strong(expected, desired, mo);
     }
 
     bool compare_exchange_strong(T& expected, T desired,
@@ -353,6 +364,40 @@ public:
         }
     }
 
+    T operator= (T value) noexcept
+    {
+        store(value);
+        return value;
+    }
+
+    T operator= (T value) volatile noexcept
+    {
+        store(value);
+        return value;
+    }
+
+    atomic_base& operator=(const atomic_base&) = delete;
+    atomic_base& operator=(const atomic_base&) volatile = delete;
+
+protected:
+    int m_value;
+};
+
+template <typename T>
+class atomic_integral : public atomic_base<T>
+{
+    typedef atomic_base<T> base;
+
+public:
+    atomic_integral() noexcept
+    {
+    }
+
+    constexpr atomic_integral(T value) noexcept
+        : base(value)
+    {
+    }
+
     T fetch_add(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, +, arg);
@@ -401,18 +446,6 @@ public:
     T fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, ^, arg);
-    }
-
-    T operator= (T value) noexcept
-    {
-        store(value);
-        return value;
-    }
-
-    T operator= (T value) volatile noexcept
-    {
-        store(value);
-        return value;
     }
 
     T operator++() noexcept
@@ -505,41 +538,71 @@ public:
         return fetch_xor(value) ^ value;
     }
 
-    operator T() const noexcept
-    {
-        return load();
-    }
-
-    operator T() const volatile noexcept
-    {
-        return load();
-    }
-
-private:
-    int m_value;
-
-protected:
-    atomic_base(const atomic_base&) = delete;
-    atomic_base& operator=(const atomic_base&) = delete;
-    atomic_base& operator=(const atomic_base&) volatile = delete;
+    using base::operator=;
 };
 
 } // namespace detail
 
+// ----=====================================================================----
+//     atomic<T>
+// ----=====================================================================----
 
 template <typename T>
-class atomic;
+class atomic : public detail::atomic_base<T>
+{
+    typedef detail::atomic_base<T> base;
 
-typedef atomic<bool>                        atomic_bool;
-typedef detail::atomic_base<char>           atomic_char;
-typedef detail::atomic_base<signed char>    atomic_schar;
-typedef detail::atomic_base<unsigned char>  atomic_uchar;
-typedef detail::atomic_base<short>          atomic_short;
-typedef detail::atomic_base<unsigned short> atomic_ushort;
-typedef detail::atomic_base<int>            atomic_int;
-typedef detail::atomic_base<unsigned int>   atomic_uint;
-typedef detail::atomic_base<long>           atomic_long;
-typedef detail::atomic_base<unsigned long>  atomic_ulong;
+public:
+    atomic() noexcept
+    {
+    }
+
+    constexpr atomic(T value) noexcept
+        : base(value)
+    {
+    }
+
+    using base::operator=;
+};
+
+// ----=====================================================================----
+//     atomic<bool>
+// ----=====================================================================----
+
+typedef detail::atomic_base<bool> atomic_bool;
+
+template <>
+struct atomic<bool> : public atomic_bool
+{
+    typedef bool T;
+    typedef atomic_bool base;
+
+public:
+    atomic() noexcept
+    {
+    }
+
+    constexpr atomic(T value) noexcept
+        : base(value)
+    {
+    }
+
+    using base::operator=;
+};
+
+// ----=====================================================================----
+//     atomic<integral>
+// ----=====================================================================----
+
+typedef detail::atomic_integral<char>           atomic_char;
+typedef detail::atomic_integral<signed char>    atomic_schar;
+typedef detail::atomic_integral<unsigned char>  atomic_uchar;
+typedef detail::atomic_integral<short>          atomic_short;
+typedef detail::atomic_integral<unsigned short> atomic_ushort;
+typedef detail::atomic_integral<int>            atomic_int;
+typedef detail::atomic_integral<unsigned int>   atomic_uint;
+typedef detail::atomic_integral<long>           atomic_long;
+typedef detail::atomic_integral<unsigned long>  atomic_ulong;
 
 template <>
 struct atomic<char> : public atomic_char
@@ -712,214 +775,16 @@ public:
     using base::operator=;
 };
 
-// Specialization for bool.
-template <>
-class atomic<bool>
-{
-public:
-    atomic() noexcept
-    {
-    }
-
-    constexpr atomic(bool value) noexcept
-        : m_value(value)
-    {
-    }
-
-    bool is_lock_free() const noexcept
-    {
-        return true;
-    }
-
-    bool is_lock_free() const volatile noexcept
-    {
-        return true;
-    }
-
-    bool load(memory_order mo = memory_order_seq_cst) const noexcept
-    {
-        __dmb(0xF);
-        return (bool)m_value;
-    }
-
-    bool load(memory_order mo = memory_order_seq_cst) const volatile noexcept
-    {
-        __dmb(0xF);
-        return (bool)m_value;
-    }
-
-    void store(bool value, memory_order mo = memory_order_seq_cst) noexcept
-    {
-        while (1)
-        {
-            __ldrex(&m_value);
-            if (__strex((int)value, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-    }
-
-    void store(bool value, memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        while (1)
-        {
-            __ldrex(&m_value);
-            if (__strex((int)value, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-    }
-
-    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) noexcept
-    {
-        bool old;
-        while (1)
-        {
-            old = (bool)__ldrex(&m_value);
-            if (__strex((int)desired, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-        return old;
-    }
-
-    bool exchange(bool desired, memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        bool old;
-        while (1)
-        {
-            old = (bool)__ldrex(&m_value);
-            if (__strex((int)desired, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-        return old;
-    }
-
-    bool compare_exchange_weak(bool& expected, bool desired,
-                               memory_order success,
-                               memory_order failure) noexcept
-    {
-        return compare_exchange_weak(expected, desired);
-    }
-
-    bool compare_exchange_weak(bool& expected, bool desired,
-                               memory_order success,
-                               memory_order failure) volatile noexcept
-    {
-        return compare_exchange_weak(expected, desired);
-    }
-
-    bool compare_exchange_weak(bool& expected, bool desired,
-                               memory_order mo = memory_order_seq_cst) noexcept
-    {
-        return compare_exchange_strong(expected, desired, mo);
-    }
-
-    bool compare_exchange_weak(bool& expected, bool desired,
-                               memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        return compare_exchange_strong(expected, desired, mo);
-    }
-
-    bool compare_exchange_strong(bool& expected, bool desired,
-                                 memory_order success,
-                                 memory_order failure) noexcept
-    {
-        return compare_exchange_strong(expected, desired);
-    }
-
-    bool compare_exchange_strong(bool& expected, bool desired,
-                                 memory_order success,
-                                 memory_order failure) volatile noexcept
-    {
-        return compare_exchange_strong(expected, desired);
-    }
-
-    bool compare_exchange_strong(bool& expected, bool desired,
-                                 memory_order mo = memory_order_seq_cst) noexcept
-    {
-        while (1)
-        {
-            bool old = (bool)__ldrex(&m_value);
-            if (old == expected)
-            {
-                if (__strex((int)desired, &m_value) == 0)
-                {
-                    __dmb(0xF);
-                    return true;
-                }
-            }
-            else
-            {
-                __clrex();
-                expected = old;
-                __dmb(0xF);
-                return false;
-            }
-        }
-    }
-
-    bool compare_exchange_strong(bool& expected, bool desired,
-                                 memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        while (1)
-        {
-            bool old = (bool)__ldrex(&m_value);
-            if (old == expected)
-            {
-                if (__strex((int)desired, &m_value) == 0)
-                {
-                    __dmb(0xF);
-                    return true;
-                }
-            }
-            else
-            {
-                __clrex();
-                expected = old;
-                __dmb(0xF);
-                return false;
-            }
-        }
-    }
-
-    bool operator= (bool value) noexcept
-    {
-        store(value);
-        return value;
-    }
-
-    bool operator= (bool value) volatile noexcept
-    {
-        store(value);
-        return value;
-    }
-
-    operator bool() const noexcept
-    {
-        return load();
-    }
-
-    operator bool() const volatile noexcept
-    {
-        return load();
-    }
-
-private:
-    int m_value;
-
-protected:
-    atomic(const atomic&) = delete;
-    atomic& operator=(const atomic&) = delete;
-    atomic& operator=(const atomic&) volatile = delete;
-};
+// ----=====================================================================----
+//     atomic<T*>
+// ----=====================================================================----
 
 // Partial specialization for pointer types.
 template <typename T>
-struct atomic<T*>
+struct atomic<T*> : public detail::atomic_base<T*>
 {
     typedef T* pointer_type;
+    typedef detail::atomic_base<T*> base;
 
     static_assert(sizeof(pointer_type) <= sizeof(int),
                   "Atomics are only implemented up to the size of int.");
@@ -930,166 +795,8 @@ public:
     }
 
     constexpr atomic(pointer_type value) noexcept
-        : m_value((int)value)
+        : base(value)
     {
-    }
-
-    bool is_lock_free() const noexcept
-    {
-        return true;
-    }
-
-    bool is_lock_free() const volatile noexcept
-    {
-        return true;
-    }
-
-    pointer_type load(memory_order mo = memory_order_seq_cst) const noexcept
-    {
-        __dmb(0xF);
-        return (pointer_type)m_value;
-    }
-
-    pointer_type load(memory_order mo = memory_order_seq_cst) const volatile noexcept
-    {
-        __dmb(0xF);
-        return (pointer_type)m_value;
-    }
-
-    void store(pointer_type value, memory_order mo = memory_order_seq_cst) noexcept
-    {
-        while (1)
-        {
-            __ldrex(&m_value);
-            if (__strex((int)value, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-    }
-
-    void store(pointer_type value, memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        while (1)
-        {
-            __ldrex(&m_value);
-            if (__strex((int)value, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-    }
-
-    pointer_type exchange(pointer_type desired, memory_order mo = memory_order_seq_cst) noexcept
-    {
-        pointer_type old;
-        while (1)
-        {
-            old = (pointer_type)__ldrex(&m_value);
-            if (__strex((int)desired, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-        return old;
-    }
-
-    pointer_type exchange(pointer_type desired, memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        pointer_type old;
-        while (1)
-        {
-            old = (pointer_type)__ldrex(&m_value);
-            if (__strex((int)desired, &m_value) == 0)
-                break;
-        }
-        __dmb(0xF);
-        return old;
-    }
-
-    bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
-                               memory_order success,
-                               memory_order failure) noexcept
-    {
-        return compare_exchange_weak(expected, desired);
-    }
-
-    bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
-                               memory_order success,
-                               memory_order failure) volatile noexcept
-    {
-        return compare_exchange_weak(expected, desired);
-    }
-
-    bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
-                               memory_order mo = memory_order_seq_cst) noexcept
-    {
-        return compare_exchange_strong(expected, desired, mo);
-    }
-
-    bool compare_exchange_weak(pointer_type& expected, pointer_type desired,
-                               memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        return compare_exchange_strong(expected, desired, mo);
-    }
-
-    bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
-                                 memory_order success,
-                                 memory_order failure) noexcept
-    {
-        return compare_exchange_strong(expected, desired);
-    }
-
-    bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
-                                 memory_order success,
-                                 memory_order failure) volatile noexcept
-    {
-        return compare_exchange_strong(expected, desired);
-    }
-
-    bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
-                                 memory_order mo = memory_order_seq_cst) noexcept
-    {
-        while (1)
-        {
-            pointer_type old = (pointer_type)__ldrex(&m_value);
-            if (old == expected)
-            {
-                if (__strex((int)desired, &m_value) == 0)
-                {
-                    __dmb(0xF);
-                    return true;
-                }
-            }
-            else
-            {
-                __clrex();
-                expected = old;
-                __dmb(0xF);
-                return false;
-            }
-        }
-    }
-
-    bool compare_exchange_strong(pointer_type& expected, pointer_type desired,
-                                 memory_order mo = memory_order_seq_cst) volatile noexcept
-    {
-        while (1)
-        {
-            pointer_type old = (pointer_type)__ldrex(&m_value);
-            if (old == expected)
-            {
-                if (__strex((int)desired, &m_value) == 0)
-                {
-                    __dmb(0xF);
-                    return true;
-                }
-            }
-            else
-            {
-                __clrex();
-                expected = old;
-                __dmb(0xF);
-                return false;
-            }
-        }
     }
 
     pointer_type fetch_add(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) noexcept
@@ -1110,18 +817,6 @@ public:
     pointer_type fetch_sub(std::ptrdiff_t arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(pointer_type, -, arg);
-    }
-
-    pointer_type operator= (pointer_type value) noexcept
-    {
-        store(value);
-        return value;
-    }
-
-    pointer_type operator= (pointer_type value) volatile noexcept
-    {
-        store(value);
-        return value;
     }
 
     pointer_type operator++() noexcept
@@ -1184,24 +879,10 @@ public:
         return fetch_sub(value) - value;
     }
 
-    operator pointer_type() const noexcept
-    {
-        return load();
-    }
-
-    operator pointer_type() const volatile noexcept
-    {
-        return load();
-    }
-
-private:
-    int m_value;
-
-protected:
-    atomic(const atomic&) = delete;
-    atomic& operator=(const atomic&) = delete;
-    atomic& operator=(const atomic&) volatile = delete;
+    using base::operator=;
 };
+
+#undef WEOS_ATOMIC_MODIFY
 
 WEOS_END_NAMESPACE
 
