@@ -1,4 +1,3 @@
-
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
@@ -32,8 +31,12 @@
 
 #include "../config.hpp"
 
+#include "tuple.hpp" // TODO: wrong path
 #include "../type_traits.hpp"
 #include "../utility.hpp"
+
+#include <new>
+
 
 WEOS_BEGIN_NAMESPACE
 
@@ -64,479 +67,6 @@ struct is_placeholder<placeholders::placeholder<TIndex> >
 
 namespace detail
 {
-
-struct unspecified_type {};
-
-// ====================================================================
-// argument_tuple<>
-// ====================================================================
-
-struct argument_tuple_null_type;
-
-template <typename A0 = argument_tuple_null_type,
-          typename A1 = argument_tuple_null_type,
-          typename A2 = argument_tuple_null_type,
-          typename A3 = argument_tuple_null_type>
-struct argument_tuple
-{
-    static const std::size_t size = 4;
-
-    explicit argument_tuple(const A0& a0,
-                            const A1& a1,
-                            const A2& a2,
-                            const A3& a3)
-        : m_a0(a0),
-          m_a1(a1),
-          m_a2(a2),
-          m_a3(a3)
-    {
-    }
-
-    // Constructor with perfect forwarding
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    explicit argument_tuple(T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3)
-        : m_a0(WEOS_NAMESPACE::forward<T0>(t0)),
-          m_a1(WEOS_NAMESPACE::forward<T1>(t1)),
-          m_a2(WEOS_NAMESPACE::forward<T2>(t2)),
-          m_a3(WEOS_NAMESPACE::forward<T3>(t3))
-    {
-    }
-
-    // Copy constructor
-    argument_tuple(const argument_tuple& other)
-        : m_a0(other.m_a0),
-          m_a1(other.m_a1),
-          m_a2(other.m_a2),
-          m_a3(other.m_a3)
-    {
-    }
-
-    // Move constructor
-    argument_tuple(argument_tuple&& other)
-        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0)),
-          m_a1(WEOS_NAMESPACE::forward<A1>(other.m_a1)),
-          m_a2(WEOS_NAMESPACE::forward<A2>(other.m_a2)),
-          m_a3(WEOS_NAMESPACE::forward<A3>(other.m_a3))
-    {
-    }
-
-    // Accessors
-    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
-
-    A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) { return m_a1; }
-    const A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) const { return m_a1; }
-
-    A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) { return m_a2; }
-    const A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) const { return m_a2; }
-
-    A3& get(WEOS_NAMESPACE::integral_constant<std::size_t, 3>) { return m_a3; }
-    const A3& get(WEOS_NAMESPACE::integral_constant<std::size_t, 3>) const { return m_a3; }
-
-private:
-    A0 m_a0;
-    A1 m_a1;
-    A2 m_a2;
-    A3 m_a3;
-
-};
-
-template <typename A0,
-          typename A1,
-          typename A2>
-struct argument_tuple<A0,
-                      A1,
-                      A2,
-                      argument_tuple_null_type>
-{
-    static const std::size_t size = 3;
-
-    explicit argument_tuple(const A0& a0,
-                            const A1& a1,
-                            const A2& a2)
-        : m_a0(a0),
-          m_a1(a1),
-          m_a2(a2)
-    {
-    }
-
-    // Constructor with perfect forwarding
-    template <typename T0,
-              typename T1,
-              typename T2>
-    explicit argument_tuple(T0&& t0,
-                            T1&& t1,
-                            T2&& t2)
-        : m_a0(WEOS_NAMESPACE::forward<T0>(t0)),
-          m_a1(WEOS_NAMESPACE::forward<T1>(t1)),
-          m_a2(WEOS_NAMESPACE::forward<T2>(t2))
-    {
-    }
-
-    // Copy constructor
-    argument_tuple(const argument_tuple& other)
-        : m_a0(other.m_a0),
-          m_a1(other.m_a1),
-          m_a2(other.m_a2)
-    {
-    }
-
-    // Move constructor
-    argument_tuple(argument_tuple&& other)
-        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0)),
-          m_a1(WEOS_NAMESPACE::forward<A1>(other.m_a1)),
-          m_a2(WEOS_NAMESPACE::forward<A2>(other.m_a2))
-    {
-    }
-
-    // Accessors
-    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
-
-    A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) { return m_a1; }
-    const A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) const { return m_a1; }
-
-    A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) { return m_a2; }
-    const A2& get(WEOS_NAMESPACE::integral_constant<std::size_t, 2>) const { return m_a2; }
-
-private:
-    A0 m_a0;
-    A1 m_a1;
-    A2 m_a2;
-
-};
-
-template <typename A0,
-          typename A1>
-struct argument_tuple<A0,
-                      A1,
-                      argument_tuple_null_type,
-                      argument_tuple_null_type>
-{
-    static const std::size_t size = 2;
-
-    explicit argument_tuple(const A0& a0,
-                            const A1& a1)
-        : m_a0(a0),
-          m_a1(a1)
-    {
-    }
-
-    // Constructor with perfect forwarding
-    template <typename T0,
-              typename T1>
-    explicit argument_tuple(T0&& t0,
-                            T1&& t1)
-        : m_a0(WEOS_NAMESPACE::forward<T0>(t0)),
-          m_a1(WEOS_NAMESPACE::forward<T1>(t1))
-    {
-    }
-
-    // Copy constructor
-    argument_tuple(const argument_tuple& other)
-        : m_a0(other.m_a0),
-          m_a1(other.m_a1)
-    {
-    }
-
-    // Move constructor
-    argument_tuple(argument_tuple&& other)
-        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0)),
-          m_a1(WEOS_NAMESPACE::forward<A1>(other.m_a1))
-    {
-    }
-
-    // Accessors
-    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
-
-    A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) { return m_a1; }
-    const A1& get(WEOS_NAMESPACE::integral_constant<std::size_t, 1>) const { return m_a1; }
-
-private:
-    A0 m_a0;
-    A1 m_a1;
-
-};
-
-template <typename A0>
-struct argument_tuple<A0,
-                      argument_tuple_null_type,
-                      argument_tuple_null_type,
-                      argument_tuple_null_type>
-{
-    static const std::size_t size = 1;
-
-    explicit argument_tuple(const A0& a0)
-        : m_a0(a0)
-    {
-    }
-
-    // Constructor with perfect forwarding
-    template <typename T0>
-    explicit argument_tuple(T0&& t0)
-        : m_a0(WEOS_NAMESPACE::forward<T0>(t0))
-    {
-    }
-
-    // Copy constructor
-    argument_tuple(const argument_tuple& other)
-        : m_a0(other.m_a0)
-    {
-    }
-
-    // Move constructor
-    argument_tuple(argument_tuple&& other)
-        : m_a0(WEOS_NAMESPACE::forward<A0>(other.m_a0))
-    {
-    }
-
-    // Accessors
-    A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) { return m_a0; }
-    const A0& get(WEOS_NAMESPACE::integral_constant<std::size_t, 0>) const { return m_a0; }
-
-private:
-    A0 m_a0;
-
-};
-
-template <>
-struct argument_tuple<argument_tuple_null_type,
-                      argument_tuple_null_type,
-                      argument_tuple_null_type,
-                      argument_tuple_null_type>
-{
-    static const std::size_t size = 0;
-
-private:
-};
-
-
-// --------------------------------------------------------------------
-//     Get the type at index \p TIndex.
-// --------------------------------------------------------------------
-template <std::size_t TIndex, typename T>
-struct argument_tuple_element;
-
-// Recursive case
-template <std::size_t TIndex,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-struct argument_tuple_element<TIndex, argument_tuple<A0, A1, A2, A3> >
-        : argument_tuple_element<TIndex - 1, argument_tuple<A1, A2, A3> >
-{
-};
-
-// End of recursion
-template <typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-struct argument_tuple_element<0, argument_tuple<A0, A1, A2, A3> >
-{
-    typedef A0 type;
-};
-
-template <std::size_t TIndex,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-struct argument_tuple_element<TIndex, const argument_tuple<A0, A1, A2, A3> >
-{
-    typedef argument_tuple<A0, A1, A2, A3> tuple_type;
-    typedef typename WEOS_NAMESPACE::add_const<
-        typename argument_tuple_element<TIndex, tuple_type>::type>::type type;
-};
-
-// --------------------------------------------------------------------
-//     Get the element at \p TIndex.
-// --------------------------------------------------------------------
-template <std::size_t TIndex,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename argument_tuple_element<TIndex, argument_tuple<A0, A1, A2, A3> >::type&
-    get(argument_tuple<A0, A1, A2, A3>& t)
-{
-    return t.get(WEOS_NAMESPACE::integral_constant<std::size_t, TIndex>());
-}
-
-template <std::size_t TIndex,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-const typename argument_tuple_element<TIndex, argument_tuple<A0, A1, A2, A3> >::type&
-    get(const argument_tuple<A0, A1, A2, A3>& t)
-{
-    return t.get(WEOS_NAMESPACE::integral_constant<std::size_t, TIndex>());
-}
-
-// --------------------------------------------------------------------
-//     Get the size.
-// --------------------------------------------------------------------
-template <typename T>
-struct argument_tuple_size;
-
-template <typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-struct argument_tuple_size<argument_tuple<A0, A1, A2, A3> >
-        : WEOS_NAMESPACE::integral_constant<
-              std::size_t,
-              argument_tuple<A0, A1, A2, A3>::size>
-{
-};
-
-template <typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-struct argument_tuple_size<const argument_tuple<A0, A1, A2, A3> >
-        : WEOS_NAMESPACE::integral_constant<
-              std::size_t,
-              argument_tuple<A0, A1, A2, A3>::size>
-{
-};
-
-inline
-argument_tuple<> forward_as_argument_tuple()
-{
-    return argument_tuple<>();
-}
-
-template <typename A0>
-inline
-argument_tuple<A0&&>
-forward_as_argument_tuple(A0&& a0)
-{
-    return argument_tuple<A0&&>(
-            WEOS_NAMESPACE::forward<A0>(a0));
-}
-
-template <typename A0,
-          typename A1>
-inline
-argument_tuple<A0&&,
-               A1&&>
-forward_as_argument_tuple(A0&& a0,
-                          A1&& a1)
-{
-    return argument_tuple<A0&&,
-                          A1&&>(
-            WEOS_NAMESPACE::forward<A0>(a0),
-            WEOS_NAMESPACE::forward<A1>(a1));
-}
-
-template <typename A0,
-          typename A1,
-          typename A2>
-inline
-argument_tuple<A0&&,
-               A1&&,
-               A2&&>
-forward_as_argument_tuple(A0&& a0,
-                          A1&& a1,
-                          A2&& a2)
-{
-    return argument_tuple<A0&&,
-                          A1&&,
-                          A2&&>(
-            WEOS_NAMESPACE::forward<A0>(a0),
-            WEOS_NAMESPACE::forward<A1>(a1),
-            WEOS_NAMESPACE::forward<A2>(a2));
-}
-
-template <typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-argument_tuple<A0&&,
-               A1&&,
-               A2&&,
-               A3&&>
-forward_as_argument_tuple(A0&& a0,
-                          A1&& a1,
-                          A2&& a2,
-                          A3&& a3)
-{
-    return argument_tuple<A0&&,
-                          A1&&,
-                          A2&&,
-                          A3&&>(
-            WEOS_NAMESPACE::forward<A0>(a0),
-            WEOS_NAMESPACE::forward<A1>(a1),
-            WEOS_NAMESPACE::forward<A2>(a2),
-            WEOS_NAMESPACE::forward<A3>(a3));
-}
-
-struct placeholder_out_of_bounds;
-
-template <int TIndex, typename TArguments,
-          bool TValid = (TIndex < argument_tuple_size<TArguments>::value)>
-struct placeholder_bounds_checker
-{
-    typedef typename argument_tuple_element<TIndex, TArguments>::type type;
-};
-
-template <int TIndex, typename TArguments>
-struct placeholder_bounds_checker<TIndex, TArguments, false>
-{
-    typedef placeholder_out_of_bounds type;
-};
-
-template <typename TBound, typename TUnbound>
-struct unpacked_argument_type
-{
-    typedef TBound type;
-};
-
-template <int TIndex, typename TUnbound>
-struct unpacked_argument_type<placeholders::placeholder<TIndex>, TUnbound>
-{
-    typedef typename placeholder_bounds_checker<TIndex - 1, TUnbound>::type temp_type;
-    typedef typename WEOS_NAMESPACE::add_rvalue_reference<temp_type>::type type;
-};
-
-template <typename TBound>
-struct unpack_argument
-{
-    template <typename TType, typename TUnbound>
-    TType&& operator() (TType&& bound,
-                        TUnbound& unbound) const
-    {
-        return WEOS_NAMESPACE::forward<TType>(bound);
-    }
-};
-
-template <int TIndex>
-struct unpack_argument<placeholders::placeholder<TIndex> >
-{
-    typedef placeholders::placeholder<TIndex> bound_type;
-
-    template <typename TUnbound>
-    typename unpacked_argument_type<bound_type, TUnbound>::type operator() (
-        const bound_type& /*bound*/, TUnbound& unbound) const
-    {
-        return WEOS_NAMESPACE::forward<typename unpacked_argument_type<
-                                  bound_type, TUnbound>::type>(
-                    get<TIndex - 1>(unbound));
-    }
-};
 
 // ----=====================================================================----
 //     WeakResultType
@@ -628,6 +158,8 @@ struct WeakResultType<R (C::*) (TArgs...) const volatile>
     typedef R result_type;
 };
 
+} // namespace detail
+
 // ----=====================================================================----
 //     invoke
 // ----=====================================================================----
@@ -679,6 +211,9 @@ auto invoke(F&& f, An&&... an)
     return WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...);
 }
 
+namespace detail
+{
+
 template <typename F, typename... An>
 struct invoke_result_type
 {
@@ -710,1736 +245,210 @@ private:
     TMemberPointer m_pm;
 };
 
-// ====================================================================
-// deduce_result_type
-// ====================================================================
+// ----=====================================================================----
+//     BindExpressionResult
+// ----=====================================================================----
 
-// Default case with explicit result type.
-template <typename TResult, typename TCallable>
-struct deduce_result_type
+// -----------------------------------------------------------------------------
+// ArgumentSelector
+// -----------------------------------------------------------------------------
+
+template <typename TBoundArg, typename TUnboundArgs,
+          bool TIsReferenceWrapper = false,
+          bool TIsBindExpression = false,
+          bool TIsPlaceholderIndex = (is_placeholder<TBoundArg>::value != 0)>
+struct ArgumentSelector
 {
-    typedef TResult type;
-};
+    static_assert(   TIsReferenceWrapper == false
+                  && TIsBindExpression == false
+                  && TIsPlaceholderIndex == false,
+                  "Logic error");
 
-// Function
-template <typename R,
-          typename... TArgs>
-struct deduce_result_type<detail::unspecified_type,
-                          R  (TArgs...) >
-{
-    typedef R type;
-};
+    typedef TBoundArg& type;
 
-// Function reference
-template <typename R,
-          typename... TArgs>
-struct deduce_result_type<detail::unspecified_type,
-                          R (&) (TArgs...) >
-{
-    typedef R type;
-};
-
-// Function pointer
-template <typename R,
-          typename... TArgs>
-struct deduce_result_type<detail::unspecified_type,
-                          R (*) (TArgs...) >
-{
-    typedef R type;
-};
-
-// Member function pointer
-template <typename R,
-          typename C,
-          typename... TArgs>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (TArgs...) >
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename... TArgs>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (TArgs...) const>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename... TArgs>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (TArgs...) volatile>
-{
-    typedef R type;
-};
-
-template <typename R,
-          typename C,
-          typename... TArgs>
-struct deduce_result_type<detail::unspecified_type,
-                          R (C::*) (TArgs...) const volatile>
-{
-    typedef R type;
-};
-
-// ====================================================================
-// BindResult
-// ====================================================================
-
-// MemberPointerWrapper will wrap member pointers using mem_fn<>.
-// The default case does nothing.
-template <typename TType>
-struct MemberPointerWrapper
-{
-    typedef TType type;
-
-    static const TType& wrap(const TType& t)
+    static type select(TBoundArg& bound, TUnboundArgs& /*unbound*/)
     {
-        return t;
-    }
-
-    static TType&& wrap(TType&& t)
-    {
-        return static_cast<TType&&>(t);
+        return bound;
     }
 };
 
-// In the special case of a member pointer, mem_fn<> is applied.
-template <typename TType, typename TClass>
-struct MemberPointerWrapper<TType TClass::*>
+template <typename TBoundArg, typename TUnboundArgs>
+struct ArgumentSelector<TBoundArg, TUnboundArgs, true, false, false>
 {
-    typedef MemFnResult<TType TClass::*> type;
+    //static_assert(false, "Not implemented, yet");
+};
 
-    static type wrap(TType TClass::* pm)
+template <typename TBoundArg, typename TUnboundArgs>
+struct ArgumentSelector<TBoundArg, TUnboundArgs, false, true, false>
+{
+    //static_assert(false, "Not implemented, yet");
+};
+
+struct placeholder_is_out_of_bounds;
+
+template <int TIndex, typename TUnboundArgs,
+          bool TValid = (TIndex < tuple_size<TUnboundArgs>::value)>
+struct CheckedTypeFromPlaceholder
+{
+    typedef typename tuple_element<TIndex, TUnboundArgs>::type type;
+};
+
+template <int TIndex, typename TUnboundArgs>
+struct CheckedTypeFromPlaceholder<TIndex, TUnboundArgs, false>
+{
+    typedef placeholder_is_out_of_bounds type;
+};
+
+template <typename TBoundArg, typename TUnboundArgs>
+struct ArgumentSelector<TBoundArg, TUnboundArgs, false, false, true>
+{
+    static constexpr size_t index = is_placeholder<TBoundArg>::value - 1;
+    static_assert(index >= 0, "Placeholder must be positive.");
+
+    typedef typename CheckedTypeFromPlaceholder<index, TUnboundArgs>::type type;
+
+    static type select(TBoundArg& /*bound*/, TUnboundArgs& unbound)
     {
-        return type(pm);
+        return WEOS_NAMESPACE::forward<type>(
+                /*TODO: WEOS_NAMESPACE::*/get<index>(unbound));
     }
 };
 
-// When the best overload for bind<>() is determined, the compiler
-// instantiates MemberPointerWrapper<void>, which forms a reference
-// to void in turn. A solution is to provide a template
-// specialization for this case. It is never used, because there
-// are better matches for bind<>.
-template <>
-struct MemberPointerWrapper<void>
+template <typename TF, typename TBoundArgs, typename TUnboundArgs>
+struct bind_expression_result_type;
+
+template <typename TF, typename... TBoundArgs, typename TUnboundArgs>
+struct bind_expression_result_type<TF, tuple<TBoundArgs...>, TUnboundArgs>
 {
-    typedef void type;
+    typedef decltype(invoke(WEOS_NAMESPACE::declval<TF&>(),
+                            WEOS_NAMESPACE::declval<typename ArgumentSelector<TBoundArgs, TUnboundArgs>::type>()...))
+          type;
 };
+
+template <typename TF, typename TBoundArgs, size_t... TBoundIndices, typename TUnboundArgs>
+inline
+typename bind_expression_result_type<TF, TBoundArgs, TUnboundArgs>::type
+invokeBindExpression(TF& functor,
+                     TBoundArgs& boundArgs, TupleIndices<TBoundIndices...>,
+                     TUnboundArgs&& unboundArgs)
+{
+    return invoke(functor,
+                  ArgumentSelector<typename tuple_element<TBoundIndices, TBoundArgs>::type,
+                                   TUnboundArgs>::select(
+                      /*TODO: WEOS_NAMESPACE::*/get<TBoundIndices>(boundArgs), unboundArgs)...);
+}
 
 // The result of a bind<>() call.
-// The TSignature will be something of the form
-// TFunctor(TBoundArg0, TBoundArg1, ...),
-// where TFunctor can be a function pointer or a MemFnResult
-template <typename TResult, typename TSignature>
-struct BindResult;
-
-template <typename TResult, typename F>
-struct BindResult<TResult, F()>
+template <typename TFunctor, typename... TBoundArgs>
+class BindExpression : public WeakResultType<typename decay<TFunctor>::type>
 {
-    typedef TResult result_type;
+protected:
+    typedef typename decay<TFunctor>::type functor_type;
+    typedef tuple<typename decay<TBoundArgs>::type...> bound_args_type;
+    typedef typename make_tuple_indices<sizeof...(TBoundArgs)>::type bound_indices_type;
 
-    // The bound functor. To be used internally only.
-    typedef F _functor_type_;
-
-    // Constructor with perfect forwarding
-    explicit BindResult(const F& f)
-        : m_functor(f)
+public:
+    template <typename F, typename... TArgs,
+              typename _ = typename enable_if<is_constructible<functor_type, F>::value
+                                              && !is_same<typename decay<F>::type,
+                                                          BindExpression>::value>::type>
+    explicit BindExpression(F&& f, TArgs&&... boundArgs)
+        : m_functor(WEOS_NAMESPACE::forward<F>(f)),
+          m_boundArgs(WEOS_NAMESPACE::forward<TArgs>(boundArgs)...)
     {
     }
 
-    // Copy construction
-    BindResult(const BindResult& other)
-        : m_functor(other.m_functor),
-          m_arguments(other.m_arguments)
-    {
-    }
+    BindExpression(const BindExpression& other) = default;
+    BindExpression& operator=(const BindExpression& other) = default;
 
-    // Move construction
-    BindResult(BindResult&& other)
+    BindExpression(BindExpression&& other)
         : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
-          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
+          m_boundArgs(WEOS_NAMESPACE::move(other.m_boundArgs))
     {
     }
 
-    result_type operator() ()
+    BindExpression& operator=(BindExpression&& other)
     {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
+        m_functor = WEOS_NAMESPACE::move(other.m_functor);
+        m_boundArgs = WEOS_NAMESPACE::move(other.m_boundArgs);
+        return *this;
     }
 
-    result_type operator() () const
+    template <typename... TArgs>
+    typename bind_expression_result_type<functor_type, bound_args_type, tuple<TArgs&&...>>::type
+    operator()(TArgs&&... args)
     {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
+        return invokeBindExpression(m_functor,
+                                    m_boundArgs, bound_indices_type(),
+                                    forward_as_tuple(WEOS_NAMESPACE::forward<TArgs>(args)...));
     }
 
-    template <typename T0>
-    result_type operator() (T0&& t0)
+    template <typename... TArgs>
+    typename bind_expression_result_type<const functor_type, const bound_args_type, tuple<TArgs&&...>>::type
+    operator()(TArgs&&... args) const
     {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
+        return invokeBindExpression(m_functor,
+                                    m_boundArgs, bound_indices_type(),
+                                    forward_as_tuple(WEOS_NAMESPACE::forward<TArgs>(args)...));
     }
 
 private:
-    typedef argument_tuple<> arguments_type;
-
-    F m_functor;
-    arguments_type m_arguments;
-
-    struct dispatch_tag;
-
-    //! \todo We can never have a member function pointer.
-    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                  "The callable has not been wrapped.");
-
-    // Invoke function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor();
-    }
-
-    // Invoke function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor();
-    }
-
-    // Invoke function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return m_functor();
-    }
-
-    // Invoke function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return m_functor();
-    }
-
+    functor_type m_functor;
+    bound_args_type m_boundArgs;
 };
 
-template <typename TResult, typename F,
-          typename A0>
-struct BindResult<TResult, F(A0)>
+// The result of a bind<TResult>() call.
+template <typename TResult, typename TFunctor, typename... TBoundArgs>
+class BindExpressionResult : public BindExpression<TFunctor, TBoundArgs...>
 {
+    typedef BindExpression<TFunctor, TBoundArgs...> base_type;
+    typedef typename base_type::functor_type functor_type;
+
+public:
     typedef TResult result_type;
 
-    // The bound functor. To be used internally only.
-    typedef F _functor_type_;
-
-    // Constructor with perfect forwarding
-    template <typename T0>
-    explicit BindResult(const F& f,
-                        T0&& t0)
-        : m_functor(f),
-          m_arguments(WEOS_NAMESPACE::forward<T0>(t0))
-    {
-    }
-
-    // Copy construction
-    BindResult(const BindResult& other)
-        : m_functor(other.m_functor),
-          m_arguments(other.m_arguments)
-    {
-    }
-
-    // Move construction
-    BindResult(BindResult&& other)
-        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
-          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
-    {
-    }
-
-    result_type operator() ()
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    result_type operator() () const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-private:
-    typedef argument_tuple<A0> arguments_type;
-
-    F m_functor;
-    arguments_type m_arguments;
-
-    struct dispatch_tag;
-
-    //! \todo We can never have a member function pointer.
-    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                  "The callable has not been wrapped.");
-
-    // Invoke function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)();
-    }
-
-    // Invoke member function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)();
-    }
-
-    // Invoke function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)();
-    }
-
-    // Invoke member function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)();
-    }
-
-};
-
-template <typename TResult, typename F,
-          typename A0,
-          typename A1>
-struct BindResult<TResult, F(A0, A1)>
-{
-    typedef TResult result_type;
-
-    // The bound functor. To be used internally only.
-    typedef F _functor_type_;
-
-    // Constructor with perfect forwarding
-    template <typename T0,
-              typename T1>
-    explicit BindResult(const F& f,
-                        T0&& t0,
-                        T1&& t1)
-        : m_functor(f),
-          m_arguments(WEOS_NAMESPACE::forward<T0>(t0),
-                      WEOS_NAMESPACE::forward<T1>(t1))
-    {
-    }
-
-    // Copy construction
-    BindResult(const BindResult& other)
-        : m_functor(other.m_functor),
-          m_arguments(other.m_arguments)
-    {
-    }
-
-    // Move construction
-    BindResult(BindResult&& other)
-        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
-          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
-    {
-    }
-
-    result_type operator() ()
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    result_type operator() () const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-private:
-    typedef argument_tuple<A0, A1> arguments_type;
-
-    F m_functor;
-    arguments_type m_arguments;
-
-    struct dispatch_tag;
-
-    //! \todo We can never have a member function pointer.
-    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                  "The callable has not been wrapped.");
-
-    // Invoke function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
+    template <typename F, typename... TArgs,
+              typename _ = typename enable_if<is_constructible<functor_type, F>::value
+                                              && !is_same<typename decay<F>::type,
+                                                          BindExpressionResult>::value>::type>
+    explicit BindExpressionResult(F&& f, TArgs&&... boundArgs)
+        : base_type(WEOS_NAMESPACE::forward<F>(f),
+                    WEOS_NAMESPACE::forward<TArgs>(boundArgs)...)
     {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args));
     }
 
-};
+    BindExpressionResult(const BindExpressionResult& other) = default;
+    BindExpressionResult& operator=(const BindExpressionResult& other) = default;
 
-template <typename TResult, typename F,
-          typename A0,
-          typename A1,
-          typename A2>
-struct BindResult<TResult, F(A0, A1, A2)>
-{
-    typedef TResult result_type;
-
-    // The bound functor. To be used internally only.
-    typedef F _functor_type_;
-
-    // Constructor with perfect forwarding
-    template <typename T0,
-              typename T1,
-              typename T2>
-    explicit BindResult(const F& f,
-                        T0&& t0,
-                        T1&& t1,
-                        T2&& t2)
-        : m_functor(f),
-          m_arguments(WEOS_NAMESPACE::forward<T0>(t0),
-                      WEOS_NAMESPACE::forward<T1>(t1),
-                      WEOS_NAMESPACE::forward<T2>(t2))
-    {
-    }
-
-    // Copy construction
-    BindResult(const BindResult& other)
-        : m_functor(other.m_functor),
-          m_arguments(other.m_arguments)
-    {
-    }
-
-    // Move construction
-    BindResult(BindResult&& other)
-        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
-          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
-    {
-    }
-
-    result_type operator() ()
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    result_type operator() () const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-private:
-    typedef argument_tuple<A0, A1, A2> arguments_type;
-
-    F m_functor;
-    arguments_type m_arguments;
-
-    struct dispatch_tag;
-
-    //! \todo We can never have a member function pointer.
-    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                  "The callable has not been wrapped.");
-
-    // Invoke function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args));
-    }
-
-};
-
-template <typename TResult, typename F,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-struct BindResult<TResult, F(A0, A1, A2, A3)>
-{
-    typedef TResult result_type;
-
-    // The bound functor. To be used internally only.
-    typedef F _functor_type_;
-
-    // Constructor with perfect forwarding
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    explicit BindResult(const F& f,
-                        T0&& t0,
-                        T1&& t1,
-                        T2&& t2,
-                        T3&& t3)
-        : m_functor(f),
-          m_arguments(WEOS_NAMESPACE::forward<T0>(t0),
-                      WEOS_NAMESPACE::forward<T1>(t1),
-                      WEOS_NAMESPACE::forward<T2>(t2),
-                      WEOS_NAMESPACE::forward<T3>(t3))
-    {
-    }
-
-    // Copy construction
-    BindResult(const BindResult& other)
-        : m_functor(other.m_functor),
-          m_arguments(other.m_arguments)
-    {
-    }
-
-    // Move construction
-    BindResult(BindResult&& other)
-        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
-          m_arguments(WEOS_NAMESPACE::move(other.m_arguments))
-    {
-    }
-
-    result_type operator() ()
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    result_type operator() () const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple());
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0>
-    result_type operator() (T0&& t0) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1>
-    result_type operator() (T0&& t0,
-                            T1&& t1) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3)
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    result_type operator() (T0&& t0,
-                            T1&& t1,
-                            T2&& t2,
-                            T3&& t3) const
-    {
-        return this->invoke<result_type>(
-                forward_as_argument_tuple(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3)));
-    }
-
-private:
-    typedef argument_tuple<A0, A1, A2, A3> arguments_type;
-
-    F m_functor;
-    arguments_type m_arguments;
-
-    struct dispatch_tag;
-
-    //! \todo We can never have a member function pointer.
-    static_assert(!WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                  "The callable has not been wrapped.");
-
-    // Invoke function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
-    }
-
-    // Invoke function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
+    BindExpressionResult(BindExpressionResult&& other)
+        : base_type(WEOS_NAMESPACE::forward<base_type>(other))
     {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
     }
 
-    // Invoke member function pointer and return void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
+    BindExpressionResult& operator=(BindExpressionResult&& other)
     {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
+        base_type::operator=(WEOS_NAMESPACE::forward<base_type>(other));
+        return *this;
     }
 
-    // Invoke member function pointer and return void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
+    template <typename... TArgs>
+    result_type operator()(TArgs&&... args)
     {
-        // The bind expression returns void. Thus, ignore the return value
-        // of the functor.
-        (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
+        return base_type::operator()(WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
-    // Invoke function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
+    template <typename... TArgs>
+    result_type operator()(TArgs&&... args) const
     {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
+        return base_type::operator()(WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
-
-    // Invoke function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && !WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return m_functor(
-            unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return non-void (unqualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0)
-    {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
-    }
-
-    // Invoke member function pointer and return non-void (const qualified).
-    template <typename TReturn, typename TUnbound>
-    TReturn invoke(
-            TUnbound&& unbound_args,
-            typename WEOS_NAMESPACE::enable_if<
-                !WEOS_NAMESPACE::is_same<TReturn, void>::value
-                && WEOS_NAMESPACE::is_member_function_pointer<F>::value,
-                dispatch_tag>::type* = 0) const
-    {
-        return (*unpack_argument<
-                typename argument_tuple_element<0, arguments_type>::type>()(
-                    get<0>(m_arguments), unbound_args).*m_functor)(
-            unpack_argument<
-                typename argument_tuple_element<1, arguments_type>::type>()(
-                    get<1>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<2, arguments_type>::type>()(
-                    get<2>(m_arguments), unbound_args),
-            unpack_argument<
-                typename argument_tuple_element<3, arguments_type>::type>()(
-                    get<3>(m_arguments), unbound_args));
-    }
-
-};
-
-
-struct bind_helper_null_type;
-
-template <typename TResult,
-          typename TCallable,
-          typename A0 = bind_helper_null_type,
-          typename A1 = bind_helper_null_type,
-          typename A2 = bind_helper_null_type,
-          typename A3 = bind_helper_null_type>
-struct bind_helper
-{
-    // Deduce the result type.
-    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
-    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
-    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
-    typedef typename wrapper_type::type functor_type;
-    typedef BindResult<result_type,
-                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
-                                    typename WEOS_NAMESPACE::decay<A1>::type,
-                                    typename WEOS_NAMESPACE::decay<A2>::type,
-                                    typename WEOS_NAMESPACE::decay<A3>::type)> type;
-};
-
-template <typename TResult,
-          typename TCallable,
-          typename A0,
-          typename A1,
-          typename A2>
-struct bind_helper<TResult, TCallable,
-                   A0,
-                   A1,
-                   A2,
-                   bind_helper_null_type>
-{
-    // Deduce the result type.
-    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
-    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
-    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
-    typedef typename wrapper_type::type functor_type;
-    typedef BindResult<result_type,
-                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
-                                    typename WEOS_NAMESPACE::decay<A1>::type,
-                                    typename WEOS_NAMESPACE::decay<A2>::type)> type;
-};
-
-template <typename TResult,
-          typename TCallable,
-          typename A0,
-          typename A1>
-struct bind_helper<TResult, TCallable,
-                   A0,
-                   A1,
-                   bind_helper_null_type,
-                   bind_helper_null_type>
-{
-    // Deduce the result type.
-    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
-    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
-    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
-    typedef typename wrapper_type::type functor_type;
-    typedef BindResult<result_type,
-                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type,
-                                    typename WEOS_NAMESPACE::decay<A1>::type)> type;
-};
-
-template <typename TResult,
-          typename TCallable,
-          typename A0>
-struct bind_helper<TResult, TCallable,
-                   A0,
-                   bind_helper_null_type,
-                   bind_helper_null_type,
-                   bind_helper_null_type>
-{
-    // Deduce the result type.
-    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
-    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
-    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
-    typedef typename wrapper_type::type functor_type;
-    typedef BindResult<result_type,
-                       functor_type(typename WEOS_NAMESPACE::decay<A0>::type)> type;
-};
-
-template <typename TResult,
-          typename TCallable>
-struct bind_helper<TResult, TCallable,
-                   bind_helper_null_type,
-                   bind_helper_null_type,
-                   bind_helper_null_type,
-                   bind_helper_null_type>
-{
-    // Deduce the result type.
-    typedef typename deduce_result_type<TResult, TCallable>::type result_type;
-    // A plain member pointer will be wrapped using mem_fn<>. This way we have a uniform calling syntax.
-    typedef MemberPointerWrapper<typename WEOS_NAMESPACE::decay<TCallable>::type> wrapper_type;
-    typedef typename wrapper_type::type functor_type;
-    typedef BindResult<result_type,
-                       functor_type()> type;
 };
 
 } // namespace detail
 
-// ====================================================================
-// mem_fn<>
-// ====================================================================
+// ----=====================================================================----
+//     mem_fn<>
+// ----=====================================================================----
 
 template <typename TResult, typename TClass>
 inline
@@ -2448,262 +457,31 @@ detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) noexcept
     return detail::MemFnResult<TResult TClass::*>(pm);
 }
 
-// ====================================================================
-// bind<>
-// ====================================================================
+// ----=====================================================================----
+//     bind
+// ----=====================================================================----
 
-// template <typename F, typename... TArgs>
-// /*unspecified*/ bind(F&& f, TArgs&&... args);
-template <typename TCallable>
+template <typename F, typename... TBoundArgs>
 inline
-typename detail::bind_helper<detail::unspecified_type,
-                             TCallable>::type
-bind(TCallable&& f)
+detail::BindExpression<F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
 {
-    typedef detail::bind_helper<detail::unspecified_type,
-                                TCallable> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)));
+    typedef detail::BindExpression<F, TBoundArgs...> type;
+    return type(WEOS_NAMESPACE::forward<F>(f),
+                WEOS_NAMESPACE::forward<TBoundArgs>(boundArgs)...);
 }
 
-template <typename TCallable,
-          typename A0>
+template <typename R, typename F, typename... TBoundArgs>
 inline
-typename detail::bind_helper<detail::unspecified_type,
-                             TCallable,
-                             A0>::type
-bind(TCallable&& f,
-     A0&& a0)
+detail::BindExpressionResult<R, F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
 {
-    typedef detail::bind_helper<detail::unspecified_type,
-                                TCallable,
-                                A0> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0));
+    typedef detail::BindExpressionResult<R, F, TBoundArgs...> type;
+    return type(WEOS_NAMESPACE::forward<F>(f),
+                WEOS_NAMESPACE::forward<TBoundArgs>(boundArgs)...);
 }
 
-template <typename TCallable,
-          typename A0,
-          typename A1>
-inline
-typename detail::bind_helper<detail::unspecified_type,
-                             TCallable,
-                             A0,
-                             A1>::type
-bind(TCallable&& f,
-     A0&& a0,
-     A1&& a1)
-{
-    typedef detail::bind_helper<detail::unspecified_type,
-                                TCallable,
-                                A0,
-                                A1> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0),
-                      WEOS_NAMESPACE::forward<A1>(a1));
-}
-
-template <typename TCallable,
-          typename A0,
-          typename A1,
-          typename A2>
-inline
-typename detail::bind_helper<detail::unspecified_type,
-                             TCallable,
-                             A0,
-                             A1,
-                             A2>::type
-bind(TCallable&& f,
-     A0&& a0,
-     A1&& a1,
-     A2&& a2)
-{
-    typedef detail::bind_helper<detail::unspecified_type,
-                                TCallable,
-                                A0,
-                                A1,
-                                A2> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0),
-                      WEOS_NAMESPACE::forward<A1>(a1),
-                      WEOS_NAMESPACE::forward<A2>(a2));
-}
-
-template <typename TCallable,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename detail::bind_helper<detail::unspecified_type,
-                             TCallable,
-                             A0,
-                             A1,
-                             A2,
-                             A3>::type
-bind(TCallable&& f,
-     A0&& a0,
-     A1&& a1,
-     A2&& a2,
-     A3&& a3)
-{
-    typedef detail::bind_helper<detail::unspecified_type,
-                                TCallable,
-                                A0,
-                                A1,
-                                A2,
-                                A3> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0),
-                      WEOS_NAMESPACE::forward<A1>(a1),
-                      WEOS_NAMESPACE::forward<A2>(a2),
-                      WEOS_NAMESPACE::forward<A3>(a3));
-}
-
-// template <typename R, typename F, typename... TArgs>
-// /*unspecified*/ bind(F&& f, TArgs&&... args);
-template <typename TResult,
-          typename TCallable>
-inline
-typename detail::bind_helper<TResult,
-                             TCallable>::type
-bind(TCallable&& f)
-{
-    typedef detail::bind_helper<TResult,
-                                TCallable> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)));
-}
-
-template <typename TResult,
-          typename TCallable,
-          typename A0>
-inline
-typename detail::bind_helper<TResult,
-                             TCallable,
-                             A0>::type
-bind(TCallable&& f,
-     A0&& a0)
-{
-    typedef detail::bind_helper<TResult,
-                                TCallable,
-                                A0> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0));
-}
-
-template <typename TResult,
-          typename TCallable,
-          typename A0,
-          typename A1>
-inline
-typename detail::bind_helper<TResult,
-                             TCallable,
-                             A0,
-                             A1>::type
-bind(TCallable&& f,
-     A0&& a0,
-     A1&& a1)
-{
-    typedef detail::bind_helper<TResult,
-                                TCallable,
-                                A0,
-                                A1> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0),
-                      WEOS_NAMESPACE::forward<A1>(a1));
-}
-
-template <typename TResult,
-          typename TCallable,
-          typename A0,
-          typename A1,
-          typename A2>
-inline
-typename detail::bind_helper<TResult,
-                             TCallable,
-                             A0,
-                             A1,
-                             A2>::type
-bind(TCallable&& f,
-     A0&& a0,
-     A1&& a1,
-     A2&& a2)
-{
-    typedef detail::bind_helper<TResult,
-                                TCallable,
-                                A0,
-                                A1,
-                                A2> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0),
-                      WEOS_NAMESPACE::forward<A1>(a1),
-                      WEOS_NAMESPACE::forward<A2>(a2));
-}
-
-template <typename TResult,
-          typename TCallable,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-inline
-typename detail::bind_helper<TResult,
-                             TCallable,
-                             A0,
-                             A1,
-                             A2,
-                             A3>::type
-bind(TCallable&& f,
-     A0&& a0,
-     A1&& a1,
-     A2&& a2,
-     A3&& a3)
-{
-    typedef detail::bind_helper<TResult,
-                                TCallable,
-                                A0,
-                                A1,
-                                A2,
-                                A3> helper_type;
-    typedef typename helper_type::wrapper_type wrapper_type;
-    typedef typename helper_type::type bind_result_type;
-
-    return bind_result_type(wrapper_type::wrap(WEOS_NAMESPACE::forward<TCallable>(f)),
-                      WEOS_NAMESPACE::forward<A0>(a0),
-                      WEOS_NAMESPACE::forward<A1>(a1),
-                      WEOS_NAMESPACE::forward<A2>(a2),
-                      WEOS_NAMESPACE::forward<A3>(a3));
-}
-
-// ====================================================================
-// function<>
-// ====================================================================
+// ----=====================================================================----
+//     function
+// ----=====================================================================----
 
 namespace detail
 {
@@ -2747,170 +525,77 @@ struct SmallFunctorStorage
     SmallFunctor data;
 };
 
-// Adapters for the implementation of the polymorphic function<>.
-// Required members:
-// static bool isEmpty(const F& f)
-//     ... checks if f is empty
-// static void init(SmallFunctorStorage& self, F&& f)
-//     ... inits self from f
-// static void manage(AdapterTask task, SmallFunctorStorage& self,
-//                    const SmallFunctorStorage* other)
-//     ... clones *other into self   if task == AdapterTask_Clone
-//     ... destroys self             if task == AdapterTask_Destroy
-// template <typename... TArgs>
-// static /*undefined*/ invoke(const SmallFunctorStorage& self, TArgs... args)
-//     ... invokes self with args
-
-
-enum AdapterTask
-{
-    AdapterTask_Clone,
-    AdapterTask_Destroy
-};
-
-typedef void (*manager_function)(AdapterTask task, SmallFunctorStorage& self, const SmallFunctorStorage* other);
-
-// An adapter which allows to use a function pointer in function<>.
 template <typename TSignature>
-struct FunctionPointerAdapter
+class InvokerBase;
+
+template <typename TResult, typename... TArgs>
+class InvokerBase<TResult(TArgs...)>
 {
+public:
+    InvokerBase() {}
+    virtual ~InvokerBase() {}
+
+    // Clones into newly allocated storage.
+    virtual InvokerBase* clone() const = 0;
+    // Clones into the given memory.
+    virtual void clone(InvokerBase* memory) const = 0;
+
+    virtual void destroy() noexcept = 0;
+    virtual void destroyAndDeallocate() noexcept = 0;
+
+    virtual TResult operator()(TArgs&&...) = 0;
+
+private:
+    InvokerBase(const InvokerBase&) = delete;
+    InvokerBase& operator=(const InvokerBase&) = delete;
 };
 
-// An adapter which allows to use a bind expression in function<>.
-template <typename TBindResult>
-class BindAdapter
+template <typename TCallable, typename TSignature>
+class Invoker;
+
+template <typename TCallable, typename TResult, typename... TArgs>
+class Invoker<TCallable, TResult(TArgs...)> : public InvokerBase<TResult(TArgs...)>
 {
-    static const std::size_t smallSize = sizeof(SmallFunctorStorage);
-    static const std::size_t smallAlign = alignment_of<SmallFunctorStorage>::value;
-
-    typedef typename TBindResult::_functor_type_ functor_type;
-    static const bool can_store_inplace =
-           sizeof(TBindResult) <= smallSize
-        && alignment_of<TBindResult>::value <= smallAlign
-        && (smallAlign % alignment_of<TBindResult>::value == 0);
-    typedef integral_constant<bool, can_store_inplace> store_inplace;
-
-    static void doInit(SmallFunctorStorage& self, const TBindResult& f, true_type)
-    {
-        new (self.get()) TBindResult(f);
-    }
-
-    static void doInit(SmallFunctorStorage& self, const TBindResult& f, false_type)
-    {
-        self.get<TBindResult*>() = new TBindResult(f);
-    }
-
-    // Clone a bind result which fits into the small functor storage.
-    static void doClone(SmallFunctorStorage& self, const SmallFunctorStorage& other, true_type)
-    {
-        new (self.get()) TBindResult(other.get<TBindResult>());
-    }
-
-    // Clone a bind result which does not fit into the small functor storage.
-    static void doClone(SmallFunctorStorage& self, const SmallFunctorStorage& other, false_type)
-    {
-        self.get<TBindResult*>() = new TBindResult(*other.get<TBindResult*>());
-    }
-
-    // Destroy a bind result which fits into the SFS.
-    static void doDestroy(SmallFunctorStorage& self, true_type)
-    {
-        self.get<TBindResult>().~TBindResult();
-    }
-
-    // Destroy a bind result which doesn't fit into the SFS.
-    static void doDestroy(SmallFunctorStorage& self, false_type)
-    {
-        delete self.get<TBindResult*>();
-    }
-
 public:
-    static bool isEmpty(const TBindResult&)
+    typedef InvokerBase<TResult(TArgs...)> base_type;
+
+    explicit Invoker(TCallable&& f)
+        : m_callable(WEOS_NAMESPACE::move(f))
     {
-        return false;
     }
 
-    static void init(SmallFunctorStorage& self, const TBindResult& f)
+    explicit Invoker(const TCallable& f)
+        : m_callable(f)
     {
-        doInit(self, f, store_inplace());
     }
 
-    static void manage(AdapterTask task, SmallFunctorStorage& self, const SmallFunctorStorage* other)
+    virtual base_type* clone() const override
     {
-        switch (task)
-        {
-        case AdapterTask_Clone:
-            doClone(self, *other, store_inplace());
-        case AdapterTask_Destroy:
-            doDestroy(self, store_inplace());
-        }
+        return new Invoker(m_callable);
     }
 
-    static typename TBindResult::result_type invoke(
-            const SmallFunctorStorage& self)
+    virtual void clone(base_type* memory) const override
     {
-        const TBindResult* functor = can_store_inplace ? &self.get<TBindResult>() : self.get<TBindResult*>();
-        return (*const_cast<TBindResult*>(functor))();
+        ::new (memory) Invoker(m_callable);
     }
 
-    template <typename T0>
-    static typename TBindResult::result_type invoke(
-            const SmallFunctorStorage& self,
-            T0 t0)
+    virtual void destroy() noexcept override
     {
-        const TBindResult* functor = can_store_inplace ? &self.get<TBindResult>() : self.get<TBindResult*>();
-        return (*const_cast<TBindResult*>(functor))(
-                    WEOS_NAMESPACE::forward<T0>(t0));
+        m_callable.~TCallable();
     }
 
-    template <typename T0,
-              typename T1>
-    static typename TBindResult::result_type invoke(
-            const SmallFunctorStorage& self,
-            T0 t0,
-            T1 t1)
+    virtual void destroyAndDeallocate() noexcept override
     {
-        const TBindResult* functor = can_store_inplace ? &self.get<TBindResult>() : self.get<TBindResult*>();
-        return (*const_cast<TBindResult*>(functor))(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1));
+        delete this;
     }
 
-    template <typename T0,
-              typename T1,
-              typename T2>
-    static typename TBindResult::result_type invoke(
-            const SmallFunctorStorage& self,
-            T0 t0,
-            T1 t1,
-            T2 t2)
+    virtual TResult operator()(TArgs&&... args) override
     {
-        const TBindResult* functor = can_store_inplace ? &self.get<TBindResult>() : self.get<TBindResult*>();
-        return (*const_cast<TBindResult*>(functor))(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2));
+        return invoke(m_callable, WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
-    template <typename T0,
-              typename T1,
-              typename T2,
-              typename T3>
-    static typename TBindResult::result_type invoke(
-            const SmallFunctorStorage& self,
-            T0 t0,
-            T1 t1,
-            T2 t2,
-            T3 t3)
-    {
-        const TBindResult* functor = can_store_inplace ? &self.get<TBindResult>() : self.get<TBindResult*>();
-        return (*const_cast<TBindResult*>(functor))(
-                    WEOS_NAMESPACE::forward<T0>(t0),
-                    WEOS_NAMESPACE::forward<T1>(t1),
-                    WEOS_NAMESPACE::forward<T2>(t2),
-                    WEOS_NAMESPACE::forward<T3>(t3));
-    }
-
+private:
+    TCallable m_callable;
 };
 
 } // namespace detail
@@ -2918,9 +603,47 @@ public:
 template <typename TSignature>
 class function;
 
-template <typename TResult>
-class function<TResult()>
+template <typename TResult, typename... TArgs>
+class function<TResult(TArgs...)>
 {
+    using invoker_base_type = detail::InvokerBase<TResult(TArgs...)>;
+    using storage_type = typename aligned_storage<sizeof(detail::SmallFunctorStorage)>::type;
+
+    static_assert(alignment_of<invoker_base_type>::value <= alignment_of<storage_type>::value
+                  && alignment_of<storage_type>::value % alignment_of<invoker_base_type>::value == 0,
+                  "Invalid in-place storage");
+
+    template <typename F>
+    using invokeResult = decltype(invoke(declval<F&>(), declval<TArgs>()...));
+
+    template <typename F>
+    using isCallable = is_convertible<invokeResult<F>, TResult>;
+
+    template <typename F>
+    class canStoreInplace
+    {
+        static const std::size_t smallSize = sizeof(storage_type);
+        static const std::size_t smallAlign = alignment_of<storage_type>::value;
+    public:
+        static constexpr bool value = sizeof(F) <= smallSize
+                                      && alignment_of<F>::value <= smallAlign
+                                      && (smallAlign % alignment_of<F>::value == 0)
+                                      ;//TODO: && is_nothrow_copy_constructible<F>::value;
+    };
+
+    template <typename F, bool TFunctionPointer =    is_function<F>::value
+                                                  || is_member_pointer<F>::value>
+    struct notNull
+    {
+        static bool check(F fp) { return fp; }
+    };
+
+    template <typename F>
+    struct notNull<F, false>
+    {
+        static bool check(const F&) { return true; }
+    };
+
 public:
     typedef TResult result_type;
 
@@ -2928,14 +651,6 @@ public:
         : m_invoker(0)
     {
     }
-
-    /*
-    template <typename TCallable>
-    function(TCallable f)
-    {
-    }
-
-    */
 
     function(nullptr_t) noexcept
         : m_invoker(0)
@@ -2945,118 +660,59 @@ public:
     function(const function& other)
         : m_invoker(0)
     {
-        *this = other;
-    }
-
-    template <typename TSignature>
-    function(const detail::BindResult<result_type, TSignature>& expr)
-        : m_invoker(0)
-    {
-        *this = expr;
-    }
-
-    ~function()
-    {
-        release();
-    }
-
-    function& operator= (const function& other)
-    {
-        if (this != &other)
+        if (other.m_invoker)
         {
-            release();
-            if (other.m_invoker)
+            if (other.m_invoker == (const invoker_base_type*)&other.m_storage)
             {
-                m_manager = other.m_manager;
-                m_manager(detail::AdapterTask_Clone, m_storage, &other.m_storage);
-                m_invoker = other.m_invoker;
+                m_invoker = (invoker_base_type*)&m_storage;
+                other.m_invoker->clone(m_invoker);
+            }
+            else
+            {
+                m_invoker = other.m_invoker->clone();
             }
         }
-        return *this;
     }
 
-    template <typename TSignature>
-    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
-    {
-        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
-
-        release();
-        adapter::init(m_storage, expr);
-        m_manager = &adapter::manage;
-        m_invoker = &adapter::invoke;
-        return *this;
-    }
-
-    result_type operator() () const
-    {
-        WEOS_ASSERT(m_invoker);
-        return (*m_invoker)(m_storage);
-    }
-
-    function& operator= (nullptr_t)
-    {
-        release();
-        return *this;
-    }
-
-    /*explicit*/ operator bool() const noexcept
-    {
-        return m_invoker != 0;
-    }
-
-private:
-    typedef result_type (*invoker_type)(const detail::SmallFunctorStorage&);
-
-    detail::SmallFunctorStorage m_storage;
-    detail::manager_function m_manager;
-    invoker_type m_invoker;
-
-    void release()
-    {
-        if (m_invoker)
-        {
-            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
-            m_invoker = 0;
-        }
-    }
-};
-
-template <typename TResult,
-          typename A0>
-class function<TResult(A0)>
-{
-public:
-    typedef TResult result_type;
-
-    function() noexcept
+    function(function&& other) noexcept
         : m_invoker(0)
     {
+        if (other.m_invoker)
+        {
+            if (other.m_invoker == (const invoker_base_type*)&other.m_storage)
+            {
+                m_invoker = (invoker_base_type*)&m_storage;
+                other.m_invoker->clone(m_invoker);
+            }
+            else
+            {
+                m_invoker = other.m_invoker;
+                other.m_invoker = 0;
+            }
+        }
     }
 
-    /*
-    template <typename TCallable>
+    template <typename TCallable,
+              typename _ = typename enable_if<!is_same<typename decay<TCallable>::type,
+                                                       function>::value
+                                              && isCallable<TCallable>::value>::type>
     function(TCallable f)
-    {
-    }
-
-    */
-
-    function(nullptr_t) noexcept
         : m_invoker(0)
     {
-    }
-
-    function(const function& other)
-        : m_invoker(0)
-    {
-        *this = other;
-    }
-
-    template <typename TSignature>
-    function(const detail::BindResult<result_type, TSignature>& expr)
-        : m_invoker(0)
-    {
-        *this = expr;
+        if (notNull<TCallable>::check(f))
+        {
+            typedef detail::Invoker<TCallable, TResult(TArgs...)> invoker_type;
+            if (canStoreInplace<TCallable>::value)
+            {
+                // Copy-construct using placement new.
+                m_invoker = (invoker_base_type*)&m_storage;
+                ::new (m_invoker) invoker_type(WEOS_NAMESPACE::move(f));
+            }
+            else
+            {
+                m_invoker = new invoker_type(WEOS_NAMESPACE::move(f));
+            }
+        }
     }
 
     ~function()
@@ -3064,426 +720,99 @@ public:
         release();
     }
 
-    function& operator= (const function& other)
+    function& operator=(const function& other)
     {
-        if (this != &other)
-        {
-            release();
-            if (other.m_invoker)
-            {
-                m_manager = other.m_manager;
-                m_manager(detail::AdapterTask_Clone, m_storage, &other.m_storage);
-                m_invoker = other.m_invoker;
-            }
-        }
+        function(other).swap(*this);
         return *this;
     }
 
-    template <typename TSignature>
-    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
-    {
-        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
+    function& operator=(function&& other);
 
+    function& operator=(nullptr_t)
+    {
         release();
-        adapter::init(m_storage, expr);
-        m_manager = &adapter::manage;
-        m_invoker = &adapter::template invoke<A0>;
         return *this;
     }
 
-    result_type operator() (A0 a0) const
+    template <typename TCallable,
+              typename _ = typename enable_if<!is_same<typename decay<TCallable>::type,
+                                                       function>::value
+                                              && isCallable<typename decay<TCallable>::type>::value>::type>
+    function& operator=(TCallable&& f)
+    {
+        function(WEOS_NAMESPACE::forward<TCallable>(f)).swap(*this);
+        return *this;
+    }
+
+    result_type operator()(TArgs... args) const
     {
         WEOS_ASSERT(m_invoker);
-        return (*m_invoker)(m_storage,
-                            WEOS_NAMESPACE::forward<A0>(a0));
+        return (*m_invoker)(WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
-    function& operator= (nullptr_t)
+    void swap(function& other) noexcept
     {
-        release();
-        return *this;
+        if (this == &other)
+            return;
+
+        if (m_invoker == (invoker_base_type*)&m_storage
+            && other.m_invoker == (invoker_base_type*)&other.m_storage)
+        {
+            // Both are small. We can only swap via some temporary space.
+            storage_type tempStorage;
+            invoker_base_type* tempInvoker = (invoker_base_type*)&tempStorage;
+
+            m_invoker->clone(tempInvoker);
+            m_invoker->destroy();
+            other.m_invoker->clone((invoker_base_type*)&m_storage);
+            other.m_invoker->destroy();
+            tempInvoker->clone((invoker_base_type*)&other.m_storage);
+            tempInvoker->destroy();
+
+            m_invoker = (invoker_base_type*)&m_storage;
+            other.m_invoker = (invoker_base_type*)&other.m_storage;
+        }
+        else if (other.m_invoker == (invoker_base_type*)&other.m_storage)
+        {
+            // The other function is small. Our internal storage is available.
+            other.m_invoker->clone((invoker_base_type*)&m_storage);
+            other.m_invoker->destroy();
+            other.m_invoker = m_invoker;
+            m_invoker = (invoker_base_type*)&m_storage;
+        }
+        else if (m_invoker == (invoker_base_type*)&m_storage)
+        {
+            // We are small. The other internal storage is free.
+            m_invoker->clone((invoker_base_type*)&other.m_storage);
+            m_invoker->destroy();
+            m_invoker = other.m_invoker;
+            other.m_invoker = (invoker_base_type*)&other.m_storage;
+        }
+        else
+        {
+            // Both are large.
+            std::swap(m_invoker, other.m_invoker);
+        }
     }
 
-    /*explicit*/ operator bool() const noexcept
+    explicit operator bool() const noexcept
     {
         return m_invoker != 0;
     }
 
 private:
-    typedef result_type (*invoker_type)(const detail::SmallFunctorStorage&,
-                                        A0);
-
-    detail::SmallFunctorStorage m_storage;
-    detail::manager_function m_manager;
-    invoker_type m_invoker;
+    storage_type m_storage;
+    invoker_base_type* m_invoker;
 
     void release()
     {
-        if (m_invoker)
-        {
-            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
-            m_invoker = 0;
-        }
+        if (m_invoker == (invoker_base_type*)&m_storage)
+            m_invoker->destroy();
+        else if (m_invoker)
+            m_invoker->destroyAndDeallocate();
     }
 };
-
-template <typename TResult,
-          typename A0,
-          typename A1>
-class function<TResult(A0, A1)>
-{
-public:
-    typedef TResult result_type;
-
-    function() noexcept
-        : m_invoker(0)
-    {
-    }
-
-    /*
-    template <typename TCallable>
-    function(TCallable f)
-    {
-    }
-
-    */
-
-    function(nullptr_t) noexcept
-        : m_invoker(0)
-    {
-    }
-
-    function(const function& other)
-        : m_invoker(0)
-    {
-        *this = other;
-    }
-
-    template <typename TSignature>
-    function(const detail::BindResult<result_type, TSignature>& expr)
-        : m_invoker(0)
-    {
-        *this = expr;
-    }
-
-    ~function()
-    {
-        release();
-    }
-
-    function& operator= (const function& other)
-    {
-        if (this != &other)
-        {
-            release();
-            if (other.m_invoker)
-            {
-                m_manager = other.m_manager;
-                m_manager(detail::AdapterTask_Clone, m_storage, &other.m_storage);
-                m_invoker = other.m_invoker;
-            }
-        }
-        return *this;
-    }
-
-    template <typename TSignature>
-    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
-    {
-        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
-
-        release();
-        adapter::init(m_storage, expr);
-        m_manager = &adapter::manage;
-        m_invoker = &adapter::template invoke<A0,
-                                              A1>;
-        return *this;
-    }
-
-    result_type operator() (A0 a0,
-                            A1 a1) const
-    {
-        WEOS_ASSERT(m_invoker);
-        return (*m_invoker)(m_storage,
-                            WEOS_NAMESPACE::forward<A0>(a0),
-                            WEOS_NAMESPACE::forward<A1>(a1));
-    }
-
-    function& operator= (nullptr_t)
-    {
-        release();
-        return *this;
-    }
-
-    /*explicit*/ operator bool() const noexcept
-    {
-        return m_invoker != 0;
-    }
-
-private:
-    typedef result_type (*invoker_type)(const detail::SmallFunctorStorage&,
-                                        A0,
-                                        A1);
-
-    detail::SmallFunctorStorage m_storage;
-    detail::manager_function m_manager;
-    invoker_type m_invoker;
-
-    void release()
-    {
-        if (m_invoker)
-        {
-            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
-            m_invoker = 0;
-        }
-    }
-};
-
-template <typename TResult,
-          typename A0,
-          typename A1,
-          typename A2>
-class function<TResult(A0, A1, A2)>
-{
-public:
-    typedef TResult result_type;
-
-    function() noexcept
-        : m_invoker(0)
-    {
-    }
-
-    /*
-    template <typename TCallable>
-    function(TCallable f)
-    {
-    }
-
-    */
-
-    function(nullptr_t) noexcept
-        : m_invoker(0)
-    {
-    }
-
-    function(const function& other)
-        : m_invoker(0)
-    {
-        *this = other;
-    }
-
-    template <typename TSignature>
-    function(const detail::BindResult<result_type, TSignature>& expr)
-        : m_invoker(0)
-    {
-        *this = expr;
-    }
-
-    ~function()
-    {
-        release();
-    }
-
-    function& operator= (const function& other)
-    {
-        if (this != &other)
-        {
-            release();
-            if (other.m_invoker)
-            {
-                m_manager = other.m_manager;
-                m_manager(detail::AdapterTask_Clone, m_storage, &other.m_storage);
-                m_invoker = other.m_invoker;
-            }
-        }
-        return *this;
-    }
-
-    template <typename TSignature>
-    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
-    {
-        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
-
-        release();
-        adapter::init(m_storage, expr);
-        m_manager = &adapter::manage;
-        m_invoker = &adapter::template invoke<A0,
-                                              A1,
-                                              A2>;
-        return *this;
-    }
-
-    result_type operator() (A0 a0,
-                            A1 a1,
-                            A2 a2) const
-    {
-        WEOS_ASSERT(m_invoker);
-        return (*m_invoker)(m_storage,
-                            WEOS_NAMESPACE::forward<A0>(a0),
-                            WEOS_NAMESPACE::forward<A1>(a1),
-                            WEOS_NAMESPACE::forward<A2>(a2));
-    }
-
-    function& operator= (nullptr_t)
-    {
-        release();
-        return *this;
-    }
-
-    /*explicit*/ operator bool() const noexcept
-    {
-        return m_invoker != 0;
-    }
-
-private:
-    typedef result_type (*invoker_type)(const detail::SmallFunctorStorage&,
-                                        A0,
-                                        A1,
-                                        A2);
-
-    detail::SmallFunctorStorage m_storage;
-    detail::manager_function m_manager;
-    invoker_type m_invoker;
-
-    void release()
-    {
-        if (m_invoker)
-        {
-            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
-            m_invoker = 0;
-        }
-    }
-};
-
-template <typename TResult,
-          typename A0,
-          typename A1,
-          typename A2,
-          typename A3>
-class function<TResult(A0, A1, A2, A3)>
-{
-public:
-    typedef TResult result_type;
-
-    function() noexcept
-        : m_invoker(0)
-    {
-    }
-
-    /*
-    template <typename TCallable>
-    function(TCallable f)
-    {
-    }
-
-    */
-
-    function(nullptr_t) noexcept
-        : m_invoker(0)
-    {
-    }
-
-    function(const function& other)
-        : m_invoker(0)
-    {
-        *this = other;
-    }
-
-    template <typename TSignature>
-    function(const detail::BindResult<result_type, TSignature>& expr)
-        : m_invoker(0)
-    {
-        *this = expr;
-    }
-
-    ~function()
-    {
-        release();
-    }
-
-    function& operator= (const function& other)
-    {
-        if (this != &other)
-        {
-            release();
-            if (other.m_invoker)
-            {
-                m_manager = other.m_manager;
-                m_manager(detail::AdapterTask_Clone, m_storage, &other.m_storage);
-                m_invoker = other.m_invoker;
-            }
-        }
-        return *this;
-    }
-
-    template <typename TSignature>
-    function& operator= (const detail::BindResult<result_type, TSignature>& expr)
-    {
-        typedef detail::BindAdapter<detail::BindResult<result_type, TSignature> > adapter;
-
-        release();
-        adapter::init(m_storage, expr);
-        m_manager = &adapter::manage;
-        m_invoker = &adapter::template invoke<A0,
-                                              A1,
-                                              A2,
-                                              A3>;
-        return *this;
-    }
-
-    result_type operator() (A0 a0,
-                            A1 a1,
-                            A2 a2,
-                            A3 a3) const
-    {
-        WEOS_ASSERT(m_invoker);
-        return (*m_invoker)(m_storage,
-                            WEOS_NAMESPACE::forward<A0>(a0),
-                            WEOS_NAMESPACE::forward<A1>(a1),
-                            WEOS_NAMESPACE::forward<A2>(a2),
-                            WEOS_NAMESPACE::forward<A3>(a3));
-    }
-
-    function& operator= (nullptr_t)
-    {
-        release();
-        return *this;
-    }
-
-    /*explicit*/ operator bool() const noexcept
-    {
-        return m_invoker != 0;
-    }
-
-private:
-    typedef result_type (*invoker_type)(const detail::SmallFunctorStorage&,
-                                        A0,
-                                        A1,
-                                        A2,
-                                        A3);
-
-    detail::SmallFunctorStorage m_storage;
-    detail::manager_function m_manager;
-    invoker_type m_invoker;
-
-    void release()
-    {
-        if (m_invoker)
-        {
-            m_manager(detail::AdapterTask_Destroy, m_storage, 0);
-            m_invoker = 0;
-        }
-    }
-};
-
-// ====================================================================
-// static_function<>
-// ====================================================================
-
-template <typename TSignature,
-          std::size_t TStorageSize = WEOS_DEFAULT_STATIC_FUNCTION_SIZE>
-class static_function;
 
 WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_FUNCTIONAL_HPP
-

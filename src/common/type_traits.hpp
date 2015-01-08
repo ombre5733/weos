@@ -80,6 +80,8 @@ WEOS_END_NAMESPACE
 WEOS_BEGIN_NAMESPACE
 
 using WEOS_IMPL_NAMESPACE::add_const;
+using WEOS_IMPL_NAMESPACE::add_cv;
+using WEOS_IMPL_NAMESPACE::add_volatile;
 using WEOS_IMPL_NAMESPACE::add_lvalue_reference;
 using WEOS_IMPL_NAMESPACE::add_rvalue_reference;
 using WEOS_IMPL_NAMESPACE::aligned_storage;
@@ -90,7 +92,10 @@ using WEOS_IMPL_NAMESPACE::decay;
 using WEOS_IMPL_NAMESPACE::false_type;
 using WEOS_IMPL_NAMESPACE::integral_constant;
 using WEOS_IMPL_NAMESPACE::is_arithmetic;
+using WEOS_IMPL_NAMESPACE::is_constructible;
 using WEOS_IMPL_NAMESPACE::is_convertible;
+using WEOS_IMPL_NAMESPACE::is_function;
+using WEOS_IMPL_NAMESPACE::is_member_pointer;
 using WEOS_IMPL_NAMESPACE::is_member_function_pointer;
 using WEOS_IMPL_NAMESPACE::is_pointer;
 using WEOS_IMPL_NAMESPACE::is_same;
