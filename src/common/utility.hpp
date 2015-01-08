@@ -51,18 +51,21 @@ template <typename T>
 typename add_rvalue_reference<T>::type declval() noexcept;
 
 template <typename T>
+inline
 constexpr typename remove_reference<T>::type&& move(T&& t) noexcept
 {
     return static_cast<typename remove_reference<T>::type&&>(t);
 }
 
 template <typename T>
+inline
 constexpr T&& forward(typename remove_reference<T>::type& t) noexcept
 {
     return static_cast<T&&>(t);
 }
 
 template <typename T>
+inline
 constexpr T&& forward(typename remove_reference<T>::type&& t) noexcept
 {
     return static_cast<T&&>(t);
