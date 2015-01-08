@@ -68,6 +68,8 @@ WEOS_END_NAMESPACE
 
 #include "../utility.hpp"
 
+#include <algorithm> // for swap()
+
 WEOS_BEGIN_NAMESPACE
 
 struct defer_lock_t {};
@@ -273,8 +275,9 @@ public:
     //! Swaps this lock with the \p other lock.
     void swap(unique_lock& other) WEOS_NOEXCEPT
     {
-        std::swap(m_mutex, other.m_mutex);
-        std::wap(m_locked, other.m_locked);
+        using std::swap;
+        swap(m_mutex, other.m_mutex);
+        swap(m_locked, other.m_locked);
     }
 
     //! Tries to lock the associated mutex.
@@ -360,24 +363,15 @@ private:
     WEOS_MOVABLE_BUT_NOT_COPYABLE(unique_lock)
 };
 
-WEOS_END_NAMESPACE
-
-
-
-namespace std
-{
-
-// Overload for swapping two mutexes \p x and \p y.
+//! Swap two unique locks \p x and \p y.
 template <typename MutexT>
 inline
-void swap(WEOS_NAMESPACE::unique_lock<MutexT>& x,
-          WEOS_NAMESPACE::unique_lock<MutexT>& y) WEOS_NOEXCEPT
+void swap(unique_lock<MutexT>& x, unique_lock<MutexT>& y) WEOS_NOEXCEPT
 {
     x.swap(y);
 }
 
-} // namespace std
-
+WEOS_END_NAMESPACE
 
 // -----------------------------------------------------------------------------
 // Unknown
