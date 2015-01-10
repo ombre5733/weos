@@ -609,10 +609,6 @@ class function<TResult(TArgs...)>
     using invoker_base_type = detail::InvokerBase<TResult(TArgs...)>;
     using storage_type = typename aligned_storage<sizeof(detail::SmallFunctorStorage)>::type;
 
-    static_assert(alignment_of<invoker_base_type>::value <= alignment_of<storage_type>::value
-                  && alignment_of<storage_type>::value % alignment_of<invoker_base_type>::value == 0,
-                  "Invalid in-place storage");
-
     template <typename F>
     using invokeResult = decltype(invoke(declval<F&>(), declval<TArgs>()...));
 
