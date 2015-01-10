@@ -40,6 +40,7 @@
 
 
 #define WEOS_CONSTEXPR_FROM_CXX14
+#define WEOS_FORCE_INLINE inline
 
 
 WEOS_BEGIN_NAMESPACE
@@ -59,7 +60,7 @@ struct tuple_size;
 namespace detail
 {
 
-using namespace std;
+using std::size_t;
 using std::swap;
 
 // ----=====================================================================----
@@ -157,7 +158,7 @@ struct IndexedTupleElement;
 
 // Swap two IndexTupleElement objects.
 template <size_t TIndex, typename TType, bool TIsEmptyAndNotFinal>
-inline
+WEOS_FORCE_INLINE
 void swap(IndexedTupleElement<TIndex, TType, TIsEmptyAndNotFinal>& a,
           IndexedTupleElement<TIndex, TType, TIsEmptyAndNotFinal>& b) // TODO: noexcept
 {
@@ -184,8 +185,9 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     // See here:
     // http://ericniebler.com/2013/08/07/universal-references-and-the-copy-constructo/
     template <typename UType,
-              typename _ = typename enable_if<!is_same<typename decay<UType>::type,
-                                                       IndexedTupleElement>::value>::type>
+              typename _ = typename enable_if<!is_base_of<IndexedTupleElement,
+                                                          typename decay<UType>::type>::value
+                                              && is_constructible<TType, UType>::value>::type>
     constexpr IndexedTupleElement(UType&& u)
         : TType(WEOS_NAMESPACE::forward<UType>(u))
     {
@@ -199,6 +201,8 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
         : TType(WEOS_NAMESPACE::move(other))
     {
     }
+
+    IndexedTupleElement& operator=(const IndexedTupleElement&) = delete;
 
     // Accesses the element.
     WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
@@ -219,9 +223,6 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
         WEOS_NAMESPACE::detail::swap(*this, other);
         return 0;
     }
-
-private:
-    IndexedTupleElement& operator=(const IndexedTupleElement&) = delete;
 };
 
 template <size_t TIndex, typename TType>
@@ -231,12 +232,15 @@ struct IndexedTupleElement<TIndex, TType, false>
     constexpr IndexedTupleElement()
         : m_value()
     {
+        static_assert(!is_reference<TType>::value,
+                      "Cannot default-construct a reference.");
     }
 
     // Constructor using perfect forwarding from a value u.
     template <typename UType,
-              typename _ = typename enable_if<!is_same<typename decay<UType>::type,
-                                                       IndexedTupleElement>::value>::type>
+              typename _ = typename enable_if<!is_base_of<IndexedTupleElement,
+                                                          typename decay<UType>::type>::value
+                                              && is_constructible<TType, UType>::value>::type>
     constexpr IndexedTupleElement(UType&& u)
         : m_value(WEOS_NAMESPACE::forward<UType>(u))
     {
@@ -246,20 +250,12 @@ struct IndexedTupleElement<TIndex, TType, false>
     IndexedTupleElement(const IndexedTupleElement& other) = default;
 
     // Move-constructs a tuple element.
-    template <typename U = TType>
-    IndexedTupleElement(typename enable_if<!is_lvalue_reference<U>::value,
-                                           IndexedTupleElement>::type&& other)
-        : m_value(WEOS_NAMESPACE::move(other.m_value))
+    IndexedTupleElement(IndexedTupleElement&& other)
+        : m_value(WEOS_NAMESPACE::forward<TType>(other.m_value))
     {
     }
 
-    // Move-constructs a tuple element. Specialization for lvalue references.
-    template <typename U = TType>
-    IndexedTupleElement(typename enable_if<is_lvalue_reference<U>::value,
-                                           IndexedTupleElement>::type&& other)
-        : m_value(other.m_value)
-    {
-    }
+    IndexedTupleElement& operator=(const IndexedTupleElement&) = delete;
 
     // Accesses the element.
     WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
@@ -283,8 +279,6 @@ struct IndexedTupleElement<TIndex, TType, false>
 
 private:
     TType m_value;
-
-    IndexedTupleElement& operator=(const IndexedTupleElement&) = delete;
 };
 
 // ----=====================================================================----
@@ -323,14 +317,6 @@ public:
     {
     }
 
-    template <typename TTuple>
-    TupleImpl(TTuple&& t)
-        : IndexedTupleElement<TIndices, TTypes>(
-              forward<typename tuple_element<TIndices, typename make_tuple_types<TTuple>::type>::type>(
-                  get<TIndices>(t)))...
-    {
-    }
-
     TupleImpl(const TupleImpl&) = default;
 
     TupleImpl(TupleImpl&&) = default; // TODO: for ARMCC we have to define this
@@ -351,14 +337,14 @@ class tuple
 {
     typedef detail::TupleImpl<
         typename detail::make_tuple_indices<sizeof...(TTypes)>::type, TTypes...>
-        base_type;
-    base_type m_base;
+        implementation_type;
+    implementation_type m_impl;
 
 
     template <std::size_t I, typename... T>
     friend constexpr typename tuple_element<I, tuple<T...> >::type& get(tuple<T...>&) noexcept;
 
-    template <std::size_t I, typename...T>
+    template <std::size_t I, typename... T>
     friend constexpr const typename tuple_element<I, tuple<T...> >::type& get(const tuple<T...>&) noexcept;
 
     template <std::size_t I, typename... T>
@@ -367,13 +353,13 @@ class tuple
 public:
     //! Constructs a tuple by value-initializing its elements.
     constexpr tuple()
-        : m_base()
+        : m_impl()
     {
     }
 
     //! Constructs a tuple by initializing the elements from the given \p args.
     explicit constexpr tuple(const TTypes&... args)
-        : m_base(typename detail::make_tuple_indices<sizeof...(TTypes)>::type(),
+        : m_impl(typename detail::make_tuple_indices<sizeof...(TTypes)>::type(),
                  typename detail::make_tuple_types<tuple, sizeof...(TTypes)>::type(),
                  typename detail::make_tuple_indices<0>::type(),
                  typename detail::make_tuple_types<tuple, 0>::type(),
@@ -388,7 +374,7 @@ public:
     //! Constructs a tuple by perfect forwarding of the given \p args.
     template <typename... UTypes> // TODO: enable if convertible
     explicit constexpr tuple(UTypes&&... args)
-        : m_base(typename detail::make_tuple_indices<sizeof...(UTypes)>::type(),
+        : m_impl(typename detail::make_tuple_indices<sizeof...(UTypes)>::type(),
                  typename detail::make_tuple_types<tuple, sizeof...(UTypes)>::type(),
                  typename detail::make_tuple_indices<sizeof...(TTypes), sizeof...(UTypes)>::type(),
                  typename detail::make_tuple_types<tuple, sizeof...(TTypes), sizeof...(UTypes)>::type(),
@@ -415,9 +401,9 @@ public:
     // TODO: assignment
 
     //! Swaps this tuple with the \p other tuple.
-    void swap(tuple& other) //noexcept(noexcept(m_base.swap(m_base)))
+    void swap(tuple& other) //noexcept(noexcept(m_impl.swap(m_impl)))
     {
-        m_base.swap(other.m_base);
+        m_impl.swap(other.m_impl);
     }
 };
 
@@ -526,25 +512,28 @@ class tuple_size<const volatile TTuple> : public integral_constant<std::size_t, 
 // ----=====================================================================----
 
 template <std::size_t TIndex, typename... TTypes>
+WEOS_FORCE_INLINE
 constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type& get(tuple<TTypes...>& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
-    return static_cast<detail::IndexedTupleElement<TIndex, type>&>(t.m_base).get();
+    return static_cast<detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
 }
 
 template <std::size_t TIndex, typename... TTypes>
+WEOS_FORCE_INLINE
 constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type&& get(tuple<TTypes...>&& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
     return static_cast<type&&>(
-                static_cast<detail::IndexedTupleElement<TIndex, type>&&>(t.m_base).get());
+                static_cast<detail::IndexedTupleElement<TIndex, type>&&>(t.m_impl).get());
 }
 
 template <std::size_t TIndex, typename... TTypes>
+WEOS_FORCE_INLINE
 constexpr const typename tuple_element<TIndex, tuple<TTypes...> >::type& get(const tuple<TTypes...>& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
-    return static_cast<const detail::IndexedTupleElement<TIndex, type>&>(t.m_base).get();
+    return static_cast<const detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
 }
 
 // ----=====================================================================----
@@ -554,6 +543,7 @@ constexpr const typename tuple_element<TIndex, tuple<TTypes...> >::type& get(con
 //! Forwards the given \p args in a tuple. The tuple must be consumed before
 //! the next sequence point.
 template <typename... TTypes>
+WEOS_FORCE_INLINE
 constexpr tuple<TTypes&&...> forward_as_tuple(TTypes&&... args) noexcept
 {
     return tuple<TTypes&&...>(WEOS_NAMESPACE::forward<TTypes>(args)...);
