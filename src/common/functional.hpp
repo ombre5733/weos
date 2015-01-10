@@ -624,20 +624,20 @@ class function<TResult(TArgs...)>
         static constexpr bool value = sizeof(F) <= smallSize
                                       && alignment_of<F>::value <= smallAlign
                                       && (smallAlign % alignment_of<F>::value == 0)
-                                      ;//TODO: && is_nothrow_copy_constructible<F>::value;
+                                      && is_nothrow_copy_constructible<F>::value;
     };
 
     template <typename F, bool TFunctionPointer =    is_function<F>::value
                                                   || is_member_pointer<F>::value>
     struct notNull
     {
-        static bool check(F fp) { return fp; }
+        static constexpr bool check(F fp) { return fp; }
     };
 
     template <typename F>
     struct notNull<F, false>
     {
-        static bool check(const F&) { return true; }
+        static constexpr bool check(const F&) { return true; }
     };
 
 public:
@@ -722,9 +722,9 @@ public:
         return *this;
     }
 
-    function& operator=(function&& other);
+    function& operator=(function&& other); // TODO
 
-    function& operator=(nullptr_t)
+    function& operator=(nullptr_t) noexcept
     {
         release();
         return *this;
@@ -800,7 +800,7 @@ private:
     storage_type m_storage;
     invoker_base_type* m_invoker;
 
-    void release()
+    void release() noexcept
     {
         if (m_invoker == (invoker_base_type*)&m_storage)
             m_invoker->destroy();
