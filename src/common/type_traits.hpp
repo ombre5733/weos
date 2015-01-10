@@ -40,24 +40,7 @@
 // ARMCC
 // -----------------------------------------------------------------------------
 
-#include <boost/type_traits.hpp>
-#define WEOS_IMPL_NAMESPACE   boost
-
-
-WEOS_BEGIN_NAMESPACE
-
-template <bool TCondition, typename TType = void>
-struct enable_if
-{
-};
-
-template <typename TType>
-struct enable_if<true, TType>
-{
-    typedef TType type;
-};
-
-WEOS_END_NAMESPACE
+#include "type_traits_impl_armcc.hpp"
 
 #else
 // -----------------------------------------------------------------------------
@@ -65,45 +48,51 @@ WEOS_END_NAMESPACE
 // -----------------------------------------------------------------------------
 
 #include <type_traits>
-#define WEOS_IMPL_NAMESPACE   std
 
 
 WEOS_BEGIN_NAMESPACE
 
 using std::enable_if;
 
+using std::integral_constant;
+using std::false_type;
+using std::true_type;
+
+using std::is_abstract;
+using std::is_base_of;
+using std::is_class;
+using std::is_constructible;
+using std::is_convertible;
+using std::is_empty;
+using std::is_enum;
+//using std::is_final;
+using std::is_nothrow_constructible;
+using std::is_nothrow_copy_constructible;
+using std::is_union;
+
+using std::add_const;
+using std::add_cv;
+using std::add_lvalue_reference;
+using std::add_rvalue_reference;
+using std::add_volatile;
+using std::aligned_storage;
+using std::alignment_of;
+using std::common_type;
+using std::conditional;
+using std::decay;
+using std::is_arithmetic;
+using std::is_function;
+using std::is_lvalue_reference;
+using std::is_member_pointer;
+using std::is_member_function_pointer;
+using std::is_pointer;
+using std::is_reference;
+using std::is_rvalue_reference;
+using std::is_same;
+using std::remove_reference;
+
 WEOS_END_NAMESPACE
 
 #endif // __CC_ARM
-
-
-WEOS_BEGIN_NAMESPACE
-
-using WEOS_IMPL_NAMESPACE::add_const;
-using WEOS_IMPL_NAMESPACE::add_cv;
-using WEOS_IMPL_NAMESPACE::add_volatile;
-using WEOS_IMPL_NAMESPACE::add_lvalue_reference;
-using WEOS_IMPL_NAMESPACE::add_rvalue_reference;
-using WEOS_IMPL_NAMESPACE::aligned_storage;
-using WEOS_IMPL_NAMESPACE::alignment_of;
-using WEOS_IMPL_NAMESPACE::common_type;
-using WEOS_IMPL_NAMESPACE::conditional;
-using WEOS_IMPL_NAMESPACE::decay;
-using WEOS_IMPL_NAMESPACE::false_type;
-using WEOS_IMPL_NAMESPACE::integral_constant;
-using WEOS_IMPL_NAMESPACE::is_arithmetic;
-using WEOS_IMPL_NAMESPACE::is_constructible;
-using WEOS_IMPL_NAMESPACE::is_convertible;
-using WEOS_IMPL_NAMESPACE::is_function;
-using WEOS_IMPL_NAMESPACE::is_member_pointer;
-using WEOS_IMPL_NAMESPACE::is_member_function_pointer;
-using WEOS_IMPL_NAMESPACE::is_pointer;
-using WEOS_IMPL_NAMESPACE::is_same;
-using WEOS_IMPL_NAMESPACE::remove_reference;
-using WEOS_IMPL_NAMESPACE::true_type;
-
-WEOS_END_NAMESPACE
-
-#undef WEOS_IMPL_NAMESPACE
 
 #endif // WEOS_COMMON_TYPETRAITS_HPP
