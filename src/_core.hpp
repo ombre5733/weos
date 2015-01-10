@@ -35,6 +35,53 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#ifdef __CC_ARM
+// -----------------------------------------------------------------------------
+// ARMCC
+// -----------------------------------------------------------------------------
+
+#if __ARMCC_VERSION < 5050000 // Format is Mmmbbbb
+    #error "Only armcc 5.05 and greater is supported."
+#endif
+
+#if __cplusplus < 201103L
+    #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument."
+#endif
+
+#include <boost/config.hpp>
+
+#if __ARMCC_VERSION / 10000 == 505
+
+WEOS_BEGIN_NAMESPACE
+
+struct nullptr_t {};
+
+WEOS_END_NAMESPACE
+
+#define nullptr WEOS_NAMESPACE::nullptr_t()
+
+#else
+
+WEOS_BEGIN_NAMESPACE
+
+typedef decltype(nullptr) nullptr_t;
+
+WEOS_END_NAMESPACE
+
+#endif // ARMCC 5.05
+
+#else
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#include <cstddef>
+
+using std::nullptr_t;
+
+#endif // __CC_ARM
+
+
 #if defined(WEOS_WRAP_CXX11)
     #include "cxx11/core.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)

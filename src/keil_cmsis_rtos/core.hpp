@@ -37,6 +37,4 @@
     #error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.74."
 #endif
 
-#include "../common/core.hpp"
-
 #endif // WEOS_KEIL_CMSIS_RTOS_CORE_HPP
