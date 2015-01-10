@@ -31,16 +31,6 @@
 
 #include "config.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/type_traits.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/type_traits.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/type_traits.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/type_traits.hpp"
-#else
-    #error "Invalid native OS."
-#endif
+#include "common/type_traits.hpp"
 
 #endif // WEOS_TYPETRAITS_HPP
