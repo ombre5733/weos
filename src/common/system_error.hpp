@@ -130,10 +130,10 @@ public:
     //!
     //! \note This constructor is only available, if
     //! <tt>weos::is_error_code_enum<ErrorCodeEnumT>::value == true</tt>.
-    template <typename ErrorCodeEnumT>
-    error_code(ErrorCodeEnumT value,
-               typename enable_if<is_error_code_enum<ErrorCodeEnumT>::value>::type* = 0) noexcept
-        : m_value(value),
+    template <typename ErrorCodeEnumT,
+              typename _ = typename enable_if<is_error_code_enum<ErrorCodeEnumT>::value>::type>
+    error_code(ErrorCodeEnumT value) noexcept
+        : m_value(static_cast<int>(value)),
           m_category(&make_error_code(value).category())
     {
     }

@@ -35,14 +35,14 @@ WEOS_BEGIN_NAMESPACE
 class generic_category_impl : public error_category
 {
 public:
-    virtual const char* name() const WEOS_NOEXCEPT
+    virtual const char* name() const noexcept
     {
         return "generic";
     }
 
     virtual const char* message(int err_val) const
     {
-        switch (err_val)
+        switch (static_cast<errc>(err_val))
         {
         case errc::invalid_argument:
             return "Invalid argument";
