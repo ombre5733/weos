@@ -26,12 +26,25 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_ATOMIC_HPP
-#define WEOS_ATOMIC_HPP
+#ifndef WEOS_CORE_HPP
+#define WEOS_CORE_HPP
 
-#include "config.hpp"
 
-#include "_core.hpp"
-#include "common/atomic.hpp"
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
 
-#endif // WEOS_ATOMIC_HPP
+
+#if defined(WEOS_WRAP_CXX11)
+    #include "cxx11/core.hpp"
+#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+    #include "keil_cmsis_rtos/core.hpp"
+#elif defined(WEOS_WRAP_KEIL_RL_RTX)
+    #include "keil_rl_rtx/core.hpp"
+#elif defined(WEOS_WRAP_OSAL)
+    #include "osal/core.hpp"
+#else
+    #error "Invalid native OS."
+#endif
+
+#endif // WEOS_CORE_HPP
