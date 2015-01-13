@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CORE_HPP
-#define WEOS_CORE_HPP
+#ifndef WEOS_COMMON_EXCEPTION_HPP
+#define WEOS_COMMON_EXCEPTION_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -35,63 +35,80 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#define WEOS_THROW_EXCEPTION(exc)                                              \
+    throw WEOS_NAMESPACE::enable_current_exception(exc)
+
+// ----=====================================================================----
+//     exception
+// ----=====================================================================----
+
+class exception
+{
+public:
+    virtual ~exception() throw() = 0;
+
+protected:
+    exception()
+        : m_errorInfoList()
+    {
+    }
+
+private:
+    mutable void* m_errorInfoList;
+};
+
+inline
+exception::~exception() throw()
+{
+}
+
+namespace detail_exception
+{
+void cloneErrorInfoList(const exception* src, exception* dest)
+{
+}
+
+void cloneErrorInfoList(const void* /*src*/, void* /*dest*/)
+{
+}
+
+} // namespace detail_exception
+
+
+// ----=====================================================================----
+//
+// ----=====================================================================----
+
 #ifdef __CC_ARM
 // -----------------------------------------------------------------------------
 // ARMCC
 // -----------------------------------------------------------------------------
 
-#if __ARMCC_VERSION < 5050000 // Format is Mmmbbbb
-    #error "Only armcc 5.05 and greater is supported."
-#endif
-
-#if __cplusplus < 201103L
-    #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument. Remove the '--gnu'' flag."
-#endif
-
-#include <boost/config.hpp>
-
-#if __ARMCC_VERSION / 10000 == 505
-
-WEOS_BEGIN_NAMESPACE
-
-struct nullptr_t {};
-
-WEOS_END_NAMESPACE
-
-#define nullptr WEOS_NAMESPACE::nullptr_t()
-
-#else
-
-WEOS_BEGIN_NAMESPACE
-
-typedef decltype(nullptr) nullptr_t;
-
-WEOS_END_NAMESPACE
-
-#endif // ARMCC 5.05
+#include "exception_impl_armcc.hpp"
 
 #else
 // -----------------------------------------------------------------------------
 // C++11 conforming STL
 // -----------------------------------------------------------------------------
 
-#include <cstddef>
+#include <exception>
 
-using std::nullptr_t;
+
+WEOS_BEGIN_NAMESPACE
+
+template <typename TType>
+inline
+TType&& enable_current_exception(TType&& exc)
+{
+    return exc;
+}
+
+using std::current_exception;
+using std::exception_ptr;
+using std::rethrow_exception;
+
+WEOS_END_NAMESPACE
 
 #endif // __CC_ARM
 
-
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/core.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/core.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/core.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/core.hpp"
-#else
-    #error "Invalid native OS."
-#endif
-
-#endif // WEOS_CORE_HPP
+#endif // WEOS_COMMON_EXCEPTION_HPP
