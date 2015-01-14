@@ -47,9 +47,35 @@ WEOS_BEGIN_NAMESPACE
 template <typename TElement, std::size_t TNumElem>
 class object_pool
 {
+    typedef memory_pool<TElement, TNumElem> memory_pool_t;
+
+    struct Deleter
+    {
+        typedef void* pointer;
+
+        Deleter(memory_pool_t& pool)
+            : m_pool(pool)
+        {
+        }
+
+        void operator() (pointer p)
+        {
+            WEOS_ASSERT(p);
+            m_pool.free(p);
+        }
+
+    private:
+        memory_pool_t& m_pool;
+    };
+
 public:
     //! The type of the elements which can be allocated via this pool.
     typedef TElement element_type;
+
+    object_pool() = default;
+
+    object_pool(const object_pool&) = delete;
+    object_pool& operator=(const object_pool&) = delete;
 
     ~object_pool()
     {
@@ -63,7 +89,7 @@ public:
 
     //! Returns the pool's capacity.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const WEOS_NOEXCEPT
+    std::size_t capacity() const noexcept
     {
         return TNumElem;
     }
@@ -71,79 +97,38 @@ public:
     //! Checks if the pool is empty.
     //! Returns \p true, if the pool is empty and no more object can be
     //! allocated.
-    bool empty() const WEOS_NOEXCEPT
+    bool empty() const noexcept
     {
         return m_memoryPool.empty();
-    }
-
-    //! Allocates memory for an object.
-    //! Allocates memory for one object and returns a pointer to the allocated
-    //! space. The object is not initialized, i.e. the caller has to invoke the
-    //! constructor using placement-new. The method returns a pointer to
-    //! the allocated memory or a null-pointer if no more memory was available.
-    element_type* try_allocate()
-    {
-        return static_cast<element_type*>(m_memoryPool.try_allocate());
-    }
-
-    //! Frees a previously allocated storage.
-    //! Frees the memory space \p element which has been previously allocated
-    //! via this object pool. This function does not destroy the element and
-    //! the caller is responsible for calling the destructor, thus.
-    void free(element_type* const element)
-    {
-        m_memoryPool.free(element);
     }
 
     //! Allocates and constructs an object.
     //! Allocates memory for an object and calls its constructor. The method
     //! returns a pointer to the newly created object or a null-pointer if no
     //! memory was available.
-    element_type* try_construct()
+    template <typename... TArgs>
+    element_type* try_construct(TArgs&&... args)
     {
-        void* mem = this->try_allocate();
+        unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
+                                      Deleter(m_memoryPool));
         if (!mem)
             return 0;
-        element_type* element = new (mem) element_type;
-        return element;
-    }
-
-    template <class T1>
-    element_type* try_construct(WEOS_FWD_REF(T1) x1)
-    {
-        void* mem = this->try_allocate();
-        if (!mem)
-            return 0;
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1));
-        return element;
-    }
-
-    template <class T1, class T2>
-    element_type* try_construct(WEOS_FWD_REF(T1) x1, WEOS_FWD_REF(T2) x2)
-    {
-        void* mem = this->try_allocate();
-        if (!mem)
-            return 0;
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1),
-                                    weos::forward<T2>(x2));
-        return element;
+        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return static_cast<element_type*>(mem.release());
     }
 
     //! Destroys an element.
     //! Destroys the \p element whose memory must have been allocated via
     //! this object pool and whose constructor must have been called.
-    void destroy(element_type* const element)
+    void destroy(element_type* element) noexcept
     {
         element->~element_type();
-        this->free(element);
+        m_memoryPool.free(element);
     }
 
 private:
-    typedef memory_pool<TElement, TNumElem> pool_t;
     //! The pool from which the memory for the elements is allocated.
-    pool_t m_memoryPool;
+    memory_pool_t m_memoryPool;
 };
 
 //! A shared object pool.
@@ -157,9 +142,35 @@ private:
 template <typename TElement, std::size_t TNumElem>
 class shared_object_pool
 {
+    typedef shared_memory_pool<TElement, TNumElem> memory_pool_t;
+
+    struct Deleter
+    {
+        typedef void* pointer;
+
+        Deleter(memory_pool_t& pool)
+            : m_pool(pool)
+        {
+        }
+
+        void operator() (pointer p)
+        {
+            WEOS_ASSERT(p);
+            m_pool.free(p);
+        }
+
+    private:
+        memory_pool_t& m_pool;
+    };
+
 public:
     //! The type of the elements which can be allocated via this pool.
     typedef TElement element_type;
+
+    shared_object_pool() = default;
+
+    shared_object_pool(const shared_object_pool&) = delete;
+    shared_object_pool& operator=(const shared_object_pool&) = delete;
 
     ~shared_object_pool()
     {
@@ -168,7 +179,7 @@ public:
 
     //! Returns the pool's capacity.
     //! Returns the number of elements for which the pool provides memory.
-    std::size_t capacity() const WEOS_NOEXCEPT
+    std::size_t capacity() const noexcept
     {
         return TNumElem;
     }
@@ -186,123 +197,32 @@ public:
         return m_memoryPool.size();
     }
 
-    //! Allocates memory for an element.
-    //! Allocates memory for an element from the pool and returns a pointer to
-    //! it. The calling thread is blocked until an element is available.
-    //!
-    //! \note The returned element is not constructed, i.e. only the memory for
-    //! it has been allocated.
-    //!
-    //! \sa free(), try_allocate(), try_allocate_for()
-    element_type* allocate()
-    {
-        return static_cast<element_type*>(m_memoryPool.allocate());
-    }
-
-    //! Tries to allocate memory for an element.
-    //! Tries to allocate memory for an element from the pool and returns a
-    //! pointer to it. If no memory is available, a null-pointer is returned.
-    //!
-    //! \note The returned element is not constructed, i.e. only the memory for
-    //! it has been allocated.
-    //!
-    //! \sa allocate(), free(), try_allocate_for()
-    element_type* try_allocate()
-    {
-        return static_cast<element_type*>(m_memoryPool.try_allocate());
-    }
-
-    //! Tries to allocate memory for an element with timeout.
-    //! Tries to allocate memory for an element and returns a pointer to it.
-    //! If no memory is available, the method blocks the calling thread until
-    //! either an element becomes available or the timeout duration \p d
-    //! expires. In the latter case, a null-pointer is returned.
-    //!
-    //! \note The returned element is not constructed, i.e. only the memory for
-    //! it has been allocated.
-    //!
-    //! \sa allocate(), free(), try_allocate()
-    template <typename RepT, typename PeriodT>
-    element_type* try_allocate_for(const chrono::duration<RepT, PeriodT>& d)
-    {
-        return static_cast<element_type*>(m_memoryPool.try_allocate_for(d));
-    }
-
-    //! Returns an element back to the pool.
-    //! Returns the \p element, which must have been allocated from this
-    //! pool, back to the pool. The destructor of the element will not be
-    //! called---this is the responsibility of the caller.
-    //!
-    //! \sa allocate(), try_allocate(), try_allocate_for()
-    void free(element_type* const element)
-    {
-        m_memoryPool.free(element);
-    }
-
     //! Constructs an object.
     //! Allocates memory and constructs an element in it. The method
     //! returns a pointer to the newly constructed object. If the pool is empty,
     //! the calling thread is blocked until an element has been returned.
-    element_type* construct()
+    template <typename... TArgs>
+    element_type* construct(TArgs&&... args)
     {
-        void* mem = this->allocate();
-        element_type* element = new (mem) element_type;
-        return element;
-    }
-
-    template <class T1>
-    element_type* construct(WEOS_FWD_REF(T1) x1)
-    {
-        void* mem = this->allocate();
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1));
-        return element;
-    }
-
-    template <class T1, class T2>
-    element_type* construct(WEOS_FWD_REF(T1) x1, WEOS_FWD_REF(T2) x2)
-    {
-        void* mem = this->allocate();
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1),
-                                    weos::forward<T2>(x2));
-        return element;
+        unique_ptr<void, Deleter> mem(m_memoryPool.allocate(),
+                                      Deleter(m_memoryPool));
+        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return static_cast<element_type*>(mem.release());
     }
 
     //! Tries to construct an object.
     //! Tries to allocate memory and constructs an element in it. Then
     //! a pointer to the newly constructed element is returned. If no memory
     //! is available in the pool, a null-pointer is returned.
-    element_type* try_construct()
+    template <typename... TArgs>
+    element_type* try_construct(TArgs&&... args)
     {
-        void* mem = this->try_allocate();
+        unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
+                                      Deleter(m_memoryPool));
         if (!mem)
             return 0;
-        element_type* element = new (mem) element_type;
-        return element;
-    }
-
-    template <class T1>
-    element_type* try_construct(WEOS_FWD_REF(T1) x1)
-    {
-        void* mem = this->try_allocate();
-        if (!mem)
-            return 0;
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1));
-        return element;
-    }
-
-    template <class T1, class T2>
-    element_type* try_construct(WEOS_FWD_REF(T1) x1, WEOS_FWD_REF(T2) x2)
-    {
-        void* mem = this->try_allocate();
-        if (!mem)
-            return 0;
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1),
-                                    weos::forward<T2>(x2));
-        return element;
+        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return static_cast<element_type*>(mem.release());
     }
 
     //! Tries to construct an object with timeout.
@@ -311,40 +231,16 @@ public:
     //! is available in the pool, the calling thread is blocked until either
     //! a memory block becomes available or the timeout duration \p d
     //! expires. In the latter case, a null-pointer is returned.
-    template <typename RepT, typename PeriodT>
-    element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d)
-    {
-        void* mem = this->try_allocate_for(d);
-        if (!mem)
-            return 0;
-        element_type* element = new (mem) element_type;
-        return element;
-    }
-
-    template <typename RepT, typename PeriodT, class T1>
+    template <typename RepT, typename PeriodT, typename... TArgs>
     element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d,
-                                    WEOS_FWD_REF(T1) x1)
+                                    TArgs... args)
     {
-        void* mem = this->try_allocate_for(d);
+        unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
+                                      Deleter(m_memoryPool));
         if (!mem)
             return 0;
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1));
-        return element;
-    }
-
-    template <typename RepT, typename PeriodT, class T1, class T2>
-    element_type* try_construct_for(const chrono::duration<RepT, PeriodT>& d,
-                                    WEOS_FWD_REF(T1) x1,
-                                    WEOS_FWD_REF(T2) x2)
-    {
-        void* mem = this->try_allocate_for(d);
-        if (!mem)
-            return 0;
-        element_type* element = new (mem) element_type(
-                                    weos::forward<T1>(x1),
-                                    weos::forward<T2>(x2));
-        return element;
+        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return static_cast<element_type*>(mem.release());
     }
 
     //! Destroys an element.
@@ -353,16 +249,15 @@ public:
     //! its memory is returned.
     //!
     //! \sa construct()
-    void destroy(element_type* const element)
+    void destroy(element_type* element) noexcept
     {
         element->~element_type();
-        this->free(element);
+        m_memoryPool.free(element);
     }
 
 private:
-    typedef shared_memory_pool<TElement, TNumElem> pool_t;
     //! The pool from which the memory for the elements is allocated.
-    pool_t m_memoryPool;
+    memory_pool_t m_memoryPool;
 };
 
 WEOS_END_NAMESPACE
