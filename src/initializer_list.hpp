@@ -115,12 +115,9 @@ constexpr const TType* end(initializer_list<TType> list) noexcept
 
 WEOS_BEGIN_NAMESPACE
 
-namespace weos
-{
 using std::begin;
 using std::initializer_list;
 using std::end;
-}
 
 WEOS_END_NAMESPACE
 
