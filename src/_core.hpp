@@ -48,13 +48,49 @@
     #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument. Remove the '--gnu' flag."
 #endif
 
+#define BOOST_EXCEPTION_DISABLE
+
 #include <boost/config.hpp>
 
 #if __ARMCC_VERSION / 10000 == 505
 
 WEOS_BEGIN_NAMESPACE
 
-struct nullptr_t {};
+struct nullptr_t
+{
+    bool operator==(nullptr_t) const noexcept
+    {
+        return true;
+    }
+
+    bool operator!=(nullptr_t) const noexcept
+    {
+        return false;
+    }
+
+    template <typename T>
+    bool operator==(T* t) const noexcept
+    {
+        return !t;
+    }
+
+    template <typename T>
+    bool operator!=(T* t) const noexcept
+    {
+        return t;
+    }
+
+    template <typename T>
+    operator T*() const noexcept
+    {
+        return 0;
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return false;
+    }
+};
 
 WEOS_END_NAMESPACE
 
@@ -77,7 +113,12 @@ WEOS_END_NAMESPACE
 
 #include <cstddef>
 
+
+WEOS_BEGIN_NAMESPACE
+
 using std::nullptr_t;
+
+WEOS_END_NAMESPACE
 
 #endif // __CC_ARM
 
