@@ -45,7 +45,7 @@
 #endif
 
 #if __cplusplus < 201103L
-    #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument. Remove the '--gnu'' flag."
+    #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument. Remove the '--gnu' flag."
 #endif
 
 #include <boost/config.hpp>
