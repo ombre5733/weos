@@ -38,6 +38,63 @@
 
 WEOS_BEGIN_NAMESPACE
 
+namespace detail_memory_pool
+{
+
+class free_list
+{
+public:
+    free_list(void* memory, std::size_t chunkSize,
+              std::size_t numElements) noexcept
+        : m_first(memory)
+    {
+        char* iter = static_cast<char*>(memory) + chunkSize * numElements;
+        char* prev = 0;
+        while (iter > static_cast<char*>(m_first))
+        {
+            iter -= chunkSize;
+            next(iter) = prev;
+            prev = iter;
+        }
+    }
+
+    free_list(const free_list&) = delete;
+    free_list& operator=(const free_list&) = delete;
+
+    bool empty() const noexcept
+    {
+        return m_first == 0;
+    }
+
+    void* try_allocate() noexcept
+    {
+        if (m_first == 0)
+            return 0;
+
+        void* chunk = m_first;
+        m_first = next(m_first);
+        return chunk;
+    }
+
+    void free(void* chunk) noexcept
+    {
+        next(chunk) = m_first;
+        m_first = chunk;
+    }
+
+private:
+    //! Pointer to the first free block.
+    void* m_first;
+
+    //! Returns a reference to the next pointer.
+    static void*& next(void* p)
+    {
+        return *static_cast<void**>(p);
+    }
+};
+
+} // namespace detail_memory_pool
+
 //! A memory pool.
 //! A memory_pool provides storage for (\p TNumElem) elements of
 //! type \p TElement. The storage is allocated statically, i.e. the pool
@@ -79,19 +136,12 @@ public:
     //! Creates a memory pool.
     //! Creates a memory pool with statically allocated storage.
     memory_pool() noexcept
-        : m_first(&m_chunks[0])
+        : m_list(&m_chunks[0], chunk_size, TNumElem)
     {
-        chunk_type* iter = &m_chunks[TNumElem - 1];
-        chunk_type* prev = 0;
-        while (1)
-        {
-            next(iter) = prev;
-            prev = iter;
-            if (iter == &m_chunks[0])
-                break;
-            --iter;
-        }
     }
+
+    memory_pool(const memory_pool&) = delete;
+    memory_pool& operator= (const memory_pool&) = delete;
 
     //! Returns the number of pool elements.
     //! Returns the number of elements for which the pool provides memory.
@@ -104,7 +154,7 @@ public:
     //! Returns \p true, if the memory pool is empty.
     bool empty() const noexcept
     {
-        return m_first == 0;
+        return m_list.empty();
     }
 
     //! Allocates a chunk from the pool.
@@ -114,12 +164,7 @@ public:
     //! \sa free()
     void* try_allocate() noexcept
     {
-        if (m_first == 0)
-            return 0;
-
-        void* chunk = m_first;
-        m_first = next(m_first);
-        return chunk;
+        return m_list.try_allocate();
     }
 
     //! Frees a previously allocated chunk.
@@ -127,27 +172,17 @@ public:
     //! to the pool.
     //!
     //! \sa allocate()
-    void free(void* const chunk) noexcept
+    void free(void* chunk) noexcept
     {
-        next(chunk) = m_first;
-        m_first = chunk;
+        m_list.free(chunk);
     }
 
 private:
     //! The memory chunks for the elements and the free-list pointers.
     chunk_type m_chunks[TNumElem];
 
-    //! Pointer to the first free block.
-    void* m_first;
-
-    //! Returns a reference to the next pointer.
-    static void*& next(void* const p)
-    {
-        return *static_cast<void**>(p);
-    }
-
-    memory_pool(const memory_pool&);
-    memory_pool& operator= (const memory_pool&);
+    //! The free-list.
+    detail_memory_pool::free_list m_list;
 };
 
 //! A shared memory pool.
