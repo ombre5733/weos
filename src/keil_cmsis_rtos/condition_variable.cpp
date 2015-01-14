@@ -94,7 +94,6 @@ void condition_variable::wait(unique_lock<mutex>& lock)
 // Private methods
 // -----------------------------------------------------------------------------
 
-inline
 void condition_variable::enqueue(WaitingThread& w)
 {
     lock_guard<mutex> locker(m_mutex);
@@ -111,7 +110,6 @@ void condition_variable::enqueue(WaitingThread& w)
     }
 }
 
-inline
 void condition_variable::maybeDequeue(WaitingThread& w)
 {
     lock_guard<mutex> locker(m_mutex);
