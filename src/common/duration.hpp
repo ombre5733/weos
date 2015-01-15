@@ -31,19 +31,20 @@
 
 #include "../config.hpp"
 
-#include <boost/config.hpp>
-#include <boost/ratio.hpp>
-#include <boost/type_traits/common_type.hpp>
-#include <boost/type_traits/is_floating_point.hpp>
+#include "../ratio.hpp"
+#include "../type_traits.hpp"
 
 #include <cstdint>
-#include <limits>
 
-namespace weos
-{
+
+WEOS_BEGIN_NAMESPACE
 
 namespace chrono
 {
+
+template <typename RepT, typename PeriodT = ratio<1> >
+class duration;
+
 
 namespace detail
 {
@@ -51,16 +52,141 @@ namespace detail
 template <typename FromDurationT, typename ToDurationT>
 struct duration_caster;
 
+// -----------------------------------------------------------------------------
+// is_duration
+// -----------------------------------------------------------------------------
+
+// A trait to determine if a type is a duration. We need this for duration_cast.
+template <typename TypeT>
+struct is_duration : public false_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<duration<RepT, PeriodT> > : public true_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<const duration<RepT, PeriodT> > : public true_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<volatile duration<RepT, PeriodT> > : public true_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<const volatile duration<RepT, PeriodT> > : public true_type {};
+
+// -----------------------------------------------------------------------------
+// Compile-time Greatest Common Divisor & Least Common Multiple
+// -----------------------------------------------------------------------------
+
+// EUCLID(a, b)
+//   if b = 0
+//     then return a
+//   else return EUCLID(b, a mod b)
+template <intmax_t A, intmax_t B>
+struct static_gcd_impl
+{
+    static const intmax_t value = static_gcd_impl<B, A % B>::value;
+};
+
+template <intmax_t A>
+struct static_gcd_impl<A, 0>
+{
+    static const intmax_t value = A;
+};
+
+template <>
+struct static_gcd_impl<0, 0>
+{
+    static const intmax_t value = 0;
+};
+
+template <intmax_t A, intmax_t B>
+struct static_gcd : public integral_constant<intmax_t, static_gcd_impl<A, B>::value>
+{
+};
+
+
+template <intmax_t A, intmax_t B>
+struct static_lcm_impl
+{
+    static const intmax_t value = A / static_gcd_impl<A, B>::value * B;
+};
+
+template <>
+struct static_lcm_impl<0, 0>
+{
+    static const intmax_t value = 0;
+};
+
+template <intmax_t A, intmax_t B>
+struct static_lcm : public integral_constant<intmax_t, static_lcm_impl<A, B>::value>
+{
+};
+
+// -----------------------------------------------------------------------------
+// ratio_gcd
+// -----------------------------------------------------------------------------
+
+template <typename R1, typename R2>
+struct ratio_gcd : ratio<static_gcd<R1::num, R2::num>::value,
+                         static_lcm<R1::den, R2::den>::value>::type
+{
+};
+
+// -----------------------------------------------------------------------------
+// checked_division
+// -----------------------------------------------------------------------------
+
+template <typename R1, typename R2>
+class checked_division
+{
+    // Divide the numerators by there GCD.
+    static const intmax_t gcd_num = static_gcd<R1::num, R2::num>::value;
+    static const intmax_t num1 = R1::num / gcd_num;
+    static const intmax_t num2 = R2::num / gcd_num;
+    // Do the same with the denominators.
+    static const intmax_t gcd_den = static_gcd<R1::den, R2::den>::value;
+    static const intmax_t den1 = R1::den / gcd_den;
+    static const intmax_t den2 = R2::den / gcd_den;
+
+    // Assume sizeof(intmax_t) == 2 and CHAR_BIT == 8:
+    // We want max = 0x7fff.
+    // Set the highest bit and add 1:
+    //   1 << (16 - 1) + 1 = 0x4000 + 1 = 0x4001
+    // Negation by two's complement is bit-wise negation plus 1:
+    //   -0x4001 = ~0x4001 + 1 = 0x7ffe + 1 = 0x7fff
+    // This is what we want.
+    static const intmax_t max = -((intmax_t(1) << (sizeof(intmax_t) * 8 - 1)) + 1);
+
+public:
+    static const bool overflow = (num1 > max / den2) || (num2 > max / den1);
+
+    // (n1 / d1) / (n2 / d2) = (n1 * d2) / (d1 * n2)
+    typedef ratio<num1 * den2, den1 * num2> type;
+};
+
 } // namespace detail
+} // namespace chrono
+
+// ----=====================================================================----
+//     Specialisation of common_type for chrono::duration<>
+// ----=====================================================================----
+
+template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
+struct common_type<chrono::duration<Rep1T, Period1T>,
+                   chrono::duration<Rep2T, Period2T> >
+{
+    typedef chrono::duration<typename common_type<Rep1T, Rep2T>::type,
+                             typename chrono::detail::ratio_gcd<Period1T, Period2T>::type> type;
+};
+
+namespace chrono
+{
 
 // ----=====================================================================----
 //     treat_as_floating_point
 // ----=====================================================================----
 
 template <typename RepT>
-struct treat_as_floating_point : boost::is_floating_point<RepT>
-{
-};
+struct treat_as_floating_point : public is_floating_point<RepT> {};
 
 // ----=====================================================================----
 //     duration_values
@@ -70,17 +196,17 @@ struct treat_as_floating_point : boost::is_floating_point<RepT>
 template <typename RepT>
 struct duration_values
 {
-    static BOOST_CONSTEXPR RepT zero()
+    static WEOS_CONSTEXPR RepT zero()
     {
         return RepT(0);
     }
 
-    static BOOST_CONSTEXPR RepT min()
+    static WEOS_CONSTEXPR RepT min()
     {
         return std::numeric_limits<RepT>::lowest();
     }
 
-    static BOOST_CONSTEXPR RepT max()
+    static WEOS_CONSTEXPR RepT max()
     {
         return std::numeric_limits<RepT>::max();
     }
@@ -93,19 +219,21 @@ struct duration_values
 //! A duration of time.
 //! A duration measures an amount of time. It is defined by a number of ticks
 //! and a period which is the time in seconds between two ticks.
-template <typename RepT, typename PeriodT = boost::ratio<1> >
+template <typename RepT, typename PeriodT>
 class duration
 {
+    static_assert(!detail::is_duration<RepT>::value,
+                  "The tick representation cannot be a duration");
+    static_assert(PeriodT::num > 0, "The period must be positive");
+
 public:
     //! The type used for representing the number of ticks.
     typedef RepT rep;
-    //! The time is seconds between two ticks specified as
-    //! <tt>boost::ratio<></tt>.
+    //! The time between two ticks specified as a ratio of seconds.
     typedef PeriodT period;
 
     //! Creates a duration of zero periods.
-    BOOST_CONSTEXPR duration() /*= default*/
-        : m_count(duration_values<rep>::zero())
+    WEOS_CONSTEXPR duration() /*= default*/
     {
     }
 
@@ -117,42 +245,56 @@ public:
     {
     }
 
-    template <typename Rep2T>
-    BOOST_CONSTEXPR explicit duration(const Rep2T& count)
+    //! Constructs a duration with \p count ticks.
+    //!
+    //! \note The constructor is disabled, if it is tried to create an
+    //! integer tick from a floating-point value. However, it is possible
+    //! to create a floating-point tick from an integer value. In other words,
+    //! if the conversion might truncate, the constructor is disabled.
+    template <typename TRep2,
+              typename _ = typename enable_if<
+                               is_convertible<TRep2, rep>::value
+                               && (treat_as_floating_point<rep>::value ||
+                                   !treat_as_floating_point<TRep2>::value)
+                           >::type>
+    WEOS_CONSTEXPR
+    explicit duration(const TRep2& count)
         : m_count(count)
     {
-        //! \todo Add a check if Rep2T is implicitly convertible to RepT
     }
 
-    template <typename Rep2T, typename Period2T>
-    BOOST_CONSTEXPR duration(const duration<Rep2T, Period2T>& other)
-        : m_count(detail::duration_caster<
-                      duration<Rep2T, Period2T>, duration>().cast(other).count())
+    //! Constructs a duration from the \p other duration.
+    template <typename TRep2, typename TPeriod2,
+              typename _ = typename enable_if<!detail::checked_division<TPeriod2, period>::overflow
+                                              && (treat_as_floating_point<rep>::value
+                                                  || (detail::checked_division<TPeriod2, period>::type::den == 1
+                                                      && !treat_as_floating_point<TRep2>::value))>::type>
+    WEOS_CONSTEXPR
+    duration(const duration<TRep2, TPeriod2>& other)
+        : m_count(duration_cast<duration>(other).count())
     {
-        //! \todo Checks for overflow are missing
     }
 
     duration& operator= (const duration& other) /*= default*/
     {
-        if (this != &other)
-            m_count = other.m_count;
+        m_count = other.m_count;
         return *this;
     }
 
     //! Returns the number of ticks.
-    BOOST_CONSTEXPR rep count() const
+    WEOS_CONSTEXPR rep count() const
     {
         return m_count;
     }
 
     // Arithmetic operators.
 
-    BOOST_CONSTEXPR duration operator+ () const
+    WEOS_CONSTEXPR duration operator+ () const
     {
-        return duration(m_count);
+        return *this;
     }
 
-    BOOST_CONSTEXPR duration operator- () const
+    WEOS_CONSTEXPR duration operator- () const
     {
         return duration(-m_count);
     }
@@ -198,19 +340,47 @@ public:
         return *this;
     }
 
+    //! Multiplies this duration by a scalar \p a.
+    duration& operator*=(const rep& a)
+    {
+        m_count *= a;
+        return *this;
+    }
+
+    //! Divides this duration by a scalar \p a.
+    duration& operator/=(const rep& a)
+    {
+        m_count /= a;
+        return *this;
+    }
+
+    //! Performs a modulo division with the scalar \p a.
+    duration& operator%=(const rep& a)
+    {
+        m_count %= a;
+        return *this;
+    }
+
+    //! Performs a modulo division with the \p other duration.
+    duration& operator%=(const duration& other)
+    {
+        m_count %= other.count();
+        return *this;
+    }
+
     // Special values.
 
-    static BOOST_CONSTEXPR duration zero()
+    static WEOS_CONSTEXPR duration zero()
     {
         return duration(duration_values<rep>::zero());
     }
 
-    static BOOST_CONSTEXPR duration min()
+    static WEOS_CONSTEXPR duration min()
     {
         return duration(duration_values<rep>::min());
     }
 
-    static BOOST_CONSTEXPR duration max()
+    static WEOS_CONSTEXPR duration max()
     {
         return duration(duration_values<rep>::max());
     }
@@ -220,80 +390,53 @@ private:
     rep m_count;
 };
 
-typedef duration<std::int32_t, boost::micro>          microseconds;
-typedef duration<std::int32_t, boost::milli>          milliseconds;
-typedef duration<std::int32_t>                        seconds;
-typedef duration<std::int32_t, boost::ratio<60> >     minutes;
-typedef duration<std::int32_t, boost::ratio<3600> >   hours;
-
-} // namespace chrono
-} // namespace weos
-
-
 // ----=====================================================================----
-//     Specialisation of common_type for chrono::duration<>
+//     SI-constants
 // ----=====================================================================----
 
-namespace boost
-{
-
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-struct common_type<weos::chrono::duration<Rep1T, Period1T>,
-                   weos::chrono::duration<Rep2T, Period2T> >;
-
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-struct common_type<weos::chrono::duration<Rep1T, Period1T>,
-                   weos::chrono::duration<Rep2T, Period2T> >
-{
-    typedef weos::chrono::duration<
-        typename common_type<Rep1T, Rep2T>::type,
-        typename ratio_gcd<Period1T, Period2T>::type> type;
-};
-
-} // namespace boost
-
+typedef duration<std::int64_t, nano>           nanoseconds;
+typedef duration<std::int64_t, micro>          microseconds;
+typedef duration<std::int64_t, milli>          milliseconds;
+typedef duration<std::int64_t>                 seconds;
+typedef duration<std::int32_t, ratio<60> >     minutes;
+typedef duration<std::int32_t, ratio<3600> >   hours;
 
 // ----=====================================================================----
 //     Operators
 // ----=====================================================================----
 
-namespace weos
-{
-namespace chrono
-{
-
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
-typename boost::common_type<duration<Rep1T, Period1T>,
-                            duration<Rep2T, Period2T> >::type
+inline WEOS_CONSTEXPR
+typename common_type<duration<Rep1T, Period1T>,
+                     duration<Rep2T, Period2T> >::type
 operator+ (const duration<Rep1T, Period1T>& x,
            const duration<Rep2T, Period2T>& y)
 {
-    typedef typename boost::common_type<
+    typedef typename common_type<
             duration<Rep1T, Period1T>,
             duration<Rep2T, Period2T> >::type common_type;
     return common_type(common_type(x).count() + common_type(y).count());
 }
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
-typename boost::common_type<duration<Rep1T, Period1T>,
-                            duration<Rep2T, Period2T> >::type
+inline WEOS_CONSTEXPR
+typename common_type<duration<Rep1T, Period1T>,
+                     duration<Rep2T, Period2T> >::type
 operator- (const duration<Rep1T, Period1T>& x,
            const duration<Rep2T, Period2T>& y)
 {
-    typedef typename boost::common_type<
+    typedef typename common_type<
             duration<Rep1T, Period1T>,
             duration<Rep2T, Period2T> >::type common_type;
     return common_type(common_type(x).count() - common_type(y).count());
 }
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
+inline WEOS_CONSTEXPR
 bool operator== (const duration<Rep1T, Period1T>& x,
                  const duration<Rep2T, Period2T>& y)
 {
-    typedef typename boost::common_type<
+    typedef typename common_type<
             duration<Rep1T, Period1T>,
             duration<Rep2T, Period2T> >::type common_type;
 
@@ -301,7 +444,7 @@ bool operator== (const duration<Rep1T, Period1T>& x,
 }
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
+inline WEOS_CONSTEXPR
 bool operator!= (const duration<Rep1T, Period1T>& x,
                  const duration<Rep2T, Period2T>& y)
 {
@@ -309,11 +452,11 @@ bool operator!= (const duration<Rep1T, Period1T>& x,
 }
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
+inline WEOS_CONSTEXPR
 bool operator< (const duration<Rep1T, Period1T>& x,
                 const duration<Rep2T, Period2T>& y)
 {
-    typedef typename boost::common_type<
+    typedef typename common_type<
             duration<Rep1T, Period1T>,
             duration<Rep2T, Period2T> >::type common_type;
 
@@ -321,7 +464,7 @@ bool operator< (const duration<Rep1T, Period1T>& x,
 }
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
+inline WEOS_CONSTEXPR
 bool operator<= (const duration<Rep1T, Period1T>& x,
                  const duration<Rep2T, Period2T>& y)
 {
@@ -329,7 +472,7 @@ bool operator<= (const duration<Rep1T, Period1T>& x,
 }
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
+inline WEOS_CONSTEXPR
 bool operator> (const duration<Rep1T, Period1T>& x,
                 const duration<Rep2T, Period2T>& y)
 {
@@ -337,7 +480,7 @@ bool operator> (const duration<Rep1T, Period1T>& x,
 }
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline BOOST_CONSTEXPR
+inline WEOS_CONSTEXPR
 bool operator>= (const duration<Rep1T, Period1T>& x,
                  const duration<Rep2T, Period2T>& y)
 {
@@ -350,20 +493,6 @@ bool operator>= (const duration<Rep1T, Period1T>& x,
 
 namespace detail
 {
-
-// The smallest integer type which is used in duration_cast.
-typedef std::int32_t cast_least_int_type;
-
-// A trait to determine if a type is a duration. We need this for duration_cast.
-template <typename TypeT>
-struct is_duration : boost::false_type
-{
-};
-
-template <typename RepT, typename PeriodT>
-struct is_duration<duration<RepT, PeriodT> > : boost::true_type
-{
-};
 
 // This struct is a helper for casting durations. Generally, we seek to convert
 // from (f * fN / fD) to (t * tN / tD), where f and t are the ticks of a
@@ -390,7 +519,7 @@ struct duration_cast_helper;
 template <typename FromDurationT, typename ToDurationT, typename RatioT>
 struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, true, true>
 {
-    BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
+    WEOS_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
         return ToDurationT(static_cast<typename ToDurationT::rep>(
                                from.count()));
@@ -401,12 +530,12 @@ struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, true, true>
 template <typename FromDurationT, typename ToDurationT, typename RatioT>
 struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, false, true>
 {
-    BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
+    WEOS_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
-        typedef typename boost::common_type<
+        typedef typename common_type<
                     typename FromDurationT::rep,
                     typename ToDurationT::rep,
-                    cast_least_int_type>::type common_type;
+                    intmax_t>::type common_type;
 
         return ToDurationT(static_cast<typename ToDurationT::rep>(
                                static_cast<common_type>(from.count())
@@ -418,12 +547,12 @@ struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, false, true>
 template <typename FromDurationT, typename ToDurationT, typename RatioT>
 struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, true, false>
 {
-    BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
+    WEOS_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
-        typedef typename boost::common_type<
+        typedef typename common_type<
                     typename FromDurationT::rep,
                     typename ToDurationT::rep,
-                    cast_least_int_type>::type common_type;
+                    intmax_t>::type common_type;
 
         return ToDurationT(static_cast<typename ToDurationT::rep>(
                                static_cast<common_type>(from.count())
@@ -435,12 +564,12 @@ struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, true, false>
 template <typename FromDurationT, typename ToDurationT, typename RatioT>
 struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, false, false>
 {
-    BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
+    WEOS_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
-        typedef typename boost::common_type<
+        typedef typename common_type<
                     typename FromDurationT::rep,
                     typename ToDurationT::rep,
-                    cast_least_int_type>::type common_type;
+                    intmax_t>::type common_type;
 
         return ToDurationT(static_cast<typename ToDurationT::rep>(
                                static_cast<common_type>(from.count())
@@ -452,7 +581,7 @@ struct duration_cast_helper<FromDurationT, ToDurationT, RatioT, false, false>
 template <typename FromDurationT, typename ToDurationT>
 struct duration_caster
 {
-    typedef typename boost::ratio_divide<
+    typedef typename ratio_divide<
                          typename FromDurationT::period,
                          typename ToDurationT::period>::type ratio;
 
@@ -461,7 +590,7 @@ struct duration_caster
                                  ratio::num == 1,
                                  ratio::den == 1> helper;
 
-    BOOST_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
+    WEOS_CONSTEXPR ToDurationT cast(const FromDurationT& from) const
     {
         return helper().cast(from);
     }
@@ -476,12 +605,12 @@ struct duration_caster
 //! <tt>d.count() * d::period / T::period</tt>. If the destination period is
 //! coarser than the source period, a truncation occurs if the destination
 //! representation is not a floating point type.
-//! All values are cast to at least weos::detail::cast_least_int_type before
+//! All values are cast to at least weos::detail::intmax_t before
 //! performing the computation.
 template <typename ToDurationT, typename RepT, typename PeriodT>
-inline BOOST_CONSTEXPR
-typename boost::enable_if_c<detail::is_duration<ToDurationT>::value,
-                            ToDurationT>::type
+inline WEOS_CONSTEXPR
+typename enable_if<detail::is_duration<ToDurationT>::value,
+                   ToDurationT>::type
 duration_cast(const duration<RepT, PeriodT>& d)
 {
     return detail::duration_caster<duration<RepT, PeriodT>,
@@ -489,6 +618,7 @@ duration_cast(const duration<RepT, PeriodT>& d)
 }
 
 } // namespace chrono
-} // namespace weos
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_DURATION_HPP

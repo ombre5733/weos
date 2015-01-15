@@ -84,12 +84,17 @@ WEOS_END_NAMESPACE
 
 WEOS_BEGIN_NAMESPACE
 
+template <typename T1, typename T2 = void, typename T3 = void>
+struct common_type
+{
+    typedef typename WEOS_IMPL_NAMESPACE::common_type<T1, T2, T3>::type type;
+};
+
 using WEOS_IMPL_NAMESPACE::add_const;
 using WEOS_IMPL_NAMESPACE::add_lvalue_reference;
 using WEOS_IMPL_NAMESPACE::add_rvalue_reference;
 using WEOS_IMPL_NAMESPACE::aligned_storage;
 using WEOS_IMPL_NAMESPACE::alignment_of;
-using WEOS_IMPL_NAMESPACE::common_type;
 using WEOS_IMPL_NAMESPACE::conditional;
 using WEOS_IMPL_NAMESPACE::decay;
 using WEOS_IMPL_NAMESPACE::false_type;
@@ -97,6 +102,7 @@ using WEOS_IMPL_NAMESPACE::integral_constant;
 using WEOS_IMPL_NAMESPACE::is_arithmetic;
 using WEOS_IMPL_NAMESPACE::is_base_of;
 using WEOS_IMPL_NAMESPACE::is_convertible;
+using WEOS_IMPL_NAMESPACE::is_floating_point;
 using WEOS_IMPL_NAMESPACE::is_member_function_pointer;
 using WEOS_IMPL_NAMESPACE::is_pointer;
 using WEOS_IMPL_NAMESPACE::is_same;
