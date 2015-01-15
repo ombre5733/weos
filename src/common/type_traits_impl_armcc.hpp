@@ -34,6 +34,42 @@
 
 WEOS_BEGIN_NAMESPACE
 
+#if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
+template <typename... T>
+struct common_type
+{
+    typedef typename boost::common_type<T...>::type type;
+};
+#else
+template <typename T1, typename T2 = void, typename T3 = void>
+struct common_type
+{
+    typedef typename boost::common_type<T1, T2, T3>::type type;
+};
+#endif
+
+using boost::add_const;
+using boost::add_cv;
+using boost::add_lvalue_reference;
+using boost::add_rvalue_reference;
+using boost::add_volatile;
+using boost::aligned_storage;
+using boost::alignment_of;
+using boost::conditional;
+using boost::decay;
+using boost::is_arithmetic;
+using boost::is_floating_point;
+using boost::is_function;
+using boost::is_lvalue_reference;
+using boost::is_member_pointer;
+using boost::is_member_function_pointer;
+using boost::is_pointer;
+using boost::is_reference;
+using boost::is_rvalue_reference;
+using boost::is_same;
+using boost::remove_reference;
+
+
 // ---- enable_if --------------------------------------------------------------
 
 template <bool TCondition, typename TType = void>
@@ -112,29 +148,6 @@ struct is_nothrow_copy_constructible
 
 template <typename TType>
 struct is_union : public integral_constant<bool, __is_union(TType)> {};
-
-
-
-using boost::add_const;
-using boost::add_cv;
-using boost::add_lvalue_reference;
-using boost::add_rvalue_reference;
-using boost::add_volatile;
-using boost::aligned_storage;
-using boost::alignment_of;
-using boost::common_type;
-using boost::conditional;
-using boost::decay;
-using boost::is_arithmetic;
-using boost::is_function;
-using boost::is_lvalue_reference;
-using boost::is_member_pointer;
-using boost::is_member_function_pointer;
-using boost::is_pointer;
-using boost::is_reference;
-using boost::is_rvalue_reference;
-using boost::is_same;
-using boost::remove_reference;
 
 WEOS_END_NAMESPACE
 
