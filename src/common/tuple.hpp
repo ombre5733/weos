@@ -45,6 +45,7 @@
 
 WEOS_BEGIN_NAMESPACE
 
+//! A tuple.
 template <typename... TTypes>
 class tuple;
 
@@ -56,6 +57,14 @@ class tuple_element;
 template <typename TTuple>
 struct tuple_size;
 
+template <std::size_t I, typename... T>
+constexpr typename tuple_element<I, tuple<T...> >::type& get(tuple<T...>&) noexcept;
+
+template <std::size_t I, typename... T>
+constexpr const typename tuple_element<I, tuple<T...> >::type& get(const tuple<T...>&) noexcept;
+
+template <std::size_t I, typename... T>
+constexpr typename tuple_element<I, tuple<T...> >::type&& get(tuple<T...>&&) noexcept;
 
 namespace detail
 {
@@ -204,6 +213,13 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
 
     IndexedTupleElement& operator=(const IndexedTupleElement&) = delete;
 
+    template <typename T>
+    IndexedTupleElement& operator=(T&& t)
+    {
+        TType::operator=(WEOS_NAMESPACE::forward<T>(t));
+        return *this;
+    }
+
     // Accesses the element.
     WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
     {
@@ -256,6 +272,13 @@ struct IndexedTupleElement<TIndex, TType, false>
     }
 
     IndexedTupleElement& operator=(const IndexedTupleElement&) = delete;
+
+    template <typename T>
+    IndexedTupleElement& operator=(T&& t)
+    {
+        m_value = WEOS_NAMESPACE::forward<T>(t);
+        return *this;
+    }
 
     // Accesses the element.
     WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
@@ -317,9 +340,54 @@ public:
     {
     }
 
+    // Copy-constructs from another TupleImpl.
     TupleImpl(const TupleImpl&) = default;
 
-    TupleImpl(TupleImpl&&) = default; // TODO: for ARMCC we have to define this
+    // Move-constructs from another TupleImpl.
+    TupleImpl(TupleImpl&& other)
+        : IndexedTupleElement<TIndices, TTypes>(
+              WEOS_NAMESPACE::forward<TTypes>(
+                  static_cast<IndexedTupleElement<TIndices, TTypes>&>(other).get()))...
+    {
+    }
+
+    // Move-constructs from another tuple.
+    template <typename TTuple>
+    constexpr TupleImpl(TTuple&& t)
+        : IndexedTupleElement<TIndices, TTypes>(
+              WEOS_NAMESPACE::forward<typename tuple_element<
+                  TIndices, typename make_tuple_types<TTuple>::type>::type>(
+                      WEOS_NAMESPACE::get<TIndices>(t)))...
+    {
+    }
+
+    // Copy-assigns the other TupleImpl to this one.
+    TupleImpl& operator=(const TupleImpl& other)
+    {
+        variadicCall(IndexedTupleElement<TIndices, TTypes>::operator=(
+            static_cast<const IndexedTupleElement<TIndices, TTypes>&>(other).get())...);
+        return *this;
+    }
+
+    // Move-assigns the other TupleImpl to this one.
+    TupleImpl& operator=(TupleImpl&& other)
+    {
+        variadicCall(IndexedTupleElement<TIndices, TTypes>::operator=(
+            WEOS_NAMESPACE::forward<TTypes>(
+                static_cast<IndexedTupleElement<TIndices, TTypes>&>(other).get()))...);
+        return *this;
+    }
+
+    // Move-assigns from another tuple.
+    template <typename TTuple>
+    TupleImpl& operator=(TTuple&& t)
+    {
+        variadicCall(IndexedTupleElement<TIndices, TTypes>::operator=(
+            WEOS_NAMESPACE::forward<typename tuple_element<
+                TIndices, typename make_tuple_types<TTuple>::type>::type>(
+                    WEOS_NAMESPACE::get<TIndices>(t)))...);
+        return *this;
+    }
 
     // Swaps this tuple with the other tuple.
     void swap(TupleImpl& other) /* noexcept if TFirst noexcept swappable && rest_type noexcept swappable */
@@ -331,7 +399,6 @@ public:
 
 } // namespace detail
 
-//! A tuple.
 template <typename... TTypes>
 class tuple
 {
