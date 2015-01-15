@@ -167,7 +167,7 @@ public:
 } // namespace chrono
 
 // ----=====================================================================----
-//     Specialisation of common_type for chrono::duration<>
+//     Specialization of common_type for chrono::duration<>
 // ----=====================================================================----
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
@@ -402,7 +402,112 @@ typedef duration<std::int32_t, ratio<60> >     minutes;
 typedef duration<std::int32_t, ratio<3600> >   hours;
 
 // ----=====================================================================----
-//     Operators
+//     duration comparisons
+// ----=====================================================================----
+
+namespace detail
+{
+
+// Compares two durations. General case.
+template <typename TDuration1, typename TDuration2>
+struct duration_equal
+{
+    static inline WEOS_CONSTEXPR
+    bool cmp(const TDuration1& d1, const TDuration2& d2)
+    {
+        typedef typename common_type<TDuration1, TDuration2>::type common_type;
+        return common_type(d1).count() == common_type(d2).count();
+    }
+};
+
+// Compares two durations. No cast needed when both durations are of the
+// same type.
+template <typename TDuration>
+struct duration_equal<TDuration, TDuration>
+{
+    static inline WEOS_CONSTEXPR
+    bool cmp(const TDuration& d1, const TDuration& d2)
+    {
+        return d1.count() == d2.count();
+    }
+};
+
+// Compares two durations. General case.
+template <typename TDuration1, typename TDuration2>
+struct duration_less
+{
+    static inline WEOS_CONSTEXPR
+    bool cmp(const TDuration1& d1, const TDuration2& d2) const
+    {
+        typedef typename common_type<TDuration1, TDuration2>::type common_type;
+        return common_type(d1).count() < common_type(d2).count();
+    }
+};
+
+// Compares two durations. No cast needed when both durations are of the
+// same type.
+template <typename TDuration>
+struct duration_less<TDuration, TDuration>
+{
+    static inline WEOS_CONSTEXPR
+    bool cmp(const TDuration& d1, const TDuration& d2)
+    {
+        return d1.count() < d2.count();
+    }
+};
+
+} // namespace detail
+
+template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+bool operator==(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
+{
+    return detail::duration_equal<duration<TRep1, TPeriod1>,
+                                  duration<TRep2, TPeriod2> >::cmp(d1, d2);
+}
+
+template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+bool operator!=(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
+{
+    return !detail::duration_equal<duration<TRep1, TPeriod1>,
+                                   duration<TRep2, TPeriod2> >::cmp(d1, d2);
+}
+
+template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+bool operator<(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
+{
+    return detail::duration_less<duration<TRep1, TPeriod1>,
+                                 duration<TRep2, TPeriod2> >::cmp(d1, d2);
+}
+
+template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+bool operator>(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
+{
+    return detail::duration_less<duration<TRep1, TPeriod1>,
+                                 duration<TRep2, TPeriod2> >::cmp(d2, d1);
+}
+
+template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+bool operator<=(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
+{
+    return !detail::duration_less<duration<TRep1, TPeriod1>,
+                                  duration<TRep2, TPeriod2> >::cmp(d2, d1);
+}
+
+template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+bool operator>=(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
+{
+    return !detail::duration_less<duration<TRep1, TPeriod1>,
+                                  duration<TRep2, TPeriod2> >::cmp(d1, d2);
+}
+
+// ----=====================================================================----
+//     duration arithmetic
 // ----=====================================================================----
 
 template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
@@ -431,61 +536,9 @@ operator- (const duration<Rep1T, Period1T>& x,
     return common_type(common_type(x).count() - common_type(y).count());
 }
 
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline WEOS_CONSTEXPR
-bool operator== (const duration<Rep1T, Period1T>& x,
-                 const duration<Rep2T, Period2T>& y)
-{
-    typedef typename common_type<
-            duration<Rep1T, Period1T>,
-            duration<Rep2T, Period2T> >::type common_type;
-
-    return common_type(x).count() == common_type(y).count();
-}
-
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline WEOS_CONSTEXPR
-bool operator!= (const duration<Rep1T, Period1T>& x,
-                 const duration<Rep2T, Period2T>& y)
-{
-    return !(x == y);
-}
-
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline WEOS_CONSTEXPR
-bool operator< (const duration<Rep1T, Period1T>& x,
-                const duration<Rep2T, Period2T>& y)
-{
-    typedef typename common_type<
-            duration<Rep1T, Period1T>,
-            duration<Rep2T, Period2T> >::type common_type;
-
-    return common_type(x).count() < common_type(y).count();
-}
-
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline WEOS_CONSTEXPR
-bool operator<= (const duration<Rep1T, Period1T>& x,
-                 const duration<Rep2T, Period2T>& y)
-{
-    return !(y < x);
-}
-
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline WEOS_CONSTEXPR
-bool operator> (const duration<Rep1T, Period1T>& x,
-                const duration<Rep2T, Period2T>& y)
-{
-    return y < x;
-}
-
-template <typename Rep1T, typename Period1T, typename Rep2T, typename Period2T>
-inline WEOS_CONSTEXPR
-bool operator>= (const duration<Rep1T, Period1T>& x,
-                 const duration<Rep2T, Period2T>& y)
-{
-    return !(x < y);
-}
+// TODO: operator*
+// TODO: operator/
+// TODO: operator%
 
 // ----=====================================================================----
 //     duration_cast
@@ -605,8 +658,7 @@ struct duration_caster
 //! <tt>d.count() * d::period / T::period</tt>. If the destination period is
 //! coarser than the source period, a truncation occurs if the destination
 //! representation is not a floating point type.
-//! All values are cast to at least weos::detail::intmax_t before
-//! performing the computation.
+//! All values are cast to at least intmax_t before performing the computation.
 template <typename ToDurationT, typename RepT, typename PeriodT>
 inline WEOS_CONSTEXPR
 typename enable_if<detail::is_duration<ToDurationT>::value,

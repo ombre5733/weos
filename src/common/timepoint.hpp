@@ -32,10 +32,9 @@
 #include "../config.hpp"
 #include "duration.hpp"
 
-#include <boost/config.hpp>
 
-namespace weos
-{
+WEOS_BEGIN_NAMESPACE
+
 namespace chrono
 {
 
@@ -47,27 +46,42 @@ namespace chrono
 template <typename ClockT, typename DurationT = typename ClockT::duration>
 class time_point
 {
+    static_assert(detail::is_duration<DurationT>::value,
+                  "The second template parameter must be a duration");
+
 public:
     typedef ClockT clock;
     typedef DurationT duration;
     typedef typename duration::rep rep;
     typedef typename duration::period period;
 
-    BOOST_CONSTEXPR time_point()
+    WEOS_CONSTEXPR time_point()
+        : m_duration(duration::zero())
     {
     }
 
     //! Creates a time point from a duration.
     //! Creates a time point whose difference to the epoch time is equal
     //! to the given duration \p d.
-    BOOST_CONSTEXPR explicit time_point(const duration& d)
+    WEOS_CONSTEXPR explicit time_point(const duration& d)
         : m_duration(d)
+    {
+    }
+
+    //! Creates a time point from another time point.
+    //! Creates a time point from the other time point \p tp.
+    template <typename TDuration2,
+              typename _ = typename enable_if<
+                               is_convertible<TDuration2, duration>::value>::type>
+    WEOS_CONSTEXPR
+    time_point(const time_point<clock, TDuration2>& tp)
+        : m_duration(tp.time_since_epoch())
     {
     }
 
     //! Returns the time point relative to the clock's epoch.
     //! Returns the time point as a duration since the clock's epoch.
-    duration time_since_epoch() const
+    WEOS_CONSTEXPR duration time_since_epoch() const
     {
         return m_duration;
     }
@@ -93,12 +107,12 @@ public:
 
     // Special values.
 
-    static BOOST_CONSTEXPR time_point max()
+    static WEOS_CONSTEXPR time_point max()
     {
         return time_point(duration::max());
     }
 
-    static BOOST_CONSTEXPR time_point min()
+    static WEOS_CONSTEXPR time_point min()
     {
         return time_point(duration::min());
     }
@@ -107,36 +121,150 @@ private:
     duration m_duration;
 };
 
-template <typename ClockT, typename Duration1T,
-          typename Rep2T, typename Period2T>
-inline
-BOOST_CONSTEXPR
-time_point<
-    ClockT,
-    typename boost::common_type<Duration1T, duration<Rep2T, Period2T> >::type>
-operator+ (const time_point<ClockT, Duration1T>& t,
-           const duration<Rep2T, Period2T>& d)
+} // namespace chrono
+
+// ----=====================================================================----
+//     Specialization of common_type for chrono::time_point<>
+// ----=====================================================================----
+
+template <typename TClock, typename TDuration1, typename TDuration2>
+struct common_type<chrono::time_point<TClock, TDuration1>,
+                   chrono::time_point<TClock, TDuration2> >
 {
-    typedef typename boost::common_type<Duration1T,
-                                        duration<Rep2T, Period2T> >::type
+    typedef chrono::time_point<TClock,
+                               typename common_type<TDuration1, TDuration2>::type>
+        type;
+};
+
+namespace chrono
+{
+
+// ----=====================================================================----
+//     time_point_cast
+// ----=====================================================================----
+
+template <typename TToDuration, typename TClock, typename TFromDuration>
+inline WEOS_CONSTEXPR
+time_point<TClock, TToDuration>
+time_point_cast(const time_point<TClock, TFromDuration>& tp)
+{
+    return time_point<TClock, TToDuration>(duration_cast<TToDuration>(
+                                               tp.time_since_epoch()));
+}
+
+// ----=====================================================================----
+//     time_point comparisons
+// ----=====================================================================----
+
+template <typename TClock, typename TDuration1, typename TDuration2>
+inline WEOS_CONSTEXPR
+bool
+operator==(const time_point<TClock, TDuration1>& x,
+           const time_point<TClock, TDuration2>& y)
+{
+    return x.time_since_epoch() == y.time_since_epoch();
+}
+
+template <typename TClock, typename TDuration1, typename TDuration2>
+inline WEOS_CONSTEXPR
+bool
+operator!=(const time_point<TClock, TDuration1>& x,
+           const time_point<TClock, TDuration2>& y)
+{
+    return x.time_since_epoch() != y.time_since_epoch();
+}
+
+template <typename TClock, typename TDuration1, typename TDuration2>
+inline WEOS_CONSTEXPR
+bool
+operator<(const time_point<TClock, TDuration1>& x,
+          const time_point<TClock, TDuration2>& y)
+{
+    return x.time_since_epoch() < y.time_since_epoch();
+}
+
+template <typename TClock, typename TDuration1, typename TDuration2>
+inline WEOS_CONSTEXPR
+bool
+operator>(const time_point<TClock, TDuration1>& x,
+           const time_point<TClock, TDuration2>& y)
+{
+    return x.time_since_epoch() > y.time_since_epoch();
+}
+
+
+template <typename TClock, typename TDuration1, typename TDuration2>
+inline WEOS_CONSTEXPR
+bool
+operator<=(const time_point<TClock, TDuration1>& x,
+           const time_point<TClock, TDuration2>& y)
+{
+    return x.time_since_epoch() <= y.time_since_epoch();
+}
+
+template <typename TClock, typename TDuration1, typename TDuration2>
+inline WEOS_CONSTEXPR
+bool
+operator>=(const time_point<TClock, TDuration1>& x,
+           const time_point<TClock, TDuration2>& y)
+{
+    return x.time_since_epoch() >= y.time_since_epoch();
+}
+
+// ----=====================================================================----
+//     time_point arithmetic
+// ----=====================================================================----
+
+template <typename TClock, typename TDuration1,
+          typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+time_point<TClock,
+           typename common_type<TDuration1, duration<TRep2, TPeriod2> >::type>
+operator+(const time_point<TClock, TDuration1>& tp,
+          const duration<TRep2, TPeriod2>& d)
+{
+    typedef typename common_type<TDuration1,
+                                 duration<TRep2, TPeriod2> >::type
             common_duration;
 
-    return time_point<ClockT, common_duration>(
-                t.time_since_epoch() + common_duration(d));
+    return time_point<TClock, common_duration>(tp.time_since_epoch() + d);
+}
+
+template <typename TRep1, typename TPeriod1, typename TClock, typename TDuration2>
+inline WEOS_CONSTEXPR
+time_point<TClock,
+           typename common_type<duration<TRep1, TPeriod1>, TDuration2>::type>
+operator+(const duration<TRep1, TPeriod1>& d,
+          const time_point<TClock, TDuration2>& tp)
+{
+    return tp + d;
+}
+
+template <typename TClock, typename TDuration1, typename TRep2, typename TPeriod2>
+inline WEOS_CONSTEXPR
+time_point<TClock,
+           typename common_type<TDuration1, duration<TRep2, TPeriod2> >::type>
+operator-(const time_point<TClock, TDuration1>& tp,
+          const duration<TRep2, TPeriod2>& d)
+{
+    typedef typename common_type<TDuration1,
+                                 duration<TRep2, TPeriod2> >::type
+            common_duration;
+
+    return time_point<TClock, common_duration>(tp.time_since_epoch() - d);
 }
 
 template <typename ClockT, typename Duration1T, typename Duration2T>
-inline
-BOOST_CONSTEXPR
-typename boost::common_type<Duration1T, Duration2T>::type
+inline WEOS_CONSTEXPR
+typename common_type<Duration1T, Duration2T>::type
 operator- (const time_point<ClockT, Duration1T>& x,
            const time_point<ClockT, Duration2T>& y)
 {
-
     return x.time_since_epoch() - y.time_since_epoch();
 }
 
 } // namespace chrono
-} // namespace weos
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_TIMEPOINT_HPP
