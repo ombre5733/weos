@@ -70,11 +70,12 @@ private:
 
 
 
-enum class cv_status
+WEOS_SCOPED_ENUM_BEGIN(cv_status)
 {
     no_timeout,
     timeout
 };
+WEOS_SCOPED_ENUM_END(cv_status)
 
 //! A condition variable.
 class condition_variable
@@ -141,6 +142,9 @@ public:
 
     // TODO: native_handle_type native_handle();
 
+    condition_variable(const condition_variable&) = delete;
+    condition_variable& operator=(const condition_variable&) = delete;
+
 private:
     //! An object to wait on a signal.
     //! A WaitingThread can be enqueued in a list of waiters. The condition
@@ -171,10 +175,6 @@ private:
     mutex m_mutex;
     //! A pointer to the first waiter.
     WaitingThread* m_waitingThreads;
-
-
-    condition_variable(const condition_variable&) = delete;
-    condition_variable& operator=(const condition_variable&) = delete;
 };
 
 WEOS_END_NAMESPACE
