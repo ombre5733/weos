@@ -35,7 +35,7 @@
 #endif // WEOS_CONFIG_HPP
 
 
-#include <boost/move/move.hpp>
+#include "../utility.hpp"
 
 #include <algorithm> // for std::swap
 
@@ -96,7 +96,7 @@ public:
 
     //! Move-constructs an intrusive pointer by moving from the \p other
     //! pointer.
-    intrusive_ptr(BOOST_RV_REF(intrusive_ptr) other)
+    intrusive_ptr(WEOS_RV_REF(intrusive_ptr) other)
         : m_pointer(other.m_pointer)
     {
         other.m_pointer = pointer();
@@ -125,7 +125,7 @@ public:
     }
 
     //! Move-assigns the \p other pointer to this pointer.
-    intrusive_ptr& operator=(BOOST_RV_REF(intrusive_ptr) other)
+    intrusive_ptr& operator=(WEOS_RV_REF(intrusive_ptr) other)
     {
         if (this != &other)
         {
@@ -207,7 +207,7 @@ private:
     //! A pointer to the managed object.
     pointer m_pointer;
 
-    BOOST_COPYABLE_AND_MOVABLE(intrusive_ptr)
+    WEOS_COPYABLE_AND_MOVABLE(intrusive_ptr)
 };
 
 //! Swaps two intrusive pointers \p a and \p b.
