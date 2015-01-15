@@ -197,7 +197,7 @@ private:
 //! Returns the generic error category.
 const error_category& generic_category();
 
-enum class errc
+WEOS_SCOPED_ENUM_BEGIN(errc)
 {
     invalid_argument              = 22,
     no_child_process              = 10,
@@ -205,12 +205,20 @@ enum class errc
     operation_not_permitted       =  1,
     resource_deadlock_would_occur = 35,
 };
+WEOS_SCOPED_ENUM_END(errc)
 
 // Specialization for errc.
 template <>
 struct is_error_code_enum<errc> : public true_type
 {
 };
+
+#ifdef WEOS_NO_SCOPED_ENUM
+template <>
+struct is_error_code_enum<errc::type> : public true_type
+{
+};
+#endif // WEOS_NO_SCOPED_ENUM
 
 //! Creates an error code from errc.
 inline

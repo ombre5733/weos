@@ -54,8 +54,43 @@
 
 #if __ARMCC_VERSION / 10000 == 505
 
+#define WEOS_NO_NULLPTR
+#define WEOS_NO_SCOPED_ENUM
+
+#else
+
 WEOS_BEGIN_NAMESPACE
 
+typedef decltype(nullptr) nullptr_t;
+
+WEOS_END_NAMESPACE
+
+#endif // ARMCC 5.05
+
+#else
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#include <cstddef>
+
+
+WEOS_BEGIN_NAMESPACE
+
+using std::nullptr_t;
+
+WEOS_END_NAMESPACE
+
+#endif // __CC_ARM
+
+
+// ----=====================================================================----
+//     nullptr & nullptr_t
+// ----=====================================================================----
+
+#ifdef WEOS_NO_NULLPTR
+
+WEOS_BEGIN_NAMESPACE
 struct nullptr_t
 {
     bool operator==(nullptr_t) const noexcept
@@ -96,32 +131,33 @@ WEOS_END_NAMESPACE
 
 #define nullptr WEOS_NAMESPACE::nullptr_t()
 
+#endif // WEOS_NO_NULLPTR
+
+
+// ----=====================================================================----
+//     Scoped enums
+// ----=====================================================================----
+
+#ifdef WEOS_NO_SCOPED_ENUM
+
+#define WEOS_SCOPED_ENUM_BEGIN(x) struct x { enum type
+#define WEOS_SCOPED_ENUM_END(x)                                                \
+        type m_value;                                                          \
+        x(type value) : m_value(value) {}                                      \
+        explicit x(int value) : m_value(static_cast<type>(m_value)) {}         \
+        operator int() const { return m_value; }                               \
+    };
+
 #else
 
-WEOS_BEGIN_NAMESPACE
+#define WEOS_SCOPED_ENUM_BEGIN(x) enum class x
+#define WEOS_SCOPED_ENUM_END(x)
 
-typedef decltype(nullptr) nullptr_t;
-
-WEOS_END_NAMESPACE
-
-#endif // ARMCC 5.05
-
-#else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
-
-#include <cstddef>
+#endif // WEOS_NO_SCOPED_ENUM
 
 
-WEOS_BEGIN_NAMESPACE
-
-using std::nullptr_t;
-
-WEOS_END_NAMESPACE
-
-#endif // __CC_ARM
-
+// ----=====================================================================----
+// ----=====================================================================----
 
 #if defined(WEOS_WRAP_CXX11)
     #include "cxx11/core.hpp"
