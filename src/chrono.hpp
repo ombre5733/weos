@@ -30,6 +30,51 @@
 #define WEOS_CHRONO_HPP
 
 #include "config.hpp"
+#include "_core.hpp"
+
+
+#ifdef __CC_ARM
+// -----------------------------------------------------------------------------
+// ARMCC
+// -----------------------------------------------------------------------------
+
+#include "common/chrono.hpp"
+
+#else
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#include <chrono>
+
+WEOS_BEGIN_NAMESPACE
+
+namespace chrono
+{
+
+using std::chrono::duration;
+using std::chrono::duration_cast;
+using std::chrono::duration_values;
+using std::chrono::time_point;
+using std::chrono::time_point_cast;
+using std::chrono::treat_as_floating_point;
+
+using std::chrono::nanoseconds;
+using std::chrono::microseconds;
+using std::chrono::milliseconds;
+using std::chrono::seconds;
+using std::chrono::minutes;
+using std::chrono::hours;
+
+} // namespace chrono
+
+WEOS_END_NAMESPACE
+
+#endif // __CC_ARM
+
+// ----=====================================================================----
+//     Specialized implementations of clocks
+// ----=====================================================================----
 
 #if defined(WEOS_WRAP_CXX11)
     #include "cxx11/chrono.hpp"
