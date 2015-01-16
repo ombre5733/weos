@@ -220,6 +220,12 @@ struct duration_values
 //     duration
 // ----=====================================================================----
 
+template <typename ToDurationT, typename RepT, typename PeriodT>
+inline constexpr
+typename enable_if<detail::is_duration<ToDurationT>::value,
+                   ToDurationT>::type
+duration_cast(const duration<RepT, PeriodT>& d);
+
 //! A duration of time.
 //! A duration measures an amount of time. It is defined by a number of ticks
 //! and a period which is the time in seconds between two ticks.
@@ -441,7 +447,7 @@ template <typename TDuration1, typename TDuration2>
 struct duration_less
 {
     static inline constexpr
-    bool cmp(const TDuration1& d1, const TDuration2& d2) const
+    bool cmp(const TDuration1& d1, const TDuration2& d2)
     {
         typedef typename common_type<TDuration1, TDuration2>::type common_type;
         return common_type(d1).count() < common_type(d2).count();
