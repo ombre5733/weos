@@ -30,8 +30,40 @@
 #define WEOS_ATOMIC_HPP
 
 #include "config.hpp"
-
 #include "_core.hpp"
-#include "common/atomic.hpp"
+
+#ifdef __CC_ARM
+// -----------------------------------------------------------------------------
+// ARMCC
+// -----------------------------------------------------------------------------
+
+#include "common/atomic_impl_armcc.hpp"
+
+#else
+// -----------------------------------------------------------------------------
+// C++11 conforming STL
+// -----------------------------------------------------------------------------
+
+#include <atomic>
+
+WEOS_BEGIN_NAMESPACE
+
+using std::memory_order;
+using std::atomic_flag;
+using std::atomic;
+using std::atomic_bool;
+using std::atomic_char;
+using std::atomic_schar;
+using std::atomic_uchar;
+using std::atomic_short;
+using std::atomic_ushort;
+using std::atomic_int;
+using std::atomic_uint;
+using std::atomic_long;
+using std::atomic_ulong;
+
+WEOS_END_NAMESPACE
+
+#endif // __CC_ARM
 
 #endif // WEOS_ATOMIC_HPP

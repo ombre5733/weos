@@ -51,14 +51,13 @@ enum memory_order
 //     atomic_flag
 // ----=====================================================================----
 
-#define ATOMIC_FLAG_INIT   0
+#define ATOMIC_FLAG_INIT   { false }
 
 class atomic_flag
 {
 public:
-    atomic_flag() noexcept
-    {
-    }
+    atomic_flag() noexcept = default;
+    ~atomic_flag() = default;
 
     // Construction from ATOMIC_FLAG_INIT.
     constexpr atomic_flag(bool value) noexcept
@@ -86,6 +85,10 @@ public:
         return fetch_and_set(1);
     }
 
+    atomic_flag(const atomic_flag&) = delete;
+    atomic_flag& operator=(const atomic_flag&) = delete;
+    atomic_flag& operator=(const atomic_flag&) volatile = delete;
+
 private:
     volatile int m_value;
 
@@ -105,11 +108,6 @@ private:
         __dmb(0xF);
         return oldValue;
     }
-
-    // ---- Hidden methods
-    atomic_flag(const atomic_flag&);
-    atomic_flag& operator= (const atomic_flag&);
-    atomic_flag& operator=(const atomic_flag&) volatile;
 };
 
 inline
@@ -185,9 +183,8 @@ class atomic_base
                   "Atomics are only implemented up to the size of int.");
 
 public:
-    atomic_base() noexcept
-    {
-    }
+    atomic_base() noexcept = default;
+    ~atomic_base() = default;
 
     constexpr atomic_base(T value) noexcept
         : m_value((int)value)
@@ -553,9 +550,7 @@ class atomic : public detail::atomic_base<T>
     typedef detail::atomic_base<T> base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -578,9 +573,7 @@ struct atomic<bool> : public atomic_bool
     typedef atomic_bool base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -611,9 +604,7 @@ struct atomic<char> : public atomic_char
     typedef atomic_char base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -630,9 +621,7 @@ class atomic<signed char> : public atomic_schar
     typedef atomic_schar base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -649,9 +638,7 @@ class atomic<unsigned char> : public atomic_uchar
     typedef atomic_uchar base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -668,9 +655,7 @@ class atomic<short> : public atomic_short
     typedef atomic_short base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -687,9 +672,7 @@ class atomic<unsigned short> : public atomic_ushort
     typedef atomic_ushort base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -706,9 +689,7 @@ class atomic<int> : public atomic_int
     typedef atomic_int base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -725,9 +706,7 @@ class atomic<unsigned int> : public atomic_uint
     typedef atomic_uint base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -744,9 +723,7 @@ class atomic<long> : public atomic_long
     typedef atomic_long base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -763,9 +740,7 @@ class atomic<unsigned long> : public atomic_ulong
     typedef atomic_ulong base;
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(T value) noexcept
         : base(value)
@@ -790,9 +765,7 @@ struct atomic<T*> : public detail::atomic_base<T*>
                   "Atomics are only implemented up to the size of int.");
 
 public:
-    atomic() noexcept
-    {
-    }
+    atomic() noexcept = default;
 
     constexpr atomic(pointer_type value) noexcept
         : base(value)
