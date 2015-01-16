@@ -50,7 +50,7 @@ constexpr keep_reference_count_t keep_reference_count = keep_reference_count_t()
 //!
 //! void intrusive_ptr_add_ref(T* t);
 //! void intrusive_ptr_release_ref(T* t);
-template <class TType>
+template <typename TType>
 class intrusive_ptr
 {
 public:

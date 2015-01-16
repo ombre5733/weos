@@ -44,9 +44,9 @@
 #endif // WEOS_USER_CONFIG_VERSION
 
 
-// -----------------------------------------------------------------------------
-// Compatibility checks
-// -----------------------------------------------------------------------------
+// ----=====================================================================----
+//     Validation
+// ----=====================================================================----
 
 // Include the CMSIS header file if necessary.
 #if defined(WEOS_WRAP_CXX11)
@@ -57,24 +57,28 @@
     #error "No native OS has been defined in the user configuration file."
 #endif // WEOS_WRAP_KEIL_RL_RTX
 
-// -----------------------------------------------------------------------------
-// Namespace
-// -----------------------------------------------------------------------------
+
+// ----=====================================================================----
+//     Namespace
+// ----=====================================================================----
 
 #define WEOS_NAMESPACE         weos
 #define WEOS_BEGIN_NAMESPACE   namespace WEOS_NAMESPACE {
 #define WEOS_END_NAMESPACE     }
 
 
-// -----------------------------------------------------------------------------
-// Assertion handling
-// -----------------------------------------------------------------------------
+// ----=====================================================================----
+//     Assertion handling
+// ----=====================================================================----
 
 #if defined(WEOS_ENABLE_ASSERT)
 
     #if defined(WEOS_CUSTOM_ASSERT_HANDLER)
         WEOS_BEGIN_NAMESPACE
 
+        // This is only a declaration - the definition has to be provided
+        // by the user.
+        [[noreturn]]
         void assert_failed(const char* condition, const char* function,
                            const char* file, int line);
 
@@ -98,9 +102,9 @@
 #endif // WEOS_ENABLE_ASSERT
 
 
-// -----------------------------------------------------------------------------
-// Exception support
-// -----------------------------------------------------------------------------
+// ----=====================================================================----
+//     Exception support
+// ----=====================================================================----
 
 #if defined(WEOS_ENABLE_EXCEPTIONS)
 

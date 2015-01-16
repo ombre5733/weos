@@ -45,7 +45,7 @@
 #endif
 
 #if __cplusplus < 201103L
-    #error "Must be compiled in C++11 mode. Use the '--cpp11' command line argument. Remove the '--gnu' flag."
+    #error "Must be compiled in C++11 mode. Use the '--cpp11' flag. Remove the '--gnu' flag."
 #endif
 
 #define BOOST_EXCEPTION_DISABLE
