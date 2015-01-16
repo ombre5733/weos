@@ -494,6 +494,8 @@ class AnonymousClass;
 // argument of pointer size.
 struct SmallFunctor
 {
+    virtual ~SmallFunctor() {}
+
     union Callable
     {
         void* objectPointer;
@@ -510,19 +512,6 @@ struct SmallFunctor
 
     Callable callable;
     Argument argument;
-};
-struct SmallFunctorStorage
-{
-    void* get() { return &data; }
-    const void* get() const { return &data; }
-
-    template <typename T>
-    T& get() { return *static_cast<T*>(get()); }
-
-    template <typename T>
-    const T& get() const { return *static_cast<const T*>(get()); }
-
-    SmallFunctor data;
 };
 
 template <typename TSignature>
@@ -545,7 +534,6 @@ public:
 
     virtual TResult operator()(TArgs&&...) = 0;
 
-private:
     InvokerBase(const InvokerBase&) = delete;
     InvokerBase& operator=(const InvokerBase&) = delete;
 };
@@ -607,7 +595,7 @@ template <typename TResult, typename... TArgs>
 class function<TResult(TArgs...)>
 {
     using invoker_base_type = detail::InvokerBase<TResult(TArgs...)>;
-    using storage_type = typename aligned_storage<sizeof(detail::SmallFunctorStorage)>::type;
+    using storage_type = typename aligned_storage<sizeof(detail::SmallFunctor)>::type;
 
     template <typename F>
     using invokeResult = decltype(invoke(declval<F&>(), declval<TArgs>()...));
