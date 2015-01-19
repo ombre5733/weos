@@ -249,7 +249,7 @@ private:
 
 template <typename TType>
 typename enable_if<is_base_of<detail_exception::CaptureableExceptionBase,
-                              typename decay<TType>::type>::value,
+                              typename remove_reference<TType>::type>::value,
                    TType&>::type
 enable_current_exception(TType& exc) WEOS_NOEXCEPT
 {
@@ -258,7 +258,7 @@ enable_current_exception(TType& exc) WEOS_NOEXCEPT
 
 template <typename TType>
 typename enable_if<is_base_of<detail_exception::CaptureableExceptionBase,
-                              typename decay<TType>::type>::value,
+                              typename remove_reference<TType>::type>::value,
                    const TType&>::type
 enable_current_exception(const TType& exc) WEOS_NOEXCEPT
 {
@@ -267,7 +267,7 @@ enable_current_exception(const TType& exc) WEOS_NOEXCEPT
 
 template <typename TType>
 typename enable_if<!is_base_of<detail_exception::CaptureableExceptionBase,
-                               typename decay<TType>::type>::value,
+                               typename remove_reference<TType>::type>::value,
                    detail_exception::CaptureableException<TType> >::type
 enable_current_exception(const TType& exc)
 {
@@ -444,6 +444,7 @@ struct UnknownException : public WEOS_NAMESPACE::exception,
     virtual ~UnknownException() throw() {}
 };
 
+inline
 exception_ptr getCurrentException()
 {
     try
@@ -499,6 +500,7 @@ const exception_ptr StaticExceptionFactory<TException>::eptr
 //     current_exception
 // ----=====================================================================----
 
+inline
 exception_ptr current_exception() WEOS_NOEXCEPT
 {
     exception_ptr result;
