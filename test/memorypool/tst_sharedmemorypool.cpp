@@ -72,7 +72,7 @@ TYPED_TEST(SharedMemoryPoolTestFixture, allocate)
     {
         //ASSERT_EQ(POOL_SIZE - i, p.size());
         ASSERT_FALSE(p.empty());
-        void* c = p.allocate();
+        void* c = p.try_allocate();
         ASSERT_TRUE(c != 0);
         //ASSERT_EQ(POOL_SIZE - i - 1, p.size());
 
@@ -129,7 +129,7 @@ TYPED_TEST(SharedMemoryPoolTestFixture, allocate_and_free)
         for (unsigned i = 0; i < j; ++i)
         {
             //ASSERT_EQ(POOL_SIZE - i, p.size());
-            void* c = p.allocate();
+            void* c = p.try_allocate();
             ASSERT_TRUE(c != 0);
             //ASSERT_EQ(POOL_SIZE - i - 1, p.size());
             ASSERT_EQ(POOL_SIZE, p.capacity());
@@ -155,7 +155,7 @@ TYPED_TEST(SharedMemoryPoolTestFixture, random_allocate_and_free)
 
     for (unsigned i = 0; i < POOL_SIZE; ++i)
     {
-        void* c = p.allocate();
+        void* c = p.try_allocate();
         ASSERT_TRUE(c != 0);
         chunks[i] = c;
         uniqueChunks.insert(c);
@@ -173,7 +173,7 @@ TYPED_TEST(SharedMemoryPoolTestFixture, random_allocate_and_free)
         unsigned index = testing::random() % POOL_SIZE;
         if (chunks[index] == 0)
         {
-            void* c = p.allocate();
+            void* c = p.try_allocate();
             ASSERT_TRUE(c != 0);
             ASSERT_TRUE(uniqueChunks.find(c) != uniqueChunks.end());
             chunks[index] = c;
