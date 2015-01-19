@@ -120,11 +120,22 @@ exception_ptr current_exception() noexcept;
 //!
 //! Rethrows the exception \p eptr, which must have been captured with
 //! current_exception().
+/*TODO:[[noreturn]]*/
 void rethrow_exception(const exception_ptr& eptr);
 
 //! \fn template <typename TType> /*unspecified*/ enable_current_exception(TType&& t)
 //! Enables capturing the exception object \p t through a call to
 //! current_exception().
+
+
+
+//! A mixin in order to allow nesting exceptions.
+class nested_exception;
+
+//! \fn template <typename TType> [[noreturn]] void throw_with_nested(TType&& exc);
+//! Throws a new exception in which the current exception is nested.
+
+//! \fn template <typename TType> void rethrow_if_nested(const TType& exc);
 
 // ----=====================================================================----
 //     CaptureableException
@@ -150,6 +161,7 @@ public:
 
     virtual const CaptureableExceptionBase* clone() const = 0;
 
+    /*TODO: [[noreturn]]*/
     virtual void rethrow() const = 0;
 
 private:
@@ -157,8 +169,8 @@ private:
 
     CaptureableExceptionBase& operator=(const CaptureableExceptionBase&);
 
-    friend void intrusive_ptr_add_ref(const CaptureableExceptionBase* exc);
-    friend void intrusive_ptr_release_ref(const CaptureableExceptionBase* exc);
+    friend void intrusive_ptr_add_ref(const CaptureableExceptionBase* exc) noexcept;
+    friend void intrusive_ptr_release_ref(const CaptureableExceptionBase* exc) noexcept;
 };
 
 inline
@@ -176,7 +188,7 @@ void intrusive_ptr_release_ref(const CaptureableExceptionBase* exc) noexcept
 
 template <typename TType>
 class CaptureableException : public TType,
-                             public virtual CaptureableExceptionBase
+                             public CaptureableExceptionBase
 {
     static const bool derivesTwice = is_base_of<CaptureableExceptionBase,
                                                 typename decay<TType>::type>::value;
@@ -191,12 +203,13 @@ public:
     }
 
 private:
-    virtual const CaptureableException* clone() const /*override*/
+    virtual const CaptureableException* clone() const override
     {
         return new CaptureableException(*this);
     }
 
-    virtual void rethrow() const /*override*/
+    /*TODO: [[noreturn]]*/
+    virtual void rethrow() const override
     {
         throw *this;
     }
@@ -209,35 +222,31 @@ private:
 // ----=====================================================================----
 
 template <typename TType>
-typename enable_if<is_base_of<detail_exception::CaptureableExceptionBase,
-                              typename decay<TType>::type>::value,
-                   TType&&>::type
-enable_current_exception(TType&& exc) noexcept
+typename enable_if<is_class<typename remove_reference<TType>::type>::value
+                   && !is_base_of<detail_exception::CaptureableExceptionBase,
+                                  typename remove_reference<TType>::type>::value,
+                   detail_exception::CaptureableException<
+                       typename remove_reference<TType>::type>
+                  >::type
+enable_current_exception(TType&& exc)
 {
-    return exc;
+    return detail_exception::CaptureableException<typename remove_reference<TType>::type>(
+                WEOS_NAMESPACE::forward<TType>(exc));
 }
 
 template <typename TType>
-typename enable_if<!is_base_of<detail_exception::CaptureableExceptionBase,
-                               typename decay<TType>::type>::value,
-                   detail_exception::CaptureableException<
-                       typename decay<TType>::type> >::type
-enable_current_exception(TType&& exc)
+typename enable_if<!is_class<typename remove_reference<TType>::type>::value
+                   || is_base_of<detail_exception::CaptureableExceptionBase,
+                                 typename remove_reference<TType>::type>::value,
+                   TType&&>::type
+enable_current_exception(TType&& exc) noexcept
 {
-    return detail_exception::CaptureableException<typename decay<TType>::type>(
-                WEOS_NAMESPACE::forward<TType>(exc));
+    return WEOS_NAMESPACE::forward<TType>(exc);
 }
 
 // ----=====================================================================----
 //     exception_ptr
 // ----=====================================================================----
-
-class exception_ptr;
-
-namespace detail_exception
-{
-exception_ptr getCurrentException();
-} // namespace detail_exception
 
 class exception_ptr
 {
@@ -284,9 +293,9 @@ public:
         return m_capturedException != other.m_capturedException;
     }
 
-    /*explicit*/ operator bool() const
+    explicit operator bool() const
     {
-        return m_capturedException;
+        return !!m_capturedException;
     }
 
 private:
@@ -398,38 +407,6 @@ struct UnknownException : public WEOS_NAMESPACE::exception,
     virtual ~UnknownException() throw() {}
 };
 
-exception_ptr getCurrentException()
-{
-    try
-    {
-        throw;
-    }
-    catch (detail_exception::CaptureableExceptionBase& exc)
-    {
-        // Note: The clone() method can throw std::bad_alloc. This exception
-        // is caught in the caller.
-        return exception_ptr(exception_ptr::pointer_type(exc.clone()));
-    }
-
-    catch (std::bad_alloc& exc)
-    {
-        return wrapStdException(exc);
-    }
-    catch (std::bad_exception& exc)
-    {
-        return wrapStdException(exc);
-    }
-    catch (std::exception& exc)
-    {
-        return cloneException(UnknownStdException());
-    }
-
-    catch (...)
-    {
-        return cloneException(UnknownException());
-    }
-}
-
 template <typename TException>
 struct StaticExceptionFactory
 {
@@ -450,37 +427,72 @@ const exception_ptr StaticExceptionFactory<TException>::eptr
 } // namespace detail_exception
 
 // ----=====================================================================----
-//     current_exception
+//     nested_exception
 // ----=====================================================================----
 
-exception_ptr current_exception() noexcept
+class nested_exception
 {
-    exception_ptr result;
-    try
+public:
+    nested_exception() noexcept;
+
+    nested_exception(const nested_exception&) noexcept = default;
+
+    nested_exception& operator=(const nested_exception&) noexcept = default;
+
+    virtual ~nested_exception() = default;
+
+    /*TODO: [[noreturn]]*/
+    void rethrow_nested() const;
+
+    exception_ptr nested_ptr() const noexcept
     {
-        result = detail_exception::getCurrentException();
+        return m_nestedException;
     }
-    catch (std::bad_alloc&)
+
+private:
+    exception_ptr m_nestedException;
+};
+
+namespace detail_exception
+{
+
+template <typename TType>
+struct NestedException : public TType,
+                         public nested_exception
+{
+    explicit NestedException(const TType& exception)
+        : TType(exception)
     {
-        result = detail_exception::StaticExceptionFactory<detail_exception::BadAlloc>::eptr;
     }
-    catch (...)
-    {
-        result = detail_exception::StaticExceptionFactory<detail_exception::BadException>::eptr;
-    }
-    return result;
+};
+
+} // namespace detail_exception
+
+template <typename TType>
+[[noreturn]]
+void throw_with_nested(TType&& exc,
+                       typename enable_if<
+                           is_class<typename remove_reference<TType>::type>::value
+                           && !is_base_of<nested_exception, typename remove_reference<TType>::type>::value
+                       >::type* = 0)
+{
+    throw detail_exception::NestedException<typename remove_reference<TType>::type>(
+                WEOS_NAMESPACE::forward<TType>(exc));
 }
 
-// ----=====================================================================----
-//     rethrow_exception
-// ----=====================================================================----
-
-void rethrow_exception(const exception_ptr& eptr)
+template <typename TType>
+[[noreturn]]
+void throw_with_nested(TType&& exc,
+                       typename enable_if<
+                           !is_class<typename remove_reference<TType>::type>::value
+                           || is_base_of<nested_exception, typename remove_reference<TType>::type>::value
+                       >::type* = 0)
 {
-    WEOS_ASSERT(eptr != nullptr);
-    eptr.m_capturedException->rethrow();
-    WEOS_ASSERT(false);
+    throw WEOS_NAMESPACE::forward<TType>(exc);
 }
+
+template <typename TType>
+void rethrow_if_nested(const TType& exc);
 
 WEOS_END_NAMESPACE
 

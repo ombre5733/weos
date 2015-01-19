@@ -28,6 +28,11 @@
 
 #include "config.hpp"
 
+#include "common/exception.cpp"
+#include "common/functional.cpp"
+#include "common/system_error.cpp"
+
+
 #if defined(WEOS_WRAP_CXX11)
     #include "cxx11/weos.cpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)

@@ -26,45 +26,14 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "core.hpp"
-
-#include "condition_variable.cpp"
-#include "chrono.cpp"
-#include "mutex.cpp"
-#include "semaphore.cpp"
-#include "system_error.cpp"
-#include "thread.cpp"
+#include "exception.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
+#ifdef __CC_ARM
+// -----------------------------------------------------------------------------
+// ARMCC
+// -----------------------------------------------------------------------------
 
-class Weos
-{
-public:
-    Weos();
-    ~Weos();
+#include "exception_impl_armcc.cpp"
 
-private:
-    thread m_precisionTimeReader;
-
-    // ---- Deleted methods.
-    Weos(const Weos&);
-    Weos& operator=(const Weos&);
-};
-
-Weos::Weos()
-    : m_precisionTimeReader(
-          thread::attributes().setPriority(thread::attributes::Low)
-                              .setStack(&precisionTimeReaderStack,
-                                        sizeof(precisionTimeReaderStack)),
-          readPrecisionTimePeriodically)
-{
-}
-
-Weos::~Weos()
-{
-    m_precisionTimeReader.set_signals(1);
-    m_precisionTimeReader.join();
-}
-
-WEOS_END_NAMESPACE
+#endif

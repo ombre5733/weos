@@ -42,6 +42,8 @@
 //     exception
 // ----=====================================================================----
 
+WEOS_BEGIN_NAMESPACE
+
 class exception
 {
 public:
@@ -74,6 +76,7 @@ void cloneErrorInfoList(const void* /*src*/, void* /*dest*/)
 
 } // namespace detail_exception
 
+WEOS_END_NAMESPACE
 
 // ----=====================================================================----
 //
@@ -92,6 +95,7 @@ void cloneErrorInfoList(const void* /*src*/, void* /*dest*/)
 // -----------------------------------------------------------------------------
 
 #include <exception>
+#include <utility>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -100,12 +104,15 @@ template <typename TType>
 inline
 TType&& enable_current_exception(TType&& exc)
 {
-    return exc;
+    return std::forward<TType>(exc);
 }
 
 using std::current_exception;
 using std::exception_ptr;
 using std::rethrow_exception;
+using std::nested_exception;
+using std::throw_with_nested;
+using std::rethrow_if_nested;
 
 WEOS_END_NAMESPACE
 
