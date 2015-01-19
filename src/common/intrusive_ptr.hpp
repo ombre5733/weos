@@ -201,6 +201,16 @@ public:
         swap(m_pointer, other.m_pointer);
     }
 
+    bool operator==(const intrusive_ptr& other) const noexcept
+    {
+        return m_pointer == other.m_pointer;
+    }
+
+    bool operator!=(const intrusive_ptr& other) const noexcept
+    {
+        return !(m_pointer == other.m_pointer);
+    }
+
 private:
     //! A pointer to the managed object.
     pointer m_pointer;
