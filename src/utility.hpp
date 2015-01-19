@@ -30,17 +30,8 @@
 #define WEOS_UTILITY_HPP
 
 #include "config.hpp"
+#include "_core.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/utility.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/utility.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/utility.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/utility.hpp"
-#else
-    #error "Invalid native OS."
-#endif
+#include "common/utility.hpp"
 
 #endif // WEOS_UTILITY_HPP

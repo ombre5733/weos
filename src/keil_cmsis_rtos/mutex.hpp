@@ -29,7 +29,11 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
 #define WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
 
-#include "core.hpp"
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
 
 #include "../chrono.hpp"
 #include "../system_error.hpp"

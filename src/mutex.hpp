@@ -30,6 +30,7 @@
 #define WEOS_MUTEX_HPP
 
 #include "config.hpp"
+#include "_core.hpp"
 
 #if defined(WEOS_WRAP_CXX11)
     #include "cxx11/mutex.hpp"

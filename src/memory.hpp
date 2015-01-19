@@ -30,17 +30,8 @@
 #define WEOS_MEMORY_HPP
 
 #include "config.hpp"
+#include "_core.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/memory.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/memory.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/memory.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/memory.hpp"
-#else
-    #error "Invalid native OS."
-#endif
+#include "common/memory.hpp"
 
 #endif // WEOS_MEMORY_HPP
