@@ -216,12 +216,6 @@ struct duration_values
 //     duration
 // ----=====================================================================----
 
-template <typename ToDurationT, typename RepT, typename PeriodT>
-inline WEOS_CONSTEXPR
-typename enable_if<detail::is_duration<ToDurationT>::value,
-                   ToDurationT>::type
-duration_cast(const duration<RepT, PeriodT>& d);
-
 //! A duration of time.
 //! A duration measures an amount of time. It is defined by a number of ticks
 //! and a period which is the time in seconds between two ticks.
@@ -257,26 +251,27 @@ public:
     //! integer tick from a floating-point value. However, it is possible
     //! to create a floating-point tick from an integer value. In other words,
     //! if the conversion might truncate, the constructor is disabled.
-    template <typename TRep2,
-              typename _ = typename enable_if<
-                               is_convertible<TRep2, rep>::value
-                               && (treat_as_floating_point<rep>::value ||
-                                   !treat_as_floating_point<TRep2>::value)
-                           >::type>
+    template <typename TRep2>
     WEOS_CONSTEXPR
-    explicit duration(const TRep2& count)
+    explicit duration(const TRep2& count,
+                      typename enable_if<
+                          is_convertible<TRep2, rep>::value
+                          && (treat_as_floating_point<rep>::value ||
+                              !treat_as_floating_point<TRep2>::value)
+                      >::type* = 0)
         : m_count(count)
     {
     }
 
     //! Constructs a duration from the \p other duration.
-    template <typename TRep2, typename TPeriod2,
-              typename _ = typename enable_if<!detail::checked_division<TPeriod2, period>::overflow
-                                              && (treat_as_floating_point<rep>::value
-                                                  || (detail::checked_division<TPeriod2, period>::type::den == 1
-                                                      && !treat_as_floating_point<TRep2>::value))>::type>
+    template <typename TRep2, typename TPeriod2>
     WEOS_CONSTEXPR
-    duration(const duration<TRep2, TPeriod2>& other)
+    duration(const duration<TRep2, TPeriod2>& other,
+             typename enable_if<!detail::checked_division<TPeriod2, period>::overflow
+                                && (treat_as_floating_point<rep>::value
+                                    || (detail::checked_division<TPeriod2, period>::type::den == 1
+                                        && !treat_as_floating_point<TRep2>::value))
+                               >::type* = 0)
         : m_count(duration_cast<duration>(other).count())
     {
     }

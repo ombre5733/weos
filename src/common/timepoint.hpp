@@ -70,11 +70,11 @@ public:
 
     //! Creates a time point from another time point.
     //! Creates a time point from the other time point \p tp.
-    template <typename TDuration2,
-              typename _ = typename enable_if<
-                               is_convertible<TDuration2, duration>::value>::type>
+    template <typename TDuration2>
     WEOS_CONSTEXPR
-    time_point(const time_point<clock, TDuration2>& tp)
+    time_point(const time_point<clock, TDuration2>& tp,
+               typename enable_if<is_convertible<TDuration2,
+                                                 duration>::value>::type* = 0)
         : m_duration(tp.time_since_epoch())
     {
     }
