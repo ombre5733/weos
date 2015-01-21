@@ -310,7 +310,7 @@ struct ArgumentSelector<TBoundArg, TUnboundArgs, false, false, true>
     static type select(TBoundArg& /*bound*/, TUnboundArgs& unbound)
     {
         return WEOS_NAMESPACE::forward<type>(
-                /*TODO: WEOS_NAMESPACE::*/get<index>(unbound));
+                WEOS_NAMESPACE::get<index>(unbound));
     }
 };
 
@@ -335,7 +335,7 @@ invokeBindExpression(TF& functor,
     return invoke(functor,
                   ArgumentSelector<typename tuple_element<TBoundIndices, TBoundArgs>::type,
                                    TUnboundArgs>::select(
-                      /*TODO: WEOS_NAMESPACE::*/get<TBoundIndices>(boundArgs), unboundArgs)...);
+                      WEOS_NAMESPACE::get<TBoundIndices>(boundArgs), unboundArgs)...);
 }
 
 // The result of a bind<>() call.
