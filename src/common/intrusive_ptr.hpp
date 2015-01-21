@@ -34,6 +34,7 @@
     #error "Do not include this file directly."
 #endif // WEOS_CONFIG_HPP
 
+#include "../type_traits.hpp"
 
 #include <algorithm> // for std::swap
 

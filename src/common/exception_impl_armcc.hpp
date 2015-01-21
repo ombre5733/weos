@@ -37,6 +37,7 @@
 
 #include "../atomic.hpp"
 #include "../intrusive_ptr.hpp"
+#include "../utility.hpp"
 #include "../type_traits.hpp"
 
 #include <new>
