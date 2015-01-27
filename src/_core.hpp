@@ -48,9 +48,12 @@
     #error "Must be compiled in C++11 mode. Use the '--cpp11' flag. Remove the '--gnu' flag."
 #endif
 
+
 #define BOOST_EXCEPTION_DISABLE
 
+#define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_compiler_config.hpp>
 #include <boost/config.hpp>
+
 
 #if __ARMCC_VERSION / 10000 == 505
 
