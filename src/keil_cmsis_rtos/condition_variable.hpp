@@ -81,6 +81,8 @@ WEOS_SCOPED_ENUM_END(cv_status)
 class condition_variable
 {
 public:
+    typedef condition_variable* native_handle_type;
+
     //! Creates a condition variable.
     condition_variable();
 
@@ -105,6 +107,24 @@ public:
     //! or a spurious wakeup occurs. The \p lock is reacquired when the
     //! function exits (either due to a notification or due to an exception).
     void wait(unique_lock<mutex>& lock);
+
+    //! Waits on this condition variable.
+    //!
+    //! This is a convenience function which is equivalent to
+    //! \code
+    //! while (!pred())
+    //! {
+    //!     wait(lock);
+    //! }
+    //! \endcode
+    template <typename TPredicate>
+    void wait(unique_lock<mutex>& lock, TPredicate pred)
+    {
+        while (!pred())
+        {
+            wait(lock);
+        }
+    }
 
     //! Waits on this condition variable with a timeout.
     //! Releases the given \p lock and adds the calling thread to a list
@@ -140,7 +160,10 @@ public:
 
     // TODO: wait_until()
 
-    // TODO: native_handle_type native_handle();
+    native_handle_type native_handle()
+    {
+        return this;
+    }
 
     condition_variable(const condition_variable&) = delete;
     condition_variable& operator=(const condition_variable&) = delete;
