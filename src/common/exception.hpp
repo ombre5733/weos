@@ -66,10 +66,12 @@ exception::~exception() throw()
 
 namespace detail_exception
 {
+inline
 void cloneErrorInfoList(const exception* src, exception* dest)
 {
 }
 
+inline
 void cloneErrorInfoList(const void* /*src*/, void* /*dest*/)
 {
 }
