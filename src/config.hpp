@@ -134,9 +134,13 @@
     #define WEOS_THROW_SYSTEM_ERROR(err, msg)                                  \
         WEOS_NAMESPACE::throw_exception(system_error(err))
 
-#else
+#elif defined(WEOS_ENABLE_ASSERT)
 
     #define WEOS_THROW_SYSTEM_ERROR(err, msg)   WEOS_ASSERT(0 && bool(err) && msg)
+
+#else
+
+    #define WEOS_THROW_SYSTEM_ERROR(err, msg)   while(1);
 
 #endif // WEOS_ENABLE_EXCEPTIONS
 
