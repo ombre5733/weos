@@ -115,6 +115,18 @@ struct native_thread_traits
         {
         }
 
+        //! Creates thread attributes.
+        //!
+        //! Creates thread attributes from a given \p priority and a \p stack.
+        template <typename T>
+        attributes(Priority priority, T& stack)
+            : m_priority(priority),
+              m_customStackSize(sizeof(T)),
+              m_customStack(&stack)
+        {
+            static_assert(sizeof(T) >= 4*16, "The stack is too small.");
+        }
+
         //! Sets the priority.
         //! Sets the thread priority to \p priority.
         //!
@@ -134,6 +146,18 @@ struct native_thread_traits
         {
             m_customStack = stack;
             m_customStackSize = stackSize;
+            return *this;
+        }
+
+        //! Provides a custom stack.
+        //!
+        //! Sets the thread's stack to \p stack.
+        template <typename T>
+        attributes& setStack(T& stack)
+        {
+            static_assert(sizeof(T) >= 4*16, "The stack is too small.");
+            m_customStack = &stack;
+            m_customStackSize = sizeof(T);
             return *this;
         }
 
