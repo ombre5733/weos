@@ -138,6 +138,9 @@ class nested_exception;
 
 //! \fn template <typename TType> void rethrow_if_nested(const TType& exc);
 
+//! Returns the number of uncaught exceptions.
+int uncaught_exceptions() noexcept;
+
 // ----=====================================================================----
 //     CaptureableException
 // ----=====================================================================----

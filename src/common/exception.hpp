@@ -116,6 +116,8 @@ using std::nested_exception;
 using std::throw_with_nested;
 using std::rethrow_if_nested;
 
+int uncaught_exceptions() noexcept;
+
 WEOS_END_NAMESPACE
 
 #endif // __CC_ARM

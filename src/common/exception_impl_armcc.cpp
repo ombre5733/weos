@@ -29,8 +29,20 @@
 #include "exception_impl_armcc.hpp"
 
 
+struct __cxa_eh_globals;
+extern "C" __cxa_eh_globals* __cxa_get_globals();
+
+
 WEOS_BEGIN_NAMESPACE
 
+// ----=====================================================================----
+//     uncaught_exceptions
+// ----=====================================================================----
+
+int uncaught_exceptions() noexcept
+{
+    return *reinterpret_cast<int*>(static_cast<void*>(__cxa_get_globals()));
+}
 
 // ----=====================================================================----
 //     rethrow_exception
