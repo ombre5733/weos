@@ -67,7 +67,7 @@ exception::~exception() throw()
 namespace detail_exception
 {
 inline
-void cloneErrorInfoList(const exception* src, exception* dest)
+void cloneErrorInfoList(const exception* /*src*/, exception* /*dest*/)
 {
 }
 
@@ -111,6 +111,7 @@ TType&& enable_current_exception(TType&& exc)
 
 using std::current_exception;
 using std::exception_ptr;
+using std::make_exception_ptr;
 using std::rethrow_exception;
 using std::nested_exception;
 using std::throw_with_nested;

@@ -430,6 +430,24 @@ const exception_ptr StaticExceptionFactory<TException>::eptr
 
 } // namespace detail_exception
 
+
+// ----=====================================================================----
+//     make_exception_ptr
+// ----=====================================================================----
+
+template <typename T>
+exception_ptr make_exception_ptr(T exc)
+{
+    try
+    {
+        throw enable_current_exception(exc);
+    }
+    catch(...)
+    {
+        return std::current_exception();
+    }
+}
+
 // ----=====================================================================----
 //     nested_exception
 // ----=====================================================================----
