@@ -287,7 +287,7 @@ public:
     //! \note If a thread is joinable, either join() or detach() must be
     //! called before the destructor is executed.
     inline
-    bool joinable() noexcept
+    bool joinable() const noexcept
     {
         return m_data != 0;
     }
