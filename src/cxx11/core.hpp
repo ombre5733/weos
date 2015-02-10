@@ -31,8 +31,4 @@
 
 #include "../config.hpp"
 
-
-#define WEOS_USE_CXX11
-#include "../common/core.hpp"
-
 #endif // WEOS_CXX11_CORE_HPP

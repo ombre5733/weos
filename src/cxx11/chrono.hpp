@@ -36,7 +36,12 @@
 
 WEOS_BEGIN_NAMESPACE
 
-namespace chrono = std::chrono;
+namespace chrono
+{
+using std::chrono::high_resolution_clock;
+using std::chrono::steady_clock;
+using std::chrono::system_clock;
+} // namespace chrono
 
 WEOS_END_NAMESPACE
 
