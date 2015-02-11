@@ -193,38 +193,27 @@ WEOS_NAMESPACE::thread::id get_id()
     return WEOS_NAMESPACE::thread::id(osThreadGetId());
 }
 
+//! \cond
+//! Puts the current thread to sleep.
+//!
+//! This is an overload if the duration is specified in milliseconds.
+void sleep_for(chrono::milliseconds ms);
+//! \endcond
+
 //! \brief Puts the current thread to sleep.
 //!
 //! Blocks the execution of the current thread for the given duration \p d.
 template <typename RepT, typename PeriodT>
-void sleep_for(const chrono::duration<RepT, PeriodT>& d) noexcept
+inline
+void sleep_for(const chrono::duration<RepT, PeriodT>& d)
 {
-    typedef chrono::detail::internal_time_cast<chrono::duration<RepT, PeriodT> >
-                caster;
-
-    typename caster::type millisecs = caster::convert_and_clip_below(d);
-
-    // The delay passed to this function has to be a lower bound. If we sleep
-    // for 1ms, the OS will wake us at the beginning of the next slot, which
-    // is too early since some time has already passed in the current slot.
-    millisecs += 1;
-
-    while (true)
+    using namespace chrono;
+    if (d > duration<RepT, PeriodT>::zero())
     {
-        typename caster::type delay = millisecs;
-        if (delay > caster::maxMillisecs)
-            delay = caster::maxMillisecs;
-        millisecs -= delay;
-
-        osStatus result = osDelay(delay);
-        if (result != osOK && result != osEventTimeout)
-        {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "sleep_for failed");
-        }
-
-        if (delay == 0)
-            return;
+        milliseconds converted = duration_cast<milliseconds>(d);
+        if (converted < d)
+            ++converted;
+        sleep_for(converted);
     }
 }
 
@@ -280,6 +269,31 @@ thread::signal_set wait_for_any_signal();
 //! is returned.
 thread::signal_set try_wait_for_any_signal();
 
+//! \cond
+//! Waits for any signal.
+//!
+//! This is an overload if the duration is specified in milliseconds.
+thread::signal_set try_wait_for_any_signal_for(chrono::milliseconds ms);
+//! \endcond
+
+//! Waits until any signal arrives or a timeout occurs.
+//! Waits up to the timeout period \p d for one or more signals to be set for
+//! the current thread. The set signals will be returned. If the timeout
+//! expires, zero is returned.
+template <typename RepT, typename PeriodT>
+inline
+thread::signal_set try_wait_for_any_signal_for(
+            const chrono::duration<RepT, PeriodT>& d)
+{
+    using namespace chrono;
+
+    milliseconds converted = duration_cast<milliseconds>(d);
+    if (converted < d)
+        ++converted;
+
+    return try_wait_for_any_signal_for(converted);
+}
+
 template <typename ClockT, typename DurationT>
 thread::signal_set try_wait_for_any_signal_until(
             const chrono::time_point<ClockT, DurationT>& time)
@@ -312,18 +326,6 @@ thread::signal_set try_wait_for_any_signal_until(
     }
 }
 
-//! Waits until any signal arrives or a timeout occurs.
-//! Waits up to the timeout period \p d for one or more signals to be set for
-//! the current thread. The set signals will be returned. If the timeout
-//! expires, zero is returned.
-template <typename RepT, typename PeriodT>
-inline
-thread::signal_set try_wait_for_any_signal_for(
-            const chrono::duration<RepT, PeriodT>& d)
-{
-    return try_wait_for_any_signal_until(chrono::steady_clock::now() + d);
-}
-
 //! Waits for a set of signals.
 //! Blocks the current thread until all signal flags selected by \p flags have
 //! been set, returns those flags and resets them. Signal flags which are
@@ -337,6 +339,33 @@ void wait_for_all_signals(thread::signal_set flags);
 //! If not all signal flags specified by \p flags are set, zero is returned
 //! and no flag is reset.
 bool try_wait_for_all_signals(thread::signal_set flags);
+
+//! \cond
+//! Waits for all specified signals.
+//!
+//! This is an overload if the duration is specified in milliseconds.
+bool try_wait_for_all_signals_for(thread::signal_set flags,
+                                  chrono::milliseconds ms);
+//! \endcond
+
+//! Blocks until a set of signals arrives or a timeout occurs.
+//! Waits up to the timeout duration \p d for all signals specified by the
+//! \p flags to be set. If these signals are set, they are returned and
+//! reset. In the case of a timeout, zero is returned and the signal flags
+//! are not modified.
+template <typename RepT, typename PeriodT>
+inline
+bool try_wait_for_all_signals_for(thread::signal_set flags,
+                                  const chrono::duration<RepT, PeriodT>& d)
+{
+    using namespace chrono;
+
+    milliseconds converted = duration_cast<milliseconds>(d);
+    if (converted < d)
+        ++converted;
+
+    return try_wait_for_all_signals_for(flags, converted);
+}
 
 template <typename ClockT, typename DurationT>
 bool try_wait_for_all_signals_until(
@@ -371,22 +400,6 @@ bool try_wait_for_all_signals_until(
         if (millisecs == 0)
             return false;
     }
-}
-
-//! Blocks until a set of signals arrives or a timeout occurs.
-//! Waits up to the timeout duration \p d for all signals specified by the
-//! \p flags to be set. If these signals are set, they are returned and
-//! reset. In the case of a timeout, zero is returned and the signal flags
-//! are not modified.
-template <typename RepT, typename PeriodT>
-inline
-bool try_wait_for_all_signals_for(
-            thread::signal_set flags,
-            const chrono::duration<RepT, PeriodT>& d)
-{
-    return try_wait_for_all_signals_until(
-                flags,
-                chrono::steady_clock::now() + d);
 }
 
 } // namespace this_thread

@@ -290,12 +290,51 @@ void thread::invoke(const attributes& attrs)
     }
 }
 
+namespace this_thread
+{
+// ----=====================================================================----
+//     Sleeping
+// ----=====================================================================----
+
+void sleep_for(chrono::milliseconds ms)
+{
+    using namespace chrono;
+
+    if (ms > milliseconds::zero())
+    {
+        // An osDelay() of 1ms only blocks until the following time slot.
+        // As some time already has passed in this slot, the true delay is
+        // shorter than what the user specified.
+
+        // We increase the number of milliseconds by one here.
+        // TODO: Fix this for clocks other than milliseconds.
+        static_assert(   chrono::system_clock::period::num == 1
+                      && chrono::system_clock::period::den == 1000,
+                      "Only implemented for milliseconds");
+        ++ms;
+
+        while (true)
+        {
+            milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                     ? ms
+                                     : milliseconds(0xFFFE);
+            ms -= truncated;
+            osStatus result = osDelay(truncated.count());
+            if (result != osOK && result != osEventTimeout)
+            {
+                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+                                        "sleep_for failed");
+            }
+
+            if (ms <= milliseconds::zero())
+                break;
+        }
+    }
+}
+
 // ----=====================================================================----
 //     Waiting for signals
 // ----=====================================================================----
-
-namespace this_thread
-{
 
 thread::signal_set wait_for_any_signal()
 {
@@ -325,6 +364,40 @@ thread::signal_set try_wait_for_any_signal()
     return 0;
 }
 
+thread::signal_set try_wait_for_any_signal_for(chrono::milliseconds ms)
+{
+    using namespace chrono;
+
+    if (ms >= milliseconds::zero())
+    {
+        while (true)
+        {
+            milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                     ? ms
+                                     : milliseconds(0xFFFE);
+            ms -= truncated;
+
+            osEvent result = osSignalWait(0, truncated.count());
+            if (result.status == osEventSignal)
+            {
+                return result.value.signals;
+            }
+
+            if (   result.status != osOK
+                && result.status != osEventTimeout)
+            {
+                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                        "try_wait_for_any_signal_for failed");
+            }
+
+            if (ms <= milliseconds::zero())
+                break;
+        }
+    }
+
+    return 0;
+}
+
 void wait_for_all_signals(thread::signal_set flags)
 {
     WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
@@ -336,6 +409,7 @@ void wait_for_all_signals(thread::signal_set flags)
 
 bool try_wait_for_all_signals(thread::signal_set flags)
 {
+    WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
     osEvent result = osSignalWait(flags, 0);
     if (result.status == osEventSignal)
     {
@@ -347,6 +421,43 @@ bool try_wait_for_all_signals(thread::signal_set flags)
     {
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
                                 "try_wait_for_all_signals failed");
+    }
+
+    return false;
+}
+
+bool try_wait_for_all_signals_for(thread::signal_set flags,
+                                  chrono::milliseconds ms)
+{
+    using namespace chrono;
+
+    WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
+
+    if (ms >= milliseconds::zero())
+    {
+        while (true)
+        {
+            milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                     ? ms
+                                     : milliseconds(0xFFFE);
+            ms -= truncated;
+
+            osEvent result = osSignalWait(flags, truncated.count());
+            if (result.status == osEventSignal)
+            {
+                return true;
+            }
+
+            if (   result.status != osOK
+                && result.status != osEventTimeout)
+            {
+                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                        "try_wait_for_any_signal_for failed");
+            }
+
+            if (ms <= milliseconds::zero())
+                break;
+        }
     }
 
     return false;

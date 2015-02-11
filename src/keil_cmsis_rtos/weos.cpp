@@ -44,19 +44,17 @@ public:
     Weos();
     ~Weos();
 
+    Weos(const Weos&) = delete;
+    Weos& operator=(const Weos&) = delete;
+
 private:
     thread m_precisionTimeReader;
-
-    // ---- Deleted methods.
-    Weos(const Weos&);
-    Weos& operator=(const Weos&);
 };
 
 Weos::Weos()
     : m_precisionTimeReader(
           thread::attributes().setPriority(thread::attributes::Low)
-                              .setStack(&precisionTimeReaderStack,
-                                        sizeof(precisionTimeReaderStack)),
+                              .setStack(precisionTimeReaderStack),
           readPrecisionTimePeriodically)
 {
 }
