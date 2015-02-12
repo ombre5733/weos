@@ -38,38 +38,6 @@
 
 WEOS_BEGIN_NAMESPACE
 
-namespace detail
-{
-//! A helper class for temporarily releasing a lock.
-//! The lock_releaser is a helper class to release a lock until the object
-//! goes out of scope. The constructor calls unlock() and the destructor
-//! calls lock(). It is somehow the dual to the lock_guard which calls lock()
-//! in the constructor and unlock() in the destructor.
-template <typename LockT>
-class lock_releaser
-{
-public:
-    typedef LockT lock_type;
-
-    explicit lock_releaser(lock_type& lock)
-        : m_lock(lock)
-    {
-        m_lock.unlock();
-    }
-
-    ~lock_releaser()
-    {
-        m_lock.lock();
-    }
-
-private:
-    lock_type& m_lock;
-};
-
-} // namespace detail
-
-
-
 WEOS_SCOPED_ENUM_BEGIN(cv_status)
 {
     no_timeout,
@@ -93,14 +61,17 @@ public:
     ~condition_variable();
 
     //! Notifies a thread waiting on this condition variable.
+    //!
     //! Notifies one thread which is waiting on this condition variable.
     void notify_one() noexcept;
 
     //! Notifies all threads waiting on this condition variable.
+    //!
     //! Notifies all threads which are waiting on this condition variable.
     void notify_all() noexcept;
 
     //! Waits on this condition variable.
+    //!
     //! The given \p lock is released and the current thread is added to a
     //! list of threads waiting for a notification. The calling thread is
     //! blocked until a notification is sent via notify() or notify_all()
@@ -118,6 +89,7 @@ public:
     //! }
     //! \endcode
     template <typename TPredicate>
+    inline
     void wait(unique_lock<mutex>& lock, TPredicate pred)
     {
         while (!pred())
@@ -127,39 +99,52 @@ public:
     }
 
     //! Waits on this condition variable with a timeout.
+    //!
     //! Releases the given \p lock and adds the calling thread to a list
     //! of threads waiting for a notification. The thread is blocked until
     //! a notification is sent, a spurious wakeup occurs or the timeout
     //! period \p d expires. When the function returns, the \p lock is
     //! reacquired no matter what has caused the wakeup.
-    template <typename RepT, typename PeriodT>
+    template <typename TRep, typename TPeriod>
+    inline
     cv_status wait_for(unique_lock<mutex>& lock,
-                       const chrono::duration<RepT, PeriodT>& d)
+                       const chrono::duration<TRep, TPeriod>& d)
     {
-        // First enqueue ourselves in the list of waiters.
-        WaitingThread w;
-        enqueue(w);
+        using namespace chrono;
 
-        // We can only unlock the lock when we are sure that a signal will
-        // reach our thread.
-        detail::lock_releaser<unique_lock<mutex> > releaser(lock);
-        // Wait until we receive a signal, then re-lock the lock.
-        bool gotSignal = w.signal.try_wait_for(d);
+        milliseconds converted = duration_cast<milliseconds>(d);
+        if (converted < d)
+            ++converted;
 
-        // If we have received a signal, we have _always_ been dequeued.
-        // If the other case, we might have been dequeued or might have
-        // been not. In that case, we have to check the dequeued flag.
-        if (!gotSignal)
-        {
-            maybeDequeue(w);
-            return cv_status::timeout;
-        }
-
-        return cv_status::no_timeout;
+        return wait_for(lock, converted);
     }
+
+    template <typename TRep, typename TPeriod, typename TPredicate>
+    inline
+    bool wait_for(unique_lock<mutex>& lock,
+                  const chrono::duration<TRep, TPeriod>& d,
+                  TPredicate pred)
+    {
+        while (!pred())
+        {
+            // TODO: This does not work in case of spurious wakeups. We
+            // wait too long then.
+            if (wait_for(lock, d) == cv_status::timeout)
+              return pred();
+        }
+        return true;
+    }
+
+    //! \cond
+    //! Waits on this condition variable with a timeout.
+    //!
+    //! This is an overload if the duration is specified in milliseconds.
+    cv_status wait_for(unique_lock<mutex>& lock, chrono::milliseconds ms);
+    //! \endcond
 
     // TODO: wait_until()
 
+    //! Returns the native handle.
     native_handle_type native_handle()
     {
         return this;

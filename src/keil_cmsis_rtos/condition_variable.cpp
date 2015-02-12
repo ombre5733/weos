@@ -31,6 +31,37 @@
 
 WEOS_BEGIN_NAMESPACE
 
+namespace cv_detail
+{
+
+//! A helper class for temporarily releasing a lock.
+//! The lock_releaser is a helper class to release a lock until the object
+//! goes out of scope. The constructor calls unlock() and the destructor
+//! calls lock(). It is somehow the dual to the lock_guard which calls lock()
+//! in the constructor and unlock() in the destructor.
+template <typename LockT>
+class lock_releaser
+{
+public:
+    typedef LockT lock_type;
+
+    explicit lock_releaser(lock_type& lock) // TODO: noexcept?
+        : m_lock(lock)
+    {
+        m_lock.unlock();
+    }
+
+    ~lock_releaser() noexcept(false)
+    {
+        m_lock.lock();
+    }
+
+private:
+    lock_type& m_lock;
+};
+
+} // namespace cv_detail
+
 condition_variable::condition_variable()
     : m_waitingThreads(0)
 {
@@ -85,9 +116,34 @@ void condition_variable::wait(unique_lock<mutex>& lock)
 
     // We can only release the lock when we are sure that a signal will
     // reach our thread.
-    detail::lock_releaser<unique_lock<mutex> > releaser(lock);
+    cv_detail::lock_releaser<unique_lock<mutex> > releaser(lock);
     // Wait until we receive a signal, then re-lock the lock.
     w.signal.wait();
+}
+
+cv_status condition_variable::wait_for(unique_lock<mutex>& lock,
+                                       chrono::milliseconds ms)
+{
+    // First enqueue ourselves in the list of waiters.
+    WaitingThread w;
+    enqueue(w);
+
+    // We can only unlock the lock when we are sure that a signal will
+    // reach our thread.
+    cv_detail::lock_releaser<unique_lock<mutex> > releaser(lock);
+    // Wait until we receive a signal, then re-lock the lock.
+    bool gotSignal = w.signal.try_wait_for(ms);
+
+    // If we have received a signal, we have _always_ been dequeued.
+    // If the other case, we might have been dequeued or might have
+    // been not. In that case, we have to check the dequeued flag.
+    if (!gotSignal)
+    {
+        maybeDequeue(w);
+        return cv_status::timeout;
+    }
+
+    return cv_status::no_timeout;
 }
 
 // -----------------------------------------------------------------------------
