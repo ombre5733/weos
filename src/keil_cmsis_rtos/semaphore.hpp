@@ -81,6 +81,9 @@ public:
     //! \brief Destroys a semaphore.
     ~semaphore();
 
+    semaphore(const semaphore&) = delete;
+    semaphore& operator=(const semaphore&) = delete;
+
     //! \brief Releases a semaphore token.
     //!
     //! Increases the semaphore's value by one.
@@ -167,11 +170,6 @@ private:
     detail::SemaphoreControlBlock m_controlBlock;
     //! The native semaphore handle.
     osSemaphoreId m_id;
-
-    // ---- Hidden methods.
-
-    semaphore(const semaphore&);
-    const semaphore& operator= (const semaphore&);
 };
 
 WEOS_END_NAMESPACE
