@@ -368,32 +368,30 @@ thread::signal_set try_wait_for_any_signal_for(chrono::milliseconds ms)
 {
     using namespace chrono;
 
-    if (ms >= milliseconds::zero())
+    if (ms < milliseconds::zero())
+        ms = milliseconds::zero();
+
+    do
     {
-        while (true)
+        milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                 ? ms
+                                 : milliseconds(0xFFFE);
+        ms -= truncated;
+
+        osEvent result = osSignalWait(0, truncated.count());
+        if (result.status == osEventSignal)
         {
-            milliseconds truncated = ms <= milliseconds(0xFFFE)
-                                     ? ms
-                                     : milliseconds(0xFFFE);
-            ms -= truncated;
-
-            osEvent result = osSignalWait(0, truncated.count());
-            if (result.status == osEventSignal)
-            {
-                return result.value.signals;
-            }
-
-            if (   result.status != osOK
-                && result.status != osEventTimeout)
-            {
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                        "try_wait_for_any_signal_for failed");
-            }
-
-            if (ms <= milliseconds::zero())
-                break;
+            return result.value.signals;
         }
-    }
+
+        if (   result.status != osOK
+            && result.status != osEventTimeout)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                    "try_wait_for_any_signal_for failed");
+        }
+
+    } while (ms > milliseconds::zero());
 
     return 0;
 }
@@ -433,32 +431,30 @@ bool try_wait_for_all_signals_for(thread::signal_set flags,
 
     WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
 
-    if (ms >= milliseconds::zero())
+    if (ms < milliseconds::zero())
+        ms = milliseconds::zero();
+
+    do
     {
-        while (true)
+        milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                 ? ms
+                                 : milliseconds(0xFFFE);
+        ms -= truncated;
+
+        osEvent result = osSignalWait(flags, truncated.count());
+        if (result.status == osEventSignal)
         {
-            milliseconds truncated = ms <= milliseconds(0xFFFE)
-                                     ? ms
-                                     : milliseconds(0xFFFE);
-            ms -= truncated;
-
-            osEvent result = osSignalWait(flags, truncated.count());
-            if (result.status == osEventSignal)
-            {
-                return true;
-            }
-
-            if (   result.status != osOK
-                && result.status != osEventTimeout)
-            {
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                        "try_wait_for_any_signal_for failed");
-            }
-
-            if (ms <= milliseconds::zero())
-                break;
+            return true;
         }
-    }
+
+        if (   result.status != osOK
+            && result.status != osEventTimeout)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+                                    "try_wait_for_any_signal_for failed");
+        }
+
+    } while (ms > milliseconds::zero());
 
     return false;
 }
