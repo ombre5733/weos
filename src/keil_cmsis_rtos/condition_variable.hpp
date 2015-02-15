@@ -159,7 +159,7 @@ private:
     //! variable can either notify the first waiter or all waiters in the list.
     struct WaitingThread
     {
-        WaitingThread()
+        WaitingThread() noexcept
             : next(0),
               dequeued(false)
         {
