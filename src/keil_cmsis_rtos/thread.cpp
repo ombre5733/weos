@@ -124,7 +124,7 @@ extern "C" void* weos_createTask(
 {
     uint32_t taskId = rt_tsk_create(
                           (void (*)(void))weos_threadInvoker,
-                          (priority - osPriorityIdle + 1)
+                          uint32_t(priority - osPriorityIdle + 1)
                           | (stackSize << 8),
                           stack,
                           data);
