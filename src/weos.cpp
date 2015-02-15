@@ -30,6 +30,7 @@
 
 #include "common/exception.cpp"
 #include "common/functional.cpp"
+#include "common/future.cpp"
 #include "common/system_error.cpp"
 
 
