@@ -49,6 +49,7 @@
 WEOS_BEGIN_NAMESPACE
 
 using std::memory_order;
+using std::atomic_thread_fence;
 using std::atomic_flag;
 using std::atomic;
 using std::atomic_bool;
