@@ -101,6 +101,14 @@ public:
     //! \p false is returned.
     bool try_wait();
 
+    //! \cond
+    //! Tries to acquire a semaphore token within a timeout.
+    //!
+    //! This is an overload for the case when the timeout is given in
+    //! milliseconds.
+    bool try_wait_for(chrono::milliseconds ms);
+    //! \endcond
+
     //! \brief Tries to acquire a semaphore token within a timeout.
     //!
     //! Tries to acquire a semaphore token within the given \p timeout. The
@@ -109,7 +117,13 @@ public:
     inline
     bool try_wait_for(const chrono::duration<RepT, PeriodT>& timeout)
     {
-        return try_wait_until(chrono::steady_clock::now() + timeout);
+        using namespace chrono;
+
+        milliseconds converted = duration_cast<milliseconds>(timeout);
+        if (converted < timeout)
+            ++converted;
+
+        return try_wait_for(converted);
     }
 
     //! \brief Tries to acquire token up to a time point.

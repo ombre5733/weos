@@ -75,6 +75,35 @@ bool semaphore::try_wait()
     return result != 0;
 }
 
+bool semaphore::try_wait_for(chrono::milliseconds ms)
+{
+    using namespace chrono;
+
+    if (ms < milliseconds::zero())
+        ms = milliseconds::zero();
+
+    do
+    {
+        milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                 ? ms
+                                 : milliseconds(0xFFFE);
+        ms -= truncated;
+
+        std::int32_t result = osSemaphoreWait(m_id, truncated.count());
+        if (result > 0)
+            return true;
+
+        if (result < 0)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "semaphore::try_wait_for failed");
+        }
+
+    } while (ms > milliseconds::zero());
+
+    return false;
+}
+
 semaphore::value_type semaphore::value() const
 {
     //! \todo Use an SVC here.
