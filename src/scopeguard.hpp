@@ -30,17 +30,144 @@
 #define WEOS_SCOPEGUARD_HPP
 
 #include "config.hpp"
+#include "_core.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/scopeguard.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/scopeguard.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/scopeguard.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/scopeguard.hpp"
-#else
-    #error "Invalid native OS."
-#endif
+
+WEOS_BEGIN_NAMESPACE
+
+namespace weos_detail
+{
+
+template <typename TCallable>
+class ScopeGuard
+{
+public:
+    template <typename T,
+              typename _ = typename FSM11STD::enable_if<!FSM11STD::is_same<typename FSM11STD::decay<T>::type,
+                                                                           ScopeGuard>::value>::type>
+    explicit ScopeGuard(T&& callable) // TODO: noexcept
+        : m_callable(callable),
+          m_dismissed(false)
+    {
+    }
+
+    ScopeGuard(ScopeGuard&& other) // TODO: noexcept
+        : m_callable(FSM11STD::move(other.m_callable)),
+          m_dismissed(other.m_dismissed)
+    {
+        other.m_dismissed = true;
+    }
+
+    ~ScopeGuard() noexcept
+    {
+        if (!m_dismissed)
+        {
+            m_callable();
+        }
+    }
+
+    ScopeGuard(const ScopeGuard& other) = delete;
+    ScopeGuard& operator=(const ScopeGuard& other) = delete;
+
+    void dismiss() noexcept
+    {
+        m_dismissed = true;
+    }
+
+private:
+    TCallable m_callable;
+    bool m_dismissed;
+};
+
+template <typename TCallable, bool TExecuteOnException>
+class ExceptionScopeGuard
+{
+public:
+    template <typename T,
+              typename _ = typename FSM11STD::enable_if<!FSM11STD::is_same<typename FSM11STD::decay<T>::type,
+                                                                           ExceptionScopeGuard>::value>::type>
+    explicit ExceptionScopeGuard(T&& callable) // TODO: noexcept
+        : m_callable(FSM11STD::forward<T>(callable)),
+          m_numExceptions(FSM11STD::uncaught_exceptions())
+    {
+    }
+
+    ExceptionScopeGuard(ExceptionScopeGuard&& other) // TODO: noexcept
+        : m_callable(FSM11STD::move(other.m_callable)),
+          m_numExceptions(other.m_numExceptions)
+    {
+    }
+
+    ~ExceptionScopeGuard() noexcept(TExecuteOnException)
+    {
+        if (TExecuteOnException
+            == (FSM11STD::uncaught_exceptions() > m_numExceptions))
+        {
+            m_callable();
+        }
+    }
+
+    ExceptionScopeGuard(const ExceptionScopeGuard& other) = delete;
+    ExceptionScopeGuard& operator=(const ExceptionScopeGuard& other) = delete;
+
+private:
+    TCallable m_callable;
+    int m_numExceptions;
+};
+
+} // namespace weos_detail
+
+struct OnScopeExit {};
+struct OnScopeFailure {};
+struct OnScopeSuccess {};
+
+template <typename TCallable>
+weos_detail::ScopeGuard<typename FSM11STD::decay<TCallable>::type> operator+(
+        OnScopeExit, TCallable&& callable)
+{
+    return weos_detail::ScopeGuard<typename FSM11STD::decay<TCallable>::type>(
+                FSM11STD::forward<TCallable>(callable));
+}
+
+template <typename TCallable>
+weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, true> operator+(
+        OnScopeFailure, TCallable&& callable)
+{
+    return weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, true>(
+                FSM11STD::forward<TCallable>(callable));
+}
+
+template <typename TCallable>
+weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, false> operator+(
+        OnScopeSuccess, TCallable&& callable)
+{
+    return weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, false>(
+                FSM11STD::forward<TCallable>(callable));
+}
+
+// Helper macros for the generation of anonymous variables.
+#define WEOS_CONCATENATE_HELPER(a, b)   a ## b
+#define WEOS_CONCATENATE(a, b)          WEOS_CONCATENATE_HELPER(a, b)
+#define WEOS_ANONYMOUS_VARIABLE(name)   WEOS_CONCATENATE(name, __LINE__)
+
+
+// Usage:
+// WEOS_SCOPE_EXIT {
+//     some code here
+// };
+#define WEOS_SCOPE_EXIT                                                        \
+    auto WEOS_ANONYMOUS_VARIABLE(_weos_scopeGuard_) =                          \
+        ::WEOS_NAMESPACE::OnScopeExit() + [&]() noexcept
+
+#define WEOS_SCOPE_FAILURE                                                     \
+    auto WEOS_ANONYMOUS_VARIABLE(_weos_scopeGuard_) =                          \
+        ::WEOS_NAMESPACE::OnScopeFailure() + [&]() noexcept
+
+#define WEOS_SCOPE_SUCCESS                                                     \
+    auto WEOS_ANONYMOUS_VARIABLE(_weos_scopeGuard_) =                          \
+        ::WEOS_NAMESPACE::OnScopeSuccess() + [&]()
+
+WEOS_END_NAMESPACE
+
 
 #endif // WEOS_SCOPEGUARD_HPP
