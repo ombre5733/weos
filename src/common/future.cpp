@@ -5,6 +5,46 @@
 
 WEOS_BEGIN_NAMESPACE
 
+// ----=====================================================================----
+//     Error
+// ----=====================================================================----
+
+class future_category_impl : public error_category
+{
+public:
+    virtual const char* name() const noexcept
+    {
+        return "future";
+    }
+
+    virtual const char* message(int err_val) const
+    {
+        switch (static_cast<errc>(err_val))
+        {
+        case future_errc::broken_promise:
+            return "broken promise";
+        case future_errc::future_already_retrieved:
+            return "future already retrieved";
+        case future_errc::promise_already_satisfied:
+            return "promise already satisfied";
+        case future_errc::no_state:
+            return "no state";
+        default:
+            return "Unknown error";
+        }
+    }
+};
+
+const error_category& future_category() noexcept
+{
+    static future_category_impl categoryInstance;
+    return categoryInstance;
+}
+
+// ----=====================================================================----
+//     SharedState
+// ----=====================================================================----
+
 namespace weos_future_detail
 {
 
