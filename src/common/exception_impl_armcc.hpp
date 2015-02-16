@@ -444,7 +444,7 @@ exception_ptr make_exception_ptr(T exc)
     }
     catch(...)
     {
-        return std::current_exception();
+        return current_exception();
     }
 }
 
