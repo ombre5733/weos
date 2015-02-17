@@ -45,7 +45,7 @@ WEOS_BEGIN_NAMESPACE
 
 class thread;
 
-namespace detail
+namespace weos_detail
 {
 
 //! Traits for native threads.
@@ -173,7 +173,7 @@ struct native_thread_traits
     };
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 WEOS_END_NAMESPACE
 

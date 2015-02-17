@@ -32,12 +32,13 @@
 #include "../config.hpp"
 
 #include "../atomic.hpp"
+#include "../memory.hpp"
 #include "../utility.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
 
-namespace detail
+namespace weos_detail
 {
 
 // ----=====================================================================----
@@ -47,15 +48,15 @@ namespace detail
 //! Data which is shared between the threaded function and the thread handle.
 struct SharedThreadData
 {
-    //! Destroys the shared thread data.
-    ~SharedThreadData();
-
     //! Increases the reference counter by one.
-    void addRef();
+    void addReferenceCount()
+    {
+        ++m_referenceCount;
+    }
 
     //! Decreases the reference counter by one. If the reference counter reaches
     //! zero, this object is destructed and returned to the pool.
-    void release();
+    void decReferenceCount();
 
     //! Allocates a ThreadData object from the global pool. An exception is
     //! thrown if the pool is empty.
@@ -67,14 +68,13 @@ struct SharedThreadData
     function<void()> m_threadedFunction;
 
     //! This semaphore is increased by the threaded function when it's
-    //! execution finishes. It is needed to implement thread::join().
+    //! execution finishes. thread::join() can block on it.
     semaphore m_finished;
 
-    atomic_int m_referenceCount;
-
-    //! This semaphore is increased by the thread creator when it has
-    //! initialized the shared data, i.e. it is abused for sending a signal.
-    semaphore m_initializationDone;
+    //! This semaphore is increased by the thread handle when join() or
+    //! detach() has been called. The threaded function blocks on it
+    //! in order to keep the thread alive (e.g. for setting signals).
+    semaphore m_joinedOrDetached;
 
     //! The native thread handle.
     native_thread_traits::thread_handle_type m_threadHandle;
@@ -82,118 +82,48 @@ struct SharedThreadData
     //! The native thread id.
     native_thread_traits::thread_id_type m_threadId;
 
+    SharedThreadData(const SharedThreadData&) = delete;
+    const SharedThreadData& operator= (const SharedThreadData&) = delete;
+
 private:
+    //! The number of references to this shared data.
+    atomic_int m_referenceCount;
+
     //! Creates the shared thread data.
     SharedThreadData();
-
-    SharedThreadData(const SharedThreadData&);
-    const SharedThreadData& operator= (const SharedThreadData&);
 };
 
-class SharedThreadDataPointer
+struct SharedThreadDataDeleter
 {
-public:
-    SharedThreadDataPointer() noexcept
-        : m_data(0)
+    void operator()(SharedThreadData* data)
     {
+        data->decReferenceCount();
     }
-
-    explicit SharedThreadDataPointer(SharedThreadData* data)
-        : m_data(data)
-    {
-        if (m_data != 0)
-            m_data->addRef();
-    }
-
-    SharedThreadDataPointer(const SharedThreadDataPointer& other)
-        : m_data(other.m_data)
-    {
-        if (m_data != 0)
-            m_data->addRef();
-    }
-
-    ~SharedThreadDataPointer()
-    {
-        if (m_data != 0)
-            m_data->release();
-    }
-
-    SharedThreadDataPointer& operator= (const SharedThreadDataPointer& other)
-    {
-        if (this != &other)
-        {
-            if (m_data != 0)
-                m_data->release();
-            m_data = other.m_data;
-            if (m_data != 0)
-                m_data->addRef();
-        }
-        return *this;
-    }
-
-    SharedThreadData* get() const noexcept
-    {
-        return m_data;
-    }
-
-    void reset()
-    {
-        if (m_data != 0)
-            m_data->release();
-        m_data = 0;
-    }
-
-    void swap(SharedThreadDataPointer& other) noexcept
-    {
-        SharedThreadData* tmp = m_data;
-        m_data = other.m_data;
-        other.m_data = tmp;
-    }
-
-    SharedThreadData& operator* () const noexcept
-    {
-        WEOS_ASSERT(m_data != 0);
-        return *m_data;
-    }
-
-    SharedThreadData* operator-> () const noexcept
-    {
-        WEOS_ASSERT(m_data != 0);
-        return m_data;
-    }
-
-    /*TODO: explicit*/ operator bool() const noexcept
-    {
-        return m_data != 0;
-    }
-
-private:
-    SharedThreadData* m_data;
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 //! A thread handle.
 class thread
 {
 public:
     //! The type of the native thread handle.
-    typedef detail::native_thread_traits::thread_handle_type* native_handle_type;
+    typedef weos_detail::native_thread_traits::thread_handle_type* native_handle_type;
 
     //! A representation of a thread identifier.
     //! This class is a wrapper around a thread identifier. It has a small
     //! memory footprint such that it is inexpensive to pass copies around.
-    typedef detail::native_thread_traits::id id;
+    typedef weos_detail::native_thread_traits::id id;
 
     //! The thread attributes.
-    typedef detail::native_thread_traits::attributes attributes;
+    typedef weos_detail::native_thread_traits::attributes attributes;
 
 
     //! Creates a thread handle without a thread.
     //! Creates a thread handle which is not associated with any thread. The
     //! new thread handle is not joinable.
     thread() noexcept
-        : m_data(0)
+        : m_data(nullptr)
     {
     }
 
@@ -206,11 +136,15 @@ public:
                                               !is_same<typename decay<F>::type, attributes>::value>::type>
     explicit
     thread(F&& f, TArgs&&... args)
-        : m_data(detail::SharedThreadData::allocate())
+        : m_data(weos_detail::SharedThreadData::allocate())
     {
-        m_data->m_threadedFunction = bind(forward<F>(f), forward<TArgs>(args)...);
+        unique_ptr<weos_detail::SharedThreadData,
+                   weos_detail::SharedThreadDataDeleter> data(m_data);
+        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
+                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
 
         invoke(attributes());
+        data.release();
     }
 
     // -------------------------------------------------------------------------
@@ -220,19 +154,23 @@ public:
     template <typename F, typename... TArgs>
     thread(const attributes& attrs,
            F&& f, TArgs&&... args)
-        : m_data(detail::SharedThreadData::allocate())
+        : m_data(weos_detail::SharedThreadData::allocate())
     {
-        m_data->m_threadedFunction = bind(forward<F>(f), forward<TArgs>(args)...);
+        unique_ptr<weos_detail::SharedThreadData,
+                   weos_detail::SharedThreadDataDeleter> data(m_data);
+        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
+                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
 
         invoke(attrs);
+        data.release();
     }
 
     //! Move constructor.
     //! Constructs a thread by moving from the \p other thread.
-    thread(thread&& other)
+    thread(thread&& other) noexcept
         : m_data(other.m_data)
     {
-        other.m_data.reset();
+        other.m_data = nullptr;
     }
 
     //! Destroys the thread handle.
@@ -246,27 +184,20 @@ public:
             std::terminate();
     }
 
+    thread(const thread&) = delete;
+    thread& operator=(const thread&) = delete;
+
     //! Move assignment.
     //! Move-assigns the \p other thread to this thread.
-    thread& operator=(thread&& other)
+    thread& operator=(thread&& other) noexcept
     {
-        if (this != &other)
-        {
-            m_data = other.m_data;
-            other.m_data.reset();
-        }
+        m_data = other.m_data;
+        other.m_data = nullptr;
         return *this;
     }
 
     //! Separates the executing thread from this thread handle.
-    void detach()
-    {
-        if (!joinable())
-            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
-                                    "thread::detach: thread is not joinable");
-
-        m_data.reset();
-    }
+    void detach();
 
     //! Returns the id of the thread.
     id get_id() const noexcept
@@ -289,7 +220,7 @@ public:
     inline
     bool joinable() const noexcept
     {
-        return m_data != 0;
+        return m_data != nullptr;
     }
 
     //! Returns the number of threads which can run concurrently on this
@@ -308,20 +239,20 @@ public:
     // -------------------------------------------------------------------------
 
     //! Represents a set of signal flags.
-    typedef detail::native_thread_traits::signal_set signal_set;
+    typedef weos_detail::native_thread_traits::signal_set signal_set;
 
     //! Returns the number of signals in a set.
     inline
     static int signals_count() noexcept
     {
-        return detail::native_thread_traits::signals_count;
+        return weos_detail::native_thread_traits::signals_count;
     }
 
     //! Returns a signal set with all flags being set.
     inline
     static signal_set all_signals() noexcept
     {
-        return detail::native_thread_traits::all_signals;
+        return weos_detail::native_thread_traits::all_signals;
     }
 
     //! Clears a set of signals.
@@ -340,11 +271,7 @@ protected:
 private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
-    detail::SharedThreadDataPointer m_data;
-
-
-    thread(const thread&) = delete;
-    thread& operator=(const thread&) = delete;
+    weos_detail::SharedThreadData* m_data;
 };
 
 //! Compares two thread ids for equality.

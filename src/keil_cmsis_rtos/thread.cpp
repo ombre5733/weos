@@ -107,16 +107,18 @@ osPriority toNativePriority(weos::thread::attributes::Priority priority)
 //! the actual function to start.
 extern "C" void weos_threadInvoker(const void* arg)
 {
-    WEOS_NAMESPACE::detail::SharedThreadDataPointer data(
-                static_cast<WEOS_NAMESPACE::detail::SharedThreadData*>(
-                    const_cast<void*>(arg)));
+    using namespace WEOS_NAMESPACE;
 
-    // Wait until the caller has initialized the shared data.
-    data->m_initializationDone.wait();
+    unique_ptr<weos_detail::SharedThreadData,
+               weos_detail::SharedThreadDataDeleter> data(
+        static_cast<weos_detail::SharedThreadData*>(const_cast<void*>(arg)));
+
     // Call the threaded function.
     data->m_threadedFunction();
     // Use the semaphore to signal that the thread has been completed.
     data->m_finished.post();
+    // Keep the thread alive because someone might still set a signal.
+    data->m_joinedOrDetached.wait();
 }
 
 extern "C" void* weos_createTask(
@@ -148,7 +150,7 @@ WEOS_BEGIN_NAMESPACE
 //     SharedThreadData
 // ----=====================================================================----
 
-namespace detail
+namespace weos_detail
 {
 
 namespace
@@ -165,21 +167,12 @@ SharedThreadDataPool& sharedThreadDataPool()
 } // anonymous namespace
 
 SharedThreadData::SharedThreadData()
-    : m_referenceCount(0),
-      m_threadId(0)
+    : m_threadId(0),
+      m_referenceCount(1)
 {
 }
 
-SharedThreadData::~SharedThreadData()
-{
-}
-
-void SharedThreadData::addRef()
-{
-    ++m_referenceCount;
-}
-
-void SharedThreadData::release()
+void SharedThreadData::decReferenceCount()
 {
     if (--m_referenceCount == 0)
     {
@@ -199,11 +192,24 @@ SharedThreadData* SharedThreadData::allocate()
     return new (mem) SharedThreadData;
 }
 
-} // namespace detail
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     thread
 // ----=====================================================================----
+
+void thread::detach()
+{
+    if (!joinable())
+        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+                                "thread::detach: thread is not joinable");
+
+    unique_ptr<weos_detail::SharedThreadData,
+               weos_detail::SharedThreadDataDeleter> data(m_data);
+
+    m_data->m_joinedOrDetached.post();
+    m_data = nullptr;
+}
 
 void thread::join()
 {
@@ -211,10 +217,12 @@ void thread::join()
         WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                 "thread::join: thread is not joinable");
 
-    m_data->m_finished.wait();
+    unique_ptr<weos_detail::SharedThreadData,
+               weos_detail::SharedThreadDataDeleter> data(m_data);
 
-    // The thread data is not needed any longer.
-    m_data.reset();
+    m_data->m_joinedOrDetached.post();
+    m_data->m_finished.wait();
+    m_data = nullptr;
 }
 
 void thread::clear_signals(signal_set flags)
@@ -264,7 +272,7 @@ void thread::invoke(const attributes& attrs)
         void* taskId = weos_createTask_indirect(
                            toNativePriority(attrs.m_priority),
                            attrs.m_customStack, attrs.m_customStackSize,
-                           m_data.get());
+                           m_data);
         m_data->m_threadId = static_cast<osThreadId>(taskId);
     }
     else
@@ -272,18 +280,16 @@ void thread::invoke(const attributes& attrs)
         osThreadDef_t threadDef = { weos_threadInvoker,
                                     toNativePriority(attrs.m_priority),
                                     1, 0 };
-        m_data->m_threadId = osThreadCreate(&threadDef, m_data.get());
+        m_data->m_threadId = osThreadCreate(&threadDef, m_data);
     }
 
     if (m_data->m_threadId)
     {
-        m_data->m_initializationDone.post();
+        // The invoked thread will only decrease the reference count.
+        m_data->addReferenceCount();
     }
     else
     {
-        // Destroy the thread-data.
-        m_data.reset();
-
         WEOS_THROW_SYSTEM_ERROR(
                     errc::no_child_process,
                     "thread::invoke: new thread was not created");
