@@ -38,14 +38,14 @@
 
 WEOS_BEGIN_NAMESPACE
 
-namespace detail_memory_pool
+namespace weos_detail
 {
 
-class free_list
+class FreeList
 {
 public:
-    free_list(void* memory, std::size_t chunkSize,
-              std::size_t numElements) noexcept
+    FreeList(void* memory, std::size_t chunkSize,
+             std::size_t numElements) noexcept
         : m_first(memory)
     {
         char* iter = static_cast<char*>(memory) + chunkSize * numElements;
@@ -58,8 +58,8 @@ public:
         }
     }
 
-    free_list(const free_list&) = delete;
-    free_list& operator=(const free_list&) = delete;
+    FreeList(const FreeList&) = delete;
+    FreeList& operator=(const FreeList&) = delete;
 
     bool empty() const noexcept
     {
@@ -98,7 +98,7 @@ private:
     }
 };
 
-} // namespace detail_memory_pool
+} // namespace weos_detail
 
 //! A memory pool.
 //! A memory_pool provides storage for (\p TNumElem) elements of
@@ -187,7 +187,7 @@ private:
     chunk_type m_chunks[TNumElem];
 
     //! The free-list.
-    detail_memory_pool::free_list m_list;
+    weos_detail::FreeList m_list;
 };
 
 WEOS_END_NAMESPACE

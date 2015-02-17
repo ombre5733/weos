@@ -85,7 +85,7 @@ public:
     //! Constructs a shared memory pool.
     shared_memory_pool() noexcept
     {
-        m_controlBlock.free = detail_memory_pool::free_list(
+        m_controlBlock.free = weos_detail::FreeList(
                                   &m_chunks[0], sizeof(chunk_type), TNumElem).first();
         m_controlBlock.end = &m_chunks[TNumElem];
         m_controlBlock.chunkSize = sizeof(chunk_type);
