@@ -154,7 +154,7 @@ public:
     {
     public:
         //! An enumeration of thread priorities.
-        enum Priority
+        WEOS_SCOPED_ENUM_BEGIN(Priority)
         {
             Idle = osPriorityIdle,
             Low = osPriorityLow,
@@ -164,10 +164,11 @@ public:
             High = osPriorityHigh,
             Realtime = osPriorityRealtime
         };
+        WEOS_SCOPED_ENUM_END(Priority)
 
         //! Creates default thread attributes.
         attributes()
-            : m_priority(Normal),
+            : m_priority(Priority::Normal),
               m_customStackSize(0),
               m_customStack(0)
         {
