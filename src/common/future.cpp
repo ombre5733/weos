@@ -1,7 +1,5 @@
 #include "future.hpp"
 
-#include "../memory.hpp"
-
 
 WEOS_BEGIN_NAMESPACE
 
@@ -42,13 +40,17 @@ const error_category& future_category() noexcept
 }
 
 // ----=====================================================================----
-//     SharedState
+//     Shared state
 // ----=====================================================================----
 
 namespace weos_detail
 {
 
-void SharedState::attachFuture()
+// ----=====================================================================----
+//     SharedStateBase
+// ----=====================================================================----
+
+void SharedStateBase::attachFuture()
 {
     unsigned flags = m_flags;
     do
@@ -59,7 +61,7 @@ void SharedState::attachFuture()
     } while (!m_flags.compare_exchange_strong(flags, flags | FutureAttached));
 }
 
-void SharedState::setException(exception_ptr exc)
+void SharedStateBase::startSettingValue()
 {
     unsigned flags = m_flags;
     do
@@ -68,46 +70,35 @@ void SharedState::setException(exception_ptr exc)
         if (flags & BeingSatisfied)
             throw future_error(make_error_code(future_errc::promise_already_satisfied));
     } while (!m_flags.compare_exchange_strong(flags, flags | BeingSatisfied));
+}
 
+void SharedStateBase::setException(exception_ptr exc)
+{
+    startSettingValue();
     m_exception = exc;
     m_flags |= Ready;
     m_cv.notify();
 }
 
-void SharedState::setValue()
+void SharedStateBase::setValue()
 {
-    unsigned flags = m_flags;
-    do
-    {
-        // Make sure that no other task has set a value or exception.
-        if (flags & BeingSatisfied)
-            throw future_error(make_error_code(future_errc::promise_already_satisfied));
-    } while (!m_flags.compare_exchange_strong(flags, flags | BeingSatisfied));
-
+    startSettingValue();
     m_flags |= Ready;
     m_cv.notify();
 }
 
-void SharedState::value()
+void SharedStateBase::copyValue()
 {
     wait();
     if (m_exception != nullptr)
         rethrow_exception(m_exception);
 }
 
-void SharedState::wait()
+void SharedStateBase::wait()
 {
     while (!(m_flags & Ready))
         m_cv.wait();
 }
-
-struct SharedStateDeleter
-{
-    void operator()(SharedState* state)
-    {
-        state->decReferenceCount();
-    }
-};
 
 } // namespace weos_detail
 
@@ -115,7 +106,7 @@ struct SharedStateDeleter
 //     future<void>
 // ----=====================================================================----
 
-future<void>::future(weos_detail::SharedState* state)
+future<void>::future(weos_detail::SharedStateBase* state)
     : m_state(state)
 {
     m_state->attachFuture();
@@ -130,10 +121,10 @@ future<void>::~future()
 
 void future<void>::get()
 {
-    unique_ptr<weos_detail::SharedState,
-               weos_detail::SharedStateDeleter> ptr(m_state);
+    unique_ptr<weos_detail::SharedStateBase,
+               weos_detail::SharedStateBaseDeleter> state(m_state);
     m_state = nullptr;
-    ptr->value();
+    state->copyValue();
 }
 
 // ----=====================================================================----
@@ -141,7 +132,7 @@ void future<void>::get()
 // ----=====================================================================----
 
 promise<void>::promise()
-    : m_state(new weos_detail::SharedState)
+    : m_state(new weos_detail::SharedStateBase)
 {
 }
 

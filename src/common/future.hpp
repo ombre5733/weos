@@ -32,13 +32,19 @@
 #include "../atomic.hpp"
 #include "../chrono.hpp"
 #include "../exception.hpp"
+#include "../memory.hpp"
 #include "../semaphore.hpp"
 #include "../system_error.hpp"
+#include "../thread.hpp"
+#include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
+
+template <typename TResult>
+class future;
 
 // ----=====================================================================----
 //
@@ -148,37 +154,42 @@ public:
     }
 };
 
-class SharedState
+// ----=====================================================================----
+//     SharedStateBase
+// ----=====================================================================----
+
+class SharedStateBase
 {
 public:
     enum
     {
-        BeingSatisfied = 0x01,
-        Ready          = 0x02,
-        FutureAttached = 0x04,
+        FutureAttached   = 0x01,
+        BeingSatisfied   = 0x02,
+        ValueConstructed = 0x04,
+        Ready            = 0x08,
     };
 
-    SharedState()
+    SharedStateBase() noexcept
         : m_referenceCount(1),
           m_flags(0)
     {
     }
 
-    virtual ~SharedState()
+    virtual ~SharedStateBase()
     {
     }
 
-    int referenceCount() const
+    int referenceCount() const noexcept
     {
         return m_referenceCount;
     }
 
-    void incReferenceCount()
+    void incReferenceCount() noexcept
     {
         ++m_referenceCount;
     }
 
-    void decReferenceCount()
+    void decReferenceCount() noexcept
     {
         if (--m_referenceCount == 0)
         {
@@ -188,16 +199,18 @@ public:
 
     void attachFuture();
 
-    bool isReady() const
+    bool isReady() const noexcept
     {
         return (m_flags & Ready) != 0;
     }
 
     void wait();
 
+    void startSettingValue();
     void setException(exception_ptr exc);
     void setValue();
-    void value();
+
+    void copyValue();
 
 protected:
     atomic_int m_referenceCount;
@@ -211,14 +224,263 @@ protected:
     }
 };
 
+struct SharedStateBaseDeleter
+{
+    void operator()(SharedStateBase* state) noexcept
+    {
+        state->decReferenceCount();
+    }
+};
+
+// ----=====================================================================----
+//     SharedState
+// ----=====================================================================----
+
+template <typename TResult>
+class SharedState : public SharedStateBase
+{
+    typedef typename aligned_storage<sizeof(TResult),
+                                     alignment_of<TResult>::value>::type storage_t;
+
+public:
+    template <typename T>
+    void setValue(T&& value)
+    {
+        this->startSettingValue();
+        ::new (&m_value) TResult(WEOS_NAMESPACE::forward<T>(value));
+        this->m_flags |= SharedStateBase::ValueConstructed | SharedStateBase::Ready;
+        this->m_cv.notify();
+    }
+
+    TResult moveValue()
+    {
+        this->wait();
+        if (this->m_exception != nullptr)
+            rethrow_exception(this->m_exception);
+        return WEOS_NAMESPACE::move(*reinterpret_cast<TResult*>(&m_value));
+    }
+
+protected:
+    storage_t m_value;
+
+    virtual void destroy() noexcept override
+    {
+        if (this->m_flags & SharedStateBase::ValueConstructed)
+            reinterpret_cast<TResult*>(&m_value)->~TResult();
+        delete this;
+    }
+};
+
+// ----=====================================================================----
+//     AsyncSharedState
+// ----=====================================================================----
+
+// TODO: Move DecayedFunction and decay_copy into thread.hpp because we would
+// need them there too.
+template <typename TFunction, typename... TArgs>
+class DecayedFunction
+{
+public:
+    typedef typename ::WEOS_NAMESPACE::weos_detail::invoke_result_type<TFunction, TArgs...>::type result_type;
+
+    explicit DecayedFunction(TFunction&& f, TArgs&&... args)
+        : m_boundFunction(WEOS_NAMESPACE::move(f),
+                          WEOS_NAMESPACE::move(args)...)
+    {
+    }
+
+    DecayedFunction(DecayedFunction&& other)
+        : m_boundFunction(WEOS_NAMESPACE::move(other.m_boundFunction))
+    {
+    }
+
+    result_type operator()()
+    {
+        typedef typename weos_detail::make_tuple_indices<
+                1 + sizeof...(TArgs), 1>::type indices_type;
+        return invoke(indices_type());
+    }
+
+private:
+    template <std::size_t... TIndices>
+    result_type invoke(weos_detail::TupleIndices<TIndices...>)
+    {
+        return WEOS_NAMESPACE::invoke(
+                    WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<0>(m_boundFunction)),
+                    WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<TIndices>(m_boundFunction))...);
+    }
+
+    tuple<TFunction, TArgs...> m_boundFunction;
+};
+
+// 30.2.6
+template <typename T>
+typename decay<T>::type decay_copy(T&& v)
+{
+    return WEOS_NAMESPACE::forward<T>(v);
+}
+
+template <typename TResult, typename TCallable>
+class AsyncSharedState : public SharedState<TResult>
+{
+public:
+    explicit AsyncSharedState(TCallable&& callable)
+        : m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
+    {
+    }
+
+    virtual void invoke()
+    {
+        try
+        {
+            this->setValue(m_callable());
+        }
+        catch (...)
+        {
+            this->setException(current_exception());
+        }
+    }
+
+protected:
+    virtual void destroy() noexcept override
+    {
+        this->wait();
+        SharedState<TResult>::destroy();
+    }
+
+private:
+    TCallable m_callable;
+};
+
+template <typename TResult, typename TCallable>
+future<TResult> makeAsyncSharedState(const thread::attributes& attrs,
+                                     TCallable&& f)
+{
+    using shared_state_type = AsyncSharedState<TResult, TCallable>;
+
+    unique_ptr<shared_state_type, SharedStateBaseDeleter>
+            state(new shared_state_type(WEOS_NAMESPACE::forward<TCallable>(f)));
+    thread(attrs, &shared_state_type::invoke, state.get()).detach();
+
+    return future<TResult>(state.get());
+}
+
 } // weos_detail
 
 // ----=====================================================================----
 //     future<T>
 // ----=====================================================================----
 
-template <typename T>
-class future;
+template <typename TResult>
+class future
+{
+    typedef weos_detail::SharedState<TResult> shared_state_type;
+
+public:
+    //! Constructs a future without shared state.
+    future() noexcept
+        : m_state(nullptr)
+    {
+    }
+
+    //! Move-constructs a future.
+    //!
+    //! Constructs a future by moving from the \p other future.
+    future(future&& other) noexcept
+        : m_state(other.m_state)
+    {
+        other.m_state = nullptr;
+    }
+
+    //! Destroys the future.
+    ~future()
+    {
+        if (m_state)
+            m_state->decReferenceCount();
+    }
+
+    //! Move-assigns the \p other future to this one.
+    future& operator=(future&& other) noexcept
+    {
+        if (m_state)
+            m_state->decReferenceCount();
+        m_state = other.m_state;
+        other.m_state = nullptr;
+
+        return *this;
+    }
+
+    future(const future&) = delete;
+    future& operator=(const future&) = delete;
+
+    //shared_future<TResult> share();
+
+    //! Returns the result.
+    //!
+    //! Blocks the caller until the result is available and returns it.
+    //! If an exception has been stored in the shared state, it will be
+    //! thrown.
+    TResult get()
+    {
+        unique_ptr<weos_detail::SharedStateBase,
+                   weos_detail::SharedStateBaseDeleter> state(m_state);
+        m_state = nullptr;
+        return static_cast<shared_state_type*>(state.get())->moveValue();
+    }
+
+    //! Swaps two futures.
+    //!
+    //! Swaps this future with the \p other future.
+    void swap(future& other) noexcept
+    {
+        std::swap(m_state, other.m_state);
+    }
+
+    //! Checks if the future has an attached shared state.
+    //!
+    //! Returns \p true, if the future has an attached shared state.
+    bool valid() const noexcept
+    {
+        return m_state != nullptr;
+    }
+
+    //! Waits until the result is available.
+    //!
+    //! Blocks the caller until the result is available.
+    void wait() const
+    {
+        m_state->wait();
+    }
+
+    // TODO:
+    template <typename TRep, typename TPeriod>
+    future_status wait_for(const chrono::duration<TRep, TPeriod>& d) const;
+
+    // TODO:
+    template <typename TClock, typename TDuration>
+    future_status wait_until(const chrono::time_point<TClock, TDuration>& tp) const;
+
+private:
+    // The shared state.
+    shared_state_type* m_state;
+
+    // This constructor is used in a promise to create a future with the
+    // same shared state.
+    explicit future(shared_state_type* state)
+        : m_state(state)
+    {
+        m_state->attachFuture();
+        m_state->incReferenceCount();
+    }
+
+
+    template <typename T>
+    friend class promise;
+
+    template <typename T, typename U>
+    friend future<T> weos_detail::makeAsyncSharedState(
+            const thread::attributes&, U&&);
+};
 
 // ----=====================================================================----
 //     future<void>
@@ -245,6 +507,11 @@ public:
         other.m_state = nullptr;
     }
 
+    //! Destroys the future.
+    //!
+    //! Destroys the future and releases its reference to the shared state.
+    //! This function will block, if the future is a result to an
+    //! async() call and the result is not available, yet.
     ~future();
 
     //! Move-assigns the \p other future to this one.
@@ -261,21 +528,35 @@ public:
     future(const future&) = delete;
     future& operator=(const future&) = delete;
 
+    //! Returns the result.
+    //!
+    //! Blocks the caller until the result is available and returns it.
+    //! If an exception has been stored in the shared state, it will be
+    //! thrown.
     void get();
 
     // TODO:
     //shared_future<void> share();
 
+    //! Swaps two futures.
+    //!
+    //! Swaps this future with the \p other future.
     void swap(future& other) noexcept
     {
         std::swap(m_state, other.m_state);
     }
 
+    //! Checks if the future has an attached shared state.
+    //!
+    //! Returns \p true, if the future has an attached shared state.
     bool valid() const noexcept
     {
         return m_state != nullptr;
     }
 
+    //! Waits until the result is available.
+    //!
+    //! Blocks the caller until the result is available.
     void wait() const
     {
         m_state->wait();
@@ -291,13 +572,13 @@ public:
 
 private:
     // The shared state.
-    weos_detail::SharedState* m_state;
+    weos_detail::SharedStateBase* m_state;
 
     // This constructor is used in a promise to create a future with the
     // same shared state.
-    explicit future(weos_detail::SharedState* state);
+    explicit future(weos_detail::SharedStateBase* state);
 
-    template <typename TPromiseValue>
+    template <typename T>
     friend class promise;
 };
 
@@ -370,7 +651,7 @@ public:
     }
 
 private:
-    weos_detail::SharedState* m_state;
+    weos_detail::SharedStateBase* m_state;
 };
 
 //! Swaps two promises \p a and \p b.
@@ -379,6 +660,32 @@ inline
 void swap(promise<T>& a, promise<T>& b) noexcept
 {
     a.swap(b);
+}
+
+// ----=====================================================================----
+//     async()
+// ----=====================================================================----
+
+template <typename TFunction, typename... TArgs>
+inline
+future<typename weos_detail::invoke_result_type<
+           typename decay<TFunction>::type,
+           typename decay<TArgs>::type...>::type>
+async(const thread::attributes& attrs, TFunction&& f, TArgs&&... args)
+{
+    using namespace weos_detail;
+
+    using result_type = typename invoke_result_type<
+                            typename decay<TFunction>::type,
+                            typename decay<TArgs>::type...>::type;
+
+    using function_type = DecayedFunction<typename decay<TFunction>::type,
+                                          typename decay<TArgs>::type...>;
+
+    return makeAsyncSharedState<result_type, function_type>(
+                attrs,
+                function_type(decay_copy(WEOS_NAMESPACE::forward<TFunction>(f)),
+                              decay_copy(WEOS_NAMESPACE::forward<TArgs>(args))...));
 }
 
 WEOS_END_NAMESPACE
