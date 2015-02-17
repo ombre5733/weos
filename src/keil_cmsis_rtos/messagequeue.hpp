@@ -49,7 +49,7 @@ class message_queue
 {
     // The CMSIS message queue operates on elements of type uint32_t.
     static_assert(sizeof(TypeT) <= 4,
-                  "Implementation limits lement size to 32 bit.");
+                  "Implementation limits element size to 32 bit.");
     static_assert(QueueSizeT > 0, "The queue size must be non-zero.");
 
 public:
