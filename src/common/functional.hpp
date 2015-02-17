@@ -65,7 +65,7 @@ struct is_placeholder<placeholders::placeholder<TIndex> >
 {
 };
 
-namespace detail
+namespace weos_detail
 {
 
 // ----=====================================================================----
@@ -158,7 +158,7 @@ struct WeakResultType<R (C::*) (TArgs...) const volatile>
     typedef R result_type;
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     invoke
@@ -211,7 +211,7 @@ auto invoke(F&& f, An&&... an)
     return WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...);
 }
 
-namespace detail
+namespace weos_detail
 {
 
 template <typename F, typename... An>
@@ -444,7 +444,7 @@ public:
     }
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     mem_fn<>
@@ -452,9 +452,9 @@ public:
 
 template <typename TResult, typename TClass>
 inline
-detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) noexcept
+weos_detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) noexcept
 {
-    return detail::MemFnResult<TResult TClass::*>(pm);
+    return weos_detail::MemFnResult<TResult TClass::*>(pm);
 }
 
 // ----=====================================================================----
@@ -463,18 +463,18 @@ detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) noexcept
 
 template <typename F, typename... TBoundArgs>
 inline
-detail::BindExpression<F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
+weos_detail::BindExpression<F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
 {
-    typedef detail::BindExpression<F, TBoundArgs...> type;
+    typedef weos_detail::BindExpression<F, TBoundArgs...> type;
     return type(WEOS_NAMESPACE::forward<F>(f),
                 WEOS_NAMESPACE::forward<TBoundArgs>(boundArgs)...);
 }
 
 template <typename R, typename F, typename... TBoundArgs>
 inline
-detail::BindExpressionResult<R, F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
+weos_detail::BindExpressionResult<R, F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
 {
-    typedef detail::BindExpressionResult<R, F, TBoundArgs...> type;
+    typedef weos_detail::BindExpressionResult<R, F, TBoundArgs...> type;
     return type(WEOS_NAMESPACE::forward<F>(f),
                 WEOS_NAMESPACE::forward<TBoundArgs>(boundArgs)...);
 }
@@ -483,7 +483,7 @@ detail::BindExpressionResult<R, F, TBoundArgs...> bind(F&& f, TBoundArgs&&... bo
 //     function
 // ----=====================================================================----
 
-namespace detail
+namespace weos_detail
 {
 
 class AnonymousClass;
@@ -586,7 +586,7 @@ private:
     TCallable m_callable;
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 template <typename TSignature>
 class function;
@@ -594,8 +594,8 @@ class function;
 template <typename TResult, typename... TArgs>
 class function<TResult(TArgs...)>
 {
-    using invoker_base_type = detail::InvokerBase<TResult(TArgs...)>;
-    using storage_type = typename aligned_storage<sizeof(detail::SmallFunctor)>::type;
+    using invoker_base_type = weos_detail::InvokerBase<TResult(TArgs...)>;
+    using storage_type = typename aligned_storage<sizeof(weos_detail::SmallFunctor)>::type;
 
     template <typename F>
     using invokeResult = decltype(invoke(declval<F&>(), declval<TArgs>()...));
@@ -685,7 +685,7 @@ public:
     {
         if (notNull<TCallable>::check(f))
         {
-            typedef detail::Invoker<TCallable, TResult(TArgs...)> invoker_type;
+            typedef weos_detail::Invoker<TCallable, TResult(TArgs...)> invoker_type;
             if (canStoreInplace<TCallable>::value)
             {
                 // Copy-construct using placement new.

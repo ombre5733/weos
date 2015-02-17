@@ -98,7 +98,7 @@ private:
 //     Shared state
 // ----=====================================================================----
 
-namespace weos_future_detail
+namespace weos_detail
 {
 
 class OneshotConditionVariable : private semaphore
@@ -211,7 +211,7 @@ protected:
     }
 };
 
-} // weos_future_detail
+} // weos_detail
 
 // ----=====================================================================----
 //     future<T>
@@ -291,11 +291,11 @@ public:
 
 private:
     // The shared state.
-    weos_future_detail::SharedState* m_state;
+    weos_detail::SharedState* m_state;
 
     // This constructor is used in a promise to create a future with the
     // same shared state.
-    explicit future(weos_future_detail::SharedState* state);
+    explicit future(weos_detail::SharedState* state);
 
     template <typename TPromiseValue>
     friend class promise;
@@ -370,7 +370,7 @@ public:
     }
 
 private:
-    weos_future_detail::SharedState* m_state;
+    weos_detail::SharedState* m_state;
 };
 
 //! Swaps two promises \p a and \p b.

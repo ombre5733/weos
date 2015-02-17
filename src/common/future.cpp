@@ -19,7 +19,7 @@ public:
 
     virtual const char* message(int err_val) const
     {
-        switch (static_cast<errc>(err_val))
+        switch (static_cast<future_errc>(err_val))
         {
         case future_errc::broken_promise:
             return "broken promise";
@@ -45,7 +45,7 @@ const error_category& future_category() noexcept
 //     SharedState
 // ----=====================================================================----
 
-namespace weos_future_detail
+namespace weos_detail
 {
 
 void SharedState::attachFuture()
@@ -109,13 +109,13 @@ struct SharedStateDeleter
     }
 };
 
-} // namespace weos_future_detail
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     future<void>
 // ----=====================================================================----
 
-future<void>::future(weos_future_detail::SharedState* state)
+future<void>::future(weos_detail::SharedState* state)
     : m_state(state)
 {
     m_state->attachFuture();
@@ -130,8 +130,8 @@ future<void>::~future()
 
 void future<void>::get()
 {
-    unique_ptr<weos_future_detail::SharedState,
-               weos_future_detail::SharedStateDeleter> ptr(m_state);
+    unique_ptr<weos_detail::SharedState,
+               weos_detail::SharedStateDeleter> ptr(m_state);
     m_state = nullptr;
     ptr->value();
 }
@@ -141,7 +141,7 @@ void future<void>::get()
 // ----=====================================================================----
 
 promise<void>::promise()
-    : m_state(new weos_future_detail::SharedState)
+    : m_state(new weos_detail::SharedState)
 {
 }
 

@@ -66,7 +66,7 @@ constexpr const typename tuple_element<I, tuple<T...> >::type& get(const tuple<T
 template <std::size_t I, typename... T>
 constexpr typename tuple_element<I, tuple<T...> >::type&& get(tuple<T...>&&) noexcept;
 
-namespace detail
+namespace weos_detail
 {
 
 using std::size_t;
@@ -236,7 +236,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     // be void because we want to use variadicCall() on it.
     int swap(IndexedTupleElement& other) // noexcept if TType is noexcept-swappable
     {
-        WEOS_NAMESPACE::detail::swap(*this, other);
+        WEOS_NAMESPACE::weos_detail::swap(*this, other);
         return 0;
     }
 };
@@ -287,7 +287,7 @@ struct IndexedTupleElement<TIndex, TType, false>
     }
 
     // Accesses the element.
-    constexpr const TType& get() const noexcept
+    WEOS_CONSTEXPR_FROM_CXX14 const TType& get() const noexcept
     {
         return m_value;
     }
@@ -296,7 +296,7 @@ struct IndexedTupleElement<TIndex, TType, false>
     // be void because we want to use variadicCall() on it.
     int swap(IndexedTupleElement& other) // noexcept if TType is noexcept-swappable
     {
-        WEOS_NAMESPACE::detail::swap(*this, other);
+        WEOS_NAMESPACE::weos_detail::swap(*this, other);
         return 0;
     }
 
@@ -397,13 +397,13 @@ public:
     }
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 template <typename... TTypes>
 class tuple
 {
-    typedef detail::TupleImpl<
-        typename detail::make_tuple_indices<sizeof...(TTypes)>::type, TTypes...>
+    typedef weos_detail::TupleImpl<
+        typename weos_detail::make_tuple_indices<sizeof...(TTypes)>::type, TTypes...>
         implementation_type;
     implementation_type m_impl;
 
@@ -426,10 +426,10 @@ public:
 
     //! Constructs a tuple by initializing the elements from the given \p args.
     explicit constexpr tuple(const TTypes&... args)
-        : m_impl(typename detail::make_tuple_indices<sizeof...(TTypes)>::type(),
-                 typename detail::make_tuple_types<tuple, sizeof...(TTypes)>::type(),
-                 typename detail::make_tuple_indices<0>::type(),
-                 typename detail::make_tuple_types<tuple, 0>::type(),
+        : m_impl(typename weos_detail::make_tuple_indices<sizeof...(TTypes)>::type(),
+                 typename weos_detail::make_tuple_types<tuple, sizeof...(TTypes)>::type(),
+                 typename weos_detail::make_tuple_indices<0>::type(),
+                 typename weos_detail::make_tuple_types<tuple, 0>::type(),
                  args...)
     {
     }
@@ -441,10 +441,10 @@ public:
     //! Constructs a tuple by perfect forwarding of the given \p args.
     template <typename... UTypes> // TODO: enable if convertible
     explicit constexpr tuple(UTypes&&... args)
-        : m_impl(typename detail::make_tuple_indices<sizeof...(UTypes)>::type(),
-                 typename detail::make_tuple_types<tuple, sizeof...(UTypes)>::type(),
-                 typename detail::make_tuple_indices<sizeof...(TTypes), sizeof...(UTypes)>::type(),
-                 typename detail::make_tuple_types<tuple, sizeof...(TTypes), sizeof...(UTypes)>::type(),
+        : m_impl(typename weos_detail::make_tuple_indices<sizeof...(UTypes)>::type(),
+                 typename weos_detail::make_tuple_types<tuple, sizeof...(UTypes)>::type(),
+                 typename weos_detail::make_tuple_indices<sizeof...(TTypes), sizeof...(UTypes)>::type(),
+                 typename weos_detail::make_tuple_types<tuple, sizeof...(TTypes), sizeof...(UTypes)>::type(),
                  forward<UTypes>(args)...)
     {
     }
@@ -496,30 +496,30 @@ public:
 
 // Specialization when TIndex is out of bounds.
 template <std::size_t TIndex>
-struct tuple_element<TIndex, detail::TupleTypes<>>
+struct tuple_element<TIndex, weos_detail::TupleTypes<>>
 {
     static_assert(TIndex != TIndex, "The element index is out of bounds.");
 };
 
 // Specialization for TIndex == 0.
 template <typename TFirst, typename... TRest>
-struct tuple_element<0, detail::TupleTypes<TFirst, TRest...>>
+struct tuple_element<0, weos_detail::TupleTypes<TFirst, TRest...>>
 {
     typedef TFirst type;
 };
 
 // General case for accessing the \p TIndex-th type.
 template <std::size_t TIndex, typename TFirst, typename... TRest>
-struct tuple_element<TIndex, detail::TupleTypes<TFirst, TRest...>>
+struct tuple_element<TIndex, weos_detail::TupleTypes<TFirst, TRest...>>
 {
     typedef typename tuple_element<TIndex - 1,
-                                   detail::TupleTypes<TRest...>>::type type;
+                                   weos_detail::TupleTypes<TRest...>>::type type;
 };
 
 template <std::size_t TIndex, typename... TTypes>
 struct tuple_element<TIndex, tuple<TTypes...>>
 {
-    typedef typename tuple_element<TIndex, detail::TupleTypes<TTypes...>>::type
+    typedef typename tuple_element<TIndex, weos_detail::TupleTypes<TTypes...>>::type
         type;
 };
 
@@ -583,7 +583,7 @@ WEOS_FORCE_INLINE
 constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type& get(tuple<TTypes...>& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
-    return static_cast<detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
+    return static_cast<weos_detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
 }
 
 template <std::size_t TIndex, typename... TTypes>
@@ -592,7 +592,7 @@ constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type&& get(tuple<TT
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
     return static_cast<type&&>(
-                static_cast<detail::IndexedTupleElement<TIndex, type>&&>(t.m_impl).get());
+                static_cast<weos_detail::IndexedTupleElement<TIndex, type>&&>(t.m_impl).get());
 }
 
 template <std::size_t TIndex, typename... TTypes>
@@ -600,7 +600,7 @@ WEOS_FORCE_INLINE
 constexpr const typename tuple_element<TIndex, tuple<TTypes...> >::type& get(const tuple<TTypes...>& t) noexcept
 {
     typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
-    return static_cast<const detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
+    return static_cast<const weos_detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
 }
 
 // ----=====================================================================----
