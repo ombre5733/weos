@@ -166,13 +166,13 @@ SharedThreadDataPool& sharedThreadDataPool()
 
 } // anonymous namespace
 
-SharedThreadData::SharedThreadData()
+SharedThreadData::SharedThreadData() noexcept
     : m_threadId(0),
       m_referenceCount(1)
 {
 }
 
-void SharedThreadData::decReferenceCount()
+void SharedThreadData::decReferenceCount() noexcept
 {
     if (--m_referenceCount == 0)
     {

@@ -56,14 +56,14 @@ namespace weos_detail
 struct SharedThreadData
 {
     //! Increases the reference counter by one.
-    void addReferenceCount()
+    void addReferenceCount() noexcept
     {
         ++m_referenceCount;
     }
 
     //! Decreases the reference counter by one. If the reference counter reaches
     //! zero, this object is destructed and returned to the pool.
-    void decReferenceCount();
+    void decReferenceCount() noexcept;
 
     //! Allocates a ThreadData object from the global pool. An exception is
     //! thrown if the pool is empty.
@@ -94,12 +94,12 @@ private:
     atomic_int m_referenceCount;
 
     //! Creates the shared thread data.
-    SharedThreadData();
+    SharedThreadData() noexcept;
 };
 
 struct SharedThreadDataDeleter
 {
-    void operator()(SharedThreadData* data)
+    void operator()(SharedThreadData* data) noexcept
     {
         data->decReferenceCount();
     }
