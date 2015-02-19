@@ -352,6 +352,40 @@ private:
     TCallable m_callable;
 };
 
+template <typename TCallable>
+class AsyncSharedState<void, TCallable> : public SharedStateBase
+{
+public:
+    explicit AsyncSharedState(TCallable&& callable)
+        : m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
+    {
+    }
+
+    virtual void invoke()
+    {
+        try
+        {
+            m_callable();
+            this->setValue();
+        }
+        catch (...)
+        {
+            this->setException(current_exception());
+        }
+    }
+
+protected:
+    virtual void destroy() noexcept override
+    {
+        this->wait();
+        SharedStateBase::destroy();
+    }
+
+private:
+    TCallable m_callable;
+};
+
+
 template <typename TResult, typename TCallable>
 future<TResult> makeAsyncSharedState(const thread::attributes& attrs,
                                      TCallable&& f)
@@ -578,8 +612,13 @@ private:
     // same shared state.
     explicit future(weos_detail::SharedStateBase* state);
 
+
     template <typename T>
     friend class promise;
+
+    template <typename T, typename U>
+    friend future<T> weos_detail::makeAsyncSharedState(
+            const thread::attributes&, U&&);
 };
 
 //! Swaps two futures \p a and \p b.
