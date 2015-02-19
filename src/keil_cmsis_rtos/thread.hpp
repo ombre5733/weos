@@ -154,21 +154,21 @@ public:
     {
     public:
         //! An enumeration of thread priorities.
-        WEOS_SCOPED_ENUM_BEGIN(Priority)
+        WEOS_SCOPED_ENUM_BEGIN(priority)
         {
-            Idle = osPriorityIdle,
-            Low = osPriorityLow,
-            BelowNormal = osPriorityBelowNormal,
-            Normal = osPriorityNormal,
-            AboveNormal = osPriorityAboveNormal,
-            High = osPriorityHigh,
-            Realtime = osPriorityRealtime
+            idle = osPriorityIdle,
+            low = osPriorityLow,
+            belowNormal = osPriorityBelowNormal,
+            normal = osPriorityNormal,
+            aboveNormal = osPriorityAboveNormal,
+            high = osPriorityHigh,
+            realtime = osPriorityRealtime
         };
-        WEOS_SCOPED_ENUM_END(Priority)
+        WEOS_SCOPED_ENUM_END(priority)
 
         //! Creates default thread attributes.
         attributes()
-            : m_priority(Priority::Normal),
+            : m_priority(priority::normal),
               m_customStackSize(0),
               m_customStack(0)
         {
@@ -178,7 +178,7 @@ public:
         //!
         //! Creates thread attributes from a given \p priority and a \p stack.
         template <typename T>
-        attributes(Priority priority, T& stack)
+        attributes(priority priority, T& stack)
             : m_priority(priority),
               m_customStackSize(sizeof(T)),
               m_customStack(&stack)
@@ -190,7 +190,7 @@ public:
         //! Sets the thread priority to \p priority.
         //!
         //! The default value is Priority::Normal.
-        attributes& setPriority(Priority priority)
+        attributes& setPriority(priority priority)
         {
             m_priority = priority;
             return *this;
@@ -222,7 +222,7 @@ public:
 
     private:
         //! The thread's priority.
-        Priority m_priority;
+        priority m_priority;
         //! The size of the custom stack.
         std::size_t m_customStackSize;
         //! A pointer to the custom stack.

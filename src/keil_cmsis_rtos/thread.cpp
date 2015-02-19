@@ -95,9 +95,9 @@ extern void* os_active_TCB[];
 
 //! Converts a weos priority to a CMSIS priority.
 static inline
-osPriority toNativePriority(weos::thread::attributes::Priority priority)
+osPriority toNativePriority(weos::thread::attributes::priority priority)
 {
-    return static_cast<osPriority>(priority);
+    return static_cast<osPriority>(int(priority));
 }
 
 //! A helper function to invoke a thread.
