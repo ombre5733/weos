@@ -73,7 +73,7 @@ private:
     // of this.
     typedef typename aligned_storage<chunk_size, chunk_align>::type chunk_type;
 
-    // The control block of a memory box. Defined in rt_TypeDef.h.
+    // The control block of a memory box. Defined in rt_TypeDef.h (OS_BM).
     struct ControlBlock
     {
         void* free;
@@ -134,10 +134,12 @@ public:
     }
 
 private:
+    //! The pool's control block. Note: It is important that the control
+    //! block is placed before the chunk array. osPoolFree() makes a boundary
+    //! check of the chunk to be freed, which involves the control block.
+    ControlBlock m_controlBlock;
     //! The memory chunks for the elements and the free-list pointers.
     chunk_type m_chunks[TNumElem];
-    //! The pool's control block.
-    ControlBlock m_controlBlock;
 };
 
 WEOS_END_NAMESPACE
