@@ -58,7 +58,7 @@ public:
         other.m_dismissed = true;
     }
 
-    ~ScopeGuard() noexcept
+    ~ScopeGuard()
     {
         if (!m_dismissed)
         {
