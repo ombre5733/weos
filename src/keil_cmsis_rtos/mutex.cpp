@@ -186,4 +186,38 @@ void recursive_mutex::unlock()
                                 "recursive_mutex::unlock failed");
 }
 
+// ----=====================================================================----
+//     recursive_timed_mutex
+// ----=====================================================================----
+
+bool recursive_timed_mutex::try_lock_for(chrono::milliseconds ms)
+{
+    using namespace chrono;
+
+    if (ms < milliseconds::zero())
+        ms = milliseconds::zero();
+
+    do
+    {
+        milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                 ? ms
+                                 : milliseconds(0xFFFE);
+        ms -= truncated;
+
+        osStatus result = osMutexWait(m_id, truncated.count());
+        if (result == osOK)
+            return true;
+
+        if (   result != osErrorResource
+            && result != osErrorTimeoutResource)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "semaphore::try_wait_for failed");
+        }
+
+    } while (ms > milliseconds::zero());
+
+    return false;
+}
+
 WEOS_END_NAMESPACE

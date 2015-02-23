@@ -39,13 +39,14 @@
 #include "../system_error.hpp"
 #include "../type_traits.hpp"
 #include "../common/mutexlocks.hpp"
+#include "_sleep.hpp"
 
 #include <cstdint>
 
 
 WEOS_BEGIN_NAMESPACE
 
-namespace detail
+namespace weos_detail
 {
 // Just enough memory to hold a CMSIS mutex. This is the type to which
 // the macro osMutexDef() defined in <cmsis_os.h> expands.
@@ -54,7 +55,7 @@ struct mutex_control_block_type
     std::uint32_t _[4];
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 //! A plain mutex.
 class mutex
@@ -69,6 +70,9 @@ public:
 
     //! Destroys the mutex.
     ~mutex();
+
+    mutex(const mutex&) = delete;
+    const mutex& operator=(const mutex&) = delete;
 
     //! Locks the mutex.
     //! Blocks the current thread until this mutex has been locked by it.
@@ -97,16 +101,11 @@ public:
 
 protected:
     //! The native mutex.
-    detail::mutex_control_block_type m_cmsisMutexControlBlock;
+    weos_detail::mutex_control_block_type m_cmsisMutexControlBlock;
     //! The native mutex handle.
     osMutexId m_id;
     //! This flag is set, if the current thread has already blocked the mutex.
     bool m_locked;
-
-private:
-    // ---- Hidden methods.
-    mutex(const mutex&);
-    const mutex& operator= (const mutex&);
 };
 
 //! A mutex with timeout support.
@@ -132,17 +131,28 @@ public:
     template <typename TClock, typename TDuration>
     bool try_lock_until(const chrono::time_point<TClock, TDuration>& time)
     {
-        typedef typename WEOS_NAMESPACE::common_type<
-                             typename TClock::duration,
-                             TDuration>::type difference_type;
-        typedef chrono::detail::internal_time_cast<difference_type> caster;
+        using namespace chrono;
 
-        while (true)
+        bool timeout = false;
+        while (!timeout)
         {
-            typename caster::type millisecs
-                    = caster::convert_and_clip(time - TClock::now());
+            osStatus result;
+            auto remainingSpan = time - TClock::now();
+            if (remainingSpan <= TDuration::zero())
+            {
+                result = osMutexWait(m_id, 0);
+                timeout = true;
+            }
+            else
+            {
+                milliseconds converted = duration_cast<milliseconds>(remainingSpan);
+                if (converted < milliseconds(1))
+                    converted = milliseconds(1);
+                else if (converted > milliseconds(0xFFFE))
+                    converted = milliseconds(0xFFFE);
+                result = osMutexWait(m_id, converted.count());
+            }
 
-            osStatus result = osMutexWait(m_id, millisecs);
             if (result == osOK)
             {
                 if (!m_locked)
@@ -153,24 +163,29 @@ public:
                 else
                 {
                     // The mutex has been locked by the same thread again.
+                    // Undo the last lock, then sleep until the time point
+                    // has been reached and return with a failure.
                     result = osMutexRelease(m_id);
                     if (result != osOK)
                     {
                         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
                                                 "timed_mutex::try_lock_until failed");
                     }
+                    if (!timeout)
+                        weos_detail::sleep_until(time);
+                    return false;
                 }
             }
+
             if (   result != osErrorResource
                 && result != osErrorTimeoutResource)
             {
                 WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
                                         "timed_mutex::try_lock_until failed");
             }
-
-            if (millisecs == 0)
-                return false;
         }
+
+        return false;
     }
 };
 
@@ -187,6 +202,9 @@ public:
 
     //! Destroys the mutex.
     ~recursive_mutex();
+
+    recursive_mutex(const recursive_mutex&) = delete;
+    const recursive_mutex& operator=(const recursive_mutex&) = delete;
 
     //! Locks the mutex.
     //!
@@ -218,20 +236,22 @@ public:
 
 protected:
     //! The native mutex.
-    detail::mutex_control_block_type m_cmsisMutexControlBlock;
+    weos_detail::mutex_control_block_type m_cmsisMutexControlBlock;
     //! The native mutex handle.
     osMutexId m_id;
-
-private:
-    // ---- Hidden methods.
-    recursive_mutex(const recursive_mutex&);
-    const recursive_mutex& operator= (const recursive_mutex&);
 };
 
 //! A recursive mutex with timeout support.
 class recursive_timed_mutex : public recursive_mutex
 {
 public:
+    //! \cond
+    //! Tries to lock the mutex with a timeout.
+    //!
+    //! This is overload for the case when the timeout is given in milliseconds.
+    bool try_lock_for(chrono::milliseconds ms);
+    //! \endcond
+
     //! Tries to lock the mutex.
     //!
     //! Tries to lock the mutex and returns either when it has been locked or
@@ -241,7 +261,13 @@ public:
     inline
     bool try_lock_for(const chrono::duration<TRep, TPeriod>& timeout)
     {
-        return try_lock_until(chrono::steady_clock::now() + timeout);
+        using namespace chrono;
+
+        milliseconds converted = duration_cast<milliseconds>(timeout);
+        if (converted < timeout)
+            ++converted;
+
+        return try_lock_for(converted);
     }
 
     //! Tries to lock the mutex.
@@ -251,17 +277,28 @@ public:
     template <typename TClock, typename TDuration>
     bool try_lock_until(const chrono::time_point<TClock, TDuration>& time)
     {
-        typedef typename WEOS_NAMESPACE::common_type<
-                             typename TClock::duration,
-                             TDuration>::type difference_type;
-        typedef chrono::detail::internal_time_cast<difference_type> caster;
+        using namespace chrono;
 
-        while (true)
+        bool timeout = false;
+        while (!timeout)
         {
-            typename caster::type millisecs
-                    = caster::convert_and_clip(time - TClock::now());
+            osStatus result;
+            auto remainingSpan = time - TClock::now();
+            if (remainingSpan <= TDuration::zero())
+            {
+                result = osMutexWait(m_id, 0);
+                timeout = true;
+            }
+            else
+            {
+                milliseconds converted = duration_cast<milliseconds>(remainingSpan);
+                if (converted < milliseconds(1))
+                    converted = milliseconds(1);
+                else if (converted > milliseconds(0xFFFE))
+                    converted = milliseconds(0xFFFE);
+                result = osMutexWait(m_id, converted.count());
+            }
 
-            osStatus result = osMutexWait(m_id, millisecs);
             if (result == osOK)
                 return true;
 
@@ -271,10 +308,9 @@ public:
                 WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
                                         "recursive_timed_mutex::try_lock_until failed");
             }
-
-            if (millisecs == 0)
-                return false;
         }
+
+        return false;
     }
 };
 
