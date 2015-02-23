@@ -39,6 +39,7 @@
 #include "../system_error.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
+#include "_sleep.hpp"
 
 #include <cstdint>
 
@@ -460,12 +461,12 @@ void sleep_for(chrono::milliseconds ms);
 //! \brief Puts the current thread to sleep.
 //!
 //! Blocks the execution of the current thread for the given duration \p d.
-template <typename RepT, typename PeriodT>
+template <typename TRep, typename TPeriod>
 inline
-void sleep_for(const chrono::duration<RepT, PeriodT>& d)
+void sleep_for(const chrono::duration<TRep, TPeriod>& d)
 {
     using namespace chrono;
-    if (d > duration<RepT, PeriodT>::zero())
+    if (d > duration<TRep, TPeriod>::zero())
     {
         milliseconds converted = duration_cast<milliseconds>(d);
         if (converted < d)
@@ -477,29 +478,11 @@ void sleep_for(const chrono::duration<RepT, PeriodT>& d)
 //! \brief Puts the current thread to sleep.
 //!
 //! Blocks the execution of the current thread until the given \p time point.
-template <typename ClockT, typename DurationT>
-void sleep_until(const chrono::time_point<ClockT, DurationT>& time) noexcept
+template <typename TClock, typename TDuration>
+inline
+void sleep_until(const chrono::time_point<TClock, TDuration>& time)
 {
-    typedef typename WEOS_NAMESPACE::common_type<
-                         typename ClockT::duration,
-                         DurationT>::type difference_type;
-    typedef chrono::detail::internal_time_cast<difference_type> caster;
-
-    while (true)
-    {
-        typename caster::type millisecs
-                = caster::convert_and_clip(time - ClockT::now());
-
-        osStatus result = osDelay(millisecs);
-        if (result != osOK && result != osEventTimeout)
-        {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "sleep_until failed");
-        }
-
-        if (millisecs == 0)
-            return;
-    }
+    weos_detail::sleep_until(time);
 }
 
 //! Triggers a rescheduling of the executing threads.
