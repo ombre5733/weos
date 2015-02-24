@@ -177,10 +177,10 @@ public:
 
         //! Creates thread attributes.
         //!
-        //! Creates thread attributes from a given \p priority and a \p stack.
+        //! Creates thread attributes from a priority \p prio and a \p stack.
         template <typename T>
-        attributes(priority priority, T& stack)
-            : m_priority(priority),
+        attributes(priority prio, T& stack)
+            : m_priority(prio),
               m_customStackSize(sizeof(T)),
               m_customStack(&stack)
         {
@@ -188,12 +188,12 @@ public:
         }
 
         //! Sets the priority.
-        //! Sets the thread priority to \p priority.
+        //! Sets the thread priority to \p prio.
         //!
         //! The default value is Priority::Normal.
-        attributes& setPriority(priority priority)
+        attributes& setPriority(priority prio)
         {
-            m_priority = priority;
+            m_priority = prio;
             return *this;
         }
 
