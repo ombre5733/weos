@@ -96,6 +96,9 @@ using std::is_enum;
 using std::is_nothrow_constructible;
 using std::is_nothrow_copy_constructible;
 using std::is_union;
+// TODO: using std::is_trivially_copyable;
+template <typename T>
+struct is_trivially_copyable : public std::is_pod<T> {};
 
 WEOS_END_NAMESPACE
 

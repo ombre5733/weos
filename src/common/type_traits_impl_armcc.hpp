@@ -149,6 +149,11 @@ struct is_nothrow_copy_constructible
 template <typename TType>
 struct is_union : public integral_constant<bool, __is_union(TType)> {};
 
+// ---- is_trivially_copyable --------------------------------------------------
+
+template <typename TType>
+struct is_trivially_copyable : public integral_constant<bool, __is_trivially_copyable(TType)> {};
+
 WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_TYPE_TRAITS_IMPL_ARMCC_HPP
