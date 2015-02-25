@@ -32,33 +32,37 @@
 #include "core.hpp"
 
 #include "../chrono.hpp"
+#include "../semaphore.hpp"
+#include "../memorypool.hpp"
 #include "../system_error.hpp"
+#include "../type_traits.hpp"
 
 #include <cstdint>
-#include <cstring>
-#include <utility>
 
 
 WEOS_BEGIN_NAMESPACE
 
-//! A message queue.
-//! The message_queue is an object to pass elements from one thread to another
-//! in a thread-safe manner. The object statically holds the necessary memory.
-template <typename TType, std::size_t TQueueSize>
-class message_queue
+namespace weos_detail
 {
-    // The CMSIS message queue operates on elements of type uint32_t.
-    static_assert(sizeof(TType) <= 4,
+
+template <typename TType, std::size_t TQueueSize>
+class SmallMessageQueue
+{
+    static_assert(sizeof(TType) <= sizeof(std::uint32_t),
                   "Implementation limits element size to 32 bit.");
+    static_assert(alignment_of<TType>::value <= alignment_of<std::uint32_t>::value,
+                  "The type's alignment is too large.");
+    static_assert(is_trivially_copyable<TType>::value,
+                  "Type must be bit-wise copyable.");
+
     static_assert(TQueueSize > 0, "The queue size must be non-zero.");
 
-public:
-    //! The type of the elements transfered via this message queue.
-    typedef TType element_type;
+    using align_tag = alignment_of<TType>;
 
-    //! Creates a message queue.
-    //! Creates an empty message queue.
-    message_queue()
+public:
+    typedef TType value_type;
+
+    SmallMessageQueue()
         : m_id(0)
     {
         // Keil's CMSIS RTOS wants a zero'ed control block type for
@@ -71,39 +75,25 @@ public:
                                     "message_queue::message_queue failed");
     }
 
-    //! Returns the capacity.
-    //! Returns the maximum number of elements which the queue can hold.
-    std::size_t capacity() const
-    {
-        return TQueueSize;
-    }
+    SmallMessageQueue(const SmallMessageQueue&) = delete;
+    SmallMessageQueue& operator=(const SmallMessageQueue&) = delete;
 
-    //! Receives an element from the queue.
-    //! Returns the first element from the message queue. If the queue is
-    //! empty, the calling thread is blocked until an element is added.
-    element_type receive()
+    value_type receive()
     {
         osEvent result = osMessageGet(m_id, osWaitForever);
         if (result.status != osEventMessage)
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
                                     "message_queue::receive failed");
 
-        element_type element;
-        std::memcpy(&element, &result.value.p, sizeof(element_type));
-        return element;
+        return *reinterpret_cast<value_type*>(&result.value.v);
     }
 
-    //! Tries to receive an element from the queue.
-    //! Tries to receive an element from the message queue.
-    //! The element is returned together with a boolean, which is set if the
-    //! queue was non-empty. If the queue was empty, the boolean is reset and
-    //! the returned element is default-constructed.
-    std::pair<bool, element_type> try_receive()
+    bool try_receive(value_type& value)
     {
         osEvent result = osMessageGet(m_id, 0);
         if (result.status == osOK)
         {
-            return std::pair<bool, element_type>(false, element_type());
+            return false;
         }
         else if (result.status != osEventMessage)
         {
@@ -111,57 +101,22 @@ public:
                                     "message_queue::try_receive failed");
         }
 
-        element_type element;
-        std::memcpy(&element, &result.value.p, sizeof(element_type));
-        return std::pair<bool, element_type>(true, element);
+        value = *reinterpret_cast<value_type*>(&result.value.v);
+        return true;
     }
 
-#if 0
-    //! Tries to receive an element from the queue.
-    //! Tries to receive an element from the message queue within the timeout
-    //! duration \p d.
-    //! The element is returned together with a boolean, which is set if the
-    //! queue was non-empty. If the queue was empty, the boolean is reset and
-    //! the returned element is default-constructed.
-    template <typename RepT, typename PeriodT>
-    std::pair<bool, element_type> try_receive_for(
-            const chrono::duration<RepT, PeriodT>& d)
+    void send(value_type value)
     {
-        try_receiver receiver(m_id);
-        if (chrono::detail::cmsis_wait<
-                RepT, PeriodT, try_receiver>::wait(d, receiver))
-        {
-            element_type element;
-            std::memcpy(&element, &receiver.datum(), sizeof(element_type));
-            return std::pair<bool, element_type>(true, element);
-        }
-
-        return std::pair<bool, element_type>(false, element_type());
-    }
-#endif
-
-    //! Sends an element via the queue.
-    //! Sends the \p element by appending it at the end of the message queue.
-    //! If the queue is full, the calling thread is blocked until space becomes
-    //! available.
-    void send(element_type element)
-    {
-        std::uint32_t datum = 0;
-        std::memcpy(&datum, &element, sizeof(element_type));
+        std::uint32_t datum = toUint32(value, align_tag());
         osStatus status = osMessagePut(m_id, datum, osWaitForever);
         if (status != osOK)
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
                                     "message_queue::send failed");
     }
 
-    //! Tries to send an element via the queue.
-    //! Tries to send the \p element via the queue. If no space was available,
-    //! \p false is returned. Otherwise the method returns \p true. The
-    //! calling thread is never blocked.
-    bool try_send(element_type element)
+    bool try_send(value_type value)
     {
-        std::uint32_t datum = 0;
-        std::memcpy(&datum, &element, sizeof(element_type));
+        std::uint32_t datum = toUint32(value, align_tag());
         osStatus status = osMessagePut(m_id, datum, 0);
         if (status == osOK)
             return true;
@@ -176,17 +131,216 @@ public:
         return false;
     }
 
+private:
+    inline
+    std::uint32_t toUint32(value_type value, integral_constant<std::size_t, 1>)
+    {
+        std::uint32_t datum;
+        for (std::size_t i = 0; i < sizeof(value_type); ++i)
+            reinterpret_cast<char*>(&datum)[i] = reinterpret_cast<char*>(&value)[i];
+        return datum;
+    }
+
+    inline
+    std::uint32_t toUint32(value_type value, integral_constant<std::size_t, 2>)
+    {
+        std::uint32_t datum;
+        for (std::size_t i = 0; i < sizeof(value_type) / sizeof(std::uint16_t); ++i)
+            reinterpret_cast<std::uint16_t*>(&datum)[i] = reinterpret_cast<std::uint16_t*>(&value)[i];
+        return datum;
+    }
+
+    inline
+    std::uint32_t toUint32(value_type value, integral_constant<std::size_t, 4>)
+    {
+        return *reinterpret_cast<std::uint32_t*>(&value);
+    }
+
+    //! The storage for the message queue.
+    std::uint32_t m_queueData[4 + TQueueSize];
+    //! The id of the message queue.
+    osMessageQId m_id;
+};
+
+template <typename TType, std::size_t TQueueSize>
+class LargeMessageQueue
+{
+public:
+    typedef TType value_type;
+
+    LargeMessageQueue()
+        : m_numAvailable(TQueueSize)
+    {
+    }
+
+    value_type receive()
+    {
+        void* mem = m_pointerQueue.receive();
+        WEOS_ASSERT(mem != nullptr);
+        value_type temp(std::move(*static_cast<value_type*>(mem)));
+        static_cast<value_type*>(mem)->~TType();
+        m_memoryPool.free(mem);
+        m_numAvailable.post();
+        return temp;
+    }
+
+    bool try_receive(value_type& value)
+    {
+        void* mem;
+        bool result = m_pointerQueue.try_receive(mem);
+        if (result)
+        {
+            WEOS_ASSERT(mem != nullptr);
+            value = std::move(*static_cast<value_type*>(mem));
+            static_cast<value_type*>(mem)->~TType();
+            m_memoryPool.free(mem);
+            m_numAvailable.post();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    void send(const value_type& element)
+    {
+        m_numAvailable.wait();
+        void* mem = m_memoryPool.try_allocate();
+        WEOS_ASSERT(mem != nullptr);
+        // TODO: unique_ptr
+        new (mem) value_type(element);
+        m_pointerQueue.send(mem);
+    }
+
+    bool try_send(const value_type& element)
+    {
+        // TODO: Make this work in an interrupt context.
+        if (!m_numAvailable.try_wait())
+            return;
+        void* mem = m_memoryPool.try_allocate();
+        WEOS_ASSERT(mem != nullptr);
+        // TODO: unique_ptr
+        new (mem) value_type(element);
+        bool result = m_pointerQueue.try_send(mem);
+        WEOS_ASSERT(result);
+        (void)result;
+    }
+
+private:
+    semaphore m_numAvailable;
+    shared_memory_pool<TType, TQueueSize> m_memoryPool;
+    SmallMessageQueue<void*, TQueueSize> m_pointerQueue;
+};
+
+template <typename TType, std::size_t TQueueSize>
+struct select_message_queue_implementation
+{
+    static const bool is_small = sizeof(TType) <= sizeof(std::uint32_t);
+    static const bool has_small_alignment = alignment_of<TType>::value <= alignment_of<std::uint32_t>::value;
+    static const bool can_be_copied = is_trivially_copyable<TType>::value;
+
+    typedef typename conditional<is_small && has_small_alignment && can_be_copied,
+                                 SmallMessageQueue<TType, TQueueSize>,
+                                 LargeMessageQueue<TType, TQueueSize>>::type type;
+};
+
+} // namespace weos_detail
+
+//! A message queue.
+//! The message_queue is an object to pass elements from one thread to another
+//! in a thread-safe manner. The object statically holds the necessary memory.
+template <typename TType, std::size_t TQueueSize>
+class message_queue
+        : public weos_detail::select_message_queue_implementation<TType, TQueueSize>::type
+{
+public:
+    //! The type of the elements transfered via this message queue.
+    typedef TType value_type;
+
+    //! \brief Creates a message queue.
+    //!
+    //! Creates an empty message queue.
+    message_queue()
+    {
+    }
+
+    message_queue(const message_queue&) = delete;
+    message_queue& operator=(const message_queue&) = delete;
+
+    //! \brief Returns the capacity.
+    //!
+    //! Returns the maximum number of elements which the queue can hold.
+    std::size_t capacity() const
+    {
+        return TQueueSize;
+    }
+
+    //! \brief Receives an element from the queue.
+    //!
+    //! Returns the first element from the message queue. If the queue is
+    //! empty, the calling thread is blocked until an element is added.
+    // value_type receive();
+
+    //! \brief Tries to receive an element from the queue.
+    //!
+    //! Tries to receive an element from the message queue.
+    //! The element is returned together with a boolean, which is set if the
+    //! queue was non-empty. If the queue was empty, the boolean is reset and
+    //! the returned element is default-constructed.
+    // bool try_receive(value_type& value);
+
+#if 0
+    //! Tries to receive an element from the queue.
+    //! Tries to receive an element from the message queue within the timeout
+    //! duration \p d.
+    //! The element is returned together with a boolean, which is set if the
+    //! queue was non-empty. If the queue was empty, the boolean is reset and
+    //! the returned element is default-constructed.
+    template <typename RepT, typename PeriodT>
+    std::pair<bool, value_type> try_receive_for(
+            const chrono::duration<RepT, PeriodT>& d)
+    {
+        try_receiver receiver(m_id);
+        if (chrono::detail::cmsis_wait<
+                RepT, PeriodT, try_receiver>::wait(d, receiver))
+        {
+            value_type element;
+            std::memcpy(&element, &receiver.datum(), sizeof(value_type));
+            return std::pair<bool, value_type>(true, element);
+        }
+
+        return std::pair<bool, value_type>(false, value_type());
+    }
+#endif
+
+    //! \brief Sends an element via the queue.
+    //!
+    //! Sends the \p element by appending it at the end of the message queue.
+    //! If the queue is full, the calling thread is blocked until space becomes
+    //! available.
+    //!
+    //! \note This method may be called in an interrupt context.
+    // void send(const value_type& element);
+
+    //! \brief Tries to send an element via the queue.
+    //!
+    //! Tries to send the \p element via the queue. If no space was available,
+    //! \p false is returned. Otherwise the method returns \p true. The
+    //! calling thread is never blocked.
+    // bool try_send(const value_type& element);
+
 #if 0
     //! Tries to send an element via the queue.
     //! Tries to send the given \p element via the queue and returns \p true
     //! if successful. If there is no space available within the
     //! duration \p d, the operation is aborted an \p false is returned.
     template <typename RepT, typename PeriodT>
-    bool try_send_for(element_type element,
+    bool try_send_for(value_type element,
                       const chrono::duration<RepT, PeriodT>& d)
     {
         std::uint32_t datum = 0;
-        std::memcpy(&datum, &element, sizeof(element_type));
+        std::memcpy(&datum, &element, sizeof(value_type));
         try_sender sender(m_id, datum);
         return chrono::detail::cmsis_wait<
                 RepT, PeriodT, try_sender>::wait(d, sender);
