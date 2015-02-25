@@ -227,6 +227,52 @@ public:
         (void)result;
     }
 
+#if 0
+    atomic<int> m_numAwailable;
+    sempahore m_trigger;
+
+    value_type _receive()
+    {
+        void* mem = m_pointerQueue.receive();
+        WEOS_ASSERT(mem != nullptr);
+        value_type temp(std::move(*static_cast<value_type*>(mem)));
+        static_cast<value_type*>(mem)->~TType();
+        m_memoryPool.free(mem);
+        if (++m_numAvailable <= 0)
+            m_trigger.post();
+        return temp;
+    }
+
+    void _send(const value_type& element)
+    {
+        if (--m_numAwailable < 0)
+            m_trigger.wait();
+        void* mem = m_memoryPool.try_allocate();
+        WEOS_ASSERT(mem != nullptr);
+        // TODO: unique_ptr
+        new (mem) value_type(element);
+        m_pointerQueue.send(mem);
+    }
+
+    bool _try_send(const value_type& element)
+    {
+        int available = m_numAwailable;
+        while (available > 0 && !m_numAwailable.compare_exchange_weak(available, available - 1))
+        {
+        }
+        if (available <= 0)
+            return false;
+
+        void* mem = m_memoryPool.try_allocate();
+        WEOS_ASSERT(mem != nullptr);
+        // TODO: unique_ptr
+        new (mem) value_type(element);
+        bool result = m_pointerQueue.try_send(mem);
+        WEOS_ASSERT(result);
+        (void)result;
+    }
+#endif
+
 private:
     semaphore m_numAvailable;
     shared_memory_pool<TType, TQueueSize> m_memoryPool;
