@@ -89,6 +89,8 @@ public:
     //! Increases the semaphore's value by one.
     //! \note It is undefined behaviour to post() a semaphore which is already
     //! full.
+    //!
+    //! \note This method may be called in an interrupt context.
     void post();
 
     //! \brief Waits until a semaphore token is available.

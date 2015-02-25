@@ -36,6 +36,7 @@
 
 
 #include "../memorypool.hpp"
+#include "../atomic.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
@@ -102,16 +103,20 @@ public:
     }
 
     //! Checks if the memory pool is empty.
+    //!
     //! Returns \p true, if the memory pool is empty.
     bool empty() const noexcept
     {
-        // TODO: read memory barrier
+        // TODO: what memory order to use here?
+        atomic_thread_fence(memory_order_seq_cst);
         return m_controlBlock.free == 0;
     }
 
     //! Allocates a chunk from the pool.
     //! Allocates one chunk from the memory pool and returns a pointer to it.
     //! If the pool is already empty, a null-pointer is returned.
+    //!
+    //! \note This method may be called in an interrupt context.
     //!
     //! \sa free()
     void* try_allocate() noexcept
@@ -123,6 +128,8 @@ public:
     //! Frees a chunk of memory.
     //! Frees a \p chunk of memory which must have been allocated through
     //! this pool.
+    //!
+    //! \note This method may be called in an interrupt context.
     //!
     //! \sa try_allocate()
     void free(void* chunk) noexcept
