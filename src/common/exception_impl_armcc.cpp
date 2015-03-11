@@ -103,7 +103,7 @@ exception_ptr getCurrentException()
     {
         return wrapStdException(exc);
     }
-    catch (std::exception& exc)
+    catch (std::exception&)
     {
         return cloneException(UnknownStdException());
     }

@@ -39,8 +39,8 @@
 #endif // WEOS_USER_CONFIG
 
 // Check the version of the user configuration file.
-#if WEOS_USER_CONFIG_VERSION != 3
-    #error "Version 3 of the WEOS user configuration is required."
+#if WEOS_USER_CONFIG_VERSION != 4
+    #error "Version 4 of the WEOS user configuration is required."
 #endif // WEOS_USER_CONFIG_VERSION
 
 
@@ -107,7 +107,6 @@
 // ----=====================================================================----
 
 #if defined(WEOS_ENABLE_EXCEPTIONS)
-
     #if !defined(WEOS_CUSTOM_THROW_EXCEPTION)
         WEOS_BEGIN_NAMESPACE
 

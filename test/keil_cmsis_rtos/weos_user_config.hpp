@@ -126,6 +126,25 @@
 // Note: If WEOS_ENABLE_EXCEPTIONS is not defined, this macro has no effect.
 // #define WEOS_CUSTOM_THROW_EXCEPTION
 
+// If this macro is defined, the macro WEOS_EXCEPTION(exc) decorates the given
+// exception exc such that it can be captured with current_exception. For
+// example:
+// struct MyException {};
+// try
+// {
+//     throw WEOS_EXCEPTION(MyException());
+// }
+// catch (...)
+// {
+//     exception_ptr eptr = current_exception();
+// }
+#define WEOS_EXCEPTION_CAN_BE_CAPTURED
+
+// If this macro is defined, the macro WEOS_EXCEPTION(exc) adds the file name,
+// line and function name to the given exception exc. This is done by
+// deriving the given exception from weos::exception.
+#define WEOS_EXCEPTION_CONTAINS_LOCATION
+
 // -----------------------------------------------------------------------------
 //     Miscellaneous
 // -----------------------------------------------------------------------------
@@ -145,6 +164,6 @@
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   3
+#define WEOS_USER_CONFIG_VERSION   4
 
 #endif // WEOS_USER_CONFIG_HPP
