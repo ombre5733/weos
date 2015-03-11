@@ -145,7 +145,7 @@ int uncaught_exceptions() noexcept;
 //     CaptureableException
 // ----=====================================================================----
 
-namespace detail_exception
+namespace weos_detail
 {
 
 // The base class for all captureable exceptions.
@@ -219,7 +219,7 @@ private:
     }
 };
 
-} // namespace detail_exception
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     enable_current_exception
@@ -227,20 +227,20 @@ private:
 
 template <typename TType>
 typename enable_if<is_class<typename remove_reference<TType>::type>::value
-                   && !is_base_of<detail_exception::CaptureableExceptionBase,
+                   && !is_base_of<weos_detail::CaptureableExceptionBase,
                                   typename remove_reference<TType>::type>::value,
-                   detail_exception::CaptureableException<
+                   weos_detail::CaptureableException<
                        typename remove_reference<TType>::type>
                   >::type
 enable_current_exception(TType&& exc)
 {
-    return detail_exception::CaptureableException<typename remove_reference<TType>::type>(
+    return weos_detail::CaptureableException<typename remove_reference<TType>::type>(
                 WEOS_NAMESPACE::forward<TType>(exc));
 }
 
 template <typename TType>
 typename enable_if<!is_class<typename remove_reference<TType>::type>::value
-                   || is_base_of<detail_exception::CaptureableExceptionBase,
+                   || is_base_of<weos_detail::CaptureableExceptionBase,
                                  typename remove_reference<TType>::type>::value,
                    TType&&>::type
 enable_current_exception(TType&& exc) noexcept
@@ -255,7 +255,7 @@ enable_current_exception(TType&& exc) noexcept
 class exception_ptr
 {
 public:
-    typedef intrusive_ptr<const detail_exception::CaptureableExceptionBase> pointer_type;
+    typedef intrusive_ptr<const weos_detail::CaptureableExceptionBase> pointer_type;
 
     exception_ptr() noexcept
     {
@@ -336,7 +336,7 @@ bool operator!=(nullptr_t, const exception_ptr& eptr)
 //     Helpers for current_exception()
 // ----=====================================================================----
 
-namespace detail_exception
+namespace weos_detail
 {
 
 template <typename TType>
@@ -428,7 +428,7 @@ template <typename TException>
 const exception_ptr StaticExceptionFactory<TException>::eptr
     = StaticExceptionFactory<TException>::get();
 
-} // namespace detail_exception
+} // namespace weos_detail
 
 
 // ----=====================================================================----
@@ -475,7 +475,7 @@ private:
     exception_ptr m_nestedException;
 };
 
-namespace detail_exception
+namespace weos_detail
 {
 
 template <typename TType>
@@ -488,7 +488,7 @@ struct NestedException : public TType,
     }
 };
 
-} // namespace detail_exception
+} // namespace weos_detail
 
 template <typename TType>
 [[noreturn]]
@@ -498,7 +498,7 @@ void throw_with_nested(TType&& exc,
                            && !is_base_of<nested_exception, typename remove_reference<TType>::type>::value
                        >::type* = 0)
 {
-    throw detail_exception::NestedException<typename remove_reference<TType>::type>(
+    throw weos_detail::NestedException<typename remove_reference<TType>::type>(
                 WEOS_NAMESPACE::forward<TType>(exc));
 }
 

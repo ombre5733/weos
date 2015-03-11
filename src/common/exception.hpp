@@ -64,7 +64,7 @@ exception::~exception() throw()
 {
 }
 
-namespace detail_exception
+namespace weos_detail
 {
 inline
 void cloneErrorInfoList(const exception* /*src*/, exception* /*dest*/)
@@ -76,7 +76,7 @@ void cloneErrorInfoList(const void* /*src*/, void* /*dest*/)
 {
 }
 
-} // namespace detail_exception
+} // namespace weos_detail
 
 WEOS_END_NAMESPACE
 

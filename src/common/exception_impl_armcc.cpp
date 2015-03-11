@@ -79,7 +79,7 @@ void nested_exception::rethrow_nested() const
 //     current_exception
 // ----=====================================================================----
 
-namespace detail_exception
+namespace weos_detail
 {
 
 exception_ptr getCurrentException()
@@ -88,7 +88,7 @@ exception_ptr getCurrentException()
     {
         throw;
     }
-    catch (detail_exception::CaptureableExceptionBase& exc)
+    catch (weos_detail::CaptureableExceptionBase& exc)
     {
         // Note: The clone() method can throw std::bad_alloc. This exception
         // is caught in the caller.
@@ -114,22 +114,22 @@ exception_ptr getCurrentException()
     }
 }
 
-} // namespace detail_exception
+} // namespace weos_detail
 
 exception_ptr current_exception() noexcept
 {
     exception_ptr result;
     try
     {
-        result = detail_exception::getCurrentException();
+        result = weos_detail::getCurrentException();
     }
     catch (std::bad_alloc&)
     {
-        result = detail_exception::StaticExceptionFactory<detail_exception::BadAlloc>::eptr;
+        result = weos_detail::StaticExceptionFactory<weos_detail::BadAlloc>::eptr;
     }
     catch (...)
     {
-        result = detail_exception::StaticExceptionFactory<detail_exception::BadException>::eptr;
+        result = weos_detail::StaticExceptionFactory<weos_detail::BadException>::eptr;
     }
     return result;
 }
