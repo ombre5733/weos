@@ -135,7 +135,7 @@
 
 #elif defined(WEOS_ENABLE_ASSERT)
 
-    #define WEOS_THROW_SYSTEM_ERROR(err, msg)   WEOS_ASSERT(0 && bool(err) && msg)
+    #define WEOS_THROW_SYSTEM_ERROR(err, msg)   WEOS_ASSERT(0 && msg)
 
 #else
 
