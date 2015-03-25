@@ -41,6 +41,7 @@
 // -----------------------------------------------------------------------------
 
 #include "../type_traits.hpp"
+#include <cstddef>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -70,6 +71,78 @@ constexpr T&& forward(typename remove_reference<T>::type&& t) noexcept
 {
     return static_cast<T&&>(t);
 }
+
+// ----=====================================================================----
+//     integer_sequence
+// ----=====================================================================----
+
+template <typename T, T... TIndices>
+struct integer_sequence
+{
+    typedef T value_type;
+
+    static constexpr std::size_t size()
+    {
+        return sizeof...(TIndices);
+    }
+};
+
+namespace weos_detail
+{
+
+template <typename T, typename TSequence1, typename TSequence2>
+struct AppendIntegerSequence;
+
+template <typename T, T... TIndices1, T... TIndices2>
+struct AppendIntegerSequence<T, integer_sequence<T, TIndices1...>, integer_sequence<T, TIndices2...>>
+{
+    using type = integer_sequence<T, TIndices1..., (sizeof...(TIndices1) + TIndices2)...>;
+};
+
+template <typename T, std::size_t N>
+struct MakeIntegerSequence
+{
+    using type = typename AppendIntegerSequence<T,
+                                                typename MakeIntegerSequence<T, N/2>::type,
+                                                typename MakeIntegerSequence<T, N - N/2>::type>::type;
+};
+
+template <typename T>
+struct MakeIntegerSequence<T, 0>
+{
+    using type = integer_sequence<T>;
+};
+
+template <typename T>
+struct MakeIntegerSequence<T, 1>
+{
+    using type = integer_sequence<T, 0>;
+};
+
+template <typename T, T N>
+struct MakeSafeIntegerSequence
+{
+    // Break compilation if N is negative. Otherwise, the compiler tries to
+    // create lots and lots of template instances.
+    static_assert(N >= 0, "The sequence length must be positive.");
+    using type = typename MakeIntegerSequence<T, N>::type;
+};
+
+} // namespace weos_detail
+
+template <std::size_t... TValues>
+using index_sequence = integer_sequence<std::size_t, TValues...>;
+
+//! Creates the integer sequence 0, 1, 2, ... N - 1 of type T.
+template <typename T, T N>
+using make_integer_sequence = typename weos_detail::MakeSafeIntegerSequence<T, N>::type;
+
+//! Creates the integer sequence 0, 1, 2, ... N - 1 with type std::size_t.
+template <std::size_t N>
+using make_index_sequence = make_integer_sequence<std::size_t, N>;
+
+template <typename... TArgs>
+using index_sequence_for = make_index_sequence<sizeof...(TArgs)>;
 
 WEOS_END_NAMESPACE
 
