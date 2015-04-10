@@ -369,15 +369,15 @@ public:
     typedef std::uint16_t signal_set;
 
     //! Returns the number of signals in a set.
-    inline
-    static int signals_count() noexcept
+    constexpr static
+    int signals_count() noexcept
     {
         return osFeature_Signals;
     }
 
     //! Returns a signal set with all flags being set.
-    inline
-    static signal_set all_signals() noexcept
+    constexpr static
+    signal_set all_signals() noexcept
     {
         return (std::uint32_t(1) << osFeature_Signals) - 1;
     }
