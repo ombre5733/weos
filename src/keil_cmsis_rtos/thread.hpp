@@ -171,7 +171,8 @@ public:
         attributes()
             : m_priority(priority::normal),
               m_customStackSize(0),
-              m_customStack(0)
+              m_customStack(0),
+              m_name("")
         {
         }
 
@@ -182,15 +183,24 @@ public:
         attributes(priority prio, T& stack)
             : m_priority(prio),
               m_customStackSize(sizeof(T)),
-              m_customStack(&stack)
+              m_customStack(&stack),
+              m_name("")
         {
             static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
+        }
+
+        //! Sets the name.
+        //! Sets the name to \p name. The default is the empty string.
+        attributes& setName(const char* name)
+        {
+            m_name = name;
+            return *this;
         }
 
         //! Sets the priority.
         //! Sets the thread priority to \p prio.
         //!
-        //! The default value is Priority::Normal.
+        //! The default value is priority::normal.
         attributes& setPriority(priority prio)
         {
             m_priority = prio;
@@ -228,6 +238,8 @@ public:
         std::size_t m_customStackSize;
         //! A pointer to the custom stack.
         void* m_customStack;
+        //! The thread's name.
+        const char* m_name;
 
         friend class thread;
     };
@@ -341,7 +353,7 @@ public:
     }
 
     //! Returns the native thread handle.
-    native_handle_type native_handle() // TODO: noexcept?
+    native_handle_type native_handle() noexcept
     {
         return this;
     }
