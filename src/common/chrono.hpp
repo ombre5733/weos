@@ -242,18 +242,13 @@ public:
     //! The time between two ticks specified as a ratio of seconds.
     typedef PeriodT period;
 
-    //! Creates a duration of zero periods.
-    constexpr duration() /*= default*/
-    {
-    }
+    //! Creates a duration.
+    constexpr duration() = default;
 
     //! Creates a duration from another one.
     //! Creates a duration which copies the number of periods from the
     //! \p other duration.
-    duration(const duration& other) /*= default*/
-        : m_count(other.m_count)
-    {
-    }
+    duration(const duration& other) = default;
 
     //! Constructs a duration with \p count ticks.
     //!
@@ -285,11 +280,7 @@ public:
     {
     }
 
-    duration& operator= (const duration& other) /*= default*/
-    {
-        m_count = other.m_count;
-        return *this;
-    }
+    duration& operator=(const duration& other) = default;
 
     //! Returns the number of ticks.
     constexpr rep count() const
@@ -299,17 +290,17 @@ public:
 
     // Arithmetic operators.
 
-    constexpr duration operator+ () const
+    constexpr duration operator+() const
     {
         return *this;
     }
 
-    constexpr duration operator- () const
+    constexpr duration operator-() const
     {
         return duration(-m_count);
     }
 
-    duration& operator++ ()
+    duration& operator++()
     {
         ++m_count;
         return *this;
@@ -317,25 +308,25 @@ public:
 
     //! \todo Other operators are missing
 
-    duration operator++ (int)
+    duration operator++(int)
     {
         return duration(m_count++);
     }
 
-    duration& operator-- ()
+    duration& operator--()
     {
         --m_count;
         return *this;
     }
 
-    duration operator-- (int)
+    duration operator--(int)
     {
         return duration(m_count--);
     }
 
     //! Adds another duration.
     //! Adds the \p other duration to this duration and returns this duration.
-    duration& operator+= (const duration& other)
+    duration& operator+=(const duration& other)
     {
         m_count += other.m_count;
         return *this;
@@ -344,7 +335,7 @@ public:
     //! Subtracts another duration.
     //! Subtracts the \p other duration from this duration and returns this
     //! duration.
-    duration& operator-= (const duration& other)
+    duration& operator-=(const duration& other)
     {
         m_count -= other.m_count;
         return *this;
