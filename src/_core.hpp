@@ -55,7 +55,7 @@
 #include <boost/config.hpp>
 
 
-#if __ARMCC_VERSION / 10000 == 505
+#if __ARMCC_VERSION < 5050169
 
 #define WEOS_NO_NULLPTR
 #define WEOS_NO_SCOPED_ENUM
