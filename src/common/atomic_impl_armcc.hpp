@@ -197,7 +197,7 @@ public:
     ~atomic_base() = default;
 
     constexpr atomic_base(T value) noexcept
-        : m_value((int)value)
+        : m_value(*(int*)&value)
     {
     }
 
@@ -218,7 +218,7 @@ public:
         while (1)
         {
             __ldrex(&m_value);
-            if (__strex((int)value, &m_value) == 0)
+            if (__strex(*(int*)&value, &m_value) == 0)
                 break;
         }
         __dmb(0xF);
@@ -229,7 +229,7 @@ public:
         while (1)
         {
             __ldrex(&m_value);
-            if (__strex((int)value, &m_value) == 0)
+            if (__strex(*(int*)&value, &m_value) == 0)
                 break;
         }
         __dmb(0xF);
@@ -238,13 +238,13 @@ public:
     T load(memory_order mo = memory_order_seq_cst) const noexcept
     {
         __dmb(0xF);
-        return (T)m_value;
+        return *(T*)&m_value;
     }
 
     T load(memory_order mo = memory_order_seq_cst) const volatile noexcept
     {
         __dmb(0xF);
-        return (T)m_value;
+        return *(T*)&m_value;
     }
 
     operator T() const noexcept
@@ -259,28 +259,28 @@ public:
 
     T exchange(T desired, memory_order mo = memory_order_seq_cst) noexcept
     {
-        T old;
+        int old;
         while (1)
         {
-            old = (T)__ldrex(&m_value);
-            if (__strex((int)desired, &m_value) == 0)
+            old = __ldrex(&m_value);
+            if (__strex(*(int*)&desired, &m_value) == 0)
                 break;
         }
         __dmb(0xF);
-        return old;
+        return *(T*)&old;
     }
 
     T exchange(T desired, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
-        T old;
+        int old;
         while (1)
         {
-            old = (T)__ldrex(&m_value);
-            if (__strex((int)desired, &m_value) == 0)
+            old = __ldrex(&m_value);
+            if (__strex(*(int*)&desired, &m_value) == 0)
                 break;
         }
         __dmb(0xF);
-        return old;
+        return *(T*)&old;
     }
 
     bool compare_exchange_weak(T& expected, T desired,
@@ -328,10 +328,10 @@ public:
     {
         while (1)
         {
-            T old = (T)__ldrex(&m_value);
-            if (old == expected)
+            int old = __ldrex(&m_value);
+            if (*(T*)&old == expected)
             {
-                if (__strex((int)desired, &m_value) == 0)
+                if (__strex(*(int*)&desired, &m_value) == 0)
                 {
                     __dmb(0xF);
                     return true;
@@ -340,7 +340,7 @@ public:
             else
             {
                 __clrex();
-                expected = old;
+                expected = *(T*)&old;
                 __dmb(0xF);
                 return false;
             }
@@ -352,10 +352,10 @@ public:
     {
         while (1)
         {
-            T old = (T)__ldrex(&m_value);
-            if (old == expected)
+            int old = __ldrex(&m_value);
+            if (*(T*)&old == expected)
             {
-                if (__strex((int)desired, &m_value) == 0)
+                if (__strex(*(int*)&desired, &m_value) == 0)
                 {
                     __dmb(0xF);
                     return true;
@@ -364,7 +364,7 @@ public:
             else
             {
                 __clrex();
-                expected = old;
+                expected = *(T*)&old;
                 __dmb(0xF);
                 return false;
             }
