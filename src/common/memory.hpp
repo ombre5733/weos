@@ -276,6 +276,13 @@ bool operator==(nullptr_t, const unique_ptr<T1, D1>& x) noexcept
 
 // TODO: add other operators
 
+// TODO: Must not participate in overload resolution for arrays.
+template <typename TType, typename... TArgs>
+unique_ptr<TType> make_unique(TArgs&&... args )
+{
+    return unique_ptr<TType>(new TType(WEOS_NAMESPACE::forward<TArgs>(args)...));
+}
+
 WEOS_END_NAMESPACE
 
 
