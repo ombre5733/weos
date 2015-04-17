@@ -118,13 +118,20 @@
 // #define WEOS_ENABLE_EXCEPTIONS
 
 // If this macro is defined, the user has to provide the throw_exception()
-// function, which has to throw the given exception. This is usefull, if the
+// function, which has to throw the given exception. This is useful, if the
 // exception must be decorated in a user-defined way before it can be thrown.
 // The function's signature is
 //   [[noreturn]] void weos::throw_exception(const std::exception& e);
 // If the macro is not defined, WEOS uses a 'throw'-statement.
 // Note: If WEOS_ENABLE_EXCEPTIONS is not defined, this macro has no effect.
 // #define WEOS_CUSTOM_THROW_EXCEPTION
+
+// Set this macro, to catch top-level exceptions in threaded contexts.
+// There has to be a user-defined function with the signature
+//   void weos::unhandled_thread_exception(weos::exception_ptr& e);
+// This function is called if an exception is not caught in a threaded function.
+// The exception pointer refers to the currently active exception.
+// #define WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 
 // If this macro is defined, the macro WEOS_EXCEPTION(exc) decorates the given
 // exception exc such that it can be captured with current_exception. For
@@ -145,16 +152,6 @@
 // deriving the given exception from weos::exception.
 // #define WEOS_EXCEPTION_CONTAINS_LOCATION
 
-// -----------------------------------------------------------------------------
-//     Miscellaneous
-// -----------------------------------------------------------------------------
-
-// The default storage size of a static_function<>.
-// A static_function<> holds a (member) function pointer and the bound
-// arguments (the fixed parameters). If the accumulated size of the bound
-// arguments exceeds the value below, a compile-time error is generated.
-#define WEOS_DEFAULT_STATIC_FUNCTION_SIZE   4 * sizeof(void*)
-
 
 
 // ----=====================================================================----
@@ -164,6 +161,6 @@
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   4
+#define WEOS_USER_CONFIG_VERSION   5
 
 #endif // WEOS_USER_CONFIG_HPP

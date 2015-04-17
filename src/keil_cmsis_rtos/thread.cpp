@@ -100,9 +100,17 @@ osPriority toNativePriority(weos::thread::attributes::priority priority)
     return static_cast<osPriority>(int(priority));
 }
 
+#ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
+
+WEOS_BEGIN_NAMESPACE
+void unhandled_thread_exception(exception_ptr exc);
+WEOS_END_NAMESPACE
+
+#endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
+
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
-//! helper function adhers to this specification. The \p arg is a pointer to
+//! helper function adheres to this specification. The \p arg is a pointer to
 //! a weos::SharedThreadData object which contains thread-specific data such as
 //! the actual function to start.
 extern "C" void weos_threadInvoker(const void* arg)
@@ -113,8 +121,20 @@ extern "C" void weos_threadInvoker(const void* arg)
                weos_detail::SharedThreadDataDeleter> data(
         static_cast<weos_detail::SharedThreadData*>(const_cast<void*>(arg)));
 
-    // Call the threaded function.
-    data->m_threadedFunction();
+#ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
+    try
+#endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
+    {
+        // Call the threaded function.
+        data->m_threadedFunction();
+    }
+#ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
+    catch (...)
+    {
+        weos::unhandled_thread_exception(weos::current_exception());
+    }
+#endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
+
     // Use the semaphore to signal that the thread has been completed.
     data->m_finished.post();
     // Keep the thread alive because someone might still set a signal.

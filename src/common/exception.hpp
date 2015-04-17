@@ -120,7 +120,9 @@ public:
         other.m_errorInfoList = nullptr;
     }
 
-    virtual ~exception() throw() = 0;
+    virtual ~exception() throw()
+    {
+    }
 
     exception& operator=(const exception& other) noexcept
     {
@@ -175,11 +177,6 @@ private:
 
     friend void weos_detail::cloneErrorInfoList(const exception*, exception*);
 };
-
-inline
-exception::~exception() throw()
-{
-}
 
 namespace weos_detail
 {
