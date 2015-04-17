@@ -65,7 +65,7 @@ set(CMAKE_C_CREATE_STATIC_LIBRARY "${CMAKE_AR} --create <TARGET> <OBJECTS>")
 
 
 
-# A convienience function to create a binary (downloadable) image.
+# A convenience function to create a binary (downloadable) image.
 function(add_binary_image outputFile inputFile)
     add_custom_command(
         OUTPUT ${outputFile}
