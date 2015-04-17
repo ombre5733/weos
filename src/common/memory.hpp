@@ -242,6 +242,15 @@ private:
     unique_ptr& operator=(const unique_ptr&) = delete;
 };
 
+//! Swaps two unique_ptrs \p a and \p b.
+template <typename TPointee, typename TDeleter>
+inline
+void swap(WEOS_NAMESPACE::unique_ptr<TPointee, TDeleter>& a,
+          WEOS_NAMESPACE::unique_ptr<TPointee, TDeleter>& b)
+{
+    a.swap(b);
+}
+
 // TODO: add unique_ptr for arrays
 
 template <typename T1, typename D1, typename T2, typename D2>
@@ -269,21 +278,6 @@ bool operator==(nullptr_t, const unique_ptr<T1, D1>& x) noexcept
 
 WEOS_END_NAMESPACE
 
-
-
-namespace std
-{
-
-// Partial specialization of swap for unique_ptr.
-template <typename TPointee, typename TDeleter>
-inline
-void swap(WEOS_NAMESPACE::unique_ptr<TPointee, TDeleter>& a,
-          WEOS_NAMESPACE::unique_ptr<TPointee, TDeleter>& b)
-{
-    a.swap(b);
-}
-
-} // namespace std
 
 #else
 // -----------------------------------------------------------------------------
