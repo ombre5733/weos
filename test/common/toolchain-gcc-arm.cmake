@@ -33,15 +33,16 @@ include(CMakeForceCompiler)
 find_program(_gcc_executable "arm-none-eabi-gcc")
 if (_gcc_executable)
     get_filename_component(_gcc_path ${_gcc_executable} PATH)
-    cmake_force_c_compiler("${_gcc_path}/arm-none-eabi-gcc" GNU)
-    cmake_force_cxx_compiler("${_gcc_path}/arm-none-eabi-g++" GNU)
-    set(OBJCOPY "${_gcc_path}/arm-none-eabi-objcopy")
+    get_filename_component(_gcc_ext ${_gcc_executable} EXT)
+    cmake_force_c_compiler("${_gcc_path}/arm-none-eabi-gcc${_gcc_ext}" GNU)
+    cmake_force_cxx_compiler("${_gcc_path}/arm-none-eabi-g++${_gcc_ext}" GNU)
+    set(OBJCOPY "${_gcc_path}/arm-none-eabi-objcopy${_gcc_ext}")
 else()
     message(FATAL_ERROR "Unable to locate 'arm-none-eabi-gcc'.")
 endif()
 
 
-# A convienience function to create a binary (downloadable) image.
+# A convenience function to create a binary (downloadable) image.
 function(add_binary_image outputFile inputFile)
     add_custom_command(
         OUTPUT ${outputFile}
