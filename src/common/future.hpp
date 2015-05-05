@@ -126,30 +126,30 @@ public:
     }
 
     template <typename TRep, typename TPeriod>
-    bool wait_for(const chrono::duration<TRep, TPeriod>& d)
+    future_status wait_for(const chrono::duration<TRep, TPeriod>& d)
     {
         if (semaphore::try_wait_for(d))
         {
             semaphore::post();
-            return true;
+            return future_status::ready;
         }
         else
         {
-            return false;
+            return future_status::timeout;
         }
     }
 
     template <typename TClock, typename TDuration>
-    bool wait_until(const chrono::time_point<TClock, TDuration>& tp)
+    future_status wait_until(const chrono::time_point<TClock, TDuration>& tp)
     {
         if (semaphore::try_wait_until(tp))
         {
             semaphore::post();
-            return true;
+            return future_status::ready;
         }
         else
         {
-            return false;
+            return future_status::timeout;
         }
     }
 };
@@ -205,6 +205,15 @@ public:
     }
 
     void wait();
+
+    template <typename TRep, typename TPeriod>
+    future_status wait_for(const chrono::duration<TRep, TPeriod>& d)
+    {
+        if (!(m_flags & Ready))
+            return m_cv.wait_for(d);
+
+        return future_status::ready;
+    }
 
     void startSettingValue();
     void setException(exception_ptr exc);
@@ -486,9 +495,11 @@ public:
         m_state->wait();
     }
 
-    // TODO:
     template <typename TRep, typename TPeriod>
-    future_status wait_for(const chrono::duration<TRep, TPeriod>& d) const;
+    future_status wait_for(const chrono::duration<TRep, TPeriod>& d) const
+    {
+        return m_state->wait_for(d);
+    }
 
     // TODO:
     template <typename TClock, typename TDuration>
@@ -596,9 +607,11 @@ public:
         m_state->wait();
     }
 
-    // TODO:
     template <typename TRep, typename TPeriod>
-    future_status wait_for(const chrono::duration<TRep, TPeriod>& d) const;
+    future_status wait_for(const chrono::duration<TRep, TPeriod>& d) const
+    {
+        return m_state->wait_for(d);
+    }
 
     // TODO:
     template <typename TClock, typename TDuration>
