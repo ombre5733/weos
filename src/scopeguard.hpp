@@ -43,8 +43,8 @@ class ScopeGuard
 {
 public:
     template <typename T,
-              typename _ = typename FSM11STD::enable_if<!FSM11STD::is_same<typename FSM11STD::decay<T>::type,
-                                                                           ScopeGuard>::value>::type>
+              typename _ = typename WEOS_NAMESPACE::enable_if<!WEOS_NAMESPACE::is_same<typename WEOS_NAMESPACE::decay<T>::type,
+                                                                                       ScopeGuard>::value>::type>
     explicit ScopeGuard(T&& callable) // TODO: noexcept
         : m_callable(callable),
           m_dismissed(false)
@@ -52,7 +52,7 @@ public:
     }
 
     ScopeGuard(ScopeGuard&& other) // TODO: noexcept
-        : m_callable(FSM11STD::move(other.m_callable)),
+        : m_callable(WEOS_NAMESPACE::move(other.m_callable)),
           m_dismissed(other.m_dismissed)
     {
         other.m_dismissed = true;
@@ -84,16 +84,16 @@ class ExceptionScopeGuard
 {
 public:
     template <typename T,
-              typename _ = typename FSM11STD::enable_if<!FSM11STD::is_same<typename FSM11STD::decay<T>::type,
-                                                                           ExceptionScopeGuard>::value>::type>
+              typename _ = typename WEOS_NAMESPACE::enable_if<!WEOS_NAMESPACE::is_same<typename WEOS_NAMESPACE::decay<T>::type,
+                                                                                       ExceptionScopeGuard>::value>::type>
     explicit ExceptionScopeGuard(T&& callable) // TODO: noexcept
-        : m_callable(FSM11STD::forward<T>(callable)),
-          m_numExceptions(FSM11STD::uncaught_exceptions())
+        : m_callable(WEOS_NAMESPACE::forward<T>(callable)),
+          m_numExceptions(WEOS_NAMESPACE::uncaught_exceptions())
     {
     }
 
     ExceptionScopeGuard(ExceptionScopeGuard&& other) // TODO: noexcept
-        : m_callable(FSM11STD::move(other.m_callable)),
+        : m_callable(WEOS_NAMESPACE::move(other.m_callable)),
           m_numExceptions(other.m_numExceptions)
     {
     }
@@ -101,7 +101,7 @@ public:
     ~ExceptionScopeGuard() noexcept(TExecuteOnException)
     {
         if (TExecuteOnException
-            == (FSM11STD::uncaught_exceptions() > m_numExceptions))
+            == (WEOS_NAMESPACE::uncaught_exceptions() > m_numExceptions))
         {
             m_callable();
         }
@@ -122,27 +122,27 @@ struct OnScopeFailure {};
 struct OnScopeSuccess {};
 
 template <typename TCallable>
-weos_detail::ScopeGuard<typename FSM11STD::decay<TCallable>::type> operator+(
+weos_detail::ScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type> operator+(
         OnScopeExit, TCallable&& callable)
 {
-    return weos_detail::ScopeGuard<typename FSM11STD::decay<TCallable>::type>(
-                FSM11STD::forward<TCallable>(callable));
+    return weos_detail::ScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type>(
+                WEOS_NAMESPACE::forward<TCallable>(callable));
 }
 
 template <typename TCallable>
-weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, true> operator+(
+weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, true> operator+(
         OnScopeFailure, TCallable&& callable)
 {
-    return weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, true>(
-                FSM11STD::forward<TCallable>(callable));
+    return weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, true>(
+                WEOS_NAMESPACE::forward<TCallable>(callable));
 }
 
 template <typename TCallable>
-weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, false> operator+(
+weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, false> operator+(
         OnScopeSuccess, TCallable&& callable)
 {
-    return weos_detail::ExceptionScopeGuard<typename FSM11STD::decay<TCallable>::type, false>(
-                FSM11STD::forward<TCallable>(callable));
+    return weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, false>(
+                WEOS_NAMESPACE::forward<TCallable>(callable));
 }
 
 // Helper macros for the generation of anonymous variables.
