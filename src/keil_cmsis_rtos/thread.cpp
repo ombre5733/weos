@@ -27,6 +27,7 @@
 *******************************************************************************/
 
 #include "thread.hpp"
+#include "svc_indirection.hpp"
 #include "../memorypool.hpp"
 
 #include <cstdint>
@@ -37,47 +38,6 @@ static const std::size_t minimum_custom_stack_size = 64;
 
 
 using namespace std;
-
-#if defined(__CC_ARM)
-
-#define SVC_4(fun, retType, A0, A1, A2, A3)                                    \
-    __svc_indirect(0)                                                          \
-    extern retType fun##_svc(retType (*)(A0, A1, A2, A3), A0, A1, A2, A3);     \
-                                                                               \
-    __attribute__((always_inline)) static inline                               \
-    retType fun##_indirect(A0 a0, A1 a1, A2 a2, A3 a3)                         \
-    {                                                                          \
-        return fun##_svc(&fun, a0, a1, a2, a3);                                \
-    }
-
-#elif defined(__GNUC__)
-
-#define SVC_Args4(A0, A1, A2, A3)                                              \
-    register A0 arg0 __asm("r0") = a0;                                         \
-    register A1 arg1 __asm("r1") = a1;                                         \
-    register A2 arg2 __asm("r2") = a2;                                         \
-    register A3 arg3 __asm("r3") = a3;
-
-#define SVC_Call(fun)                                                          \
-    __asm volatile(                                                            \
-        "ldr r12,=" #fun "\n\t"                                                \
-        "svc 0"                                                                \
-        : "=r" (arg0), "=r" (arg1), "=r" (arg2), "=r" (arg3)                   \
-        :  "r" (arg0),  "r" (arg1),  "r" (arg2),  "r" (arg3)                   \
-        : "r12", "lr", "cc");
-
-#define SVC_4(fun, retType, A0, A1, A2, A3)                                    \
-    __attribute__((always_inline)) static inline                               \
-    retType fun##_indirect(A0 a0, A1 a1, A2 a2, A3 a3)                         \
-    {                                                                          \
-        SVC_Args4(A0, A1, A2, A3)                                              \
-        SVC_Call(fun)                                                          \
-        return (retType)arg0;                                                  \
-    }
-
-#else
-  #error "Compiler not supported"
-#endif
 
 // The function which actually creates a thread. The signature can be found
 // in ../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h.
