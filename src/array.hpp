@@ -31,6 +31,7 @@
 
 #include "config.hpp"
 #include "_core.hpp"
+#include "exception.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -69,30 +70,27 @@ struct array
 
     constexpr const_reference operator[](size_type index) const
     {
-        // WEOS_ASSERT(index < TSize);
-        return _m_data[index];
+        return index < TSize ? _m_data[index] : asserting_at(index);
     }
 
     reference at(size_type index)
     {
 #ifdef WEOS_ENABLE_EXCEPTIONS
         if (index >= TSize)
-            throw std::out_of_range("array::at()");
+            throw WEOS_EXCEPTION(std::out_of_range("array::at()"));
 #endif // WEOS_ENABLE_EXCEPTIONS
         WEOS_ASSERT(index < TSize);
 
         return _m_data[index];
     }
 
-    /*constexpr*/ const_reference at(size_type index) const
+    constexpr const_reference at(size_type index) const
     {
 #ifdef WEOS_ENABLE_EXCEPTIONS
-        if (index >= TSize)
-            throw std::out_of_range("array::at()");
+        return index < TSize ? _m_data[index] : throw WEOS_EXCEPTION(std::out_of_range("array::at()"));
+#else
+        return index < TSize ? _m_data[index] : asserting_at(index);
 #endif // WEOS_ENABLE_EXCEPTIONS
-        WEOS_ASSERT(index < TSize);
-
-        return _m_data[index];
     }
 
     reference front()
@@ -103,8 +101,7 @@ struct array
 
     constexpr const_reference front() const
     {
-        //WEOS_ASSERT(TSize > 0);
-        return _m_data[0];
+        return TSize > 0 ? _m_data[0] : asserting_at(0);
     }
 
     reference back()
@@ -115,8 +112,7 @@ struct array
 
     constexpr const_reference back() const
     {
-        //WEOS_ASSERT(TSize > 0);
-        return _m_data[TSize > 0 ? TSize - 1 : 0];
+        return TSize > 0 ? _m_data[TSize - 1] : asserting_at(0);
     }
 
     value_type* data() noexcept
@@ -224,6 +220,13 @@ struct array
 
     // The array elements.
     value_type _m_data[TSize > 0 ? TSize : 1];
+
+private:
+    const_reference asserting_at(size_type index) const
+    {
+        WEOS_ASSERT(index < TSize);
+        return _m_data[index];
+    }
 };
 
 template <typename TType, std::size_t TSize>
