@@ -41,6 +41,7 @@
 // -----------------------------------------------------------------------------
 
 #include "../type_traits.hpp"
+#include "../utility.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
