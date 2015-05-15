@@ -487,16 +487,16 @@ template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator>(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return detail::duration_less<duration<TRep1, TPeriod1>,
-                                 duration<TRep2, TPeriod2> >::cmp(d2, d1);
+    return detail::duration_less<duration<TRep2, TPeriod2>,
+                                 duration<TRep1, TPeriod1> >::cmp(d2, d1);
 }
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator<=(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return !detail::duration_less<duration<TRep1, TPeriod1>,
-                                  duration<TRep2, TPeriod2> >::cmp(d2, d1);
+    return !detail::duration_less<duration<TRep2, TPeriod2>,
+                                  duration<TRep1, TPeriod1> >::cmp(d2, d1);
 }
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
