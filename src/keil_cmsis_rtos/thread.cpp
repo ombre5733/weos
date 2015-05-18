@@ -68,6 +68,21 @@ WEOS_END_NAMESPACE
 
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 
+extern "C" void weos_threadExit(void)
+{
+    static_assert(osCMSIS_RTX <= ((4<<16) | 75),
+                  "Check that offsetof(OS_TCB, priv_stack) == 38.");
+    static constexpr auto priv_stack_offset = 38;
+
+    void* ptcb = osThreadGetId();
+    // The memory was not allocated from the pool. Set the private stack
+    // size 'priv_stack' to zero, such that CMSIS won't add the memory to
+    // its pool.
+    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + priv_stack_offset) = 0;
+
+    osThreadExit();
+}
+
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
 //! helper function adheres to this specification. The \p arg is a pointer to
@@ -102,26 +117,36 @@ extern "C" void weos_threadInvoker(const void* arg)
 }
 
 extern "C" void* weos_createTask(
-        uint32_t priority, void* stack, uint32_t stackSize, void* data)
+        void* stack, uint32_t stackSize_and_priority,
+        void* data, uint32_t debugFunctionPtr)
 {
     uint32_t taskId = rt_tsk_create(
                           (void (*)(void))weos_threadInvoker,
-                          uint32_t(priority - osPriorityIdle + 1)
-                          | (stackSize << 8),
+                          stackSize_and_priority,
                           stack,
                           data);
     if (taskId)
     {
+        void* pTCB = os_active_TCB[taskId - 1];
+
         // Set R13 to the address of osThreadExit, which has to be invoked
         // when the thread exits.
-        static_cast<uint32_t*>(stack)[13] = (uint32_t)&osThreadExit;
-        return os_active_TCB[taskId - 1];
+        static_cast<uint32_t*>(stack)[13] = (uint32_t)&weos_threadExit;
+
+        // Set the field ptask in OS_TCB to the invoked function (needed for
+        // the uVision debugger).
+        static_assert(osCMSIS_RTX <= ((4<<16) | 75),
+                      "Check that offsetof(OS_TCB, ptask) == 48.");
+        static constexpr auto ptask_offset = 48;
+        *reinterpret_cast<std::uint32_t*>(static_cast<char*>(pTCB) + ptask_offset)
+                = debugFunctionPtr;
+        return pTCB;
     }
 
     return 0;
 }
 
-SVC_4(weos_createTask, void*, uint32_t, void*, uint32_t, void*)
+SVC_4(weos_createTask, void*,   void*, uint32_t, void*, uint32_t)
 
 
 WEOS_BEGIN_NAMESPACE
@@ -250,9 +275,11 @@ void thread::invoke(const attributes& attrs)
     if (attrs.m_customStack)
     {
         void* taskId = weos_createTask_indirect(
-                           toNativePriority(attrs.m_priority),
-                           attrs.m_customStack, attrs.m_customStackSize,
-                           m_data);
+                           attrs.m_customStack,
+                           uint32_t(int(attrs.m_priority) - osPriorityIdle + 1)
+                           | (attrs.m_customStackSize << 8),
+                           m_data,
+                           (std::uint32_t)(&weos_threadInvoker));
         m_data->m_threadId = static_cast<osThreadId>(taskId);
     }
     else
