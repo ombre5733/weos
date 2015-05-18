@@ -200,6 +200,12 @@ struct ExceptionInfoBase : public TType,
     }
 
     virtual ~ExceptionInfoBase() throw() {}
+
+    ExceptionInfoBase& operator<<(const throw_location& loc)
+    {
+        *static_cast<exception*>(this) << loc;
+        return *this;
+    }
 };
 
 } // namespace weos_detail
