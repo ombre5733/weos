@@ -33,8 +33,8 @@
 
 #include <cmsis_os.h>
 
-#if osCMSIS_RTX < ((4<<16) | 70) || osCMSIS_RTX > ((4<<16) | 74)
-    #error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.74."
+#if osCMSIS_RTX < ((4<<16) | 70) || osCMSIS_RTX > ((4<<16) | 75)
+    #error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.75."
 #endif
 
 #endif // WEOS_KEIL_CMSIS_RTOS_CORE_HPP
