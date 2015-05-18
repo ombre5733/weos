@@ -338,6 +338,17 @@ public:
     {
     }
 
+    virtual ~AsyncSharedState() noexcept
+    {
+        if (m_thread.joinable())
+            m_thread.join();
+    }
+
+    void startThread(const thread::attributes& attrs)
+    {
+        m_thread = thread(attrs, &AsyncSharedState::invoke, this);
+    }
+
     virtual void invoke()
     {
         try
@@ -359,6 +370,7 @@ protected:
 
 private:
     TCallable m_callable;
+    thread m_thread;
 };
 
 template <typename TCallable>
@@ -368,6 +380,17 @@ public:
     explicit AsyncSharedState(TCallable&& callable)
         : m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
     {
+    }
+
+    virtual ~AsyncSharedState() noexcept
+    {
+        if (m_thread.joinable())
+            m_thread.join();
+    }
+    
+    void startThread(const thread::attributes& attrs)
+    {
+        m_thread = thread(attrs, &AsyncSharedState::invoke, this);
     }
 
     virtual void invoke()
@@ -392,6 +415,7 @@ protected:
 
 private:
     TCallable m_callable;
+    thread m_thread;
 };
 
 
@@ -401,9 +425,9 @@ future<TResult> makeAsyncSharedState(const thread::attributes& attrs,
 {
     using shared_state_type = AsyncSharedState<TResult, TCallable>;
 
-    unique_ptr<shared_state_type, SharedStateBaseDeleter>
-            state(new shared_state_type(WEOS_NAMESPACE::forward<TCallable>(f)));
-    thread(attrs, &shared_state_type::invoke, state.get()).detach();
+    unique_ptr<shared_state_type, SharedStateBaseDeleter> state(
+                new shared_state_type(WEOS_NAMESPACE::forward<TCallable>(f)));
+    state->startThread(attrs);
 
     return future<TResult>(state.get());
 }
