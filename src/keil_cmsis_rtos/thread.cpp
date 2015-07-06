@@ -68,21 +68,6 @@ WEOS_END_NAMESPACE
 
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 
-extern "C" void weos_threadExit(void)
-{
-    static_assert(osCMSIS_RTX <= ((4<<16) | 75),
-                  "Check that offsetof(OS_TCB, priv_stack) == 38.");
-    static constexpr auto priv_stack_offset = 38;
-
-    void* ptcb = osThreadGetId();
-    // The memory was not allocated from the pool. Set the private stack
-    // size 'priv_stack' to zero, such that CMSIS won't add the memory to
-    // its pool.
-    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + priv_stack_offset) = 0;
-
-    osThreadExit();
-}
-
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
 //! helper function adheres to this specification. The \p arg is a pointer to
@@ -114,6 +99,18 @@ extern "C" void weos_threadInvoker(const void* arg)
     data->m_finished.post();
     // Keep the thread alive because someone might still set a signal.
     data->m_joinedOrDetached.wait();
+
+    // The memory was not allocated from the pool. Set the private stack
+    // size 'priv_stack' to zero, such that CMSIS won't add the memory to
+    // its pool.
+    static_assert(osCMSIS_RTX <= ((4<<16) | 75),
+                  "Check that offsetof(OS_TCB, priv_stack) == 38.");
+    static constexpr auto priv_stack_offset = 38;
+    void* ptcb = osThreadGetId();
+    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + priv_stack_offset) = 0;
+
+    data = nullptr;
+    osThreadExit();
 }
 
 extern "C" void* weos_createTask(
@@ -128,10 +125,6 @@ extern "C" void* weos_createTask(
     if (taskId)
     {
         void* pTCB = os_active_TCB[taskId - 1];
-
-        // Set R13 to the address of osThreadExit, which has to be invoked
-        // when the thread exits.
-        static_cast<uint32_t*>(stack)[13] = (uint32_t)&weos_threadExit;
 
         // Set the field ptask in OS_TCB to the invoked function (needed for
         // the uVision debugger).
@@ -225,8 +218,8 @@ void thread::join()
     unique_ptr<weos_detail::SharedThreadData,
                weos_detail::SharedThreadDataDeleter> data(m_data);
 
-    m_data->m_joinedOrDetached.post();
     m_data->m_finished.wait();
+    m_data->m_joinedOrDetached.post();
     m_data = nullptr;
 }
 
