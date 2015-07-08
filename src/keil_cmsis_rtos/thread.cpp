@@ -39,19 +39,28 @@ static const std::size_t minimum_custom_stack_size = 64;
 
 using namespace std;
 
+// ----=====================================================================----
+//     Functions imported from the CMSIS implementation
+// ----=====================================================================----
+
+extern "C"
+{
+
 // The function which actually creates a thread. The signature can be found
 // in ../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h.
-extern "C" uint32_t rt_tsk_create(void(*task)(void),
-                                  uint32_t prio_stksz,
-                                  void* stk, void* argv);
+uint32_t rt_tsk_create(void(*task)(void),
+                       uint32_t prio_stksz,
+                       void* stk, void* argv);
 
-// The function which is called when a thread exits. This function has to
-// be set as return address for every new thread.
-extern "C" void osThreadExit(void);
+// The function which is called when a thread exits.
+int svcThreadTerminate(void* thread_id);
 
 // An array of pointers to task/thread control blocks. The declaration is
 // from ../3rdparty/keil_cmsis_rtos/INC/RTX_Config.h.
 extern void* os_active_TCB[];
+
+} // extern "C"
+
 
 //! Converts a weos priority to a CMSIS priority.
 static inline
@@ -68,6 +77,28 @@ WEOS_END_NAMESPACE
 
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 
+// Terminates the current thread.
+//
+// The only reason for this function is that the finished signal and the
+// thread termination have to be done together. This is really important
+// because the joining thread might re-use the stack of this thread. So we
+// must ensure that there is no context between setting the semaphore
+// signal and terminating the thread.
+extern "C" int weos_terminateTask(void* data, void* threadId)
+{
+    using namespace WEOS_NAMESPACE;
+
+    // Use the semaphore to signal that the thread has been completed.
+    static_cast<weos_detail::SharedThreadData*>(data)->m_finished.post();
+    static_cast<weos_detail::SharedThreadData*>(data)->decReferenceCount();
+    //rt_tsk_delete(threadId);
+    svcThreadTerminate(threadId);
+    return 0;
+}
+
+SVC_2(weos_terminateTask, int,   void*, void*)
+
+
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
 //! helper function adheres to this specification. The \p arg is a pointer to
@@ -80,6 +111,15 @@ extern "C" void weos_threadInvoker(const void* arg)
     unique_ptr<weos_detail::SharedThreadData,
                weos_detail::SharedThreadDataDeleter> data(
         static_cast<weos_detail::SharedThreadData*>(const_cast<void*>(arg)));
+
+    // The stack memory was not allocated from the pool. Set the private stack
+    // size 'priv_stack' to zero, such that CMSIS won't add the memory to
+    // its pool when the thread finishes.
+    static_assert(osCMSIS_RTX <= ((4<<16) | 75),
+                  "Check that offsetof(OS_TCB, priv_stack) == 38.");
+    static constexpr auto priv_stack_offset = 38;
+    void* ptcb = osThreadGetId();
+    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + priv_stack_offset) = 0;
 
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     try
@@ -95,23 +135,12 @@ extern "C" void weos_threadInvoker(const void* arg)
     }
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 
-    // Use the semaphore to signal that the thread has been completed.
-    data->m_finished.post();
     // Keep the thread alive because someone might still set a signal.
     data->m_joinedOrDetached.wait();
-
-    // The memory was not allocated from the pool. Set the private stack
-    // size 'priv_stack' to zero, such that CMSIS won't add the memory to
-    // its pool.
-    static_assert(osCMSIS_RTX <= ((4<<16) | 75),
-                  "Check that offsetof(OS_TCB, priv_stack) == 38.");
-    static constexpr auto priv_stack_offset = 38;
-    void* ptcb = osThreadGetId();
-    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + priv_stack_offset) = 0;
-
-    data = nullptr;
-    osThreadExit();
+    // Notify a potentially joining thread and terminate this thread then.
+    weos_terminateTask_indirect(data.release(), ptcb);
 }
+
 
 extern "C" void* weos_createTask(
         void* stack, uint32_t stackSize_and_priority,
@@ -218,8 +247,8 @@ void thread::join()
     unique_ptr<weos_detail::SharedThreadData,
                weos_detail::SharedThreadDataDeleter> data(m_data);
 
-    m_data->m_finished.wait();
     m_data->m_joinedOrDetached.post();
+    m_data->m_finished.wait();
     m_data = nullptr;
 }
 

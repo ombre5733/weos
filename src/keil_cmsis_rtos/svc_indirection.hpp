@@ -31,6 +31,16 @@
 
 #if defined(__CC_ARM)
 
+#define SVC_1(fun, retType, A0)                                                \
+    __svc_indirect(0)                                                          \
+    extern retType fun##_svc(retType (*)(A0), A0);                             \
+                                                                               \
+    __attribute__((always_inline)) static inline                               \
+    retType fun##_indirect(A0 a0)                                              \
+    {                                                                          \
+        return fun##_svc(&fun, a0);                                            \
+    }
+
 #define SVC_2(fun, retType, A0, A1)                                            \
     __svc_indirect(0)                                                          \
     extern retType fun##_svc(retType (*)(A0, A1), A0, A1);                     \
@@ -53,9 +63,15 @@
 
 #elif defined(__GNUC__)
 
+#define SVC_Args1(A0)                                                          \
+    register A0  arg0 __asm("r0") = a0;                                        \
+    register int arg1 __asm("r1");                                             \
+    register int arg2 __asm("r2");                                             \
+    register int arg3 __asm("r3");
+
 #define SVC_Args2(A0, A1)                                                      \
-    register A0   arg0 __asm("r0") = a0;                                       \
-    register A1   arg1 __asm("r1") = a1;                                       \
+    register A0  arg0 __asm("r0") = a0;                                        \
+    register A1  arg1 __asm("r1") = a1;                                        \
     register int arg2 __asm("r2");                                             \
     register int arg3 __asm("r3");
 
@@ -72,6 +88,15 @@
         : "=r" (arg0), "=r" (arg1), "=r" (arg2), "=r" (arg3)                   \
         :  "r" (arg0),  "r" (arg1),  "r" (arg2),  "r" (arg3)                   \
         : "r12", "lr", "cc");
+
+#define SVC_1(fun, retType, A0)                                                \
+    __attribute__((always_inline)) static inline                               \
+    retType fun##_indirect(A0 a0)                                              \
+    {                                                                          \
+        SVC_Args1(A0)                                                          \
+        SVC_Call(fun)                                                          \
+        return (retType)arg0;                                                  \
+    }
 
 #define SVC_2(fun, retType, A0, A1)                                            \
     __attribute__((always_inline)) static inline                               \
