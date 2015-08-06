@@ -34,33 +34,15 @@ WEOS_BEGIN_NAMESPACE
 //     mutex
 // ----=====================================================================----
 
-mutex::mutex()
-    : m_id(0),
-      m_locked(false)
-{
-    // Keil's RTOS wants a zero'ed control block type for initialization.
-    m_cmsisMutexControlBlock._[0] = 0;
-    osMutexDef_t mutexDef = { m_cmsisMutexControlBlock._ };
-    m_id = osMutexCreate(&mutexDef);
-    if (m_id == 0)
-    {
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                "mutex::mutex failed");
-    }
-}
-
 mutex::~mutex()
 {
-    if (m_id)
-    {
-        WEOS_ASSERT(!m_locked);
-        osMutexDelete(m_id);
-    }
+    WEOS_ASSERT(!m_locked);
+    osMutexDelete(native_handle());
 }
 
 void mutex::lock()
 {
-    osStatus result = osMutexWait(m_id, osWaitForever);
+    osStatus result = osMutexWait(native_handle(), osWaitForever);
     if (result != osOK)
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
                                 "mutex::lock failed");
@@ -73,7 +55,7 @@ void mutex::lock()
     {
         // The mutex has been locked twice. Undo one lock and throw an
         // exception.
-        result = osMutexRelease(m_id);
+        result = osMutexRelease(native_handle());
         if (result != osOK)
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
                                     "mutex::lock failed");
@@ -82,9 +64,9 @@ void mutex::lock()
     }
 }
 
-bool mutex::try_lock()
+bool mutex::try_lock() noexcept
 {
-    osStatus result = osMutexWait(m_id, 0);
+    osStatus result = osMutexWait(native_handle(), 0);
 
     // If osMutexWait(mutex, millisec) fails to acquire a mutex within the
     // timeout, the error code is
@@ -96,8 +78,7 @@ bool mutex::try_lock()
         return false;
     }
     if (result != osOK)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                "mutex::try_lock failed");
+        return false;
 
     if (!m_locked)
     {
@@ -108,82 +89,49 @@ bool mutex::try_lock()
     {
         // The mutex has already been locked by the current thread. Unlock
         // it once and pretend that try_lock() failed.
-        result = osMutexRelease(m_id);
-        if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                    "mutex::try_lock failed");
+        result = osMutexRelease(native_handle());
+        (void)result;
+        WEOS_ASSERT(result == osOK);
         return false;
     }
 }
 
-void mutex::unlock()
+void mutex::unlock() noexcept
 {
     WEOS_ASSERT(m_locked);
     m_locked = false;
-    osStatus result = osMutexRelease(m_id);
-    if (result != osOK)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                "mutex::unlock failed");
+    osStatus result = osMutexRelease(native_handle());
+    (void)result;
+    WEOS_ASSERT(result == osOK);
 }
 
 // ----=====================================================================----
 //     recursive_mutex
 // ----=====================================================================----
 
-recursive_mutex::recursive_mutex()
-    : m_id(0)
-{
-    // Keil's RTOS wants a zero'ed control block type for initialization.
-    m_cmsisMutexControlBlock._[0] = 0;
-    osMutexDef_t mutexDef = { m_cmsisMutexControlBlock._ };
-    m_id = osMutexCreate(&mutexDef);
-    if (m_id == 0)
-    {
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                "recursive_mutex::recursive_mutex failed");
-    }
-}
-
 recursive_mutex::~recursive_mutex()
 {
-    if (m_id)
-        osMutexDelete(m_id);
+    osMutexDelete(native_handle());
 }
 
 void recursive_mutex::lock()
 {
-    osStatus result = osMutexWait(m_id, osWaitForever);
+    osStatus result = osMutexWait(native_handle(), osWaitForever);
     if (result != osOK)
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
                                 "recursive_mutex::lock failed");
 }
 
-bool recursive_mutex::try_lock()
+bool recursive_mutex::try_lock() noexcept
 {
-    osStatus result = osMutexWait(m_id, 0);
-
-    // If osMutexWait(mutex, millisec) fails to acquire a mutex within the
-    // timeout, the error code is
-    //   osErrorTimeoutResource if millisec != 0
-    //   osErrorResource if millisec == 0
-    if (result == osErrorResource)
-    {
-        // The mutex is owned by another thread.
-        return false;
-    }
-    if (result != osOK)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                "recursive_mutex::try_lock failed");
-
-    return true;
+    return osMutexWait(native_handle(), 0) == osOK;
 }
 
-void recursive_mutex::unlock()
+void recursive_mutex::unlock() noexcept
 {
-    osStatus result = osMutexRelease(m_id);
-    if (result != osOK)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
-                                "recursive_mutex::unlock failed");
+    osStatus result = osMutexRelease(native_handle());
+    (void)result;
+    WEOS_ASSERT(result == osOK);
 }
 
 // ----=====================================================================----
@@ -204,7 +152,7 @@ bool recursive_timed_mutex::try_lock_for(chrono::milliseconds ms)
                                  : milliseconds(0xFFFE);
         ms -= truncated;
 
-        osStatus result = osMutexWait(m_id, truncated.count());
+        osStatus result = osMutexWait(native_handle(), truncated.count());
         if (result == osOK)
             return true;
 

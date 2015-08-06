@@ -46,27 +46,33 @@
 
 WEOS_BEGIN_NAMESPACE
 
-namespace weos_detail
-{
-// Just enough memory to hold a CMSIS mutex. This is the type to which
-// the macro osMutexDef() defined in <cmsis_os.h> expands.
-struct mutex_control_block_type
-{
-    std::uint32_t _[4];
-};
-
-} // namespace weos_detail
-
 //! A plain mutex.
 class mutex
 {
+    // The CMSIS-RTOS control block (OS_MUCB from ${CMSIS-RTOS}/SRC/rt_TypeDef.h)
+    // must have the following layout:
+    // struct OS_MUCB
+    // {
+    //     uint8_t cb_type;
+    //     uint16_t level;
+    //     void* p_lnk;
+    //     void* owner;
+    //     void* p_mlnk;
+    // };
+    static_assert(osCMSIS_RTX <= ((4<<16) | 75), "Check the layout of OS_MUCB.");
+
 public:
     //! The type of the native mutex handle.
     typedef osMutexId native_handle_type;
 
 
     //! Creates a mutex.
-    mutex();
+    constexpr
+    mutex() noexcept
+        : m_cmsisMutexControlBlock{3 /* cb_type & level */, 0 /* p_lnk */, 0 /* owner */, 0 /* p_mlnk */},
+          m_locked(false)
+    {
+    }
 
     //! Destroys the mutex.
     ~mutex();
@@ -86,24 +92,23 @@ public:
     //! If this mutex is available, it is locked by the calling thread and
     //! \p true is returned. If the mutex is already locked, the method
     //! returns \p false without blocking.
-    bool try_lock();
+    bool try_lock() noexcept;
 
     //! Unlocks the mutex.
     //! Unlocks this mutex which must have been locked previously by the
     //! calling thread.
-    void unlock();
+    void unlock() noexcept;
 
     //! Returns a native mutex handle.
     native_handle_type native_handle()
     {
-        return m_id;
+        return static_cast<native_handle_type>(
+                    static_cast<void*>(m_cmsisMutexControlBlock));
     }
 
 protected:
     //! The native mutex.
-    weos_detail::mutex_control_block_type m_cmsisMutexControlBlock;
-    //! The native mutex handle.
-    osMutexId m_id;
+    std::uint32_t m_cmsisMutexControlBlock[4];
     //! This flag is set, if the current thread has already blocked the mutex.
     bool m_locked;
 };
@@ -140,7 +145,7 @@ public:
             auto remainingSpan = time - TClock::now();
             if (remainingSpan <= TDuration::zero())
             {
-                result = osMutexWait(m_id, 0);
+                result = osMutexWait(native_handle(), 0);
                 timeout = true;
             }
             else
@@ -150,7 +155,7 @@ public:
                     converted = milliseconds(1);
                 else if (converted > milliseconds(0xFFFE))
                     converted = milliseconds(0xFFFE);
-                result = osMutexWait(m_id, converted.count());
+                result = osMutexWait(native_handle(), converted.count());
             }
 
             if (result == osOK)
@@ -165,7 +170,7 @@ public:
                     // The mutex has been locked by the same thread again.
                     // Undo the last lock, then sleep until the time point
                     // has been reached and return with a failure.
-                    result = osMutexRelease(m_id);
+                    result = osMutexRelease(native_handle());
                     if (result != osOK)
                     {
                         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
@@ -192,13 +197,28 @@ public:
 //! A recursive mutex.
 class recursive_mutex
 {
+    // The CMSIS-RTOS control block (OS_MUCB from ${CMSIS-RTOS}/SRC/rt_TypeDef.h)
+    // must have the following layout:
+    // struct OS_MUCB
+    // {
+    //     uint8_t cb_type;
+    //     uint16_t level;
+    //     void* p_lnk;
+    //     void* owner;
+    //     void* p_mlnk;
+    // };
+    static_assert(osCMSIS_RTX <= ((4<<16) | 75), "Check the layout of OS_MUCB.");
+
 public:
     //! The type of the native mutex handle.
     typedef osMutexId native_handle_type;
 
 
     //! Creates a mutex.
-    recursive_mutex();
+    recursive_mutex()
+        : m_cmsisMutexControlBlock{3 /* cb_type & level */, 0 /* p_lnk */, 0 /* owner */, 0 /* p_mlnk */}
+    {
+    }
 
     //! Destroys the mutex.
     ~recursive_mutex();
@@ -221,24 +241,23 @@ public:
     //! \p true is returned. Locking may be done recursively.
     //!
     //! \sa lock()
-    bool try_lock();
+    bool try_lock() noexcept;
 
     //! Unlocks the mutex.
     //! Unlocks this mutex which must have been locked previously by the
     //! calling thread.
-    void unlock();
+    void unlock() noexcept;
 
     //! Returns a native mutex handle.
     native_handle_type native_handle()
     {
-        return m_id;
+        return static_cast<native_handle_type>(
+                    static_cast<void*>(m_cmsisMutexControlBlock));
     }
 
 protected:
     //! The native mutex.
-    weos_detail::mutex_control_block_type m_cmsisMutexControlBlock;
-    //! The native mutex handle.
-    osMutexId m_id;
+    std::uint32_t m_cmsisMutexControlBlock[4];
 };
 
 //! A recursive mutex with timeout support.
@@ -286,7 +305,7 @@ public:
             auto remainingSpan = time - TClock::now();
             if (remainingSpan <= TDuration::zero())
             {
-                result = osMutexWait(m_id, 0);
+                result = osMutexWait(native_handle(), 0);
                 timeout = true;
             }
             else
@@ -296,7 +315,7 @@ public:
                     converted = milliseconds(1);
                 else if (converted > milliseconds(0xFFFE))
                     converted = milliseconds(0xFFFE);
-                result = osMutexWait(m_id, converted.count());
+                result = osMutexWait(native_handle(), converted.count());
             }
 
             if (result == osOK)
