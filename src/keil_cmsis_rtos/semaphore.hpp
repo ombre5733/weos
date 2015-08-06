@@ -39,44 +39,42 @@
 
 WEOS_BEGIN_NAMESPACE
 
-namespace detail
-{
-// Just enough memory to hold a CMSIS semaphore. This is the type to which
-// the macro osSemaphoreDef() defined in <cmsis_os.h> expands.
-struct SemaphoreControlBlock
-{
-    // The first 32-bit of a semaphore. The typedef can be found
-    // in ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
-    struct Header
-    {
-        volatile std::uint8_t controlBlockType;
-        volatile std::uint8_t tokenMask;
-        volatile std::uint16_t numTokens;
-    };
-
-    std::uint32_t _[2];
-
-    inline
-    std::int16_t numTokens() const
-    {
-        return reinterpret_cast<const Header&>(_[0]).numTokens;
-    }
-};
-
-} // namespace detail
-
-
 //! \brief A semaphore.
 class semaphore
 {
+    // The CMSIS-RTOS control block (OS_SCB from ${CMSIS-RTOS}/SRC/rt_TypeDef.h)
+    // must have the following layout:
+    // struct OS_SCB
+    // {
+    //     uint8_t cb_type;
+    //     uint8_t mask;
+    //     uint16_t tokens;
+    //     void* p_lnk;
+    // };
+    static_assert(osCMSIS_RTX <= ((4<<16) | 75), "Check the layout of OS_SCB.");
+    struct ControlBlock
+    {
+        std::uint8_t cb_type;
+        std::uint8_t dummy;
+        std::uint16_t tokens;
+        void* p_lnk;
+    };
+
 public:
+    //! The type of the native mutex handle.
+    typedef osSemaphoreId native_handle_type;
+
     //! The counter type used for the semaphore.
     typedef std::uint16_t value_type;
 
     //! \brief Creates a semaphore.
     //!
     //! Creates a semaphore with an initial number of \p value tokens.
-    explicit semaphore(value_type value = 0);
+    constexpr
+    explicit semaphore(value_type value = 0) noexcept
+        : m_cmsisSemaphoreControlBlock{2, 0, value, 0}
+    {
+    }
 
     //! \brief Destroys a semaphore.
     ~semaphore();
@@ -149,7 +147,7 @@ public:
             typename caster::type millisecs
                     = caster::convert_and_clip(time - ClockT::now());
 
-            std::int32_t result = osSemaphoreWait(m_id, millisecs);
+            std::int32_t result = osSemaphoreWait(native_handle(), millisecs);
             if (result > 0)
                 return true;
 
@@ -167,11 +165,16 @@ public:
     //! Returns the numer of semaphore tokens.
     value_type value() const;
 
+    //! Returns a native semaphore handle.
+    native_handle_type native_handle()
+    {
+        return static_cast<native_handle_type>(
+                    static_cast<void*>(&m_cmsisSemaphoreControlBlock));
+    }
+
 private:
     //! The native semaphore.
-    detail::SemaphoreControlBlock m_controlBlock;
-    //! The native semaphore handle.
-    osSemaphoreId m_id;
+    ControlBlock m_cmsisSemaphoreControlBlock;
 };
 
 WEOS_END_NAMESPACE

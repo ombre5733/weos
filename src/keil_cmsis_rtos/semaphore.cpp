@@ -31,27 +31,14 @@
 
 WEOS_BEGIN_NAMESPACE
 
-semaphore::semaphore(value_type value)
-    : m_id(0)
-{
-    // Keil's RTOS wants a zero'ed control block type for initialization.
-    m_controlBlock._[0] = 0;
-    osSemaphoreDef_t semaphoreDef = { m_controlBlock._ };
-    m_id = osSemaphoreCreate(&semaphoreDef, value);
-    if (m_id == 0)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                "semaphore::semaphore failed");
-}
-
 semaphore::~semaphore()
 {
-    if (m_id)
-        osSemaphoreDelete(m_id);
+    osSemaphoreDelete(native_handle());
 }
 
 void semaphore::post()
 {
-    osStatus status = osSemaphoreRelease(m_id);
+    osStatus status = osSemaphoreRelease(native_handle());
     if (status != osOK)
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
                                 "semaphore::post failed");
@@ -59,7 +46,7 @@ void semaphore::post()
 
 void semaphore::wait()
 {
-    std::int32_t result = osSemaphoreWait(m_id, osWaitForever);
+    std::int32_t result = osSemaphoreWait(native_handle(), osWaitForever);
     if (result <= 0)
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
                                 "semaphore::wait failed");
@@ -67,7 +54,7 @@ void semaphore::wait()
 
 bool semaphore::try_wait()
 {
-    std::int32_t result = osSemaphoreWait(m_id, 0);
+    std::int32_t result = osSemaphoreWait(native_handle(), 0);
     if (result < 0)
         WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
                                 "semaphore::try_wait failed");
@@ -89,7 +76,8 @@ bool semaphore::try_wait_for(chrono::milliseconds ms)
                                  : milliseconds(0xFFFE);
         ms -= truncated;
 
-        std::int32_t result = osSemaphoreWait(m_id, truncated.count());
+        std::int32_t result = osSemaphoreWait(native_handle(),
+                                              truncated.count());
         if (result > 0)
             return true;
 
@@ -107,7 +95,7 @@ bool semaphore::try_wait_for(chrono::milliseconds ms)
 semaphore::value_type semaphore::value() const
 {
     //! \todo Use an SVC here.
-    return m_controlBlock.numTokens();
+    return m_cmsisSemaphoreControlBlock.tokens;
 }
 
 WEOS_END_NAMESPACE
