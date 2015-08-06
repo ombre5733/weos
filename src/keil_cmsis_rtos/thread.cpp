@@ -32,12 +32,17 @@
 
 #include <cstdint>
 
+using namespace std;
+
 
 // The stack must be able to hold the registers R0-R15.
-static const std::size_t minimum_custom_stack_size = 64;
+static constexpr size_t minimum_custom_stack_size = 64;
 
-
-using namespace std;
+// The code below directly accesses OS_TCB defined in
+// ${CMSIS-RTOS}/SRC/rt_TypeDef.h. The following offsets are needed:
+static constexpr auto offsetof_priv_stack = 38;
+static constexpr auto offsetof_ptask = 48;
+static_assert(osCMSIS_RTX <= ((4<<16) | 75), "Check that layout of OS_TCB.");
 
 // ----=====================================================================----
 //     Functions imported from the CMSIS implementation
@@ -115,11 +120,8 @@ extern "C" void weos_threadInvoker(const void* arg)
     // The stack memory was not allocated from the pool. Set the private stack
     // size 'priv_stack' to zero, such that CMSIS won't add the memory to
     // its pool when the thread finishes.
-    static_assert(osCMSIS_RTX <= ((4<<16) | 75),
-                  "Check that offsetof(OS_TCB, priv_stack) == 38.");
-    static constexpr auto priv_stack_offset = 38;
     void* ptcb = osThreadGetId();
-    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + priv_stack_offset) = 0;
+    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + offsetof_priv_stack) = 0;
 
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     try
@@ -157,10 +159,7 @@ extern "C" void* weos_createTask(
 
         // Set the field ptask in OS_TCB to the invoked function (needed for
         // the uVision debugger).
-        static_assert(osCMSIS_RTX <= ((4<<16) | 75),
-                      "Check that offsetof(OS_TCB, ptask) == 48.");
-        static constexpr auto ptask_offset = 48;
-        *reinterpret_cast<std::uint32_t*>(static_cast<char*>(pTCB) + ptask_offset)
+        *reinterpret_cast<std::uint32_t*>(static_cast<char*>(pTCB) + offsetof_ptask)
                 = debugFunctionPtr;
         return pTCB;
     }
