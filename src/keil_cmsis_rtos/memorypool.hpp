@@ -74,7 +74,9 @@ private:
     // of this.
     typedef typename aligned_storage<chunk_size, chunk_align>::type chunk_type;
 
-    // The control block of a memory box. Defined in rt_TypeDef.h (OS_BM).
+    // The control block of a memory box. Defined as OS_BM in
+    // ${CMSIS-RTOS}/SRC/rt_TypeDef.h.
+    static_assert(osCMSIS_RTX <= ((4<<16) | 78), "Check the layout of OS_BM.");
     struct ControlBlock
     {
         void* free;

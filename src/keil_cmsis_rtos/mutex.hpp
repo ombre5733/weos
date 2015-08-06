@@ -59,7 +59,7 @@ class mutex
     //     void* owner;
     //     void* p_mlnk;
     // };
-    static_assert(osCMSIS_RTX <= ((4<<16) | 75), "Check the layout of OS_MUCB.");
+    static_assert(osCMSIS_RTX <= ((4<<16) | 78), "Check the layout of OS_MUCB.");
 
 public:
     //! The type of the native mutex handle.
@@ -207,7 +207,7 @@ class recursive_mutex
     //     void* owner;
     //     void* p_mlnk;
     // };
-    static_assert(osCMSIS_RTX <= ((4<<16) | 75), "Check the layout of OS_MUCB.");
+    static_assert(osCMSIS_RTX <= ((4<<16) | 78), "Check the layout of OS_MUCB.");
 
 public:
     //! The type of the native mutex handle.
