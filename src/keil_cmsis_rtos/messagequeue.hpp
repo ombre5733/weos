@@ -393,12 +393,6 @@ public:
                 RepT, PeriodT, try_sender>::wait(d, sender);
     }
 #endif
-
-private:
-    //! The storage for the message queue.
-    std::uint32_t m_queueData[4 + TQueueSize];
-    //! The id of the message queue.
-    osMessageQId m_id;
 };
 
 WEOS_END_NAMESPACE
