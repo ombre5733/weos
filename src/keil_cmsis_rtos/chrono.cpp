@@ -34,8 +34,18 @@
 
 #include <cstdint>
 
-// Declaration from ${CMSIS-RTOS}/SRC/rt_Time.h.
-extern "C" std::uint32_t rt_time_get(void);
+
+extern "C"
+{
+// Declarations from ${CMSIS-RTOS}/SRC/rt_Time.h.
+extern std::uint32_t os_time;
+
+// Declarations from ${CMSIS-RTOS}/SRC/RTX_Config.h.
+extern std::uint32_t const os_trv;
+extern std::uint32_t os_tick_val(void);
+extern std::uint32_t os_tick_ovf(void);
+
+} // extern "C"
 
 
 WEOS_BEGIN_NAMESPACE
@@ -44,106 +54,67 @@ WEOS_BEGIN_NAMESPACE
 //     Internals
 // ----=====================================================================----
 
-static atomic<std::uint32_t> weos_chrono_overflowData(0);
+// Keep track of the overflows of os_time. For this, we store the
+// highest four bits of the os_time together with an overflow counter:
+// +-----------------+-----------------+
+// | os_time[31:28]  | OverflowCounter |
+// |     (4 bit)     |    (28 bit)     |
+// +-----------------+-----------------+
+//
+// This is shared memory and will be updated from multiple threads
+// simultaneously.
+static atomic<std::uint32_t> weos_chrono_overflowData{0};
 
-static std::pair<std::int64_t, std::uint32_t> weos_chrono_getTimeAndTicks()
+// Returns the tick counter of the fastest timer, which is available.
+// The function keeps track of the number of overflows in os_time.
+// This can only work correctly, if the function is called often enough
+// such that no overflow is lost. To be more precise, it has to be
+// called at least once per 2^28 os_time-intervals.
+static std::int64_t weos_chrono_getTicks()
 {
-    // Dealing with the precision time is a bit tricky:
-    // - The resultant time is made up by combining the OS time
-    //   (a low frequency counter) with the SysTick (a high frequency counter).
-    // - We have to read the SysTick and the OS time in a consistent state,
-    //   i.e. within one SysTick interval.
-    // - If we read the SysTick just before an overflow and the OS time
-    //   just after it and simply combine the two values, we would report a
-    //   time which is somewhere in the future (because SysTick is too large).
-    // - We want to have a monotonic clock, so reporting a time which is
-    //   somewhere in the future is no option.
-    // - The OS time is only 32-bit, but we would like to have 64-bit bit
-    //   so that the user code does not have to worry about overflows.
-
-    // Let's generate a valid pair of (OS time, SysTick). Read the SysTick and
-    // then the OS time. Finally, read the SysTick again to detect overflows.
-    std::uint32_t ticks = osKernelSysTick();
-    std::uint32_t time = rt_time_get();
-    std::uint32_t ticksAgain = osKernelSysTick();
-
-    // If ticksAgain >= ticks, there is no problem even if there have been
-    // multiple overflows of the SysTick in between. The relation
-    // (time, ticks) <= (OS time, SysTick) always holds in this case, i.e.
-    // (time, ticks) is not somewhere in the future.
-
-    if (ticksAgain < ticks)
+    // 1. step: Get a consistent pair of (time, ticks). The following loop
+    // might be interrupted at any point and os_time might be changed then.
+    std::uint32_t ticks, time, ticksAgain, timeAgain;
+    do
     {
-        // The SysTick overflowed at least once. At this point, we do not know
-        // if we have called os_time_get() before the first overflow or
-        // after it. The table below lists the pairs
-        //     x := (time, ticks)
-        //     y := (time, ticksAgain)
-        //     z := (time + 1, ticksAgain)
-        //
-        // 1. case: Fetched OS time before overflow.
-        // (0x0010, 0x0FF1) --> ticks      = 0x0FF1
-        // (0x0010, 0x0FFC) --> time       = 0x0010
-        // (0x0011, 0x0008) --> ticksAgain = 0x0008
-        //     x = (0x0010, 0x0FF1) ... valid
-        //     y = (0x0010, 0x0008) ... invalid (in the past)
-        //     z = (0x0011, 0x0008) ... valid
-        //
-        // 2. case: Fetched OS time after overflow.
-        // (0x0010, 0x0FF1) --> ticks      = 0x0FF1
-        // (0x0011, 0x0002) --> time       = 0x0011
-        // (0x0011, 0x0008) --> ticksAgain = 0x0008
-        //     x = (0x0011, 0x0FF1) ... invalid (in the future)
-        //     y = (0x0011, 0x0008) ... valid
-        //     z = (0x0012, 0x0008) ... invalid (in the future)
-        //
-        // We choose z for the first case and y for the second.
+        atomic_thread_fence(memory_order_seq_cst);
+        ticks = os_tick_val();
+        time = os_tick_ovf() ? os_time + 1 : os_time;
+        atomic_thread_fence(memory_order_seq_cst);
+        ticksAgain = os_tick_val();
+        timeAgain = os_tick_ovf() ? os_time + 1 : os_time;
+    } while (ticksAgain <= ticks || time != timeAgain);
 
-        ticks = ticksAgain;
-        std::uint32_t timeAgain = rt_time_get();
-        if (time != timeAgain)
-            ++time;
+    // 2. step: Keep track of the overflows in os_time.
+    std::uint32_t highBits = time & 0xF0000000;
+    std::uint32_t overflows;
 
-        // Note: There is the potential problem that timeAgain = time + 2^32,
-        // i.e. there have been 2^32 overflows. However, this would mean
-        // that the current task had been blocked for days.
-    }
-
-    // Read the shared overflow data. It consists of an overflow counter plus
-    // the highest four bits of the OS time.
-    std::uint32_t previousData = weos_chrono_overflowData;
-    std::uint32_t previousHighBits = previousData & 0x0F;
-    std::uint32_t previousTimeOverflows = previousData >> 4;
-
-    std::uint32_t highBits = time >> 28;
-    std::uint32_t timeOverflows = previousTimeOverflows;
-
-    // If the current time is less than the time stored previously, there has
-    // been an overflow.
-    if (highBits < previousHighBits)
-        ++timeOverflows;
-
-    // Now it comes to updating the shared overflow data. It is possible that
-    // other threads want to do the same in parallel. We try to update the
-    // shared data as long as our time is ahead of the shared previous time.
-    while (highBits != previousHighBits
-           && (highBits - previousHighBits) % 16 < 7)
+    while (1)
     {
-        if (weos_chrono_overflowData.compare_exchange_weak(
-                previousData, (timeOverflows << 4) | highBits))
+        std::uint32_t data = weos_chrono_overflowData;
+        std::uint32_t prevHighBits = data & 0xF0000000;
+        overflows = data & 0x0FFFFFFF;
+
+        if (highBits == prevHighBits)
         {
+            // The likely case: The highest bits have not changed so we are
+            // done.
             break;
         }
-
-        // Another thread has changed the shared data in between. Update
-        // the previous high bits.
-        previousHighBits = previousData & 0x0F;
+        else
+        {
+            // The high bits have changed. If os_time also wrapped around,
+            // the overflow counter must be increased. The new counter has
+            // to be written back to the shared data. When another thread
+            // interfered, start over again.
+            if (highBits < prevHighBits)
+                ++overflows;
+            if (weos_chrono_overflowData.compare_exchange_weak(data, highBits | overflows))
+                break;
+        }
     }
 
-    // By combining the time with its overflow counter, we can create a
-    // 60-bit time.
-    std::int64_t longTime = (std::uint64_t(timeOverflows) << 32) + time;
-    return std::pair<std::int64_t, std::uint32_t>(longTime, ticks);
+    return (((std::uint64_t)overflows << 32) | time) * (os_trv + 1) + ticks;
 }
 
 // The precision time has to be read periodically at least once before it
@@ -158,7 +129,7 @@ static void readPrecisionTimePeriodically()
                                         chrono::seconds(1));
         if (signal)
             break;
-        weos_chrono_getTimeAndTicks();
+        weos_chrono_getTicks();
     }
 }
 
@@ -171,8 +142,14 @@ namespace chrono
 
 system_clock::time_point system_clock::now()
 {
-    std::pair<std::int64_t, std::uint32_t> result = weos_chrono_getTimeAndTicks();
-    return time_point(duration(result.first));
+    static_assert(WEOS_SYSTEM_CLOCK_FREQUENCY % WEOS_SYSTICK_FREQUENCY == 0,
+                  "The system clock must be an integer multiple of the SysTick");
+
+    static constexpr std::uint64_t sys_clock_ticks_per_time_interval
+            = WEOS_SYSTEM_CLOCK_FREQUENCY / WEOS_SYSTICK_FREQUENCY;
+
+    return time_point(duration(weos_chrono_getTicks()
+                               / sys_clock_ticks_per_time_interval));
 }
 
 // ----=====================================================================----
@@ -181,15 +158,7 @@ system_clock::time_point system_clock::now()
 
 high_resolution_clock::time_point high_resolution_clock::now()
 {
-    static_assert(WEOS_SYSTEM_CLOCK_FREQUENCY % WEOS_SYSTICK_FREQUENCY == 0,
-                  "The system clock must be an integer multiple of the SysTick");
-
-    static const std::uint64_t ticks_per_time_interval
-            = WEOS_SYSTEM_CLOCK_FREQUENCY / WEOS_SYSTICK_FREQUENCY;
-
-    std::pair<std::int64_t, std::uint32_t> result = weos_chrono_getTimeAndTicks();
-    return time_point(duration(result.first * ticks_per_time_interval
-                               + result.second));
+    return time_point(duration(weos_chrono_getTicks()));
 }
 
 } // namespace chrono
