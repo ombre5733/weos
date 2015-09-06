@@ -218,7 +218,7 @@ public:
     {
         // TODO: Make this work in an interrupt context.
         if (!m_numAvailable.try_wait())
-            return;
+            return false;
         void* mem = m_memoryPool.try_allocate();
         WEOS_ASSERT(mem != nullptr);
         // TODO: unique_ptr
@@ -226,6 +226,7 @@ public:
         bool result = m_pointerQueue.try_send(mem);
         WEOS_ASSERT(result);
         (void)result;
+        return true;
     }
 
 #if 0
