@@ -70,7 +70,7 @@ static atomic<std::uint32_t> weos_chrono_overflowData{0};
 // This can only work correctly, if the function is called often enough
 // such that no overflow is lost. To be more precise, it has to be
 // called at least once per 2^28 os_time-intervals.
-static std::int64_t weos_chrono_getTicks()
+static std::int64_t weos_chrono_getSystemClockTicks()
 {
     // 1. step: Get a consistent pair of (time, ticks). The following loop
     // might be interrupted at any point and os_time might be changed then.
@@ -129,7 +129,7 @@ static void readPrecisionTimePeriodically()
                                         chrono::seconds(1));
         if (signal)
             break;
-        weos_chrono_getTicks();
+        weos_chrono_getSystemClockTicks();
     }
 }
 
@@ -148,7 +148,7 @@ system_clock::time_point system_clock::now()
     static constexpr std::uint64_t sys_clock_ticks_per_time_interval
             = WEOS_SYSTEM_CLOCK_FREQUENCY / WEOS_SYSTICK_FREQUENCY;
 
-    return time_point(duration(weos_chrono_getTicks()
+    return time_point(duration(weos_chrono_getSystemClockTicks()
                                / sys_clock_ticks_per_time_interval));
 }
 
@@ -158,7 +158,7 @@ system_clock::time_point system_clock::now()
 
 high_resolution_clock::time_point high_resolution_clock::now()
 {
-    return time_point(duration(weos_chrono_getTicks()));
+    return time_point(duration(weos_chrono_getSystemClockTicks()));
 }
 
 } // namespace chrono
