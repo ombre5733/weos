@@ -142,11 +142,13 @@ bool recursive_timed_mutex::try_lock_for(chrono::milliseconds ms)
 {
     using namespace chrono;
 
-    if (ms < milliseconds::zero())
-        ms = milliseconds::zero();
+    if (ms < ms.zero())
+        ms = ms.zero();
 
     do
     {
+        static_assert(osCMSIS_RTX <= ((4<<16) | 78),
+                      "Check the maximum timeout.");
         milliseconds truncated = ms <= milliseconds(0xFFFE)
                                  ? ms
                                  : milliseconds(0xFFFE);
@@ -163,7 +165,7 @@ bool recursive_timed_mutex::try_lock_for(chrono::milliseconds ms)
                                     "semaphore::try_wait_for failed");
         }
 
-    } while (ms > milliseconds::zero());
+    } while (ms > ms.zero());
 
     return false;
 }
