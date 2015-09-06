@@ -715,7 +715,22 @@ public:
         return *this;
     }
 
-    function& operator=(function&& other); // TODO
+    function& operator=(function&& other)
+    {
+        release();
+        if (other.m_invoker == (invoker_base_type*)&other.m_storage)
+        {
+            m_invoker = (invoker_base_type*)&m_storage;
+            other.m_invoker->clone((invoker_base_type*)&m_storage);
+        }
+        else
+        {
+            m_invoker = other.m_invoker;
+            other.m_invoker = nullptr;
+        }
+
+        return *this;
+    }
 
     function& operator=(nullptr_t) noexcept
     {
@@ -765,6 +780,7 @@ public:
         else if (other.m_invoker == (invoker_base_type*)&other.m_storage)
         {
             // The other function is small. Our internal storage is available.
+            // Handles the case where this->m_invoker == nullptr.
             other.m_invoker->clone((invoker_base_type*)&m_storage);
             other.m_invoker->destroy();
             other.m_invoker = m_invoker;
@@ -773,6 +789,7 @@ public:
         else if (m_invoker == (invoker_base_type*)&m_storage)
         {
             // We are small. The other internal storage is free.
+            // Handles the case where other.m_invoker == nullptr.
             m_invoker->clone((invoker_base_type*)&other.m_storage);
             m_invoker->destroy();
             m_invoker = other.m_invoker;
@@ -780,14 +797,14 @@ public:
         }
         else
         {
-            // Both are large.
+            // Both are large or both are nullptr.
             std::swap(m_invoker, other.m_invoker);
         }
     }
 
     explicit operator bool() const noexcept
     {
-        return m_invoker != 0;
+        return m_invoker != nullptr;
     }
 
 private:
