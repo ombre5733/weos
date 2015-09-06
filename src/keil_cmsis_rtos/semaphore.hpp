@@ -135,31 +135,10 @@ public:
     //! return value is \p true, if a token could be acquired before the
     //! timeout.
     template <typename ClockT, typename DurationT>
+    inline
     bool try_wait_until(const chrono::time_point<ClockT, DurationT>& time)
     {
-        typedef typename WEOS_NAMESPACE::common_type<
-                             typename ClockT::duration,
-                             DurationT>::type difference_type;
-        typedef chrono::detail::internal_time_cast<difference_type> caster;
-
-        while (true)
-        {
-            typename caster::type millisecs
-                    = caster::convert_and_clip(time - ClockT::now());
-
-            std::int32_t result = osSemaphoreWait(native_handle(), millisecs);
-            if (result > 0)
-                return true;
-
-            if (result < 0)
-            {
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
-                                        "semaphore::try_wait_until failed");
-            }
-
-            if (millisecs == 0)
-                return false;
-        }
+        return try_wait_for(time - ClockT::now());
     }
 
     //! Returns the numer of semaphore tokens.
