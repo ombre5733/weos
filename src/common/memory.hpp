@@ -43,6 +43,8 @@
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
+#include <boost/core/addressof.hpp>
+
 
 WEOS_BEGIN_NAMESPACE
 
@@ -69,7 +71,7 @@ struct default_delete
 
 // TODO: add a default_delete specialization for arrays
 
-namespace detail
+namespace weos_detail
 {
 
 // Checks if T has a member named 'pointer', i.e. if T::pointer exists.
@@ -107,7 +109,7 @@ struct deleter_pointer_or_fallback<TType, TDeleter, false>
     typedef TType* type;
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 
 
@@ -118,7 +120,7 @@ class unique_ptr : protected TDeleter
 public:
     typedef TPointee element_type;
     typedef TDeleter deleter_type;
-    typedef typename detail::deleter_pointer_or_fallback<
+    typedef typename weos_detail::deleter_pointer_or_fallback<
                 element_type,
                 typename remove_reference<deleter_type>::type>::type
             pointer;
@@ -246,8 +248,7 @@ private:
 //! Swaps two unique_ptrs \p a and \p b.
 template <typename TPointee, typename TDeleter>
 inline
-void swap(WEOS_NAMESPACE::unique_ptr<TPointee, TDeleter>& a,
-          WEOS_NAMESPACE::unique_ptr<TPointee, TDeleter>& b)
+void swap(unique_ptr<TPointee, TDeleter>& a, unique_ptr<TPointee, TDeleter>& b)
 {
     a.swap(b);
 }
@@ -284,6 +285,8 @@ unique_ptr<TType> make_unique(TArgs&&... args )
     return unique_ptr<TType>(new TType(WEOS_NAMESPACE::forward<TArgs>(args)...));
 }
 
+using boost::addressof;
+
 WEOS_END_NAMESPACE
 
 
@@ -297,6 +300,7 @@ WEOS_END_NAMESPACE
 
 WEOS_BEGIN_NAMESPACE
 
+using std::addressof;
 using std::default_delete;
 using std::unique_ptr;
 
