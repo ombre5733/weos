@@ -39,10 +39,6 @@
 #include "../utility.hpp"
 
 
-#define WEOS_CONSTEXPR_FROM_CXX14
-#define WEOS_FORCE_INLINE inline
-
-
 WEOS_BEGIN_NAMESPACE
 
 //! A tuple.
@@ -58,13 +54,16 @@ template <typename TTuple>
 struct tuple_size;
 
 template <std::size_t I, typename... T>
-constexpr typename tuple_element<I, tuple<T...> >::type& get(tuple<T...>&) noexcept;
+WEOS_FORCE_INLINE
+constexpr typename tuple_element<I, tuple<T...>>::type& get(tuple<T...>&) noexcept;
 
 template <std::size_t I, typename... T>
-constexpr const typename tuple_element<I, tuple<T...> >::type& get(const tuple<T...>&) noexcept;
+WEOS_FORCE_INLINE
+constexpr typename tuple_element<I, tuple<T...>>::type&& get(tuple<T...>&&) noexcept;
 
 template <std::size_t I, typename... T>
-constexpr typename tuple_element<I, tuple<T...> >::type&& get(tuple<T...>&&) noexcept;
+WEOS_FORCE_INLINE
+constexpr const typename tuple_element<I, tuple<T...>>::type& get(const tuple<T...>&) noexcept;
 
 namespace weos_detail
 {
@@ -409,13 +408,14 @@ class tuple
 
 
     template <std::size_t I, typename... T>
-    friend constexpr typename tuple_element<I, tuple<T...> >::type& get(tuple<T...>&) noexcept;
+    friend constexpr typename tuple_element<I, tuple<T...>>::type& get(tuple<T...>&) noexcept;
 
     template <std::size_t I, typename... T>
-    friend constexpr const typename tuple_element<I, tuple<T...> >::type& get(const tuple<T...>&) noexcept;
+    friend constexpr typename tuple_element<I, tuple<T...>>::type&& get(tuple<T...>&&) noexcept;
 
     template <std::size_t I, typename... T>
-    friend constexpr typename tuple_element<I, tuple<T...> >::type&& get(tuple<T...>&&) noexcept;
+    friend constexpr const typename tuple_element<I, tuple<T...>>::type& get(const tuple<T...>&) noexcept;
+
 
 public:
     //! Constructs a tuple by value-initializing its elements.
@@ -533,7 +533,7 @@ class tuple_element<TIndex, const TTuple>
 
 //! Returns the \p TIndex-th type of a volatile tuple.
 template <std::size_t TIndex, typename TTuple>
-class tuple_element <TIndex, volatile TTuple>
+class tuple_element<TIndex, volatile TTuple>
 {
     typedef typename add_volatile<
                 typename tuple_element<TIndex, TTuple>::type>::type type;
@@ -541,7 +541,7 @@ class tuple_element <TIndex, volatile TTuple>
 
 //! Returns the \p TIndex-th type of a const volatile tuple.
 template <std::size_t TIndex, class TTuple>
-class tuple_element <TIndex, const volatile TTuple>
+class tuple_element<TIndex, const volatile TTuple>
 {
     typedef typename add_cv<
                 typename tuple_element<TIndex, TTuple>::type>::type type;
@@ -552,7 +552,7 @@ class tuple_element <TIndex, const volatile TTuple>
 // ----=====================================================================----
 
 template <typename... TTypes>
-class tuple_size<tuple<TTypes...> > : public integral_constant<std::size_t, sizeof...(TTypes)>
+class tuple_size<tuple<TTypes...>> : public integral_constant<std::size_t, sizeof...(TTypes)>
 {
 };
 
@@ -580,26 +580,26 @@ class tuple_size<const volatile TTuple> : public integral_constant<std::size_t, 
 
 template <std::size_t TIndex, typename... TTypes>
 WEOS_FORCE_INLINE
-constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type& get(tuple<TTypes...>& t) noexcept
+constexpr typename tuple_element<TIndex, tuple<TTypes...>>::type& get(tuple<TTypes...>& t) noexcept
 {
-    typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
+    typedef typename tuple_element<TIndex, tuple<TTypes...>>::type type;
     return static_cast<weos_detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
 }
 
 template <std::size_t TIndex, typename... TTypes>
 WEOS_FORCE_INLINE
-constexpr typename tuple_element<TIndex, tuple<TTypes...> >::type&& get(tuple<TTypes...>&& t) noexcept
+constexpr typename tuple_element<TIndex, tuple<TTypes...>>::type&& get(tuple<TTypes...>&& t) noexcept
 {
-    typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
+    typedef typename tuple_element<TIndex, tuple<TTypes...>>::type type;
     return static_cast<type&&>(
                 static_cast<weos_detail::IndexedTupleElement<TIndex, type>&&>(t.m_impl).get());
 }
 
 template <std::size_t TIndex, typename... TTypes>
 WEOS_FORCE_INLINE
-constexpr const typename tuple_element<TIndex, tuple<TTypes...> >::type& get(const tuple<TTypes...>& t) noexcept
+constexpr const typename tuple_element<TIndex, tuple<TTypes...>>::type& get(const tuple<TTypes...>& t) noexcept
 {
-    typedef typename tuple_element<TIndex, tuple<TTypes...> >::type type;
+    typedef typename tuple_element<TIndex, tuple<TTypes...>>::type type;
     return static_cast<const weos_detail::IndexedTupleElement<TIndex, type>&>(t.m_impl).get();
 }
 

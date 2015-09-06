@@ -70,10 +70,25 @@ WEOS_END_NAMESPACE
 
 #endif // ARMCC 5.05
 
+#define WEOS_CONSTEXPR_FROM_CXX14
+#define WEOS_FORCE_INLINE   __attribute__((always_inline))
+
 #else
 // -----------------------------------------------------------------------------
 // C++11 conforming STL
 // -----------------------------------------------------------------------------
+
+#ifdef __GNUC__
+
+#define WEOS_CONSTEXPR_FROM_CXX14
+#define WEOS_FORCE_INLINE   __attribute__((always_inline))
+
+#else
+
+#define WEOS_CONSTEXPR_FROM_CXX14
+#define WEOS_FORCE_INLINE   inline
+
+#endif // __GNUC__
 
 #include <cstddef>
 
