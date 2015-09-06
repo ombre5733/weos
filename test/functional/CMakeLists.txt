@@ -28,3 +28,6 @@
 
 set(test_SOURCES tst_bind_with_result.cpp)
 add_test_executable(tst_bind_with_result "${COMMON_SOURCES};${test_SOURCES}")
+
+set(test_SOURCES tst_function.cpp)
+add_test_executable(tst_function "${COMMON_SOURCES};${test_SOURCES}")

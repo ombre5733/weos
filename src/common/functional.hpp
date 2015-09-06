@@ -32,6 +32,7 @@
 #include "../config.hpp"
 
 #include "../exception.hpp"
+#include "../memory.hpp"
 #include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
@@ -65,9 +66,20 @@ struct is_placeholder : WEOS_NAMESPACE::integral_constant<int, 0>
 };
 
 template <int TIndex>
-struct is_placeholder<placeholders::placeholder<TIndex> >
+struct is_placeholder<placeholders::placeholder<TIndex>>
         : WEOS_NAMESPACE::integral_constant<int, TIndex>
 {
+};
+
+template <typename T>
+struct weos_is_placeholder : false_type
+{
+};
+
+template <int I>
+struct weos_is_placeholder<placeholders::placeholder<I>> : true_type
+{
+    static constexpr int index = I - 1;
 };
 
 namespace weos_detail
@@ -216,8 +228,98 @@ auto invoke(F&& f, An&&... an)
     return WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...);
 }
 
+// ----=====================================================================----
+//     reference_wrapper
+// ----=====================================================================----
+
+template <typename T>
+class reference_wrapper : public weos_detail::WeakResultType<T>
+{
+public:
+    typedef T type;
+
+    reference_wrapper(T& t) noexcept
+        : m_wrapped(WEOS_NAMESPACE::addressof(t))
+    {
+    }
+
+    reference_wrapper(T&&) = delete;
+
+    reference_wrapper(const reference_wrapper&) = default;
+    reference_wrapper& operator=(const reference_wrapper&) noexcept = default;
+
+    operator T& () const noexcept
+    {
+        return *m_wrapped;
+    }
+
+    T& get() const noexcept
+    {
+        return *m_wrapped;
+    }
+
+    template <typename... TArgs>
+    typename result_of<T&(TArgs&&...)>::type operator()(TArgs&&... args) const
+    {
+        return invoke(*m_wrapped, WEOS_NAMESPACE::forward<TArgs>(args)...);
+    }
+
+private:
+    T* m_wrapped;
+};
+
+//! Create a reference wrapper from a reference \p t.
+template <typename T>
+reference_wrapper<T> ref(T& t) noexcept
+{
+    return reference_wrapper<T>(t);
+}
+
+//! Create a reference wrapper from a reference wrapper \p w.
+template <typename T>
+reference_wrapper<T> ref(reference_wrapper<T> w) noexcept
+{
+    return w;
+}
+
+template <typename T>
+void ref(const T&& t) = delete;
+
+//! Create a const-reference wrapper from a const-reference \p t.
+template <typename T>
+reference_wrapper<const T> cref(const T& t) noexcept
+{
+    return reference_wrapper<const T>(t);
+}
+
+//! Create a const-reference wrapper from a reference wrapper \p w.
+template <typename T>
+reference_wrapper<const T> cref(reference_wrapper<T> w) noexcept
+{
+    return reference_wrapper<const T>(w.get());
+}
+
+template <typename T>
+void cref(const T&& t) = delete;
+
+template <int TIndex>
+struct weos_is_placeholder<const placeholders::placeholder<TIndex>> : true_type
+{
+    static const std::size_t index = TIndex - 1;
+};
+
 namespace weos_detail
 {
+
+template <typename T>
+struct is_reference_wrapper : false_type
+{
+};
+
+template <typename T>
+struct is_reference_wrapper<reference_wrapper<T>> : true_type
+{
+};
 
 template <typename F, typename... An>
 struct invoke_result_type
@@ -259,15 +361,14 @@ private:
 // -----------------------------------------------------------------------------
 
 template <typename TBoundArg, typename TUnboundArgs,
-          bool TIsReferenceWrapper = false,
-          bool TIsBindExpression = false,
-          bool TIsPlaceholderIndex = (is_placeholder<TBoundArg>::value != 0)>
+          bool TIsReferenceWrapper = weos_detail::is_reference_wrapper<typename decay<TBoundArg>::type>::value,
+          bool TIsPlaceholder = weos_is_placeholder<typename decay<TBoundArg>::type>::value,
+          bool TIsBindExpression = false>
 struct ArgumentSelector
 {
-    static_assert(   TIsReferenceWrapper == false
-                  && TIsBindExpression == false
-                  && TIsPlaceholderIndex == false,
-                  "Logic error");
+    static_assert(   !TIsReferenceWrapper
+                  && !TIsPlaceholder
+                  && !TIsBindExpression, "Logic error");
 
     typedef TBoundArg& type;
 
@@ -280,43 +381,32 @@ struct ArgumentSelector
 template <typename TBoundArg, typename TUnboundArgs>
 struct ArgumentSelector<TBoundArg, TUnboundArgs, true, false, false>
 {
-    //static_assert(false, "Not implemented, yet");
+    typedef typename TBoundArg::type& type;
+
+    static type select(TBoundArg& bound, TUnboundArgs& /*unbound*/)
+    {
+        return bound.get();
+    }
 };
 
 template <typename TBoundArg, typename TUnboundArgs>
 struct ArgumentSelector<TBoundArg, TUnboundArgs, false, true, false>
 {
-    //static_assert(false, "Not implemented, yet");
-};
-
-struct placeholder_is_out_of_bounds;
-
-template <int TIndex, typename TUnboundArgs,
-          bool TValid = (TIndex < tuple_size<TUnboundArgs>::value)>
-struct CheckedTypeFromPlaceholder
-{
-    typedef typename tuple_element<TIndex, TUnboundArgs>::type type;
-};
-
-template <int TIndex, typename TUnboundArgs>
-struct CheckedTypeFromPlaceholder<TIndex, TUnboundArgs, false>
-{
-    typedef placeholder_is_out_of_bounds type;
-};
-
-template <typename TBoundArg, typename TUnboundArgs>
-struct ArgumentSelector<TBoundArg, TUnboundArgs, false, false, true>
-{
-    static constexpr size_t index = is_placeholder<TBoundArg>::value - 1;
-    static_assert(index >= 0, "Placeholder must be positive.");
-
-    typedef typename CheckedTypeFromPlaceholder<index, TUnboundArgs>::type type;
+    static const auto index = weos_is_placeholder<typename decay<TBoundArg>::type>::index;
+    typedef typename tuple_element<index, TUnboundArgs>::type type;
 
     static type select(TBoundArg& /*bound*/, TUnboundArgs& unbound)
     {
         return WEOS_NAMESPACE::forward<type>(
                 WEOS_NAMESPACE::get<index>(unbound));
     }
+};
+
+template <typename TBoundArg, typename TUnboundArgs>
+struct ArgumentSelector<TBoundArg, TUnboundArgs, false, false, true>
+{
+    static_assert(!is_same<TBoundArg, TBoundArg>::value,
+                  "Not implemented, yet");
 };
 
 template <typename TF, typename TBoundArgs, typename TUnboundArgs>
