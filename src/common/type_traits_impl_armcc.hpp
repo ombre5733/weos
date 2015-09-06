@@ -30,6 +30,7 @@
 #define WEOS_COMMON_TYPE_TRAITS_IMPL_ARMCC_HPP
 
 #include <boost/type_traits.hpp>
+#include <boost/utility/result_of.hpp>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -52,12 +53,14 @@ using boost::add_const;
 using boost::add_cv;
 using boost::add_lvalue_reference;
 using boost::add_rvalue_reference;
+using boost::add_pointer;
 using boost::add_volatile;
 using boost::aligned_storage;
 using boost::alignment_of;
 using boost::conditional;
 using boost::decay;
 using boost::is_arithmetic;
+using boost::is_array;
 using boost::is_floating_point;
 using boost::is_function;
 using boost::is_lvalue_reference;
@@ -67,8 +70,13 @@ using boost::is_pointer;
 using boost::is_reference;
 using boost::is_rvalue_reference;
 using boost::is_same;
+using boost::remove_all_extents;
+using boost::remove_const;
+using boost::remove_cv;
+using boost::remove_extent;
 using boost::remove_reference;
-
+using boost::remove_volatile;
+using boost::result_of;
 
 // ---- enable_if --------------------------------------------------------------
 
