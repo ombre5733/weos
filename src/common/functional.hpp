@@ -31,6 +31,7 @@
 
 #include "../config.hpp"
 
+#include "../exception.hpp"
 #include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
@@ -39,6 +40,10 @@
 
 
 WEOS_BEGIN_NAMESPACE
+
+struct bad_function_call : public std::exception
+{
+};
 
 namespace placeholders
 {
@@ -632,17 +637,17 @@ public:
     typedef TResult result_type;
 
     function() noexcept
-        : m_invoker(0)
+        : m_invoker(nullptr)
     {
     }
 
     function(nullptr_t) noexcept
-        : m_invoker(0)
+        : m_invoker(nullptr)
     {
     }
 
     function(const function& other)
-        : m_invoker(0)
+        : m_invoker(nullptr)
     {
         if (other.m_invoker)
         {
@@ -659,7 +664,7 @@ public:
     }
 
     function(function&& other) noexcept
-        : m_invoker(0)
+        : m_invoker(nullptr)
     {
         if (other.m_invoker)
         {
@@ -671,7 +676,7 @@ public:
             else
             {
                 m_invoker = other.m_invoker;
-                other.m_invoker = 0;
+                other.m_invoker = nullptr;
             }
         }
     }
@@ -681,7 +686,7 @@ public:
                                                        function>::value
                                               && isCallable<TCallable>::value>::type>
     function(TCallable f)
-        : m_invoker(0)
+        : m_invoker(nullptr)
     {
         if (notNull<TCallable>::check(f))
         {
@@ -730,7 +735,8 @@ public:
 
     result_type operator()(TArgs... args) const
     {
-        WEOS_ASSERT(m_invoker);
+        if (!m_invoker)
+            throw WEOS_EXCEPTION(bad_function_call());
         return (*m_invoker)(WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
