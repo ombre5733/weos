@@ -39,25 +39,22 @@ namespace cv_detail
 //! goes out of scope. The constructor calls unlock() and the destructor
 //! calls lock(). It is somehow the dual to the lock_guard which calls lock()
 //! in the constructor and unlock() in the destructor.
-template <typename LockT>
 class lock_releaser
 {
 public:
-    typedef LockT lock_type;
-
-    explicit lock_releaser(lock_type& lock) // TODO: noexcept?
+    explicit lock_releaser(unique_lock<mutex>& lock) // TODO: noexcept?
         : m_lock(lock)
     {
         m_lock.unlock();
     }
 
-    ~lock_releaser() noexcept(false)
+    ~lock_releaser()
     {
         m_lock.lock();
     }
 
 private:
-    lock_type& m_lock;
+    unique_lock<mutex>& m_lock;
 };
 
 } // namespace cv_detail
@@ -116,7 +113,7 @@ void condition_variable::wait(unique_lock<mutex>& lock)
 
     // We can only release the lock when we are sure that a signal will
     // reach our thread.
-    cv_detail::lock_releaser<unique_lock<mutex> > releaser(lock);
+    cv_detail::lock_releaser releaser(lock);
     // Wait until we receive a signal, then re-lock the lock.
     w.signal.wait();
 }
@@ -130,13 +127,13 @@ cv_status condition_variable::wait_for(unique_lock<mutex>& lock,
 
     // We can only unlock the lock when we are sure that a signal will
     // reach our thread.
-    cv_detail::lock_releaser<unique_lock<mutex> > releaser(lock);
+    cv_detail::lock_releaser releaser(lock);
     // Wait until we receive a signal, then re-lock the lock.
     bool gotSignal = w.signal.try_wait_for(ms);
 
     // If we have received a signal, we have _always_ been dequeued.
-    // If the other case, we might have been dequeued or might have
-    // been not. In that case, we have to check the dequeued flag.
+    // In the other case, we might have been dequeued or might have not.
+    // So the dequeued flag has to be checked.
     if (!gotSignal)
     {
         maybeDequeue(w);
