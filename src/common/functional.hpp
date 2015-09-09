@@ -911,6 +911,13 @@ private:
     }
 };
 
+//! Swaps two functions \p x and \p y.
+template <typename TResult, typename... TArgs>
+void swap(function<TResult(TArgs...)>& x, function<TResult(TArgs...)>& y)
+{
+    x.swap(y);
+}
+
 WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_FUNCTIONAL_HPP
