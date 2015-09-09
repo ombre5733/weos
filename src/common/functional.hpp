@@ -616,7 +616,7 @@ template <typename TResult, typename... TArgs>
 class InvokerBase<TResult(TArgs...)>
 {
 public:
-    InvokerBase() {}
+    InvokerBase() noexcept = default;
     virtual ~InvokerBase() {}
 
     // Clones into newly allocated storage.
@@ -703,10 +703,11 @@ class function<TResult(TArgs...)>
     {
         static const std::size_t smallSize = sizeof(storage_type);
         static const std::size_t smallAlign = alignment_of<storage_type>::value;
+        typedef weos_detail::Invoker<F, TResult(TArgs...)> invoker_type;
     public:
-        static constexpr bool value = sizeof(F) <= smallSize
-                                      && alignment_of<F>::value <= smallAlign
-                                      && (smallAlign % alignment_of<F>::value == 0)
+        static constexpr bool value = sizeof(invoker_type) <= smallSize
+                                      && alignment_of<invoker_type>::value <= smallAlign
+                                      && (smallAlign % alignment_of<invoker_type>::value == 0)
                                       && is_nothrow_copy_constructible<F>::value;
     };
 
