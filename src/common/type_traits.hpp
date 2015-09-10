@@ -98,6 +98,7 @@ using std::is_base_of;
 using std::is_class;
 using std::is_constructible;
 using std::is_convertible;
+using std::is_default_constructible;
 using std::is_empty;
 using std::is_enum;
 //using std::is_final;

@@ -123,6 +123,11 @@ template <typename TFrom, typename TTo>
 struct is_convertible : public integral_constant<bool, __is_convertible_to(TFrom, TTo) &&
                                                        !is_abstract<TTo>::value> {};
 
+// ---- is_default_constructible -----------------------------------------------
+
+template <typename TType>
+struct is_default_constructible : public is_constructible<TType> {};
+
 // ---- is_empty ---------------------------------------------------------------
 
 template <typename TType>
