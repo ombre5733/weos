@@ -90,22 +90,77 @@ TEST(type_traits, is_class)
 
 namespace is_constructible_
 {
-struct A {};
-struct B { B(int) {} };
+    struct A {};
+    struct B { B(int) {} };
+    struct C { virtual void f() = 0; };
 }
 
 TEST(type_traits, is_constructible)
 {
     using namespace is_constructible_;
-    static_assert(!is_constructible<void>::value, "");
     static_assert( is_constructible<int>::value, "");
     static_assert( is_constructible<A>::value, "");
     static_assert(!is_constructible<A, int>::value, "");
-    static_assert( is_constructible<B, int>::value, "");
     static_assert(!is_constructible<B>::value, "");
+    static_assert( is_constructible<B, int>::value, "");
 
-    // TODO: references
-    // static_assert(?is_constructible<A&>::value, "");
+    // Void and abstract types are not constructible.
+    static_assert(!is_constructible<void>::value, "");
+    static_assert(!is_constructible<C>::value, "");
+
+    // Arrays with known bounds are constructible if the element type is so.
+    static_assert( is_constructible<int[4]>::value, "");
+    static_assert( is_constructible<A[4]>::value, "");
+    static_assert(!is_constructible<B[4]>::value, "");
+    static_assert(!is_constructible<int[]>::value, "");
+    static_assert(!is_constructible<A[]>::value, "");
+    static_assert(!is_constructible<B[]>::value, "");
+
+    // References are not default-constructible.
+    static_assert(!is_constructible<int&>::value, "");
+    static_assert(!is_constructible<int&&>::value, "");
+
+    // References can be created from an implicitly convertible type.
+    static_assert( is_constructible<int&, int&>::value, "");
+    static_assert( is_constructible<int&&, int&&>::value, "");
+    static_assert(!is_constructible<int&, int>::value, "");
+    static_assert( is_constructible<int&&, int>::value, "");
+    static_assert( is_constructible<const int&, int>::value, "");
+    static_assert(!is_constructible<B&, int>::value, "");
+    static_assert( is_constructible<B&&, int>::value, "");
+    static_assert( is_constructible<const B&, int>::value, "");
+
+    // Function types are not constructible.
+    static_assert(!is_constructible<void()>::value, "");
+    static_assert(!is_constructible<int(int)>::value, "");
+}
+
+TEST(type_traits, is_default_constructible)
+{
+    using namespace is_constructible_;
+    static_assert( is_default_constructible<int>::value, "");
+    static_assert( is_default_constructible<A>::value, "");
+    static_assert(!is_default_constructible<B>::value, "");
+
+    // Void and abstract types are not constructible.
+    static_assert(!is_default_constructible<void>::value, "");
+    static_assert(!is_default_constructible<C>::value, "");
+
+    // Arrays with known bounds are constructible if the element type is so.
+    static_assert( is_default_constructible<int[4]>::value, "");
+    static_assert( is_default_constructible<A[4]>::value, "");
+    static_assert(!is_default_constructible<B[4]>::value, "");
+    static_assert(!is_default_constructible<int[]>::value, "");
+    static_assert(!is_default_constructible<A[]>::value, "");
+    static_assert(!is_default_constructible<B[]>::value, "");
+
+    // References are not default-constructible.
+    static_assert(!is_default_constructible<int&>::value, "");
+    static_assert(!is_default_constructible<int&&>::value, "");
+
+    // Function types are not constructible.
+    static_assert(!is_default_constructible<void()>::value, "");
+    static_assert(!is_default_constructible<int(int)>::value, "");
 }
 
 namespace is_empty_
@@ -155,8 +210,9 @@ TEST(type_traits, is_enum)
 
 namespace is_nothrow_constructible_
 {
-struct A {};
-struct B { B(int); B(float) noexcept; };
+struct A { A() noexcept; };
+struct B { B(); };
+struct C { virtual void f() = 0; };
 }
 
 TEST(type_traits, is_nothrow_constructible)
@@ -164,8 +220,26 @@ TEST(type_traits, is_nothrow_constructible)
     using namespace is_nothrow_constructible_;
     static_assert( is_nothrow_constructible<int>::value, "");
     static_assert( is_nothrow_constructible<A>::value, "");
-    static_assert(!is_nothrow_constructible<B, int>::value, "");
-    static_assert( is_nothrow_constructible<B, float>::value, "");
+    static_assert(!is_nothrow_constructible<B>::value, "");
+
+    // Void and abstract types are not nothrow constructible.
+    static_assert(!is_nothrow_constructible<void>::value, "");
+    static_assert(!is_nothrow_constructible<C>::value, "");
+
+    // Arrays with known bounds are nothrow constructible if the element
+    // type is so.
+    static_assert( is_nothrow_constructible<int[4]>::value, "");
+    static_assert( is_nothrow_constructible<A[4]>::value, "");
+    static_assert(!is_nothrow_constructible<B[4]>::value, "");
+    static_assert(!is_nothrow_constructible<int[]>::value, "");
+    static_assert(!is_nothrow_constructible<A[]>::value, "");
+    static_assert(!is_nothrow_constructible<B[]>::value, "");
+
+    // References are not nothrow default-constructible.
+    static_assert(!is_nothrow_constructible<int&>::value, "");
+    static_assert(!is_nothrow_constructible<int&&>::value, "");
+    static_assert( is_nothrow_constructible<int&, int&>::value, "");
+    static_assert( is_nothrow_constructible<int&&, int&&>::value, "");
 }
 
 // is_nothrow_copy_constructible
