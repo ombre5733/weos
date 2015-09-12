@@ -188,7 +188,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     //     IndexedTupleElement(IndexedTupleElement&&)
     // because it would match
     //     IndexedTupleElement(IndexedTupleElement&)
-    // and interfer with the copy-constructor
+    // and interfere with the copy-constructor
     //     IndexedTupleElement(const IndexedTupleElement&)
     // See here:
     // http://ericniebler.com/2013/08/07/universal-references-and-the-copy-constructo/
@@ -205,7 +205,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     IndexedTupleElement(const IndexedTupleElement& other) = default;
 
     // Move-constructs a tuple element.
-    IndexedTupleElement(IndexedTupleElement&& other)
+    IndexedTupleElement(IndexedTupleElement&& other) // TODO: noexcept
         : TType(WEOS_NAMESPACE::move(other))
     {
     }
@@ -396,6 +396,22 @@ public:
     }
 };
 
+template <typename... T>
+struct all : WEOS_NAMESPACE::true_type {};
+
+template <typename H, typename... T>
+struct all<H, T...> : WEOS_NAMESPACE::conditional<H::value, all<T...>, WEOS_NAMESPACE::false_type>::type
+{
+};
+
+template <typename... T>
+struct any : WEOS_NAMESPACE::false_type {};
+
+template <typename H, typename... T>
+struct any<H, T...> : WEOS_NAMESPACE::conditional<H::value, WEOS_NAMESPACE::true_type, any<T...>>::type
+{
+};
+
 } // namespace weos_detail
 
 template <typename... TTypes>
@@ -419,13 +435,15 @@ class tuple
 
 public:
     //! Constructs a tuple by value-initializing its elements.
-    constexpr tuple()
+    template <typename TT = true_type,
+              typename = typename enable_if<weos_detail::all<TT, is_default_constructible<TTypes>...>::value>::type>
+    constexpr tuple() noexcept(weos_detail::all<is_nothrow_default_constructible<TTypes>...>::value)
         : m_impl()
     {
     }
 
     //! Constructs a tuple by initializing the elements from the given \p args.
-    explicit constexpr tuple(const TTypes&... args)
+    explicit constexpr tuple(const TTypes&... args) noexcept(weos_detail::all<is_nothrow_copy_constructible<TTypes>...>::value)
         : m_impl(typename weos_detail::make_tuple_indices<sizeof...(TTypes)>::type(),
                  typename weos_detail::make_tuple_types<tuple, sizeof...(TTypes)>::type(),
                  typename weos_detail::make_tuple_indices<0>::type(),
