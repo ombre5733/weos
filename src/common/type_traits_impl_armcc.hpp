@@ -59,17 +59,21 @@ using boost::aligned_storage;
 using boost::alignment_of;
 using boost::conditional;
 using boost::decay;
+using boost::extent;
 using boost::is_arithmetic;
 using boost::is_array;
+using boost::is_const;
 using boost::is_floating_point;
 using boost::is_function;
 using boost::is_lvalue_reference;
 using boost::is_member_pointer;
 using boost::is_member_function_pointer;
+using boost::is_object;
 using boost::is_pointer;
 using boost::is_reference;
 using boost::is_rvalue_reference;
 using boost::is_same;
+using boost::is_void;
 using boost::remove_all_extents;
 using boost::remove_const;
 using boost::remove_cv;
@@ -156,6 +160,11 @@ struct is_nothrow_copy_constructible
     : public is_nothrow_constructible<
                  TType,
                  typename add_lvalue_reference<typename add_const<TType>::type>::type> {};
+
+// ---- is_nothrow_default_constructible ---------------------------------------
+
+template <typename TType>
+struct is_nothrow_default_constructible : public is_nothrow_constructible<TType> {};
 
 // ---- is_union ---------------------------------------------------------------
 

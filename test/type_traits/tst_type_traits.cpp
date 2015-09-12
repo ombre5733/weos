@@ -91,8 +91,11 @@ TEST(type_traits, is_class)
 namespace is_constructible_
 {
     struct A {};
-    struct B { B(int) {} };
+    struct B { B(int); };
     struct C { virtual void f() = 0; };
+    struct D { D(B); };
+    struct E { explicit E(int); };
+    struct F { F(E); };
 }
 
 TEST(type_traits, is_constructible)
@@ -132,7 +135,13 @@ TEST(type_traits, is_constructible)
 
     // Function types are not constructible.
     static_assert(!is_constructible<void()>::value, "");
+    static_assert(!is_constructible<int()>::value, "");
     static_assert(!is_constructible<int(int)>::value, "");
+
+    // Implicit and explicit conversion.
+    static_assert( is_constructible<D, int>::value, "");
+    static_assert(!is_constructible<F, int>::value, "");
+    static_assert( is_constructible<F, E>::value, "");
 }
 
 TEST(type_traits, is_default_constructible)
@@ -160,7 +169,16 @@ TEST(type_traits, is_default_constructible)
 
     // Function types are not constructible.
     static_assert(!is_default_constructible<void()>::value, "");
+    static_assert(!is_default_constructible<int()>::value, "");
     static_assert(!is_default_constructible<int(int)>::value, "");
+
+    static_assert(!is_default_constructible<void(&)()>::value, "");
+    static_assert(!is_default_constructible<int(&)()>::value, "");
+    static_assert(!is_default_constructible<int(&)(int)>::value, "");
+
+    static_assert( is_default_constructible<void(*)()>::value, "");
+    static_assert( is_default_constructible<int(*)()>::value, "");
+    static_assert( is_default_constructible<int(*)(int)>::value, "");
 }
 
 namespace is_empty_
