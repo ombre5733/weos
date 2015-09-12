@@ -58,6 +58,7 @@ extern const placeholder<1> _1;
 extern const placeholder<2> _2;
 extern const placeholder<3> _3;
 extern const placeholder<4> _4;
+
 } // namespace placeholders
 
 template <typename T>
@@ -82,28 +83,88 @@ struct weos_is_placeholder<placeholders::placeholder<I>> : true_type
     static constexpr int index = I - 1;
 };
 
+// ----=====================================================================----
+//     invoke
+// ----=====================================================================----
+
+// Invokes a Callable. See: http://en.cppreference.com/w/cpp/concept/Callable
+
+// Pointer to member function + object of/reference to matching class.
+template <typename F, typename A0, typename... An>
+inline
+auto invoke(F&& f, A0&& a0, An&&... an)
+    -> decltype((WEOS_NAMESPACE::forward<A0>(a0).*f)(WEOS_NAMESPACE::forward<An>(an)...))
+{
+    return (WEOS_NAMESPACE::forward<A0>(a0).*f)(WEOS_NAMESPACE::forward<An>(an)...);
+}
+
+// Pointer to member function + pointer to matching class.
+template <typename F, typename A0, typename... An>
+inline
+auto invoke(F&& f, A0&& a0, An&&... an)
+    -> decltype(((*WEOS_NAMESPACE::forward<A0>(a0)).*f)(WEOS_NAMESPACE::forward<An>(an)...))
+{
+    return ((*WEOS_NAMESPACE::forward<A0>(a0)).*f)(WEOS_NAMESPACE::forward<An>(an)...);
+}
+
+// Pointer to data member + object of/reference to matching class.
+template <typename F, typename A0>
+inline
+auto invoke(F&& f, A0&& a0)
+    -> decltype(WEOS_NAMESPACE::forward<A0>(a0).*f)
+{
+    return WEOS_NAMESPACE::forward<A0>(a0).*f;
+}
+
+// Pointer to data member + pointer to matching class.
+template <typename F, typename A0>
+inline
+auto invoke(F&& f, A0&& a0)
+    -> decltype((*WEOS_NAMESPACE::forward<A0>(a0)).*f)
+{
+    return (*WEOS_NAMESPACE::forward<A0>(a0)).*f;
+}
+
+// Function object
+template <typename F, typename... An>
+inline
+auto invoke(F&& f, An&&... an)
+    -> decltype(WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...))
+{
+    return WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...);
+}
+
 namespace weos_detail
 {
+
+template <typename F, typename... An>
+struct invoke_result_type
+{
+    typedef decltype(invoke(WEOS_NAMESPACE::declval<F>(),
+                            WEOS_NAMESPACE::declval<An>()...)) type;
+};
+
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     WeakResultType
 // ----=====================================================================----
 
+namespace weos_detail
+{
+
 // Checks if T has a member named 'result_type', i.e. if T::result_type exists.
 template <typename T>
 class has_result_type_member
 {
-    struct two
-    {
-        char a;
-        char b;
-    };
+    typedef char yes;
+    struct no { char _[2]; };
 
     template <typename U>
-    static char test(typename U::result_type* = 0);
+    static yes test(typename U::result_type* = 0);
 
     template <typename U>
-    static two test(...);
+    static no test(...);
 
 public:
     static const bool value = sizeof(test<T>(0)) == 1;
@@ -176,57 +237,6 @@ struct WeakResultType<R (C::*) (TArgs...) const volatile>
 };
 
 } // namespace weos_detail
-
-// ----=====================================================================----
-//     invoke
-// ----=====================================================================----
-
-// Invokes a Callable. See: http://en.cppreference.com/w/cpp/concept/Callable
-
-// Pointer to member function + object of/reference to matching class.
-template <typename F, typename A0, typename... An>
-inline
-auto invoke(F&& f, A0&& a0, An&&... an)
-    -> decltype((WEOS_NAMESPACE::forward<A0>(a0).*f)(WEOS_NAMESPACE::forward<An>(an)...))
-{
-    return (WEOS_NAMESPACE::forward<A0>(a0).*f)(WEOS_NAMESPACE::forward<An>(an)...);
-}
-
-// Pointer to member function + pointer to matching class.
-template <typename F, typename A0, typename... An>
-inline
-auto invoke(F&& f, A0&& a0, An&&... an)
-    -> decltype(((*WEOS_NAMESPACE::forward<A0>(a0)).*f)(WEOS_NAMESPACE::forward<An>(an)...))
-{
-    return ((*WEOS_NAMESPACE::forward<A0>(a0)).*f)(WEOS_NAMESPACE::forward<An>(an)...);
-}
-
-// Pointer to data member + object of/reference to matching class.
-template <typename F, typename A0>
-inline
-auto invoke(F&& f, A0&& a0)
-    -> decltype(WEOS_NAMESPACE::forward<A0>(a0).*f)
-{
-    return WEOS_NAMESPACE::forward<A0>(a0).*f;
-}
-
-// Pointer to data member + pointer to matching class.
-template <typename F, typename A0>
-inline
-auto invoke(F&& f, A0&& a0)
-    -> decltype((*WEOS_NAMESPACE::forward<A0>(a0)).*f)
-{
-    return (*WEOS_NAMESPACE::forward<A0>(a0)).*f;
-}
-
-// Function object
-template <typename F, typename... An>
-inline
-auto invoke(F&& f, An&&... an)
-    -> decltype(WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...))
-{
-    return WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...);
-}
 
 // ----=====================================================================----
 //     reference_wrapper
@@ -321,16 +331,14 @@ struct is_reference_wrapper<reference_wrapper<T>> : true_type
 {
 };
 
-template <typename F, typename... An>
-struct invoke_result_type
-{
-    typedef decltype(invoke(WEOS_NAMESPACE::declval<F>(),
-                            WEOS_NAMESPACE::declval<An>()...)) type;
-};
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     MemFnResult
 // ----=====================================================================----
+
+namespace weos_detail
+{
 
 template <typename TMemberPointer>
 class MemFnResult : public WeakResultType<TMemberPointer>
@@ -352,18 +360,44 @@ private:
     TMemberPointer m_pm;
 };
 
+} // namespace weos_detail
+
 // ----=====================================================================----
-//     BindExpressionResult
+//     mem_fn<>
 // ----=====================================================================----
 
+template <typename TResult, typename TClass>
+inline
+weos_detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) noexcept
+{
+    return weos_detail::MemFnResult<TResult TClass::*>(pm);
+}
+
+// ----=====================================================================----
+//     BindExpression & BindExpressionResult
+// ----=====================================================================----
+
+namespace weos_detail
+{
+
+template <typename T>
+struct is_bind_expression : WEOS_NAMESPACE::false_type {}; // TODO
+
+} // namespace weos_detail
+
+template <typename T>
+struct is_bind_expression : weos_detail::is_bind_expression<T> {}; // TODO
+
+namespace weos_detail
+{
 // -----------------------------------------------------------------------------
 // ArgumentSelector
 // -----------------------------------------------------------------------------
 
 template <typename TBoundArg, typename TUnboundArgs,
-          bool TIsReferenceWrapper = weos_detail::is_reference_wrapper<typename decay<TBoundArg>::type>::value,
+          bool TIsReferenceWrapper = is_reference_wrapper<typename decay<TBoundArg>::type>::value,
           bool TIsPlaceholder = weos_is_placeholder<typename decay<TBoundArg>::type>::value,
-          bool TIsBindExpression = false>
+          bool TIsBindExpression = is_bind_expression<TBoundArg>::value>
 struct ArgumentSelector
 {
     static_assert(   !TIsReferenceWrapper
@@ -492,6 +526,12 @@ private:
     bound_args_type m_boundArgs;
 };
 
+template <typename TFunctor, typename... TBoundArgs>
+struct is_bind_expression<BindExpression<TFunctor, TBoundArgs...>>
+        : WEOS_NAMESPACE::true_type
+{
+};
+
 // The result of a bind<TResult>() call.
 template <typename TResult, typename TFunctor, typename... TBoundArgs>
 class BindExpressionResult : public BindExpression<TFunctor, TBoundArgs...>
@@ -539,18 +579,13 @@ public:
     }
 };
 
-} // namespace weos_detail
-
-// ----=====================================================================----
-//     mem_fn<>
-// ----=====================================================================----
-
-template <typename TResult, typename TClass>
-inline
-weos_detail::MemFnResult<TResult TClass::*> mem_fn(TResult TClass::* pm) noexcept
+template <typename TResult, typename TFunctor, typename... TBoundArgs>
+struct is_bind_expression<BindExpressionResult<TResult, TFunctor, TBoundArgs...>>
+        : WEOS_NAMESPACE::true_type
 {
-    return weos_detail::MemFnResult<TResult TClass::*>(pm);
-}
+};
+
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     bind
