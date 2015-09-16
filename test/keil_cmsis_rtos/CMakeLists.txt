@@ -70,13 +70,11 @@ set(COMMON_SOURCES
 weos_use_wrapper(Keil-CMSIS-RTOS SOURCE_LIST COMMON_SOURCES)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "ARM")
-    add_definitions("-DBOOST_COMPILER_CONFIG=\"boost/config/compiler/common_edg.hpp\"")
-
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} --cpu=Cortex-M4 --apcs=interwork")
 
     set(COMMON_FLAGS "--cpu=Cortex-M4 -O2 --apcs=interwork --exceptions")
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${COMMON_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} --gnu")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMMON_FLAGS} --cpp11")
 
     # Link against Keil's CMSIS-RTOS library.
     set(CMSIS_RTX_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/keil_cmsis_rtos/LIB/ARM/RTX_CM4.lib")
@@ -138,4 +136,5 @@ add_test_directory(messagequeue)
 add_test_directory(mutex)
 add_test_directory(semaphore)
 add_test_directory(thread)
+add_test_directory(tuple)
 add_test_directory(type_traits)

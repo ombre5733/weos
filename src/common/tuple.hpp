@@ -486,7 +486,7 @@ public:
     // TODO: assignment
 
     //! Swaps this tuple with the \p other tuple.
-    void swap(tuple& other) //noexcept(noexcept(m_impl.swap(m_impl)))
+    void swap(tuple& other) noexcept(noexcept(m_impl.swap(m_impl)))
     {
         m_impl.swap(other.m_impl);
     }
