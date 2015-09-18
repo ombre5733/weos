@@ -43,8 +43,11 @@
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
-#include <boost/core/addressof.hpp>
-
+#if BOOST_VERSION > 105500
+    #include <boost/core/addressof.hpp>
+#else
+    #include <boost/utility/addressof.hpp>
+#endif
 
 WEOS_BEGIN_NAMESPACE
 

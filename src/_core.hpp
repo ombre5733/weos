@@ -48,6 +48,10 @@
     #error "Must be compiled in C++11 mode. Use the '--cpp11' flag. Remove the '--gnu' flag."
 #endif
 
+#if defined(__CC_ARM) && defined(__GNUC__)
+    #error "Must not be compiled in GNU compatibility mode. Remove the '--gnu' flag."
+#endif
+
 
 #define BOOST_EXCEPTION_DISABLE
 
