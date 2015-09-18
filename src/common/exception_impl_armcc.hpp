@@ -80,10 +80,10 @@ class exception_ptr;
 //! enable_current_exception() on the object to be thrown as shown in the
 //! code above.
 //!
-//! If enable_current_exception(), it might not be possible to capture the
-//! the correct type of the exception. This is relevant, if the exception
-//! is rethrown through rethrow_exception() and caught in another catch
-//! block. Consider the following example:
+//! If enable_current_exception() is omitted, it might not be possible to
+//! capture the the correct type of the exception. This is relevant, if the
+//! exception is rethrown through rethrow_exception() and caught in another
+//! catch block. Consider the following example:
 //!
 //! \code{.cpp}
 //! struct MyException {};
