@@ -28,6 +28,8 @@
 
 #include "exception_impl_armcc.hpp"
 
+#include <stdexcept>
+
 
 struct __cxa_eh_globals;
 extern "C" __cxa_eh_globals* __cxa_get_globals();
@@ -103,6 +105,45 @@ exception_ptr getCurrentException()
     {
         return wrapStdException(exc);
     }
+
+    catch (std::domain_error& exc)
+    {
+        return wrapStdException(exc);
+    }
+    catch (std::invalid_argument& exc)
+    {
+        return wrapStdException(exc);
+    }
+    catch (std::length_error& exc)
+    {
+        return wrapStdException(exc);
+    }
+    catch (std::out_of_range& exc)
+    {
+        return wrapStdException(exc);
+    }
+    catch (std::logic_error& exc)
+    {
+        return wrapStdException(exc);
+    }
+
+    catch (std::overflow_error& exc)
+    {
+        return wrapStdException(exc);
+    }
+    catch (std::range_error& exc)
+    {
+        return wrapStdException(exc);
+    }
+    catch (std::underflow_error& exc)
+    {
+        return wrapStdException(exc);
+    }
+    catch (std::runtime_error& exc)
+    {
+        return wrapStdException(exc);
+    }
+
     catch (std::exception&)
     {
         return cloneException(UnknownStdException());
