@@ -33,11 +33,31 @@
 
 using namespace weos;
 
+template <typename T>
+class has_type
+{
+    typedef char yes;
+
+    struct no
+    {
+        char _[2];
+    };
+
+    template <typename U>
+    static yes test(typename U::type* = 0);
+
+    template <typename U>
+    static no test(...);
+
+public:
+    static const bool value = sizeof(test<T>(0)) == 1;
+};
+
 TEST(type_traits, enable_if)
 {
     static_assert(is_same<enable_if<true>::type, void>::value, "");
     static_assert(is_same<enable_if<true, int>::type, int>::value, "");
-    // TODO: make sure that enable_if<false> has no type member
+    static_assert(!has_type<enable_if<false>>::value, "");
 }
 
 namespace is_abstract_
@@ -60,18 +80,32 @@ TEST(type_traits, is_abstract)
 namespace is_base_of_
 {
 struct A {};
-struct B : A {};
-struct C : private A {};
+struct B {};
+struct C : A {};
+struct D : private A {};
+struct E : A, B {};
+struct F : virtual C, virtual D {};
 }
 
 TEST(type_traits, is_base_of)
 {
     using namespace is_base_of_;
-    static_assert( is_base_of<A, B>::value, "");
-    static_assert( is_base_of<A, C>::value, "");
     static_assert( is_base_of<A, A>::value, "");
-    static_assert(!is_base_of<B, A>::value, "");
+    static_assert( is_base_of<A, C>::value, "");
+    static_assert( is_base_of<A, D>::value, "");
+    static_assert( is_base_of<A, E>::value, "");
+    static_assert( is_base_of<B, E>::value, "");
+    static_assert( is_base_of<A, F>::value, "");
+    static_assert( is_base_of<C, F>::value, "");
+    static_assert( is_base_of<D, F>::value, "");
+
     static_assert(!is_base_of<C, A>::value, "");
+    static_assert(!is_base_of<D, A>::value, "");
+    static_assert(!is_base_of<E, A>::value, "");
+    static_assert(!is_base_of<E, B>::value, "");
+    static_assert(!is_base_of<F, A>::value, "");
+    static_assert(!is_base_of<F, C>::value, "");
+    static_assert(!is_base_of<F, D>::value, "");
 }
 
 namespace is_class_
@@ -260,7 +294,7 @@ TEST(type_traits, is_nothrow_constructible)
     static_assert( is_nothrow_constructible<int&&, int&&>::value, "");
 }
 
-// is_nothrow_copy_constructible
+// TODO: is_nothrow_copy_constructible
 
 TEST(type_traits, is_same)
 {
@@ -281,4 +315,4 @@ TEST(type_traits, is_union)
     static_assert( is_union<U>::value, "");
 }
 
-// is_trivially_copyable
+// TODO: is_trivially_copyable
