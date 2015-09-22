@@ -43,6 +43,8 @@
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
+#include <boost/version.hpp>
+
 #if BOOST_VERSION > 105500
     #include <boost/core/addressof.hpp>
 #else
