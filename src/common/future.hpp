@@ -40,6 +40,8 @@
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
+#include <stdexcept>
+
 
 WEOS_BEGIN_NAMESPACE
 
@@ -83,7 +85,7 @@ error_code make_error_code(future_errc errno) noexcept
     return error_code(static_cast<int>(errno), future_category());
 }
 
-class future_error // TODO: Base class
+class future_error : public std::logic_error
 {
 public:
     future_error(error_code ec)
