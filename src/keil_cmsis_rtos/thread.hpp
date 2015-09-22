@@ -171,7 +171,7 @@ public:
         attributes()
             : m_priority(priority::normal),
               m_customStackSize(0),
-              m_customStack(0),
+              m_customStack(nullptr),
               m_name("")
         {
         }
@@ -188,6 +188,9 @@ public:
         {
             static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
         }
+
+        attributes(const attributes&) = default;
+        attributes& operator=(const attributes&) = default;
 
         //! Sets the name.
         //! Sets the name to \p name. The default is the empty string.
@@ -229,6 +232,18 @@ public:
             m_customStack = &stack;
             m_customStackSize = sizeof(T);
             return *this;
+        }
+
+        //! Returns the start of the stack.
+        void* stackBegin() const
+        {
+            return m_customStack;
+        }
+
+        //! Returns the size of the stack.
+        std::size_t stackSize() const
+        {
+            return m_customStackSize;
         }
 
     private:
