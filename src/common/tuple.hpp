@@ -435,8 +435,9 @@ class tuple
 
 public:
     //! Constructs a tuple by value-initializing its elements.
-    template <typename TT = true_type,
-              typename = typename enable_if<weos_detail::all<TT, is_default_constructible<TTypes>...>::value>::type>
+    // TODO: ARMCC does not like this
+    //template <typename TT = true_type,
+    //          typename = typename enable_if<weos_detail::all<TT, is_default_constructible<TTypes>...>::value>::type>
     constexpr tuple() noexcept(weos_detail::all<is_nothrow_default_constructible<TTypes>...>::value)
         : m_impl()
     {
