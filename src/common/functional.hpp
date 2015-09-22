@@ -38,6 +38,7 @@
 #include "../utility.hpp"
 
 #include <new>
+#include <typeinfo>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -664,6 +665,9 @@ public:
 
     virtual TResult operator()(TArgs&&...) = 0;
 
+    virtual const void* target(const std::type_info& info) const noexcept = 0;
+    virtual const std::type_info& targetType() const noexcept = 0;
+
     InvokerBase(const InvokerBase&) = delete;
     InvokerBase& operator=(const InvokerBase&) = delete;
 };
@@ -710,6 +714,19 @@ public:
     virtual TResult operator()(TArgs&&... args) override
     {
         return invoke(m_callable, WEOS_NAMESPACE::forward<TArgs>(args)...);
+    }
+
+    virtual const void* target(const std::type_info& info) const noexcept override
+    {
+        if (typeid(TCallable) == info)
+            return &m_callable;
+        else
+            return nullptr;
+    }
+
+    virtual const std::type_info& targetType() const noexcept override
+    {
+        return typeid(TCallable);
     }
 
 private:
@@ -931,6 +948,35 @@ public:
     explicit operator bool() const noexcept
     {
         return m_invoker != nullptr;
+    }
+
+    //! Returns a pointer to the stored target.
+    template <typename T>
+    T* target() noexcept
+    {
+        if (m_invoker)
+            (T*)m_invoker->target(typeid(T)); // TODO: change the cast
+        else
+            return nullptr;
+    }
+
+    //! Returns a pointer to the stored target.
+    template <typename T>
+    const T* target() const noexcept
+    {
+        if (m_invoker)
+            (const T*)m_invoker->target(typeid(T)); // TODO: change the cast
+        else
+            return nullptr;
+    }
+
+    //! Returns the type of the stored target.
+    const std::type_info& target_type() const noexcept
+    {
+        if (m_invoker)
+            return m_invoker->targetType();
+        else
+            return typeid(void);
     }
 
 private:
