@@ -135,3 +135,103 @@ TEST(function, sum)
         ASSERT_EQ(12, sum);
     }
 }
+
+int sum()
+{
+    return 0;
+}
+
+template <typename H, typename... T>
+int sum(H h, T... t)
+{
+    return h + sum(t...);
+}
+
+template <int... V>
+struct Values
+{
+};
+
+template <int I, typename T>
+struct make_value_list_impl;
+
+template <int... V>
+struct make_value_list_impl<0, Values<V...>>
+{
+    using type = Values<V...>;
+};
+
+template <int I, int... V>
+struct make_value_list_impl<I, Values<V...>>
+{
+    using type = typename make_value_list_impl<I - 1, Values<V..., I>>::type;
+};
+
+template <int I>
+struct make_value_list
+{
+    using type = typename make_value_list_impl<I, Values<>>::type;
+};
+
+template <typename... T>
+struct Types
+{
+};
+
+template <int I, typename T>
+struct make_type_list_impl;
+
+template <typename... T>
+struct make_type_list_impl<0, Types<T...>>
+{
+    using type = Types<T...>;
+};
+
+template <int I, typename... T>
+struct make_type_list_impl<I, Types<T...>>
+{
+    using type = typename make_type_list_impl<I - 1, Types<T..., int>>::type;
+};
+
+template <int I>
+struct make_type_list
+{
+    using type = typename make_type_list_impl<I, Types<>>::type;
+};
+
+template <int... V, typename... T>
+weos::function<int()> createFunction(Values<V...>, Types<T...>)
+{
+    return weos::bind(static_cast<int(*)(T...)>(&sum), V...);
+}
+
+template <int I>
+void testFunction()
+{
+    auto f = createFunction(typename make_value_list<I>::type(),
+                            typename make_type_list<I>::type());
+    ASSERT_TRUE(f() == I * (I + 1) / 2);
+}
+
+void doExecute(weos::integral_constant<int, 0>)
+{
+    testFunction<0>();
+}
+
+template <int I>
+void doExecute(weos::integral_constant<int, I>)
+{
+    testFunction<I>();
+    doExecute(weos::integral_constant<int, I - 1>());
+}
+
+template <int I>
+void execute()
+{
+    doExecute(weos::integral_constant<int, I>());
+}
+
+TEST(function, various_sizes)
+{
+    execute<64>();
+}
