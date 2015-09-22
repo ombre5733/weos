@@ -401,8 +401,8 @@ thread::signal_set try_wait_for_any_signal_for(chrono::milliseconds ms)
 {
     using namespace chrono;
 
-    if (ms < milliseconds::zero())
-        ms = milliseconds::zero();
+    if (ms < ms.zero())
+        ms = ms.zero();
 
     do
     {
@@ -424,7 +424,7 @@ thread::signal_set try_wait_for_any_signal_for(chrono::milliseconds ms)
                                     "try_wait_for_any_signal_for failed");
         }
 
-    } while (ms > milliseconds::zero());
+    } while (ms > ms.zero());
 
     return 0;
 }
@@ -464,8 +464,8 @@ bool try_wait_for_all_signals_for(thread::signal_set flags,
 
     WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
 
-    if (ms < milliseconds::zero())
-        ms = milliseconds::zero();
+    if (ms < ms.zero())
+        ms = ms.zero();
 
     do
     {
@@ -484,10 +484,10 @@ bool try_wait_for_all_signals_for(thread::signal_set flags,
             && result.status != osEventTimeout)
         {
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
-                                    "try_wait_for_any_signal_for failed");
+                                    "try_wait_for_all_signals_for failed");
         }
 
-    } while (ms > milliseconds::zero());
+    } while (ms > ms.zero());
 
     return false;
 }

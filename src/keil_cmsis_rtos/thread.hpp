@@ -478,7 +478,7 @@ inline
 void sleep_for(const chrono::duration<TRep, TPeriod>& d)
 {
     using namespace chrono;
-    if (d > duration<TRep, TPeriod>::zero())
+    if (d > d.zero())
     {
         milliseconds converted = duration_cast<milliseconds>(d);
         if (converted < d)
@@ -546,25 +546,34 @@ thread::signal_set try_wait_for_any_signal_for(
     return try_wait_for_any_signal_for(converted);
 }
 
-template <typename ClockT, typename DurationT>
+template <typename TClock, typename TDuration>
 thread::signal_set try_wait_for_any_signal_until(
-            const chrono::time_point<ClockT, DurationT>& time)
+            const chrono::time_point<TClock, TDuration>& time)
 {
-    while (1)
+    using namespace chrono;
+
+    bool timeout = false;
+    while (!timeout)
     {
-        typedef typename WEOS_NAMESPACE::common_type<
-                             typename ClockT::duration,
-                             DurationT>::type difference_type;
-        typedef chrono::detail::internal_time_cast<difference_type> caster;
-
-        typename caster::type millisecs
-                = caster::convert_and_clip(time - ClockT::now());
-
-        osEvent result = osSignalWait(0, millisecs);
-        if (result.status == osEventSignal)
+        osEvent result;
+        auto remainingSpan = time - TClock::now();
+        if (remainingSpan <= TDuration::zero())
         {
-            return result.value.signals;
+            result = osSignalWait(0, 0);
+            timeout = true;
         }
+        else
+        {
+            milliseconds converted = duration_cast<milliseconds>(remainingSpan);
+            if (converted < milliseconds(1))
+                converted = milliseconds(1);
+            else if (converted > milliseconds(0xFFFE))
+                converted = milliseconds(0xFFFE);
+            result = osSignalWait(0, converted.count());
+        }
+
+        if (result.status == osEventSignal)
+            return result.value.signals;
 
         if (   result.status != osOK
             && result.status != osEventTimeout)
@@ -572,10 +581,9 @@ thread::signal_set try_wait_for_any_signal_until(
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
                                     "try_wait_for_any_signal_until failed");
         }
-
-        if (millisecs == 0)
-            return 0;
     }
+
+    return 0;
 }
 
 //! Waits for a set of signals.
@@ -619,28 +627,36 @@ bool try_wait_for_all_signals_for(thread::signal_set flags,
     return try_wait_for_all_signals_for(flags, converted);
 }
 
-template <typename ClockT, typename DurationT>
+template <typename TClock, typename TDuration>
 bool try_wait_for_all_signals_until(
             thread::signal_set flags,
-            const chrono::time_point<ClockT, DurationT>& time)
+            const chrono::time_point<TClock, TDuration>& time)
 {
+    using namespace chrono;
     WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
 
-    while (true)
+    bool timeout = false;
+    while (!timeout)
     {
-        typedef typename WEOS_NAMESPACE::common_type<
-                             typename ClockT::duration,
-                             DurationT>::type difference_type;
-        typedef chrono::detail::internal_time_cast<difference_type> caster;
-
-        typename caster::type millisecs
-                = caster::convert_and_clip(time - ClockT::now());
-
-        osEvent result = osSignalWait(flags, millisecs);
-        if (result.status == osEventSignal)
+        osEvent result;
+        auto remainingSpan = time - TClock::now();
+        if (remainingSpan <= TDuration::zero())
         {
-            return true;
+            result = osSignalWait(flags, 0);
+            timeout = true;
         }
+        else
+        {
+            milliseconds converted = duration_cast<milliseconds>(remainingSpan);
+            if (converted < milliseconds(1))
+                converted = milliseconds(1);
+            else if (converted > milliseconds(0xFFFE))
+                converted = milliseconds(0xFFFE);
+            result = osSignalWait(flags, converted.count());
+        }
+
+        if (result.status == osEventSignal)
+            return true;
 
         if (   result.status != osOK
             && result.status != osEventTimeout)
@@ -648,10 +664,9 @@ bool try_wait_for_all_signals_until(
             WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
                                     "try_wait_for_all_signals_until failed");
         }
-
-        if (millisecs == 0)
-            return false;
     }
+
+    return false;
 }
 
 } // namespace this_thread
