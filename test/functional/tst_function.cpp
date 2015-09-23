@@ -58,6 +58,22 @@ test_type sum4(test_type a0, test_type a1, test_type a2, test_type a3)
 
 } // anonymous namespace
 
+TEST(function, constructor)
+{
+    weos::function<void()> f;
+    ASSERT_TRUE(!f);
+}
+
+TEST(function, assignment)
+{
+    weos::function<void()> f;
+    f = weos::bind(f0);
+    ASSERT_TRUE(!!f);
+
+    f = nullptr;
+    ASSERT_TRUE(!f);
+}
+
 TEST(function, function_pointer_0_args)
 {
     for (int counter = 0; counter < 100; ++counter)

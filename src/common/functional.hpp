@@ -955,7 +955,7 @@ public:
     T* target() noexcept
     {
         if (m_invoker)
-            (T*)m_invoker->target(typeid(T)); // TODO: change the cast
+            return (T*)m_invoker->target(typeid(T)); // TODO: change the cast
         else
             return nullptr;
     }
@@ -965,7 +965,7 @@ public:
     const T* target() const noexcept
     {
         if (m_invoker)
-            (const T*)m_invoker->target(typeid(T)); // TODO: change the cast
+            return (const T*)m_invoker->target(typeid(T)); // TODO: change the cast
         else
             return nullptr;
     }
@@ -989,6 +989,7 @@ private:
             m_invoker->destroy();
         else if (m_invoker)
             m_invoker->destroyAndDeallocate();
+        m_invoker = nullptr;
     }
 };
 
