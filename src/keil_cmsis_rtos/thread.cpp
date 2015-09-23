@@ -87,7 +87,7 @@ WEOS_END_NAMESPACE
 // The only reason for this function is that the finished signal and the
 // thread termination have to be done together. This is really important
 // because the joining thread might re-use the stack of this thread. So we
-// must ensure that there is no context between setting the semaphore
+// must ensure that there is no context switch between setting the semaphore
 // signal and terminating the thread.
 extern "C" int weos_terminateTask(void* data, void* threadId)
 {
@@ -283,7 +283,7 @@ void thread::set_signals(signal_set flags)
 
 void thread::invoke(const attributes& attrs)
 {
-    if (attrs.m_customStack != 0
+    if (attrs.m_customStack != nullptr
         && (   attrs.m_customStackSize < minimum_custom_stack_size
             || attrs.m_customStackSize >= (std::uint32_t(1) << 24)))
     {
@@ -313,7 +313,10 @@ void thread::invoke(const attributes& attrs)
 
     if (m_data->m_threadId)
     {
-        // The invoked thread will only decrease the reference count.
+        // The invoked thread will only decrease the reference count. It is
+        // impossible that the threaded function has already decreased the
+        // reference count. Even if it has already finished, the wrapper
+        // function blocks on the m_joinedOrDetached semaphore.
         m_data->addReferenceCount();
     }
     else

@@ -378,7 +378,7 @@ public:
     // -------------------------------------------------------------------------
 
     static_assert(osFeature_Signals > 0 && osFeature_Signals <= 16,
-                  "The wrapper supports only up 16 signals.");
+                  "The wrapper supports only up to 16 signals.");
 
     //! Represents a set of signal flags.
     typedef std::uint16_t signal_set;
