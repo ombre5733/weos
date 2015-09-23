@@ -405,15 +405,14 @@ public:
     //! Sets the signals which are specified by the \p flags.
     void set_signals(signal_set flags);
 
-protected:
-    //! Invokes the function which is stored in the shared data in a new
-    //! thread which is created with the attributes \p attrs.
-    void invoke(const attributes& attrs);
-
 private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
     weos_detail::SharedThreadData* m_data;
+
+    //! Invokes the function which is stored in the shared data in a new
+    //! thread which is created with the attributes \p attrs.
+    void invoke(const attributes& attrs);
 };
 
 //! Compares two thread ids for equality.
