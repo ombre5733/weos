@@ -89,7 +89,8 @@ class future_error : public std::logic_error
 {
 public:
     future_error(error_code ec)
-        : m_errorCode(ec)
+        : logic_error("future error"),
+          m_errorCode(ec)
     {
     }
 
