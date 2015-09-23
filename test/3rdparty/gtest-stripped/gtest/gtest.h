@@ -1682,7 +1682,7 @@ class TypeParameterizedTest {
   static bool Register(const char* prefix, const char* case_name,
                        const char* test_names, int index) {
     typedef typename Types::Head Type;
-    typedef Fixture<Type> FixtureClass;
+    //typedef Fixture<Type> FixtureClass;
     typedef typename TestSel::template Bind<Type>::type TestClass;
 
     // First, registers the first type-parameterized test in the type
