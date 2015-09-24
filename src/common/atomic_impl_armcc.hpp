@@ -35,6 +35,11 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#if __ARMCC_VERSION >= 5060000
+// Do not warn about deprecated __ldrex and __strex.
+#pragma diag_suppress 3731
+#endif
+
 WEOS_BEGIN_NAMESPACE
 
 enum memory_order
@@ -868,5 +873,9 @@ public:
 #undef WEOS_ATOMIC_MODIFY
 
 WEOS_END_NAMESPACE
+
+#if __ARMCC_VERSION >= 5060000
+#pragma diag_warning 3731
+#endif
 
 #endif // WEOS_COMMON_ATOMIC_IMPL_ARMCC_HPP
