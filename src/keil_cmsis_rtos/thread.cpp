@@ -68,8 +68,8 @@ extern void* os_active_TCB[];
 
 
 //! Converts a weos priority to a CMSIS priority.
-static inline
-osPriority toNativePriority(weos::thread::attributes::priority priority)
+static inline constexpr
+osPriority toNativePriority(weos::thread::attributes::priority priority) noexcept
 {
     return static_cast<osPriority>(int(priority));
 }
@@ -89,7 +89,7 @@ WEOS_END_NAMESPACE
 // because the joining thread might re-use the stack of this thread. So we
 // must ensure that there is no context switch between setting the semaphore
 // signal and terminating the thread.
-extern "C" int weos_terminateTask(void* data, void* threadId)
+extern "C" int weos_terminateTask(void* data, void* threadId) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
@@ -109,7 +109,7 @@ SVC_2(weos_terminateTask, int,   void*, void*)
 //! helper function adheres to this specification. The \p arg is a pointer to
 //! a weos::SharedThreadData object which contains thread-specific data such as
 //! the actual function to start.
-extern "C" void weos_threadInvoker(const void* arg)
+extern "C" void weos_threadInvoker(const void* arg) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
@@ -146,7 +146,7 @@ extern "C" void weos_threadInvoker(const void* arg)
 
 extern "C" void* weos_createTask(
         void* stack, uint32_t stackSize_and_priority,
-        void* data, uint32_t debugFunctionPtr)
+        void* data, uint32_t debugFunctionPtr) noexcept
 {
     uint32_t taskId = rt_tsk_create(
                           (void (*)(void))weos_threadInvoker,
@@ -184,7 +184,7 @@ namespace
 typedef shared_memory_pool<SharedThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS>
     SharedThreadDataPool;
 
-SharedThreadDataPool& sharedThreadDataPool()
+SharedThreadDataPool& sharedThreadDataPool() noexcept
 {
     static SharedThreadDataPool pool;
     return pool;
