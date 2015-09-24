@@ -498,7 +498,7 @@ template <>
 class tuple<>
 {
 public:
-    constexpr tuple()
+    constexpr tuple() noexcept
     {
     }
 
@@ -544,7 +544,7 @@ struct tuple_element<TIndex, tuple<TTypes...>>
 
 //! Returns the \p TIndex-th type of a const tuple.
 template <std::size_t TIndex, typename TTuple>
-class tuple_element<TIndex, const TTuple>
+struct tuple_element<TIndex, const TTuple>
 {
     typedef typename add_const<
                 typename tuple_element<TIndex, TTuple>::type>::type type;
@@ -552,7 +552,7 @@ class tuple_element<TIndex, const TTuple>
 
 //! Returns the \p TIndex-th type of a volatile tuple.
 template <std::size_t TIndex, typename TTuple>
-class tuple_element<TIndex, volatile TTuple>
+struct tuple_element<TIndex, volatile TTuple>
 {
     typedef typename add_volatile<
                 typename tuple_element<TIndex, TTuple>::type>::type type;
@@ -560,7 +560,7 @@ class tuple_element<TIndex, volatile TTuple>
 
 //! Returns the \p TIndex-th type of a const volatile tuple.
 template <std::size_t TIndex, class TTuple>
-class tuple_element<TIndex, const volatile TTuple>
+struct tuple_element<TIndex, const volatile TTuple>
 {
     typedef typename add_cv<
                 typename tuple_element<TIndex, TTuple>::type>::type type;
@@ -571,25 +571,25 @@ class tuple_element<TIndex, const volatile TTuple>
 // ----=====================================================================----
 
 template <typename... TTypes>
-class tuple_size<tuple<TTypes...>> : public integral_constant<std::size_t, sizeof...(TTypes)>
+struct tuple_size<tuple<TTypes...>> : public integral_constant<std::size_t, sizeof...(TTypes)>
 {
 };
 
 //! Returns the size of a const tuple.
 template <typename TTuple>
-class tuple_size<const TTuple> : public integral_constant<std::size_t, tuple_size<TTuple>::value>
+struct tuple_size<const TTuple> : public integral_constant<std::size_t, tuple_size<TTuple>::value>
 {
 };
 
 //! Returns the size of a volatile tuple.
 template <typename TTuple>
-class tuple_size<volatile TTuple> : public integral_constant<std::size_t, tuple_size<TTuple>::value>
+struct tuple_size<volatile TTuple> : public integral_constant<std::size_t, tuple_size<TTuple>::value>
 {
 };
 
 //! Returns the size of a const volatile tuple.
 template <typename TTuple>
-class tuple_size<const volatile TTuple> : public integral_constant<std::size_t, tuple_size<TTuple>::value>
+struct tuple_size<const volatile TTuple> : public integral_constant<std::size_t, tuple_size<TTuple>::value>
 {
 };
 
