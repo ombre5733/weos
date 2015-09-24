@@ -635,6 +635,17 @@ constexpr tuple<TTypes&&...> forward_as_tuple(TTypes&&... args) noexcept
     return tuple<TTypes&&...>(WEOS_NAMESPACE::forward<TTypes>(args)...);
 }
 
+// ----=====================================================================----
+//     swap()
+// ----=====================================================================----
+
+//! Swaps two tuples \p a and \p b.
+template <typename... TTypes> // TODO: enable_if all swappable & noexcept
+void swap(tuple<TTypes...>& a, tuple<TTypes...>& b)
+{
+    a.swap(b);
+}
+
 WEOS_END_NAMESPACE
 
 #endif // WEOS_COMMON_TUPLE_HPP
