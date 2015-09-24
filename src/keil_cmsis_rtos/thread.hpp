@@ -39,6 +39,7 @@
 #include "../system_error.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
+#include "../common/thread_detail.hpp"
 #include "_sleep.hpp"
 
 #include <cstdint>
@@ -73,7 +74,7 @@ struct SharedThreadData
 
 
     //! The bound function which will be called in the new thread.
-    function<void()> m_threadedFunction;
+    function<void()> m_threadedFunction; // TODO: this is wrong
 
     //! This semaphore is increased by the threaded function when it's
     //! execution finishes. thread::join() can block on it.

@@ -31,8 +31,9 @@
 
 #include "../config.hpp"
 
-#include "../atomic.hpp"
-#include "../memory.hpp"
+#include "../functional.hpp"
+#include "../tuple.hpp"
+#include "../type_traits.hpp"
 #include "../utility.hpp"
 
 
@@ -41,286 +42,50 @@ WEOS_BEGIN_NAMESPACE
 namespace weos_detail
 {
 
-// ----=====================================================================----
-//     SharedThreadData
-// ----=====================================================================----
-
-//! Data which is shared between the threaded function and the thread handle.
-struct SharedThreadData
-{
-    //! Increases the reference counter by one.
-    void addReferenceCount()
-    {
-        ++m_referenceCount;
-    }
-
-    //! Decreases the reference counter by one. If the reference counter reaches
-    //! zero, this object is destructed and returned to the pool.
-    void decReferenceCount();
-
-    //! Allocates a ThreadData object from the global pool. An exception is
-    //! thrown if the pool is empty.
-    static SharedThreadData* allocate();
-
-
-
-    //! The bound function which will be called in the new thread.
-    function<void()> m_threadedFunction;
-
-    //! This semaphore is increased by the threaded function when it's
-    //! execution finishes. thread::join() can block on it.
-    semaphore m_finished;
-
-    //! This semaphore is increased by the thread handle when join() or
-    //! detach() has been called. The threaded function blocks on it
-    //! in order to keep the thread alive (e.g. for setting signals).
-    semaphore m_joinedOrDetached;
-
-    //! The native thread handle.
-    native_thread_traits::thread_handle_type m_threadHandle;
-
-    //! The native thread id.
-    native_thread_traits::thread_id_type m_threadId;
-
-    SharedThreadData(const SharedThreadData&) = delete;
-    const SharedThreadData& operator= (const SharedThreadData&) = delete;
-
-private:
-    //! The number of references to this shared data.
-    atomic_int m_referenceCount;
-
-    //! Creates the shared thread data.
-    SharedThreadData();
-};
-
-struct SharedThreadDataDeleter
-{
-    void operator()(SharedThreadData* data)
-    {
-        data->decReferenceCount();
-    }
-};
-
-} // namespace weos_detail
-
-//! A thread handle.
-class thread
+template <typename TFunction, typename... TArgs>
+class DecayedFunction
 {
 public:
-    //! The type of the native thread handle.
-    typedef weos_detail::native_thread_traits::thread_handle_type* native_handle_type;
+    typedef typename ::WEOS_NAMESPACE::weos_detail::invoke_result_type<TFunction, TArgs...>::type result_type;
 
-    //! A representation of a thread identifier.
-    //! This class is a wrapper around a thread identifier. It has a small
-    //! memory footprint such that it is inexpensive to pass copies around.
-    typedef weos_detail::native_thread_traits::id id;
-
-    //! The thread attributes.
-    typedef weos_detail::native_thread_traits::attributes attributes;
-
-
-    //! Creates a thread handle without a thread.
-    //! Creates a thread handle which is not associated with any thread. The
-    //! new thread handle is not joinable.
-    thread() noexcept
-        : m_data(nullptr)
+    explicit DecayedFunction(TFunction&& f, TArgs&&... args)
+        : m_boundFunction(WEOS_NAMESPACE::move(f),
+                          WEOS_NAMESPACE::move(args)...)
     {
     }
 
-    // -------------------------------------------------------------------------
-    // Constructor without attributes
-    // -------------------------------------------------------------------------
-
-    template <typename F, typename... TArgs,
-              typename _ = typename enable_if<!is_same<typename decay<F>::type, thread>::value &&
-                                              !is_same<typename decay<F>::type, attributes>::value>::type>
-    explicit
-    thread(F&& f, TArgs&&... args)
-        : m_data(weos_detail::SharedThreadData::allocate())
+    DecayedFunction(DecayedFunction&& other)
+        : m_boundFunction(WEOS_NAMESPACE::move(other.m_boundFunction))
     {
-        unique_ptr<weos_detail::SharedThreadData,
-                   weos_detail::SharedThreadDataDeleter> data(m_data);
-        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
-                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
-
-        invoke(attributes());
-        data.release();
     }
 
-    // -------------------------------------------------------------------------
-    // Constructor with attributes
-    // -------------------------------------------------------------------------
-
-    template <typename F, typename... TArgs>
-    thread(const attributes& attrs,
-           F&& f, TArgs&&... args)
-        : m_data(weos_detail::SharedThreadData::allocate())
+    result_type operator()()
     {
-        unique_ptr<weos_detail::SharedThreadData,
-                   weos_detail::SharedThreadDataDeleter> data(m_data);
-        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
-                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
-
-        invoke(attrs);
-        data.release();
+        typedef typename weos_detail::make_tuple_indices<
+                1 + sizeof...(TArgs), 1>::type indices_type;
+        return invoke(indices_type());
     }
-
-    //! Move constructor.
-    //! Constructs a thread by moving from the \p other thread.
-    thread(thread&& other) noexcept
-        : m_data(other.m_data)
-    {
-        other.m_data = nullptr;
-    }
-
-    //! Destroys the thread handle.
-    //! Destroys this thread handle.
-    //! \note If the thread handle is still associated with a joinable thread,
-    //! its destruction will call std::terminate(). It is mandatory to either
-    //! call join() or detach().
-    ~thread()
-    {
-        if (joinable())
-            std::terminate();
-    }
-
-    thread(const thread&) = delete;
-    thread& operator=(const thread&) = delete;
-
-    //! Move assignment.
-    //! Move-assigns the \p other thread to this thread.
-    thread& operator=(thread&& other) noexcept
-    {
-        m_data = other.m_data;
-        other.m_data = nullptr;
-        return *this;
-    }
-
-    //! Separates the executing thread from this thread handle.
-    void detach();
-
-    //! Returns the id of the thread.
-    id get_id() const noexcept
-    {
-        if (m_data)
-            return id(m_data->m_threadId);
-        else
-            return id();
-    }
-
-    //! Blocks until the associated thread has been finished.
-    //! Blocks the calling thread until the thread which is associated with
-    //! this thread handle has been finished.
-    void join();
-
-    //! Checks if the thread is joinable.
-    //! Returns \p true, if the thread is joinable.
-    //! \note If a thread is joinable, either join() or detach() must be
-    //! called before the destructor is executed.
-    inline
-    bool joinable() const noexcept
-    {
-        return m_data != nullptr;
-    }
-
-    //! Returns the number of threads which can run concurrently on this
-    //! hardware.
-    inline
-    static unsigned hardware_concurrency() noexcept
-    {
-        return 1;
-    }
-
-    //! Returns the native thread handle.
-    native_handle_type native_handle(); // TODO: noexcept?
-
-    // -------------------------------------------------------------------------
-    // Signal management
-    // -------------------------------------------------------------------------
-
-    //! Represents a set of signal flags.
-    typedef weos_detail::native_thread_traits::signal_set signal_set;
-
-    //! Returns the number of signals in a set.
-    inline
-    static int signals_count() noexcept
-    {
-        return weos_detail::native_thread_traits::signals_count;
-    }
-
-    //! Returns a signal set with all flags being set.
-    inline
-    static signal_set all_signals() noexcept
-    {
-        return weos_detail::native_thread_traits::all_signals;
-    }
-
-    //! Clears a set of signals.
-    //! Clears the signals which are specified by the \p flags.
-    void clear_signals(signal_set flags);
-
-    //! Sets a set of signals.
-    //! Sets the signals which are specified by the \p flags.
-    void set_signals(signal_set flags);
-
-protected:
-    //! Invokes the function which is stored in the shared data in a new
-    //! thread which is created with the attributes \p attrs.
-    void invoke(const attributes& attrs);
 
 private:
-    //! The thread-data which is shared by this class and the invoker
-    //! function.
-    weos_detail::SharedThreadData* m_data;
+    template <std::size_t... TIndices>
+    result_type invoke(weos_detail::TupleIndices<TIndices...>)
+    {
+        return WEOS_NAMESPACE::invoke(
+                    WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<0>(m_boundFunction)),
+                    WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<TIndices>(m_boundFunction))...);
+    }
+
+    tuple<TFunction, TArgs...> m_boundFunction;
 };
 
-//! Compares two thread ids for equality.
-//! Returns \p true, if \p lhs and \p rhs are equal.
-inline
-bool operator== (thread::id lhs, thread::id rhs) noexcept
+// 30.2.6
+template <typename T>
+typename decay<T>::type decay_copy(T&& v)
 {
-    return lhs.m_id == rhs.m_id;
+    return WEOS_NAMESPACE::forward<T>(v);
 }
 
-//! Compares two thread ids for inequality.
-//! Returns \p true, if \p lhs and \p rhs are not equal.
-inline
-bool operator!= (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id != rhs.m_id;
-}
-
-//! Less-than comparison for thread ids.
-//! Returns \p true, if \p lhs is less than \p rhs.
-inline
-bool operator< (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id < rhs.m_id;
-}
-
-//! Less-than or equal comparison for thread ids.
-//! Returns \p true, if \p lhs is less than or equal to \p rhs.
-inline
-bool operator<= (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id <= rhs.m_id;
-}
-
-//! Greater-than comparison for thread ids.
-//! Returns \p true, if \p lhs is greater than \p rhs.
-inline
-bool operator> (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id > rhs.m_id;
-}
-
-//! Greater-than or equal comparison for thread ids.
-//! Returns \p true, if \p lhs is greater than or equal to \p rhs.
-inline
-bool operator>= (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id >= rhs.m_id;
-}
+} // namespace weos_detail
 
 WEOS_END_NAMESPACE
 

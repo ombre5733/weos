@@ -287,51 +287,6 @@ protected:
 //     AsyncSharedState
 // ----=====================================================================----
 
-// TODO: Move DecayedFunction and decay_copy into thread.hpp because we would
-// need them there too.
-template <typename TFunction, typename... TArgs>
-class DecayedFunction
-{
-public:
-    typedef typename ::WEOS_NAMESPACE::weos_detail::invoke_result_type<TFunction, TArgs...>::type result_type;
-
-    explicit DecayedFunction(TFunction&& f, TArgs&&... args)
-        : m_boundFunction(WEOS_NAMESPACE::move(f),
-                          WEOS_NAMESPACE::move(args)...)
-    {
-    }
-
-    DecayedFunction(DecayedFunction&& other)
-        : m_boundFunction(WEOS_NAMESPACE::move(other.m_boundFunction))
-    {
-    }
-
-    result_type operator()()
-    {
-        typedef typename weos_detail::make_tuple_indices<
-                1 + sizeof...(TArgs), 1>::type indices_type;
-        return invoke(indices_type());
-    }
-
-private:
-    template <std::size_t... TIndices>
-    result_type invoke(weos_detail::TupleIndices<TIndices...>)
-    {
-        return WEOS_NAMESPACE::invoke(
-                    WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<0>(m_boundFunction)),
-                    WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<TIndices>(m_boundFunction))...);
-    }
-
-    tuple<TFunction, TArgs...> m_boundFunction;
-};
-
-// 30.2.6
-template <typename T>
-typename decay<T>::type decay_copy(T&& v)
-{
-    return WEOS_NAMESPACE::forward<T>(v);
-}
-
 template <typename TResult, typename TCallable>
 class AsyncSharedState : public SharedState<TResult>
 {
