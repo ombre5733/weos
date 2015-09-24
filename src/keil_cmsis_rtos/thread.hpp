@@ -169,7 +169,7 @@ public:
         WEOS_SCOPED_ENUM_END(priority)
 
         //! Creates default thread attributes.
-        attributes()
+        attributes() noexcept
             : m_priority(priority::normal),
               m_customStackSize(0),
               m_customStack(nullptr),
@@ -181,7 +181,7 @@ public:
         //!
         //! Creates thread attributes from a priority \p prio and a \p stack.
         template <typename T>
-        attributes(priority prio, T& stack)
+        attributes(priority prio, T& stack) noexcept
             : m_priority(prio),
               m_customStackSize(sizeof(T)),
               m_customStack(&stack),
@@ -193,9 +193,15 @@ public:
         attributes(const attributes&) = default;
         attributes& operator=(const attributes&) = default;
 
+        //! Returns the name.
+        const char* name() const noexcept
+        {
+            return m_name;
+        }
+
         //! Sets the name.
         //! Sets the name to \p name. The default is the empty string.
-        attributes& setName(const char* name)
+        attributes& setName(const char* name) noexcept
         {
             m_name = name;
             return *this;
@@ -205,7 +211,7 @@ public:
         //! Sets the thread priority to \p prio.
         //!
         //! The default value is priority::normal.
-        attributes& setPriority(priority prio)
+        attributes& setPriority(priority prio) noexcept
         {
             m_priority = prio;
             return *this;
@@ -216,7 +222,7 @@ public:
         //! in bytes is passed in \p stackSize rather than the default stack.
         //!
         //! The default is a null-pointer for the stack and zero for its size.
-        attributes& setStack(void* stack, std::size_t stackSize)
+        attributes& setStack(void* stack, std::size_t stackSize) noexcept
         {
             m_customStack = stack;
             m_customStackSize = stackSize;
@@ -227,7 +233,7 @@ public:
         //!
         //! Sets the thread's stack to \p stack.
         template <typename T>
-        attributes& setStack(T& stack)
+        attributes& setStack(T& stack) noexcept
         {
             static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
             m_customStack = &stack;
@@ -236,13 +242,13 @@ public:
         }
 
         //! Returns the start of the stack.
-        void* stackBegin() const
+        void* stackBegin() const noexcept
         {
             return m_customStack;
         }
 
         //! Returns the size of the stack.
-        std::size_t stackSize() const
+        std::size_t stackSize() const noexcept
         {
             return m_customStackSize;
         }
