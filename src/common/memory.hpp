@@ -292,6 +292,11 @@ unique_ptr<TType> make_unique(TArgs&&... args )
 
 using boost::addressof;
 
+struct allocator_arg_t
+{
+};
+constexpr allocator_arg_t allocator_arg = allocator_arg_t();
+
 WEOS_END_NAMESPACE
 
 
@@ -308,6 +313,8 @@ WEOS_BEGIN_NAMESPACE
 using std::addressof;
 using std::default_delete;
 using std::unique_ptr;
+using std::allocator_arg;
+using std::allocator_arg_t;
 
 WEOS_END_NAMESPACE
 

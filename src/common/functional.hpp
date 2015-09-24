@@ -825,9 +825,9 @@ public:
     }
 
     template <typename TCallable,
-              typename _ = typename enable_if<!is_same<typename decay<TCallable>::type,
-                                                       function>::value
-                                              && isCallable<TCallable>::value>::type>
+              typename = typename enable_if<!is_same<typename decay<TCallable>::type,
+                                                     function>::value
+                                            && isCallable<TCallable>::value>::type>
     function(TCallable f)
         : m_invoker(nullptr)
     {
@@ -846,6 +846,31 @@ public:
             }
         }
     }
+
+    template <typename TAllocator>
+    function(allocator_arg_t, const TAllocator&) noexcept
+        : m_invoker(nullptr)
+    {
+    }
+
+    template<typename TAllocator>
+    function(allocator_arg_t, const TAllocator&, nullptr_t) noexcept
+        : m_invoker(nullptr)
+    {
+    }
+
+    // TODO
+    template<typename TAllocator>
+    function(allocator_arg_t, const TAllocator&, const function&);
+
+    // TODO
+    template<typename TAllocator>
+    function(allocator_arg_t, const TAllocator&, function&&);
+
+    // TODO
+    template <typename TCallable, typename TAllocator,
+              typename = typename enable_if<isCallable<TCallable>::value>::type>
+    function(allocator_arg_t, const TAllocator&, TCallable f);
 
     ~function()
     {
@@ -882,9 +907,9 @@ public:
     }
 
     template <typename TCallable,
-              typename _ = typename enable_if<!is_same<typename decay<TCallable>::type,
-                                                       function>::value
-                                              && isCallable<typename decay<TCallable>::type>::value>::type>
+              typename = typename enable_if<!is_same<typename decay<TCallable>::type,
+                                                     function>::value
+                                            && isCallable<typename decay<TCallable>::type>::value>::type>
     function& operator=(TCallable&& f)
     {
         function(WEOS_NAMESPACE::forward<TCallable>(f)).swap(*this);
@@ -955,7 +980,7 @@ public:
     T* target() noexcept
     {
         if (m_invoker)
-            return (T*)m_invoker->target(typeid(T)); // TODO: change the cast
+            return (T*)m_invoker->target(typeid(T)); // TODO: change the cast; could have a const-correctness problem here
         else
             return nullptr;
     }
