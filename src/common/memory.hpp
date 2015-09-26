@@ -43,6 +43,9 @@
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
+#include "string.h"
+
+#include <boost/container/scoped_allocator.hpp>
 #include <boost/version.hpp>
 
 #if BOOST_VERSION > 105500
@@ -292,10 +295,11 @@ unique_ptr<TType> make_unique(TArgs&&... args )
 
 using boost::addressof;
 
-struct allocator_arg_t
-{
-};
-constexpr allocator_arg_t allocator_arg = allocator_arg_t();
+using std::allocator;
+using boost::container::allocator_traits;
+using boost::container::allocator_arg;
+using boost::container::allocator_arg_t;
+using boost::container::uses_allocator;
 
 WEOS_END_NAMESPACE
 
@@ -313,8 +317,12 @@ WEOS_BEGIN_NAMESPACE
 using std::addressof;
 using std::default_delete;
 using std::unique_ptr;
+
+using std::allocator;
+using std::allocator_traits;
 using std::allocator_arg;
 using std::allocator_arg_t;
+using std::uses_allocator;
 
 WEOS_END_NAMESPACE
 

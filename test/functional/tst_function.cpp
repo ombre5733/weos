@@ -60,8 +60,14 @@ test_type sum4(test_type a0, test_type a1, test_type a2, test_type a3)
 
 TEST(function, constructor)
 {
-    weos::function<void()> f;
-    ASSERT_TRUE(!f);
+    weos::function<void()> f1;
+    ASSERT_TRUE(!f1);
+    weos::function<void()> f2(nullptr);
+    ASSERT_TRUE(!f2);
+    weos::function<void()> f3(weos::allocator_arg, std::allocator<char>{});
+    ASSERT_TRUE(!f3);
+    weos::function<void()> f4(weos::allocator_arg, std::allocator<char>{}, nullptr);
+    ASSERT_TRUE(!f4);
 }
 
 TEST(function, assignment)
