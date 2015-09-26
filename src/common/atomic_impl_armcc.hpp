@@ -35,10 +35,15 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#include "../mutex.hpp"
+#include "../type_traits.hpp"
+
+
 #if __ARMCC_VERSION >= 5060000
 // Do not warn about deprecated __ldrex and __strex.
 #pragma diag_suppress 3731
 #endif
+
 
 WEOS_BEGIN_NAMESPACE
 
@@ -174,7 +179,7 @@ bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag, memory_order 
 }
 
 // ----=====================================================================----
-//     atomic_base & atomic_integral
+//     atomic_base
 // ----=====================================================================----
 
 #define WEOS_ATOMIC_MODIFY(type, op, arg)                                      \
@@ -188,10 +193,18 @@ bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag, memory_order 
     __dmb(0xF);                                                                \
     return old
 
-namespace detail
+extern mutex g_atomicMutex;
+
+#define WEOS_LOCKED_MODIFY(type, op, arg)                                      \
+    lock_guard<mutex> lock(g_atomicMutex);                                            \
+    type old = m_value;                                                        \
+    m_value = old op arg;                                                      \
+    return old
+
+namespace weos_detail
 {
 
-template <typename T>
+template <typename T, bool TSmall = sizeof(T) <= sizeof(int)>
 class atomic_base
 {
     static_assert(sizeof(T) <= sizeof(int),
@@ -391,178 +404,525 @@ public:
     atomic_base& operator=(const atomic_base&) = delete;
     atomic_base& operator=(const atomic_base&) volatile = delete;
 
+    // Integral
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_add(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, +, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_add(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, +, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_sub(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, -, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_sub(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, -, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_and(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, &, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_and(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, &, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_or(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, |, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_or(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, |, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_xor(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, ^, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_ATOMIC_MODIFY(T, ^, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++() noexcept
+    {
+        return fetch_add(1) + 1;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++() volatile noexcept
+    {
+        return fetch_add(1) + 1;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++ (int) noexcept
+    {
+        return fetch_add(1);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++ (int) volatile noexcept
+    {
+        return fetch_add(1);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator--() noexcept
+    {
+        return fetch_sub(1) - 1;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator--() volatile noexcept
+    {
+        return fetch_sub(1) - 1;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-- (int) noexcept
+    {
+        return fetch_sub(1);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-- (int) volatile noexcept
+    {
+        return fetch_sub(1);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator+= (T value) noexcept
+    {
+        return fetch_add(value) + value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator+= (T value) volatile noexcept
+    {
+        return fetch_add(value) + value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-= (T value) noexcept
+    {
+        return fetch_sub(value) - value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-= (T value) volatile noexcept
+    {
+        return fetch_sub(value) - value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator&= (T value) noexcept
+    {
+        return fetch_and(value) & value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator&= (T value) volatile noexcept
+    {
+        return fetch_and(value) & value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator|= (T value) noexcept
+    {
+        return fetch_or(value) | value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator|= (T value) volatile noexcept
+    {
+        return fetch_or(value) | value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator^= (T value) noexcept
+    {
+        return fetch_xor(value) ^ value;
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator^= (T value) volatile noexcept
+    {
+        return fetch_xor(value) ^ value;
+    }
+
 protected:
     int m_value;
 };
 
 template <typename T>
-class atomic_integral : public atomic_base<T>
+class atomic_base<T, false>
 {
-    typedef atomic_base<T> base;
-
 public:
-    atomic_integral() noexcept
+    atomic_base() noexcept = default;
+    ~atomic_base() = default;
+
+    constexpr atomic_base(T value) noexcept
+        : m_value(value)
     {
     }
 
-    constexpr atomic_integral(T value) noexcept
-        : base(value)
+    atomic_base(const atomic_base&) = delete;
+
+    bool is_lock_free() const noexcept
     {
+        return false;
     }
 
-    T fetch_add(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    bool is_lock_free() const volatile noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, +, arg);
+        return false;
     }
 
-    T fetch_add(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    void store(T value, memory_order mo = memory_order_seq_cst) noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, +, arg);
+        lock_guard<mutex> lock(g_atomicMutex);
+        m_value = value;
     }
 
-    T fetch_sub(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    void store(T value, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, -, arg);
+        lock_guard<mutex> lock(g_atomicMutex);
+        m_value = value;
     }
 
-    T fetch_sub(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    T load(memory_order mo = memory_order_seq_cst) const noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, -, arg);
+        lock_guard<mutex> lock(g_atomicMutex);
+        return m_value;
     }
 
-    T fetch_and(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    T load(memory_order mo = memory_order_seq_cst) const volatile noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, &, arg);
+        lock_guard<mutex> lock(g_atomicMutex);
+        return m_value;
     }
 
-    T fetch_and(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    operator T() const noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, &, arg);
+        return load();
     }
 
-    T fetch_or(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    operator T() const volatile noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, |, arg);
+        return load();
     }
 
-    T fetch_or(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    T exchange(T desired, memory_order mo = memory_order_seq_cst) noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, |, arg);
+        using namespace std;
+        lock_guard<mutex> lock(g_atomicMutex);
+        swap(desired, m_value);
+        return desired;
     }
 
-    T fetch_xor(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    T exchange(T desired, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, ^, arg);
+        using namespace std;
+        lock_guard<mutex> lock(g_atomicMutex);
+        swap(desired, m_value);
+        return desired;
     }
 
-    T fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order success,
+                               memory_order failure) noexcept
     {
-        WEOS_ATOMIC_MODIFY(T, ^, arg);
+        return compare_exchange_weak(expected, desired);
     }
 
-    T operator++() noexcept
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order success,
+                               memory_order failure) volatile noexcept
+    {
+        return compare_exchange_weak(expected, desired);
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order success,
+                                 memory_order failure) noexcept
+    {
+        return compare_exchange_strong(expected, desired);
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order success,
+                                 memory_order failure) volatile noexcept
+    {
+        return compare_exchange_strong(expected, desired);
+    }
+
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order mo = memory_order_seq_cst) noexcept
+    {
+        return compare_exchange_strong(expected, desired, mo);
+    }
+
+    bool compare_exchange_weak(T& expected, T desired,
+                               memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        return compare_exchange_strong(expected, desired, mo);
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order mo = memory_order_seq_cst) noexcept
+    {
+        using namespace std;
+        if (m_value == expected)
+        {
+            m_value = desired;
+            return true;
+        }
+        else
+        {
+            expected = m_value;
+            return false;
+        }
+    }
+
+    bool compare_exchange_strong(T& expected, T desired,
+                                 memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        using namespace std;
+        if (m_value == expected)
+        {
+            m_value = desired;
+            return true;
+        }
+        else
+        {
+            expected = m_value;
+            return false;
+        }
+    }
+
+    T operator= (T value) noexcept
+    {
+        store(value);
+        return value;
+    }
+
+    T operator= (T value) volatile noexcept
+    {
+        store(value);
+        return value;
+    }
+
+    atomic_base& operator=(const atomic_base&) = delete;
+    atomic_base& operator=(const atomic_base&) volatile = delete;
+
+    // Integral
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_add(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, +, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_add(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, +, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_sub(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, -, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_sub(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, -, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_and(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, &, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_and(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, &, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_or(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, |, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_or(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, |, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_xor(T arg, memory_order mo = memory_order_seq_cst) noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, ^, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
+    {
+        WEOS_LOCKED_MODIFY(T, ^, arg);
+    }
+
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++() noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    T operator++() volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++() volatile noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    T operator++ (int) noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++ (int) noexcept
     {
         return fetch_add(1);
     }
 
-    T operator++ (int) volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator++ (int) volatile noexcept
     {
         return fetch_add(1);
     }
 
-    T operator--() noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator--() noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    T operator--() volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator--() volatile noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    T operator-- (int) noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-- (int) noexcept
     {
         return fetch_sub(1);
     }
 
-    T operator-- (int) volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-- (int) volatile noexcept
     {
         return fetch_sub(1);
     }
 
-    T operator+= (T value) noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator+= (T value) noexcept
     {
         return fetch_add(value) + value;
     }
 
-    T operator+= (T value) volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator+= (T value) volatile noexcept
     {
         return fetch_add(value) + value;
     }
 
-    T operator-= (T value) noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-= (T value) noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    T operator-= (T value) volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator-= (T value) volatile noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    T operator&= (T value) noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator&= (T value) noexcept
     {
         return fetch_and(value) & value;
     }
 
-    T operator&= (T value) volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator&= (T value) volatile noexcept
     {
         return fetch_and(value) & value;
     }
 
-    T operator|= (T value) noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator|= (T value) noexcept
     {
         return fetch_or(value) | value;
     }
 
-    T operator|= (T value) volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator|= (T value) volatile noexcept
     {
         return fetch_or(value) | value;
     }
 
-    T operator^= (T value) noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator^= (T value) noexcept
     {
         return fetch_xor(value) ^ value;
     }
 
-    T operator^= (T value) volatile noexcept
+    typename WEOS_NAMESPACE::enable_if<WEOS_NAMESPACE::is_integral<T>::value, T>::type
+    operator^= (T value) volatile noexcept
     {
         return fetch_xor(value) ^ value;
     }
 
-    using base::operator=;
+protected:
+    int m_value;
 };
 
-} // namespace detail
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     atomic<T>
 // ----=====================================================================----
 
 template <typename T>
-class atomic : public detail::atomic_base<T>
+class atomic : public weos_detail::atomic_base<T>
 {
-    typedef detail::atomic_base<T> base;
+    typedef weos_detail::atomic_base<T> base;
 
 public:
     atomic() noexcept = default;
@@ -579,7 +939,7 @@ public:
 //     atomic<bool>
 // ----=====================================================================----
 
-typedef detail::atomic_base<bool> atomic_bool;
+typedef weos_detail::atomic_base<bool> atomic_bool;
 
 template <>
 struct atomic<bool> : public atomic_bool
@@ -602,15 +962,15 @@ public:
 //     atomic<integral>
 // ----=====================================================================----
 
-typedef detail::atomic_integral<char>           atomic_char;
-typedef detail::atomic_integral<signed char>    atomic_schar;
-typedef detail::atomic_integral<unsigned char>  atomic_uchar;
-typedef detail::atomic_integral<short>          atomic_short;
-typedef detail::atomic_integral<unsigned short> atomic_ushort;
-typedef detail::atomic_integral<int>            atomic_int;
-typedef detail::atomic_integral<unsigned int>   atomic_uint;
-typedef detail::atomic_integral<long>           atomic_long;
-typedef detail::atomic_integral<unsigned long>  atomic_ulong;
+typedef weos_detail::atomic_base<char>           atomic_char;
+typedef weos_detail::atomic_base<signed char>    atomic_schar;
+typedef weos_detail::atomic_base<unsigned char>  atomic_uchar;
+typedef weos_detail::atomic_base<short>          atomic_short;
+typedef weos_detail::atomic_base<unsigned short> atomic_ushort;
+typedef weos_detail::atomic_base<int>            atomic_int;
+typedef weos_detail::atomic_base<unsigned int>   atomic_uint;
+typedef weos_detail::atomic_base<long>           atomic_long;
+typedef weos_detail::atomic_base<unsigned long>  atomic_ulong;
 
 template <>
 struct atomic<char> : public atomic_char
@@ -771,10 +1131,10 @@ public:
 
 // Partial specialization for pointer types.
 template <typename T>
-struct atomic<T*> : public detail::atomic_base<T*>
+struct atomic<T*> : public weos_detail::atomic_base<T*>
 {
     typedef T* pointer_type;
-    typedef detail::atomic_base<T*> base;
+    typedef weos_detail::atomic_base<T*> base;
 
     static_assert(sizeof(pointer_type) <= sizeof(int),
                   "Atomics are only implemented up to the size of int.");
@@ -871,6 +1231,7 @@ public:
 };
 
 #undef WEOS_ATOMIC_MODIFY
+#undef WEOS_LOCKED_MODIFY
 
 WEOS_END_NAMESPACE
 

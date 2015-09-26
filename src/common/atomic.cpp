@@ -26,21 +26,18 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "config.hpp"
-
-#include "common/atomic.cpp"
-#include "common/exception.cpp"
-#include "common/functional.cpp"
-#include "common/future.cpp"
-#include "common/system_error.cpp"
+#include "../atomic.hpp"
 
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/weos.cpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/weos.cpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/weos.cpp"
-#else
-    #error "Invalid native OS."
-#endif
+#ifdef __CC_ARM
+
+WEOS_BEGIN_NAMESPACE
+
+namespace weos_detail
+{
+mutex g_atomicMutex;
+} // namespace weos_detail
+
+WEOS_END_NAMESPACE
+
+#endif // __CC_ARM
