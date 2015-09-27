@@ -35,12 +35,12 @@ WEOS_BEGIN_NAMESPACE
 class generic_category_impl : public error_category
 {
 public:
-    virtual const char* name() const noexcept
+    virtual const char* name() const noexcept override
     {
         return "generic";
     }
 
-    virtual const char* message(int err_val) const
+    virtual const char* message(int err_val) const override
     {
         switch (static_cast<errc>(err_val))
         {

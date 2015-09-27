@@ -183,6 +183,12 @@ public:
         return m_value;
     }
 
+    //! Returns \p true, if the error value is non-zero.
+    explicit operator bool() const noexcept
+    {
+        return m_value != 0;
+    }
+
 private:
     //! Error code's value.
     int m_value;
@@ -233,12 +239,12 @@ error_code make_error_code(errc err) noexcept
 
 //! A system error.
 //! A system_error is an exception which wraps an error_code.
-class system_error : public std::exception
+class system_error : public std::exception // TODO: must be a runtime error
 {
 public:
     //! Creates a system error from an error code.
     //! Creates a system error which wraps the error \p code.
-    system_error(error_code code)
+    system_error(error_code code) // TODO: default value
         : m_errorCode(code)
     {
     }
