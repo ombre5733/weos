@@ -391,14 +391,14 @@ public:
     typedef std::uint16_t signal_set;
 
     //! Returns the number of signals in a set.
-    constexpr static
+    static constexpr
     int signals_count() noexcept
     {
         return osFeature_Signals;
     }
 
     //! Returns a signal set with all flags being set.
-    constexpr static
+    static constexpr
     signal_set all_signals() noexcept
     {
         return (std::uint32_t(1) << osFeature_Signals) - 1;
