@@ -49,8 +49,16 @@ template <typename TResult>
 class future;
 
 // ----=====================================================================----
-//
+//     Types
 // ----=====================================================================----
+
+WEOS_SCOPED_ENUM_BEGIN(launch)
+{
+    async = 1,
+    deferred = 2,
+    any = async | deferred
+};
+WEOS_SCOPED_ENUM_END(launch)
 
 WEOS_SCOPED_ENUM_BEGIN(future_status)
 {
@@ -680,7 +688,8 @@ inline
 future<typename weos_detail::invoke_result_type<
            typename decay<TFunction>::type,
            typename decay<TArgs>::type...>::type>
-async(const thread::attributes& attrs, TFunction&& f, TArgs&&... args)
+async(launch launchPolicy, const thread::attributes& attrs,
+      TFunction&& f, TArgs&&... args)
 {
     using namespace weos_detail;
 
@@ -691,10 +700,24 @@ async(const thread::attributes& attrs, TFunction&& f, TArgs&&... args)
     using function_type = DecayedFunction<typename decay<TFunction>::type,
                                           typename decay<TArgs>::type...>;
 
+    // TODO: make use of launchPolicy
+
     return makeAsyncSharedState<result_type, function_type>(
                 attrs,
                 function_type(decay_copy(WEOS_NAMESPACE::forward<TFunction>(f)),
                               decay_copy(WEOS_NAMESPACE::forward<TArgs>(args))...));
+}
+
+template <typename TFunction, typename... TArgs>
+WEOS_FORCE_INLINE
+future<typename weos_detail::invoke_result_type<
+           typename decay<TFunction>::type,
+           typename decay<TArgs>::type...>::type>
+async(const thread::attributes& attrs, TFunction&& f, TArgs&&... args)
+{
+    return async(launch::any, attrs,
+                 WEOS_NAMESPACE::forward<TFunction>(f),
+                 WEOS_NAMESPACE::forward<TArgs>(args)...);
 }
 
 WEOS_END_NAMESPACE
