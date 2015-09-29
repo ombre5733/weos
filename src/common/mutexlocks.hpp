@@ -350,6 +350,63 @@ void swap(unique_lock<MutexT>& x, unique_lock<MutexT>& y) noexcept
     x.swap(y);
 }
 
+//! Locks the two lockables \p lockable1 and \p lockable2 using a dead-lock
+//! avoiding algorithm. If an exception is thrown, all lockables are unlocked
+//! before the exception is passed on.
+template <typename TLockable1, typename TLockable2>
+void lock(TLockable1& lockable1, TLockable2& lockable2)
+{
+    for (;;)
+    {
+        // Try the sequence [lockable1, lockable2].
+        {
+            unique_lock<TLockable1> lock(lockable1);
+            if (lockable2.try_lock())
+            {
+                lock.release();
+                return;
+            }
+        }
+
+        // Try the sequence [lockable2, lockable1].
+        {
+            unique_lock<TLockable2> lock(lockable2);
+            if (lockable1.try_lock())
+            {
+                lock.release();
+                return;
+            }
+        }
+    }
+}
+
+// TODO:
+//template <typename TLockable1, typename TLockable2, typename... TLockableN>
+//void lock(TLockable1& lockable1, TLockable2& lockable2, TLockableN&... lockN);
+
+//! Tries to lock the two lockables \p lockable1 and \p lockable2 by calling
+//! try_lock on them. If an exception is thrown, all lockables are unlocked
+//! before the exception is passed on. The return value is -1, if both
+//! lockables have been locked, 0 if lockable1.try_lock() failed and
+//! 1 if lockable2.try_lock() failed.
+template <typename TLockable1, typename TLockable2>
+int try_lock(TLockable1& lockable1, TLockable2& lockable2)
+{
+    unique_lock<TLockable1> lock(lockable1, try_to_lock);
+    if (!lock.owns_lock())
+        return 0;
+
+    if (lockable2.try_lock())
+    {
+        lock.release();
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
 WEOS_END_NAMESPACE
 
 #else
@@ -373,6 +430,8 @@ using std::try_to_lock;
 
 using std::lock_guard;
 using std::unique_lock;
+
+using std::lock;
 
 WEOS_END_NAMESPACE
 
