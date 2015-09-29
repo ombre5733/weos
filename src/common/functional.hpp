@@ -1018,6 +1018,34 @@ private:
     }
 };
 
+//! Returns \p true, if \p f has no target.
+template <typename TResult, typename... TArgs>
+bool operator==(const function<TResult(TArgs...)>& f, nullptr_t) noexcept
+{
+    return !f;
+}
+
+//! Returns \p true, if \p f has no target.
+template <typename TResult, typename... TArgs>
+bool operator==(nullptr_t, const function<TResult(TArgs...)>& f) noexcept
+{
+    return !f;
+}
+
+//! Returns \p true, if \p f has a target.
+template <typename TResult, typename... TArgs>
+bool operator!=(const function<TResult(TArgs...)>& f, nullptr_t) noexcept
+{
+    return (bool)f;
+}
+
+//! Returns \p true, if \p f has a target.
+template <typename TResult, typename... TArgs>
+bool operator!=(nullptr_t, const function<TResult(TArgs...)>& f) noexcept
+{
+    return (bool)f;
+}
+
 //! Swaps two functions \p x and \p y.
 template <typename TResult, typename... TArgs>
 void swap(function<TResult(TArgs...)>& x, function<TResult(TArgs...)>& y)

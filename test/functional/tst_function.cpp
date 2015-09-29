@@ -75,9 +75,13 @@ TEST(function, assignment)
     weos::function<void()> f;
     f = weos::bind(f0);
     ASSERT_TRUE(!!f);
+    ASSERT_TRUE(f != nullptr);
+    ASSERT_TRUE(nullptr != f);
 
     f = nullptr;
     ASSERT_TRUE(!f);
+    ASSERT_TRUE(f == nullptr);
+    ASSERT_TRUE(nullptr == f);
 }
 
 TEST(function, function_pointer_0_args)
