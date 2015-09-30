@@ -196,7 +196,7 @@ bool atomic_flag_test_and_set_explicit(volatile atomic_flag* flag, memory_order 
 extern mutex g_atomicMutex;
 
 #define WEOS_LOCKED_MODIFY(type, op, arg)                                      \
-    lock_guard<mutex> lock(g_atomicMutex);                                            \
+    lock_guard<mutex> lock(g_atomicMutex);                                     \
     type old = m_value;                                                        \
     m_value = old op arg;                                                      \
     return old
