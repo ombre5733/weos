@@ -55,7 +55,11 @@
 
 #define BOOST_EXCEPTION_DISABLE
 
-#define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_compiler_config.hpp>
+#if __ARMCC_VERSION < 5050169
+    #define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_compiler_config.hpp>
+#else
+    #define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_5050169_compiler_config.hpp>
+#endif
 #include <boost/config.hpp>
 
 
@@ -66,9 +70,14 @@
 
 #else
 
+namespace std
+{
+    typedef decltype(nullptr) nullptr_t;
+} // namespace std
+
 WEOS_BEGIN_NAMESPACE
 
-typedef decltype(nullptr) nullptr_t;
+using std::nullptr_t;
 
 WEOS_END_NAMESPACE
 
