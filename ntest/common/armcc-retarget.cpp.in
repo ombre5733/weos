@@ -1,0 +1,198 @@
+/*******************************************************************************
+  WEOS - Wrapper for embedded operating systems
+
+  Copyright (c) 2013-2015, Manuel Freiberger
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  - Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer.
+  - Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
+#include "stm32f4xx.h"
+#include "system_stm32f4xx.h"
+
+#include <stdio.h>
+
+// ----=====================================================================----
+//     TTY
+// ----=====================================================================----
+
+static
+void initUart()
+{
+    const int BAUDRATE = 115200;
+
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+    RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+
+    // Set the RX pin (PD09) to alternate function 7.
+    GPIOD->PUPDR   &= ~((uint32_t)3 << (2 * 9));
+    GPIOD->PUPDR   |=   (uint32_t)0 << (2 * 9);
+    GPIOD->MODER   &= ~((uint32_t)3 << (2 * 9));
+    GPIOD->MODER   |=   (uint32_t)2 << (2 * 9);
+    GPIOD->AFR[1]  &= ~((uint32_t)0xF << (4 * (9 % 8)));
+    GPIOD->AFR[1]  |=   (uint32_t)7   << (4 * (9 % 8));
+
+    // Set the TX pin (PD08) to alternate function 7. The pull-up is enabled,
+    // otherwise a wrong first byte is transmitted.
+    GPIOD->PUPDR   &= ~((uint32_t)3 << (2 * 8));
+    GPIOD->PUPDR   |=   (uint32_t)1 << (2 * 8);
+    GPIOD->MODER   &= ~((uint32_t)3 << (2 * 8));
+    GPIOD->MODER   |=   (uint32_t)2 << (2 * 8);
+    GPIOD->OTYPER  &= ~((uint32_t)1 << 8);
+    GPIOD->OSPEEDR &= ~((uint32_t)3 << (2 * 8));
+    GPIOD->OSPEEDR |=   (uint32_t)2 << (2 * 8);
+    GPIOD->AFR[1]  &= ~((uint32_t)0xF << (4 * (8 % 8)));
+    GPIOD->AFR[1]  |=   (uint32_t)7   << (4 * (8 % 8));
+
+    // Setup the USART.
+    USART3->BRR = SYSTEM_SLOW_PERIPHERAL_CLOCK / BAUDRATE;
+    USART3->CR1 = 0;
+    USART3->CR2 = 0;
+    USART3->CR3 = 0;
+    USART3->CR1 |= USART_CR1_RE | USART_CR1_TE;
+    USART3->CR1 |= USART_CR1_UE;
+}
+
+static
+void putChar(char ch)
+{
+    while ((USART3->SR & USART_SR_TXE) == 0);
+    USART3->DR = ch;
+}
+
+static
+void putString(const char* text)
+{
+    while (*text)
+    {
+        putChar(*text);
+        ++text;
+    }
+}
+
+// ----=====================================================================----
+//     Test fixture
+// ----=====================================================================----
+
+static const char TESTER_MARKER[] = "\n^^^FREMTESTER:${TESTID}:";
+
+// Called from the start-up code. The function has to initialize the clock
+// and all peripherals needed for testing.
+extern "C"
+void SystemInit(void)
+{
+    System_InitializeClock();
+
+    //! \todo FPU settings should go into the peripheral description file.
+    // Enable the FPU coprocessor.
+    //SCB->CPACR = uint32_t(0xF) << 20;
+    *((volatile uint32_t*)0xE000ED88) = uint32_t(0xF) << 20;
+    // Trap on unaligned memory accesses.
+    //SCB->CCR |= uint32_t(8);
+    *((volatile uint32_t*)0xE000ED14) = uint32_t(8);
+
+    initUart();
+    putString(TESTER_MARKER);
+    putString("BEGIN^^^\n");
+}
+
+// Called if assert() fails. The macro __ASSERT_MSG must be defined to force
+// calling this function for different optimization levels.
+// http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0475c/Chdhbhge.html
+extern "C"
+void __aeabi_assert(const char* expr, const char* file, int line)
+{
+    //printf("%s:%d Assertion '%s' failed", file, line, expr);
+    putString(TESTER_MARKER);
+    putString("FAIL^^^\n");
+    while (1);
+}
+
+// Called after main has ended, the atexit() functions have been executed
+// and the C/C++ runtime library has been torn down. The argument is
+// the value returned from main().
+// http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0475l/chr1358938922456.html
+extern "C"
+void _sys_exit(int rc)
+{
+    putString(TESTER_MARKER);
+    if (rc == 0)
+        putString("PASS^^^\n");
+    else
+        putString("FAIL^^^\n");
+    while (1);
+}
+
+// ----=====================================================================----
+//     File I/O
+// ----=====================================================================----
+
+namespace std
+{
+
+//! A minimal file handle.
+struct __FILE
+{
+    int handle;
+};
+
+FILE __stdout;
+FILE __stdin;
+FILE __stderr;
+
+int fclose(FILE* f)
+{
+    return 0;
+}
+
+int ferror(FILE* f)
+{
+    return 0;
+}
+
+int fflush(FILE* f)
+{
+    return 0;
+}
+
+int fgetc(FILE* f)
+{
+    return 0;
+}
+
+int fputc(int c, FILE* f)
+{
+    putChar(c);
+    return c;
+}
+
+int fseek(FILE* f, long pos, int mode)
+{
+    return 0;
+}
+
+long int ftell(FILE* f)
+{
+    return 0;
+}
+
+} // namespace std
