@@ -177,7 +177,8 @@ template <size_t TIndex, typename TType>
 struct IndexedTupleElement<TIndex, TType, true> : private TType
 {
     // Creates a tuple element by value-initializing the underlying type.
-    constexpr IndexedTupleElement()
+    constexpr
+    IndexedTupleElement()
         : TType()
     {
     }
@@ -196,7 +197,8 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
               typename _ = typename enable_if<!is_base_of<IndexedTupleElement,
                                                           typename decay<UType>::type>::value
                                               && is_constructible<TType, UType>::value>::type>
-    constexpr IndexedTupleElement(UType&& u)
+    constexpr
+    IndexedTupleElement(UType&& u)
         : TType(WEOS_NAMESPACE::forward<UType>(u))
     {
     }
@@ -220,13 +222,15 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     }
 
     // Accesses the element.
-    WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
+    WEOS_CONSTEXPR_FROM_CXX14
+    TType& get() noexcept
     {
         return static_cast<TType&>(*this);
     }
 
     // Accesses the element.
-    constexpr const TType& get() const noexcept
+    WEOS_CONSTEXPR_FROM_CXX14
+    const TType& get() const noexcept
     {
         return static_cast<const TType&>(*this);
     }
@@ -244,7 +248,8 @@ template <size_t TIndex, typename TType>
 struct IndexedTupleElement<TIndex, TType, false>
 {
     // Creates a tuple element by value-initializing the underlying type.
-    constexpr IndexedTupleElement()
+    constexpr
+    IndexedTupleElement()
         : m_value()
     {
         static_assert(!is_reference<TType>::value,
@@ -256,7 +261,8 @@ struct IndexedTupleElement<TIndex, TType, false>
               typename _ = typename enable_if<!is_base_of<IndexedTupleElement,
                                                           typename decay<UType>::type>::value
                                               && is_constructible<TType, UType>::value>::type>
-    constexpr IndexedTupleElement(UType&& u)
+    constexpr
+    IndexedTupleElement(UType&& u)
         : m_value(WEOS_NAMESPACE::forward<UType>(u))
     {
     }
@@ -280,13 +286,15 @@ struct IndexedTupleElement<TIndex, TType, false>
     }
 
     // Accesses the element.
-    WEOS_CONSTEXPR_FROM_CXX14 TType& get() noexcept
+    WEOS_CONSTEXPR_FROM_CXX14
+    TType& get() noexcept
     {
         return m_value;
     }
 
     // Accesses the element.
-    WEOS_CONSTEXPR_FROM_CXX14 const TType& get() const noexcept
+    WEOS_CONSTEXPR_FROM_CXX14
+    const TType& get() const noexcept
     {
         return m_value;
     }
@@ -320,7 +328,8 @@ struct TupleImpl<TupleIndices<TIndices...>, TTypes...>
         : public IndexedTupleElement<TIndices, TTypes>...
 {
 public:
-    constexpr TupleImpl()
+    constexpr
+    TupleImpl()
     {
     }
 
@@ -331,9 +340,10 @@ public:
     template <size_t... TFirstIndices, typename... TFirstTypes,
               size_t... TLastIndices, typename... TLastTypes,
               typename... UTypes>
-    explicit TupleImpl(TupleIndices<TFirstIndices...>, TupleTypes<TFirstTypes...>,
-                       TupleIndices<TLastIndices...>, TupleTypes<TLastTypes...>,
-                       UTypes&&... firstValues)
+    explicit
+    TupleImpl(TupleIndices<TFirstIndices...>, TupleTypes<TFirstTypes...>,
+              TupleIndices<TLastIndices...>, TupleTypes<TLastTypes...>,
+              UTypes&&... firstValues)
         : IndexedTupleElement<TFirstIndices, TFirstTypes>(forward<UTypes>(firstValues))...,
           IndexedTupleElement<TLastIndices, TLastTypes>()...
     {
@@ -352,7 +362,8 @@ public:
 
     // Move-constructs from another tuple.
     template <typename TTuple>
-    constexpr TupleImpl(TTuple&& t)
+    constexpr
+    TupleImpl(TTuple&& t)
         : IndexedTupleElement<TIndices, TTypes>(
               WEOS_NAMESPACE::forward<typename tuple_element<
                   TIndices, typename make_tuple_types<TTuple>::type>::type>(
@@ -438,13 +449,15 @@ public:
     // TODO: ARMCC does not like this
     //template <typename TT = true_type,
     //          typename = typename enable_if<weos_detail::all<TT, is_default_constructible<TTypes>...>::value>::type>
-    constexpr tuple() noexcept(weos_detail::all<is_nothrow_default_constructible<TTypes>...>::value)
+    constexpr
+    tuple() noexcept(weos_detail::all<is_nothrow_default_constructible<TTypes>...>::value)
         : m_impl()
     {
     }
 
     //! Constructs a tuple by initializing the elements from the given \p args.
-    explicit constexpr tuple(const TTypes&... args) noexcept(weos_detail::all<is_nothrow_copy_constructible<TTypes>...>::value)
+    explicit constexpr
+    tuple(const TTypes&... args) noexcept(weos_detail::all<is_nothrow_copy_constructible<TTypes>...>::value)
         : m_impl(typename weos_detail::make_tuple_indices<sizeof...(TTypes)>::type(),
                  typename weos_detail::make_tuple_types<tuple, sizeof...(TTypes)>::type(),
                  typename weos_detail::make_tuple_indices<0>::type(),
@@ -459,7 +472,8 @@ public:
 
     //! Constructs a tuple by perfect forwarding of the given \p args.
     template <typename... UTypes> // TODO: enable if convertible
-    explicit constexpr tuple(UTypes&&... args)
+    explicit constexpr
+    tuple(UTypes&&... args)
         : m_impl(typename weos_detail::make_tuple_indices<sizeof...(UTypes)>::type(),
                  typename weos_detail::make_tuple_types<tuple, sizeof...(UTypes)>::type(),
                  typename weos_detail::make_tuple_indices<sizeof...(TTypes), sizeof...(UTypes)>::type(),
@@ -469,12 +483,16 @@ public:
     }
 
     //! Copy-constructs a tuple by copying from the \p other tuple.
+    // TODO
     template <typename... UTypes>
-    constexpr tuple(const tuple<UTypes...>& other);
+    constexpr
+    tuple(const tuple<UTypes...>& other);
 
     //! Move-constructs a tuple by moving from the \p other tuple.
+    // TODO
     template <typename... UTypes>
-    constexpr tuple(tuple<UTypes...>&& other);
+    constexpr
+    tuple(tuple<UTypes...>&& other);
 
     //! Copy-constructs a tuple from the \p other tuple.
     tuple(const tuple& other) = default;
@@ -498,7 +516,8 @@ template <>
 class tuple<>
 {
 public:
-    constexpr tuple() noexcept
+    constexpr
+    tuple() noexcept
     {
     }
 

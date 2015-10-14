@@ -672,54 +672,88 @@ public:
     InvokerBase& operator=(const InvokerBase&) = delete;
 };
 
-template <typename TCallable, typename TSignature>
+template <typename TAllocator, typename TCallable, typename TSignature>
 class Invoker;
 
-template <typename TCallable, typename TResult, typename... TArgs>
-class Invoker<TCallable, TResult(TArgs...)> : public InvokerBase<TResult(TArgs...)>
+template <typename TAllocator, typename TCallable,
+          typename TResult, typename... TArgs>
+class Invoker<TAllocator, TCallable, TResult(TArgs...)>
+    : public InvokerBase<TResult(TArgs...)>
 {
 public:
     typedef InvokerBase<TResult(TArgs...)> base_type;
 
-    explicit Invoker(TCallable&& f)
-        : m_callable(WEOS_NAMESPACE::move(f))
+    explicit
+    Invoker(TCallable&& f)
+        : m_callableAllocator(WEOS_NAMESPACE::move(f), TAllocator())
     {
     }
 
-    explicit Invoker(const TCallable& f)
-        : m_callable(f)
+    explicit
+    Invoker(TCallable&& f, TAllocator&& allocator)
+        : m_callableAllocator(WEOS_NAMESPACE::move(f),
+                              WEOS_NAMESPACE::move(allocator))
+    {
+    }
+
+    explicit
+    Invoker(const TCallable& f, TAllocator&& allocator)
+        : m_callableAllocator(f, WEOS_NAMESPACE::move(allocator))
+    {
+    }
+
+    explicit
+    Invoker(const TCallable& f, const TAllocator& allocator)
+        : m_callableAllocator(f, allocator)
     {
     }
 
     virtual base_type* clone() const override
     {
-        return new Invoker(m_callable);
+        using traits = allocator_traits<TAllocator>;
+        using allocator_t = typename traits::template rebind_alloc<Invoker>;
+        using deallocator_t = weos_detail::deallocator<allocator_t>;
+
+
+        allocator_t allocator(WEOS_NAMESPACE::get<1>(m_callableAllocator));
+        unique_ptr<Invoker, deallocator_t> mem(
+                    allocator.allocate(1), deallocator_t(allocator));
+        new (mem.get()) Invoker(WEOS_NAMESPACE::get<0>(m_callableAllocator),
+                                TAllocator(allocator));
+        return mem.release();
     }
 
     virtual void clone(base_type* memory) const override
     {
-        ::new (memory) Invoker(m_callable);
+        new (memory) Invoker(WEOS_NAMESPACE::get<0>(m_callableAllocator),
+                             WEOS_NAMESPACE::get<1>(m_callableAllocator));
     }
 
     virtual void destroy() noexcept override
     {
-        m_callable.~TCallable();
+        m_callableAllocator.~tuple<TCallable, TAllocator>();
     }
 
     virtual void destroyAndDeallocate() noexcept override
     {
-        delete this;
+        using traits = allocator_traits<TAllocator>;
+        using allocator_t = typename traits::template rebind_alloc<Invoker>;
+
+        allocator_t allocator(WEOS_NAMESPACE::get<1>(m_callableAllocator));
+        m_callableAllocator.~tuple<TCallable, TAllocator>();
+        allocator.deallocate(this, 1);
     }
 
     virtual TResult operator()(TArgs&&... args) override
     {
-        return invoke(m_callable, WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return invoke(WEOS_NAMESPACE::get<0>(m_callableAllocator),
+                      WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
     virtual const void* target(const std::type_info& info) const noexcept override
     {
         if (typeid(TCallable) == info)
-            return &m_callable;
+            return &WEOS_NAMESPACE::get<0>(m_callableAllocator);
         else
             return nullptr;
     }
@@ -730,7 +764,7 @@ public:
     }
 
 private:
-    TCallable m_callable;
+    tuple<TCallable, TAllocator> m_callableAllocator;
 };
 
 } // namespace weos_detail
@@ -750,17 +784,15 @@ class function<TResult(TArgs...)>
     template <typename F>
     using isCallable = is_convertible<invokeResult<F>, TResult>;
 
-    template <typename F>
-    class canStoreInplace
+    template <typename TInvoker>
+    class fitsInplace
     {
         static const std::size_t smallSize = sizeof(storage_type);
         static const std::size_t smallAlign = alignment_of<storage_type>::value;
-        typedef weos_detail::Invoker<F, TResult(TArgs...)> invoker_type;
     public:
-        static constexpr bool value = sizeof(invoker_type) <= smallSize
-                                      && alignment_of<invoker_type>::value <= smallAlign
-                                      && (smallAlign % alignment_of<invoker_type>::value == 0)
-                                      && is_nothrow_copy_constructible<F>::value;
+        static constexpr bool value = sizeof(TInvoker) <= smallSize
+                                      && alignment_of<TInvoker>::value <= smallAlign
+                                      && (smallAlign % alignment_of<TInvoker>::value == 0);
     };
 
     template <typename F, bool TFunctionPointer =    is_function<F>::value
@@ -831,18 +863,27 @@ public:
     function(TCallable f)
         : m_invoker(nullptr)
     {
+        typedef weos_detail::Invoker<allocator<TCallable>, TCallable, TResult(TArgs...)> invoker_type;
+        using allocator_t = allocator<invoker_type>;
+        using deallocator_t = weos_detail::deallocator<allocator_t>;
+
         if (notNull<TCallable>::check(f))
         {
-            typedef weos_detail::Invoker<TCallable, TResult(TArgs...)> invoker_type;
-            if (canStoreInplace<TCallable>::value)
+            if (   fitsInplace<invoker_type>::value
+                && is_nothrow_copy_constructible<TCallable>::value)
             {
-                // Copy-construct using placement new.
+                // Construct inplace using placement new.
                 m_invoker = (invoker_base_type*)&m_storage;
-                ::new (m_invoker) invoker_type(WEOS_NAMESPACE::move(f));
+                new (m_invoker) invoker_type(WEOS_NAMESPACE::move(f));
             }
             else
             {
-                m_invoker = new invoker_type(WEOS_NAMESPACE::move(f));
+                allocator_t alloc;
+                unique_ptr<invoker_type, deallocator_t> mem(
+                            alloc.allocate(1), deallocator_t(alloc));
+                new (mem.get()) invoker_type(WEOS_NAMESPACE::move(f),
+                                               allocator<TCallable>(alloc));
+                m_invoker = mem.release();
             }
         }
     }
@@ -867,10 +908,39 @@ public:
     template<typename TAllocator>
     function(allocator_arg_t, const TAllocator&, function&&);
 
-    // TODO
+    //! Constructs a function from the callable \p f using the
+    //! allocator \p alloc.
     template <typename TCallable, typename TAllocator,
               typename = typename enable_if<isCallable<TCallable>::value>::type>
-    function(allocator_arg_t, const TAllocator&, TCallable f);
+    function(allocator_arg_t, const TAllocator& alloc, TCallable f)
+        : m_invoker(nullptr)
+    {
+        typedef weos_detail::Invoker<TAllocator, TCallable, TResult(TArgs...)> invoker_type;
+        using traits = allocator_traits<TAllocator>;
+        using allocator_t = typename traits::template rebind_alloc<invoker_type>;
+        using deallocator_t = weos_detail::deallocator<allocator_t>;
+
+        if (notNull<TCallable>::check(f))
+        {
+            if (   fitsInplace<invoker_type>::value
+                && is_nothrow_copy_constructible<TCallable>::value
+                && is_nothrow_copy_constructible<TAllocator>::value)
+            {
+                // Construct inplace using placement new.
+                m_invoker = (invoker_base_type*)&m_storage;
+                new (m_invoker) invoker_type(WEOS_NAMESPACE::move(f), alloc);
+            }
+            else
+            {
+                allocator_t allocator(alloc);
+                unique_ptr<invoker_type, deallocator_t> mem(
+                            allocator.allocate(1), deallocator_t(allocator));
+                new (mem.get()) invoker_type(WEOS_NAMESPACE::move(f),
+                                             TAllocator(allocator));
+                m_invoker = mem.release();
+            }
+        }
+    }
 
     ~function()
     {
