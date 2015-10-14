@@ -40,10 +40,9 @@
 // ARMCC
 // -----------------------------------------------------------------------------
 
+#include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
-
-#include "string.h"
 
 #include <boost/container/scoped_allocator.hpp>
 #include <boost/version.hpp>
@@ -63,7 +62,8 @@ WEOS_BEGIN_NAMESPACE
 template <typename T>
 struct default_delete
 {
-    constexpr default_delete() noexcept = default;
+    constexpr
+    default_delete() noexcept = default;
 
     template <typename U>
     default_delete(const default_delete<U>&,
@@ -123,7 +123,7 @@ struct deleter_pointer_or_fallback<TType, TDeleter, false>
 
 //! A unique pointer.
 template <typename TPointee, typename TDeleter = default_delete<TPointee> >
-class unique_ptr : protected TDeleter
+class unique_ptr
 {
 public:
     typedef TPointee element_type;
@@ -134,36 +134,68 @@ public:
             pointer;
 
     //! Creates a unique pointer equivalent to nullptr.
-    constexpr unique_ptr() noexcept
-        : m_pointer()
+    constexpr
+    unique_ptr() noexcept
+        : m_pointerDeleter(pointer(), deleter_type())
     {
     }
 
     //! Creates a unique pointer equivalent to nullptr.
-    constexpr unique_ptr(nullptr_t) noexcept
-        : m_pointer()
+    constexpr
+    unique_ptr(nullptr_t) noexcept
+        : m_pointerDeleter(pointer(), deleter_type())
     {
     }
 
     //! Creates a unique pointer which owns the given \p ptr.
-    explicit unique_ptr(pointer ptr) noexcept
-        : m_pointer(ptr)
+    explicit
+    unique_ptr(pointer ptr) noexcept
+        : m_pointerDeleter(ptr, deleter_type())
     {
     }
 
-    // TODO: add unique_ptr(pointer ptr, deleter_type);
+    // 20.8.1.2.1
+    // Type of the deleter:
+    // If TDeleter is a non-reference type A --> const A&
+    // If TDeleter is an lvalue reference type A& --> A&
+    // If TDeleter is an lvalue reference type const A& --> const A&
+    unique_ptr(pointer ptr,
+               typename conditional<
+                   is_reference<TDeleter>::value,
+                   TDeleter,
+                   typename add_lvalue_reference<
+                       typename add_const<TDeleter>::type
+                   >::type
+               >::type deleter)
+        : m_pointerDeleter(ptr, deleter)
+    {
+    }
+
+    // 20.8.1.2.1
+    // Type of the deleter:
+    // If TDeleter is a non-reference type A --> A&&
+    // If TDeleter is an lvalue reference type A& --> A&&
+    // If TDeleter is an lvalue reference type const A& --> const A&&
+    unique_ptr(pointer ptr,
+               typename add_rvalue_reference<
+                   typename remove_reference<TDeleter>::type
+               >::type deleter)
+        : m_pointerDeleter(ptr, WEOS_NAMESPACE::move(deleter))
+    {
+    }
 
     //! Move construction.
     //! Creates a unique pointer by moving from the \p other pointer.
     unique_ptr(unique_ptr&& other) noexcept
-        :  m_pointer(other.release())
+        :  m_pointerDeleter(other.release(),
+                            WEOS_NAMESPACE::forward<TDeleter>(other.get_deleter()))
     {
     }
 
     // TODO: add missing move constructor which converts deleter_type's
 
     //! Destroys the pointer and the managed packet.
-    ~unique_ptr() // TODO: noexcept?
+    ~unique_ptr()
     {
         reset();
     }
@@ -181,6 +213,8 @@ public:
     unique_ptr& operator=(unique_ptr&& other) noexcept
     {
         reset(other.release());
+        WEOS_NAMESPACE::get<1>(m_pointerDeleter)
+                = WEOS_NAMESPACE::forward<TDeleter>(other.get_deleter());
         return *this;
     }
 
@@ -191,17 +225,27 @@ public:
     //! ownership.
     pointer get() const noexcept
     {
-        return m_pointer;
+        return WEOS_NAMESPACE::get<0>(m_pointerDeleter);
     }
 
-    // TODO: get_deleter()
+    //! Returns the associated deleter.
+    deleter_type& get_deleter() noexcept
+    {
+        return WEOS_NAMESPACE::get<1>(m_pointerDeleter);
+    }
+
+    //! Returns the associated deleter.
+    const deleter_type& get_deleter() const noexcept
+    {
+        return WEOS_NAMESPACE::get<1>(m_pointerDeleter);
+    }
 
     //! Releases the ownership.
     //! Transfers the ownership of the stored object to the caller.
     pointer release() noexcept
     {
-        pointer temp = m_pointer;
-        m_pointer = pointer();
+        pointer temp = WEOS_NAMESPACE::get<0>(m_pointerDeleter);
+        WEOS_NAMESPACE::get<0>(m_pointerDeleter) = pointer();
         return temp;
     }
 
@@ -209,11 +253,14 @@ public:
     void reset(pointer ptr = pointer()) noexcept
     {
         // Watch out for self-assignment.
-        if (m_pointer != ptr)
+        if (WEOS_NAMESPACE::get<0>(m_pointerDeleter) != ptr)
         {
-            if (m_pointer != pointer())
-                deleter_type::operator()(m_pointer);
-            m_pointer = ptr;
+            // Note: The order of these expressions is important.
+            // See 20.8.1.2.5.
+            pointer temp = WEOS_NAMESPACE::get<0>(m_pointerDeleter);
+            WEOS_NAMESPACE::get<0>(m_pointerDeleter) = ptr;
+            if (temp)
+                WEOS_NAMESPACE::get<1>(m_pointerDeleter)(temp);
         }
     }
 
@@ -221,33 +268,32 @@ public:
     void swap(unique_ptr& other) noexcept
     {
         using std::swap;
-        swap(m_pointer, other.m_pointer);
+        swap(m_pointerDeleter, other.m_pointerDeleter);
     }
 
     //! Returns a reference to the owned object.
     typename add_lvalue_reference<element_type>::type operator*() const
     {
-        WEOS_ASSERT(m_pointer != pointer());
-        return *m_pointer;
+        return *WEOS_NAMESPACE::get<0>(m_pointerDeleter);
     }
 
     //! Accesses the owned object.
     pointer operator->() const noexcept
     {
-        WEOS_ASSERT(m_pointer != pointer());
-        return m_pointer;
+        return WEOS_NAMESPACE::get<0>(m_pointerDeleter);
     }
 
     //! Checks if the smart pointer owns an object.
     //! Returns \p true, if this smart pointer owns an object.
-    explicit operator bool() const noexcept
+    explicit
+    operator bool() const noexcept
     {
-        return get() != pointer();
+        return WEOS_NAMESPACE::get<0>(m_pointerDeleter) != nullptr;
     }
 
 private:
     //! A pointer to the owned object.
-    pointer m_pointer;
+    tuple<pointer, deleter_type> m_pointerDeleter;
 
     unique_ptr(const unique_ptr&) = delete;
     unique_ptr& operator=(const unique_ptr&) = delete;
