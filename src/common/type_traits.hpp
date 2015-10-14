@@ -112,6 +112,7 @@ using std::is_default_constructible;
 using std::is_empty;
 using std::is_enum;
 //using std::is_final;
+using std::is_literal_type;
 using std::is_nothrow_constructible;
 using std::is_nothrow_copy_constructible;
 using std::is_nothrow_default_constructible;

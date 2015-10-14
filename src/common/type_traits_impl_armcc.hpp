@@ -153,6 +153,12 @@ struct is_enum : public integral_constant<bool, __is_enum(TType)> {};
 template <typename TType>
 struct is_final : public integral_constant<bool, __is_final(TType)> {};
 
+// ---- is_literal_type --------------------------------------------------------
+
+template <typename TType>
+struct is_literal_type
+        : public integral_constant<bool, __is_literal_type(TType)> {};
+
 // ---- is_nothrow_constructible -----------------------------------------------
 
 template <typename TType, typename... TArgs>
