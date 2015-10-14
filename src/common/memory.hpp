@@ -374,4 +374,37 @@ WEOS_END_NAMESPACE
 
 #endif // __CC_ARM
 
+
+WEOS_BEGIN_NAMESPACE
+
+namespace weos_detail
+{
+
+// A deallocator usable for unique_ptr.
+template <typename TAllocator>
+class deallocator
+{
+public:
+    using pointer = typename WEOS_NAMESPACE::allocator_traits<TAllocator>::pointer;
+
+    explicit
+    deallocator(TAllocator& allocator) noexcept
+        : m_allocator(allocator)
+    {
+    }
+
+    void operator()(pointer ptr) noexcept
+    {
+        WEOS_NAMESPACE::allocator_traits<TAllocator>::deallocate(
+                    m_allocator, ptr, 1);
+    }
+
+private:
+    TAllocator& m_allocator;
+};
+
+} // namespace weos_detail
+
+WEOS_END_NAMESPACE
+
 #endif // WEOS_COMMON_MEMORY_HPP
