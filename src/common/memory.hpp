@@ -44,14 +44,15 @@
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
-#include <boost/container/scoped_allocator.hpp>
 #include <boost/version.hpp>
-
 #if BOOST_VERSION > 105500
     #include <boost/core/addressof.hpp>
 #else
+    #include "string.h"
     #include <boost/utility/addressof.hpp>
 #endif
+#include <boost/container/scoped_allocator.hpp>
+
 
 WEOS_BEGIN_NAMESPACE
 

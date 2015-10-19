@@ -89,13 +89,13 @@ WEOS_END_NAMESPACE
 // because the joining thread might re-use the stack of this thread. So we
 // must ensure that there is no context switch between setting the semaphore
 // signal and terminating the thread.
-extern "C" int weos_terminateTask(void* data, void* threadId) noexcept
+extern "C" int weos_terminateTask(void* sema, void* threadId) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
     // Use the semaphore to signal that the thread has been completed.
-    static_cast<weos_detail::SharedThreadData*>(data)->m_finished.post();
-    static_cast<weos_detail::SharedThreadData*>(data)->decReferenceCount();
+    if (sema)
+        static_cast<semaphore*>(sema)->post();
     //rt_tsk_delete(threadId);
     svcThreadTerminate(threadId);
     return 0;
@@ -113,9 +113,8 @@ extern "C" void weos_threadInvoker(const void* arg) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
-    unique_ptr<weos_detail::SharedThreadData,
-               weos_detail::SharedThreadDataDeleter> data(
-        static_cast<weos_detail::SharedThreadData*>(const_cast<void*>(arg)));
+    auto data = static_cast<weos_detail::SharedThreadData*>(
+                    const_cast<void*>(arg));
 
     // The stack memory was not allocated from the pool. Set the private stack
     // size 'priv_stack' to zero, such that CMSIS won't add the memory to
@@ -133,14 +132,30 @@ extern "C" void weos_threadInvoker(const void* arg) noexcept
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     catch (...)
     {
-        weos::unhandled_thread_exception(weos::current_exception());
+        ::WEOS_NAMESPACE::unhandled_thread_exception(weos::current_exception());
     }
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 
     // Keep the thread alive because someone might still set a signal.
     data->m_joinedOrDetached.wait();
-    // Notify a potentially joining thread and terminate this thread then.
-    weos_terminateTask_indirect(data.release(), ptcb);
+
+    // We do not want to deallocate the shared data in the interrupt context
+    // because the allocator might want to lock a mutex. So the reference
+    // counter is decreased right now although (part of) the shared data
+    // is still needed.
+    if (--data->m_referenceCount == 0)
+    {
+        // The invokee has to destroy the shared data. After that it will
+        // cancel the thread.
+        data->destroy();
+        weos_terminateTask_indirect(nullptr, ptcb);
+    }
+    else
+    {
+        // The invoker has to destroy the shared data. The invokee signals
+        // the end of the threaded function and cancels the thread.
+        weos_terminateTask_indirect(&data->m_finished, ptcb);
+    }
 }
 
 
@@ -198,13 +213,10 @@ SharedThreadData::SharedThreadData() noexcept
 {
 }
 
-void SharedThreadData::decReferenceCount() noexcept
+void SharedThreadData::destroy() noexcept
 {
-    if (--m_referenceCount == 0)
-    {
-        this->~SharedThreadData();
-        sharedThreadDataPool().free(this);
-    }
+    this->~SharedThreadData();
+    sharedThreadDataPool().free(this);
 }
 
 SharedThreadData* SharedThreadData::allocate()
@@ -230,10 +242,16 @@ void thread::detach()
         WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                 "thread::detach: thread is not joinable");
 
-    unique_ptr<weos_detail::SharedThreadData,
-               weos_detail::SharedThreadDataDeleter> data(m_data);
-
     m_data->m_joinedOrDetached.post();
+    // If the invokee has already decreased the reference count, we have to
+    // deallocate the shared data.
+    if (--m_data->m_referenceCount == 0)
+    {
+        // Watch out: The invokee still needs to access m_finished.
+        m_data->m_finished.wait();
+        m_data->destroy();
+    }
+
     m_data = nullptr;
 }
 
@@ -243,11 +261,13 @@ void thread::join()
         WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
                                 "thread::join: thread is not joinable");
 
-    unique_ptr<weos_detail::SharedThreadData,
-               weos_detail::SharedThreadDataDeleter> data(m_data);
-
     m_data->m_joinedOrDetached.post();
     m_data->m_finished.wait();
+    // If the invokee has already decreased the reference count, we have to
+    // deallocate the shared data.
+    if (--m_data->m_referenceCount == 0)
+        m_data->destroy();
+
     m_data = nullptr;
 }
 
@@ -317,7 +337,7 @@ void thread::invoke(const attributes& attrs)
         // impossible that the threaded function has already decreased the
         // reference count. Even if it has already finished, the wrapper
         // function blocks on the m_joinedOrDetached semaphore.
-        m_data->addReferenceCount();
+        ++m_data->m_referenceCount;
     }
     else
     {

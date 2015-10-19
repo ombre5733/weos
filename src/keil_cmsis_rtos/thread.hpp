@@ -57,19 +57,15 @@ namespace weos_detail
 //! Data which is shared between the threaded function and the thread handle.
 struct SharedThreadData
 {
-    //! Increases the reference counter by one.
-    void addReferenceCount() noexcept
-    {
-        ++m_referenceCount;
-    }
-
-    //! Decreases the reference counter by one. If the reference counter reaches
-    //! zero, this object is destructed and returned to the pool.
-    void decReferenceCount() noexcept;
+    SharedThreadData(const SharedThreadData&) = delete;
+    const SharedThreadData& operator=(const SharedThreadData&) = delete;
 
     //! Allocates a ThreadData object from the global pool. An exception is
     //! thrown if the pool is empty.
     static SharedThreadData* allocate();
+
+    //! Destroys and deallocates this shared data.
+    void destroy() noexcept;
 
 
 
@@ -88,13 +84,10 @@ struct SharedThreadData
     //! The native thread id.
     osThreadId m_threadId;
 
-    SharedThreadData(const SharedThreadData&) = delete;
-    const SharedThreadData& operator= (const SharedThreadData&) = delete;
-
-private:
-    //! The number of references to this shared data.
+    //! The number of references to this shared data. Is initialized to 1.
     atomic_int m_referenceCount;
 
+private:
     //! Creates the shared thread data.
     SharedThreadData() noexcept;
 };
@@ -103,7 +96,7 @@ struct SharedThreadDataDeleter
 {
     void operator()(SharedThreadData* data) noexcept
     {
-        data->decReferenceCount();
+        data->destroy();
     }
 };
 
