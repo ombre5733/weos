@@ -41,7 +41,7 @@ cxxFlags = ["--cpu=Cortex-M4",
             "--apcs=interwork",
             "--exceptions",
             "--cpp11",
-            "-D__ASSERT_MSG",            
+            "-D__ASSERT_MSG",
             "-Ospace",
             "-I.",
             "-Icmsis"]
@@ -52,7 +52,7 @@ linkerFlags = ["RTX_CM4.lib"]
 def downloadExecutable(executable):
     from subprocess import PIPE
 
-    print("Download " + executable)    
+    print("Download " + executable)
     binFile = executable + ".bin"
     try:
         subprocess.check_call(["fromelf",
@@ -69,11 +69,11 @@ def downloadExecutable(executable):
                               stdout=PIPE, stderr=PIPE)
     except subprocess.CalledProcessError:
         return False
-        
+
     return True
 
 
-
+#"""
 toolchain = "gcc"
 
 targetUart = {'baudRate': 115200,
@@ -123,13 +123,9 @@ linkerFlags = ["-mthumb",
 def downloadExecutable(executable):
     from subprocess import PIPE
 
-    print("Download " + executable)    
+    print("Download " + executable)
     binFile = executable + ".bin"
     try:
-        print(" ".join(["arm-none-eabi-objcopy",
-                               "-O", "binary",
-                               binFile,
-                               executable]))
         subprocess.check_call(["arm-none-eabi-objcopy",
                                "-O", "binary",
                                executable,
@@ -143,8 +139,9 @@ def downloadExecutable(executable):
                               stdout=PIPE, stderr=PIPE)
     except subprocess.CalledProcessError:
         return False
-        
+
     return True
+#"""
 
 # ----===================================================----
 #     End of site config
@@ -168,12 +165,21 @@ def rootRel(file):
 
 def cwdRel(file):
     return os.path.join(workingDir, file)
-    
-def execute(exe, inFile, outFile, *args):
+
+def flatten(*args):
+    result = []
+    for arg in args:
+        if type(arg) is list:
+            result.extend(arg)
+        else:
+            result.append(arg)
+    return result
+
+def execute(exe, inFiles, outFile, *args):
     from subprocess import PIPE
-    
+
     print("Generate " + outFile)
-    
+
     outDir = os.path.split(outFile)[0]
     if not os.path.exists(outDir):
         os.makedirs(outDir)
@@ -182,14 +188,7 @@ def execute(exe, inFile, outFile, *args):
     except OSError:
         pass
 
-    argv = [exe]
-    for arg in args:
-        if type(arg) is list:
-            argv.extend(arg)
-        else:
-            argv.append(arg)
-    argv.append(inFile)
-    argv.extend(["-o", outFile])
+    argv = flatten(exe, inFiles, "-o", outFile, *args)
     subprocess.check_call(argv, stdout=PIPE, stderr=PIPE)
 
 
@@ -199,7 +198,7 @@ class Test:
     XPASS = 3
     XFAIL = 4
     FATAL = 5
-    
+
     def __init__(self, name, expected):
         self.name = name
         self.expected = expected
@@ -230,29 +229,29 @@ class Monitor(threading.Thread):
     BEGIN = 1
     PASS = 2
     FAIL = 3
-    
+
     stringToToken = { "BEGIN" : BEGIN, "PASS" : PASS, "FAIL" : FAIL}
-        
+
     def __init__(self, tokenQueue):
         super(Monitor, self).__init__()
         self.stopRequest = threading.Event()
         self.uart = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
-        self.tokenQueue = tokenQueue        
-        
+        self.tokenQueue = tokenQueue
+
     def run(self):
         while not self.stopRequest.isSet():
             line = self.uart.readline()
             m = re.match(r"\^\^\^FREMTESTER:(.*):(.*)\^\^\^", line)
             if m:
                 self.tokenQueue.put(
-                    (m.group(1), 
+                    (m.group(1),
                      Monitor.stringToToken.get(m.group(2), Monitor.UNKNOWN)))
-            
+
     def join(self, timeout=None):
         self.stopRequest.set()
-        super(Monitor, self).join(timeout)        
+        super(Monitor, self).join(timeout)
 
-    
+
 if toolchain == ToolChain.ARMCC:
     execute(asmExecutable,
             rootRel("common/armcc-startup_stm32f4xx.s"),
@@ -265,7 +264,7 @@ elif toolchain == ToolChain.GCC:
             cwdRel("startup_stm32f4xx.o"),
             asmFlags, "-c")
     retargetSourceFile = rootRel("common/gcc-retarget.cpp.in")
-    
+
 execute(cExecutable,
         rootRel("common/system_stm32f4xx.c"),
         cwdRel("system_stm32f4xx.o"),
@@ -283,7 +282,7 @@ execute(cxxExecutable,
 fixtureObjectFiles = [cwdRel("startup_stm32f4xx.o"),
                       cwdRel("system_stm32f4xx.o"),
                       cwdRel("RTX_Conf_CM.o"),
-                      ]#cwdRel("weos.o")]
+                      cwdRel("weos.o")]
 
 
 testList = findTests()
@@ -298,7 +297,7 @@ for testIdx in xrange(len(testList)):
     print("*" * 75)
     print(testFile)
     print("*" * 75)
-    
+
     testFileBaseName = os.path.splitext(testFile)[0]
     substitutions["TESTID"] = str(uuid.uuid4())
     with open(retargetSourceFile, 'r') as sourceFile:
@@ -310,7 +309,7 @@ for testIdx in xrange(len(testList)):
             os.makedirs(outDir)
         with open(outFileName, 'w') as outFile:
             outFile.write(result)
-    
+
     retargetObjectFile = cwdRel(testFileBaseName + "-retarget.o")
     execute(cxxExecutable,
             cwdRel(testFileBaseName + "-retarget.cpp"),
@@ -343,7 +342,7 @@ for testIdx in xrange(len(testList)):
     except subprocess.CalledProcessError:
         testList[testIdx].actual = Test.FAIL
         continue
-    
+
     try:
         if not downloadExecutable(exeFile):
             testList[testIdx].actual = Test.FATAL
@@ -353,7 +352,7 @@ for testIdx in xrange(len(testList)):
         testList[testIdx].actual = Test.FATAL
         testList[testIdx].reason = "download failed"
         continue
-    
+
     startTime = time.time()
     started = False
     while time.time() - startTime < 3:
@@ -368,7 +367,7 @@ for testIdx in xrange(len(testList)):
         testList[testIdx].actual = Test.FATAL
         testList[testIdx].reason = "test not started"
         continue
-    
+
     startTime = time.time()
     TestTimeout = 30
     while time.time() - startTime < TestTimeout:
@@ -383,12 +382,12 @@ for testIdx in xrange(len(testList)):
             else:
                 testList[testIdx].actual = Test.FATAL
                 testList[testIdx].reason = "unknown test token"
-                
+
             if testList[testIdx].actual is not None:
                 break
         except Queue.Empty:
             continue
-        
+
     if testList[testIdx].actual is None:
         testList[testIdx].actual = Test.FATAL
         testList[testIdx].reason = "timeout"
@@ -416,7 +415,7 @@ for test in testList:
         print(fatalStr.format(test.name, resultString[test.actual],
                               test.reason))
         continue
-    
+
     if test.actual == test.expected:
         fmt = goodStr
     elif ((test.expected == Test.XPASS and test.actual == Test.FAIL) or
