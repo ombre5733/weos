@@ -78,7 +78,7 @@ public:
     ~mutex();
 
     mutex(const mutex&) = delete;
-    const mutex& operator=(const mutex&) = delete;
+    mutex& operator=(const mutex&) = delete;
 
     //! Locks the mutex.
     //! Blocks the current thread until this mutex has been locked by it.
@@ -224,7 +224,7 @@ public:
     ~recursive_mutex();
 
     recursive_mutex(const recursive_mutex&) = delete;
-    const recursive_mutex& operator=(const recursive_mutex&) = delete;
+    recursive_mutex& operator=(const recursive_mutex&) = delete;
 
     //! Locks the mutex.
     //!

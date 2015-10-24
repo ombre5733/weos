@@ -58,7 +58,7 @@ namespace weos_detail
 struct SharedThreadData
 {
     SharedThreadData(const SharedThreadData&) = delete;
-    const SharedThreadData& operator=(const SharedThreadData&) = delete;
+    SharedThreadData& operator=(const SharedThreadData&) = delete;
 
     //! Allocates a ThreadData object from the global pool. An exception is
     //! thrown if the pool is empty.
