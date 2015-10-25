@@ -27,6 +27,7 @@
 *******************************************************************************/
 
 #include <weos/tuple.hpp>
+#include <cassert>
 
 using namespace weos;
 
@@ -35,17 +36,17 @@ struct A {};
 int main()
 {
     tuple<int> t1(10);
-    ASSERT_EQ(10, get<0>(t1));
+    assert(get<0>(t1) == 10);
     get<0>(t1) = 20;
-    ASSERT_EQ(20, get<0>(t1));
+    assert(get<0>(t1) == 20);
 
     int i = 10;
     float f = 2106.f;
     tuple<int&, float&> t2(i, f);
-    ASSERT_EQ(10, get<0>(t2));
-    ASSERT_EQ(2106.f, get<1>(t2));
+    assert(get<0>(t2) == 10);
+    assert(get<1>(t2) == 2106.f);
     get<0>(t2) = 42;
     get<1>(t2) = -1;
-    ASSERT_EQ(42, i);
-    ASSERT_EQ(-1.f, f);
+    assert(i == 42);
+    assert(f == -1.f);
 }
