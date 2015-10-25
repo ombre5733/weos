@@ -335,7 +335,7 @@ void thread::invoke(const attributes& attrs)
     {
         // The invoked thread will only decrease the reference count. It is
         // impossible that the threaded function has already decreased the
-        // reference count. Even if it has already finished, the wrapper
+        // reference count. Even if it has already ended, the wrapping
         // function blocks on the m_joinedOrDetached semaphore.
         ++m_data->m_referenceCount;
     }
