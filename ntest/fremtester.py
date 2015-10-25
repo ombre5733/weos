@@ -1,3 +1,8 @@
+#
+# FremTester
+#
+
+import argparse
 import fnmatch
 import os
 import Queue
@@ -9,9 +14,8 @@ import threading
 import time
 import uuid
 
-rootDir = os.path.dirname(os.path.abspath(__file__))
+testerDir = os.path.dirname(os.path.abspath(__file__))
 workingDir = os.getcwd()
-
 
 # ----===================================================----
 #     Site config
@@ -147,6 +151,19 @@ def downloadExecutable(executable):
 #     End of site config
 # ----===================================================----
 
+
+# ----======================================================================----
+#     Argument parsing
+# ----======================================================================----
+
+parser = argparse.ArgumentParser(description="Test framework")
+parser.add_argument("ROOT",
+                    help="Root directory for test discovery")
+args = parser.parse_args()
+
+
+
+
 class ToolChain:
     ARMCC = 1
     GCC = 2
@@ -160,11 +177,16 @@ else:
     raise Exception("Unknown toolchain")
 
 
-def rootRel(file):
-    return os.path.join(rootDir, file)
-
 def cwdRel(file):
     return os.path.join(workingDir, file)
+
+def rootRel(file):
+    return os.path.join(args.ROOT, file)
+
+def testerRel(file):
+    return os.path.join(testerDir, file)
+
+
 
 def flatten(*args):
     result = []
@@ -189,7 +211,7 @@ def execute(exe, inFiles, outFile, *args):
         pass
 
     argv = flatten(exe, inFiles, "-o", outFile, *args)
-    subprocess.check_call(argv, stdout=PIPE, stderr=PIPE)
+    subprocess.check_call(argv)#, stdout=PIPE, stderr=PIPE)
 
 
 class Test:
@@ -205,24 +227,30 @@ class Test:
         self.actual = None
         self.reason = ""
 
-def findTests():
+def findTests(rootPath):
+    def extractResult(testFile):
+        if ".pass." in testFile:
+            expected = Test.PASS
+        elif '.fail.' in testFile:
+            expected = Test.FAIL
+        elif '.xpass.' in testFile:
+            expected = Test.XPASS
+        elif '.xfail.' in testFile:
+            expected = Test.XFAIL
+        else:
+            raise Exception("Expected result is invalid")
+        return Test(testFile, expected)
+
+    if os.path.isfile(rootPath):
+        return [extractResult(rootPath)]
+
     tests = []
-    for root, dirnames, filenames in os.walk(rootDir):
+    for root, dirnames, filenames in os.walk(rootPath):
         for filename in fnmatch.filter(filenames, 'tst_*.cpp'):
             name = os.path.relpath(os.path.join(root, filename),
-                                   rootDir)
-            if ".pass." in name:
-                expected = Test.PASS
-            elif '.fail.' in name:
-                expected = Test.FAIL
-            elif '.xpass.' in name:
-                expected = Test.XPASS
-            elif '.xfail.' in name:
-                expected = Test.XFAIL
-            else:
-                raise Exception("Expected result is invalid")
-            tests.append(Test(name, expected))
-    return tests
+                                   rootPath)
+            tests.append(extractResult(name))
+    return sorted(tests, key=lambda t: t.name)
 
 class Monitor(threading.Thread):
     UNKNOWN = 0
@@ -241,6 +269,8 @@ class Monitor(threading.Thread):
     def run(self):
         while not self.stopRequest.isSet():
             line = self.uart.readline()
+            if line:
+                print(line)
             m = re.match(r"\^\^\^FREMTESTER:(.*):(.*)\^\^\^", line)
             if m:
                 self.tokenQueue.put(
@@ -254,29 +284,29 @@ class Monitor(threading.Thread):
 
 if toolchain == ToolChain.ARMCC:
     execute(asmExecutable,
-            rootRel("common/armcc-startup_stm32f4xx.s"),
+            testerRel("common/armcc-startup_stm32f4xx.s"),
             cwdRel("startup_stm32f4xx.o"),
             asmFlags)
-    retargetSourceFile = rootRel("common/armcc-retarget.cpp.in")
+    retargetSourceFile = testerRel("common/armcc-retarget.cpp.in")
 elif toolchain == ToolChain.GCC:
     execute(asmExecutable,
-            rootRel("common/gcc-startup_stm32f4xx.S"),
+            testerRel("common/gcc-startup_stm32f4xx.S"),
             cwdRel("startup_stm32f4xx.o"),
             asmFlags, "-c")
-    retargetSourceFile = rootRel("common/gcc-retarget.cpp.in")
+    retargetSourceFile = testerRel("common/gcc-retarget.cpp.in")
 
 execute(cExecutable,
-        rootRel("common/system_stm32f4xx.c"),
+        testerRel("common/system_stm32f4xx.c"),
         cwdRel("system_stm32f4xx.o"),
         cFlags, "-c")
 execute(cExecutable,
-        rootRel("common/RTX_Conf_CM.c"),
+        testerRel("common/RTX_Conf_CM.c"),
         cwdRel("RTX_Conf_CM.o"),
         cFlags, "-c")
 execute(cxxExecutable,
-        rootRel("../src/weos.cpp"),
+        testerRel("../src/weos.cpp"),
         cwdRel("weos.o"),
-        "-I" + rootRel("../src/"),
+        "-I" + testerRel("../src/"),
         cxxFlags, "-c")
 
 fixtureObjectFiles = [cwdRel("startup_stm32f4xx.o"),
@@ -284,8 +314,7 @@ fixtureObjectFiles = [cwdRel("startup_stm32f4xx.o"),
                       cwdRel("RTX_Conf_CM.o"),
                       cwdRel("weos.o")]
 
-
-testList = findTests()
+testList = findTests(args.ROOT)
 
 tokenQueue = Queue.Queue()
 monitor = Monitor(tokenQueue)
@@ -314,7 +343,7 @@ for testIdx in xrange(len(testList)):
     execute(cxxExecutable,
             cwdRel(testFileBaseName + "-retarget.cpp"),
             retargetObjectFile,
-            cxxFlags, "-c", "-I" + rootRel("common/"))
+            cxxFlags, "-c", "-I" + testerRel("common/"))
 
     objectFile = cwdRel(testFileBaseName + '.o')
     exeFile = cwdRel(testFileBaseName + '.axf')
@@ -330,7 +359,7 @@ for testIdx in xrange(len(testList)):
                     fixtureObjectFiles,
                     retargetObjectFile,
                     linkerFlags,
-                    "--scatter", rootRel("common/armcc-linker.sct"))
+                    "--scatter", testerRel("common/armcc-linker.sct"))
         elif toolchain == ToolChain.GCC:
             execute(linkerExecutable,
                     objectFile,
@@ -338,7 +367,7 @@ for testIdx in xrange(len(testList)):
                     fixtureObjectFiles,
                     retargetObjectFile,
                     linkerFlags,
-                    "-T" + rootRel("common/gcc-stm32f4xx.ld"))
+                    "-T" + testerRel("common/gcc-stm32f4xx.ld"))
     except subprocess.CalledProcessError:
         testList[testIdx].actual = Test.FAIL
         continue
