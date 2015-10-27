@@ -87,6 +87,21 @@ public:
     //! Returns the name of this error category.
     virtual const char* name() const noexcept = 0;
 
+    bool operator==(const error_category& other) const noexcept
+    {
+        return this == &other;
+    }
+
+    bool operator!=(const error_category& other) const noexcept
+    {
+        return this != &other;
+    }
+
+    bool operator<(const error_category& other) const noexcept
+    {
+        return this < &other;
+    }
+
 private:
     error_category(const error_category&) = delete;
     const error_category& operator= (const error_category&) = delete;
@@ -195,6 +210,14 @@ private:
     //! The error category.
     const error_category* m_category;
 };
+
+inline
+bool operator==(const error_code& a, const error_code& b) noexcept
+{
+    return a.value() == b.value() && a.category() == b.category();
+}
+
+// TODO: Add other comparison operators
 
 // ----=====================================================================----
 //     Generic error category
