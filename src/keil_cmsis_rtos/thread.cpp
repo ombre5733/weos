@@ -89,7 +89,8 @@ WEOS_END_NAMESPACE
 // because the joining thread might re-use the stack of this thread. So we
 // must ensure that there is no context switch between setting the semaphore
 // signal and terminating the thread.
-extern "C" int weos_terminateTask(void* sema, void* threadId) noexcept
+extern "C"
+int weos_terminateTask(void* sema, void* threadId) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
@@ -109,18 +110,13 @@ SVC_2(weos_terminateTask, int,   void*, void*)
 //! helper function adheres to this specification. The \p arg is a pointer to
 //! a weos::SharedThreadData object which contains thread-specific data such as
 //! the actual function to start.
-extern "C" void weos_threadInvoker(const void* arg) noexcept
+extern "C"
+void weos_threadInvoker(const void* arg) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
     auto data = static_cast<weos_detail::SharedThreadData*>(
                     const_cast<void*>(arg));
-
-    // The stack memory was not allocated from the pool. Set the private stack
-    // size 'priv_stack' to zero, such that CMSIS won't add the memory to
-    // its pool when the thread finishes.
-    void* ptcb = osThreadGetId();
-    *reinterpret_cast<std::uint16_t*>(static_cast<char*>(ptcb) + offsetof_priv_stack) = 0;
 
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     try
@@ -147,21 +143,22 @@ extern "C" void weos_threadInvoker(const void* arg) noexcept
     {
         // The invokee has to destroy the shared data. After that it will
         // cancel the thread.
+        osThreadId threadId = data->m_threadId;
         data->destroy();
-        weos_terminateTask_indirect(nullptr, ptcb);
+        weos_terminateTask_indirect(nullptr, threadId);
     }
     else
     {
         // The invoker has to destroy the shared data. The invokee signals
         // the end of the threaded function and cancels the thread.
-        weos_terminateTask_indirect(&data->m_finished, ptcb);
+        weos_terminateTask_indirect(&data->m_finished, data->m_threadId);
     }
 }
 
 
-extern "C" void* weos_createTask(
-        void* stack, uint32_t stackSize_and_priority,
-        void* data, uint32_t debugFunctionPtr) noexcept
+extern "C"
+void* weos_createTask(void* stack, uint32_t stackSize_and_priority,
+                      void* data, uint32_t debugFunctionPtr) noexcept
 {
     uint32_t taskId = rt_tsk_create(
                           (void (*)(void))weos_threadInvoker,
@@ -171,6 +168,11 @@ extern "C" void* weos_createTask(
     if (taskId)
     {
         void* pTCB = os_active_TCB[taskId - 1];
+
+        // The stack memory was not allocated from the CMSIS pool. Set the
+        // private stack size 'priv_stack' to zero, such that CMSIS won't add
+        // the memory to its pool when the thread finishes.
+        *reinterpret_cast<std::uint16_t*>(static_cast<char*>(pTCB) + offsetof_priv_stack) = 0;
 
         // Set the field ptask in OS_TCB to the invoked function (needed for
         // the uVision debugger).
