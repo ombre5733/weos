@@ -180,13 +180,16 @@ public:
         Ready            = 0x08,
     };
 
-    SharedStateBase() noexcept
+    explicit
+    SharedStateBase(bool deallocateOnDestruction) noexcept
         : m_referenceCount(1),
-          m_flags(0)
+          m_flags(0),
+          m_deallocateOnDestruction(deallocateOnDestruction)
     {
     }
 
-    virtual ~SharedStateBase()
+    virtual
+    ~SharedStateBase()
     {
     }
 
@@ -237,11 +240,10 @@ protected:
     atomic_uint m_flags;
     exception_ptr m_exception;
     OneshotConditionVariable m_cv;
+    bool m_deallocateOnDestruction;
 
-    virtual void destroy() noexcept
-    {
-        delete this;
-    }
+    virtual
+    void destroy() noexcept;
 };
 
 struct SharedStateBaseDeleter
@@ -263,6 +265,12 @@ class SharedState : public SharedStateBase
                                      alignment_of<TResult>::value>::type storage_t;
 
 public:
+    explicit
+    SharedState(bool deallocateOnDestruction) noexcept
+        : SharedStateBase(deallocateOnDestruction)
+    {
+    }
+
     template <typename T>
     void setValue(T&& value)
     {
@@ -283,11 +291,12 @@ public:
 protected:
     storage_t m_value;
 
-    virtual void destroy() noexcept override
+    virtual
+    void destroy() noexcept override
     {
         if (this->m_flags & SharedStateBase::ValueConstructed)
             reinterpret_cast<TResult*>(&m_value)->~TResult();
-        delete this;
+        SharedStateBase::destroy();
     }
 };
 
@@ -299,12 +308,15 @@ template <typename TResult, typename TCallable>
 class AsyncSharedState : public SharedState<TResult>
 {
 public:
-    explicit AsyncSharedState(TCallable&& callable)
-        : m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
+    explicit
+    AsyncSharedState(bool deallocateOnDestruction, TCallable&& callable)
+        : SharedState<TResult>(deallocateOnDestruction),
+          m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
     {
     }
 
-    virtual void invoke()
+    virtual
+    void invoke() noexcept
     {
         try
         {
@@ -317,7 +329,8 @@ public:
     }
 
 protected:
-    virtual void destroy() noexcept override
+    virtual
+    void destroy() noexcept override
     {
         this->wait();
         SharedState<TResult>::destroy();
@@ -331,12 +344,15 @@ template <typename TCallable>
 class AsyncSharedState<void, TCallable> : public SharedStateBase
 {
 public:
-    explicit AsyncSharedState(TCallable&& callable)
-        : m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
+    explicit
+    AsyncSharedState(bool deallocateOnDestruction, TCallable&& callable)
+        : SharedStateBase(deallocateOnDestruction),
+          m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
     {
     }
 
-    virtual void invoke()
+    virtual
+    void invoke() noexcept
     {
         try
         {
@@ -350,7 +366,8 @@ public:
     }
 
 protected:
-    virtual void destroy() noexcept override
+    virtual
+    void destroy() noexcept override
     {
         this->wait();
         SharedStateBase::destroy();
@@ -361,13 +378,26 @@ private:
 };
 
 template <typename TResult, typename TCallable>
-future<TResult> makeAsyncSharedState(const thread::attributes& attrs,
-                                     TCallable&& f)
+future<TResult> makeAsyncSharedState(thread::attributes attrs, TCallable&& f)
 {
     using shared_state_type = AsyncSharedState<TResult, TCallable>;
+    static constexpr size_t alignment = alignment_of<shared_state_type>::value;
+    static constexpr size_t size = sizeof(shared_state_type);
+
+    void* stack = attrs.stackBegin();
+    size_t stackSize = attrs.stackSize();
+    if (!align(alignment, size, stack, stackSize))
+        throw std::bad_alloc();
 
     unique_ptr<shared_state_type, SharedStateBaseDeleter> state(
-                new shared_state_type(WEOS_NAMESPACE::forward<TCallable>(f)));
+                ::new (stack) shared_state_type(
+                    false, WEOS_NAMESPACE::forward<TCallable>(f)));
+
+    stack = static_cast<char*>(stack) + size;
+    stackSize -= size;
+    weos_detail::max_align(stack, stackSize);
+    attrs.setStack(stack, stackSize);
+
     thread(attrs, &shared_state_type::invoke, state.get()).detach();
 
     return future<TResult>(state.get());
@@ -488,8 +518,7 @@ private:
     friend class promise;
 
     template <typename T, typename U>
-    friend future<T> weos_detail::makeAsyncSharedState(
-            const thread::attributes&, U&&);
+    friend future<T> weos_detail::makeAsyncSharedState(thread::attributes, U&&);
 };
 
 // ----=====================================================================----
@@ -595,8 +624,7 @@ private:
     friend class promise;
 
     template <typename T, typename U>
-    friend future<T> weos_detail::makeAsyncSharedState(
-            const thread::attributes&, U&&);
+    friend future<T> weos_detail::makeAsyncSharedState(thread::attributes, U&&);
 };
 
 //! Swaps two futures \p a and \p b.
@@ -611,6 +639,7 @@ void swap(future<T>& a, future<T>& b) noexcept
 //     promise<T>
 // ----=====================================================================----
 
+// TODO: Implement this
 template <typename T>
 class promise;
 
