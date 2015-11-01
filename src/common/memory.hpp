@@ -348,6 +348,15 @@ using boost::container::allocator_arg;
 using boost::container::allocator_arg_t;
 using boost::container::uses_allocator;
 
+void* align(std::size_t alignment, std::size_t size, void*& ptr, std::size_t& space);
+
+namespace weos_detail
+{
+
+void* max_align(void*& ptr, std::size_t& space);
+
+} // namespace weos_detail
+
 WEOS_END_NAMESPACE
 
 
@@ -370,6 +379,8 @@ using std::allocator_traits;
 using std::allocator_arg;
 using std::allocator_arg_t;
 using std::uses_allocator;
+
+void* align(std::size_t alignment, std::size_t size, void*& ptr, std::size_t& space);
 
 WEOS_END_NAMESPACE
 
@@ -403,6 +414,8 @@ public:
 private:
     TAllocator& m_allocator;
 };
+
+void* max_align(void*& ptr, std::size_t& space);
 
 } // namespace weos_detail
 

@@ -26,22 +26,50 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "config.hpp"
+#include "memory.hpp"
 
-#include "common/atomic.cpp"
-#include "common/exception.cpp"
-#include "common/functional.cpp"
-#include "common/future.cpp"
-#include "common/memory.cpp"
-#include "common/system_error.cpp"
+WEOS_BEGIN_NAMESPACE
 
+void* align(std::size_t alignment, std::size_t size,
+            void*& ptr, std::size_t& space)
+{
+    using namespace std;
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/weos.cpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/weos.cpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/weos.cpp"
-#else
-    #error "Invalid native OS."
-#endif
+    uintptr_t address = uintptr_t(ptr);
+    // Clearing the low-order bits is done by masking them (since
+    // -2 = 0b11111110, -4 = 0b11111100...). This is portable code because
+    // std::size_t is guaranteed to be unsigned.
+    uintptr_t aligned_address = (address + (alignment - 1)) & -alignment;
+    size_t diff = aligned_address - address;
+    if (space >= size + diff)
+    {
+        space -= diff;
+        ptr = reinterpret_cast<void*>(aligned_address);
+        return ptr;
+    }
+    return nullptr;
+}
+
+namespace weos_detail
+{
+
+void* max_align(void*& ptr, std::size_t& space)
+{
+    using namespace std;
+
+    static constexpr size_t alignment = alignment_of<long double>::value;
+    uintptr_t address = uintptr_t(ptr);
+    uintptr_t aligned_address = (address + (alignment - 1)) & -alignment;
+    size_t diff = aligned_address - address;
+    if (space >= diff)
+    {
+        space -= diff;
+        ptr = reinterpret_cast<void*>(aligned_address);
+        return ptr;
+    }
+    return nullptr;
+}
+
+} // namespace weos_detail
+
+WEOS_END_NAMESPACE
