@@ -50,7 +50,7 @@ template <typename RepT, typename PeriodT = ratio<1> >
 class duration;
 
 
-namespace weos_detail
+namespace weos_chrono_detail
 {
 
 template <typename FromDurationT, typename ToDurationT>
@@ -167,7 +167,7 @@ public:
     typedef ratio<num1 * den2, den1 * num2> type;
 };
 
-} // namespace weos_detail
+} // namespace weos_chrono_detail
 } // namespace chrono
 
 // ----=====================================================================----
@@ -179,7 +179,8 @@ struct common_type<chrono::duration<Rep1T, Period1T>,
                    chrono::duration<Rep2T, Period2T> >
 {
     typedef chrono::duration<typename common_type<Rep1T, Rep2T>::type,
-                             typename chrono::weos_detail::ratio_gcd<Period1T, Period2T>::type> type;
+                             typename chrono::weos_chrono_detail::ratio_gcd<
+                                 Period1T, Period2T>::type> type;
 };
 
 namespace chrono
@@ -222,7 +223,7 @@ struct duration_values
 
 template <typename ToDurationT, typename RepT, typename PeriodT>
 inline constexpr
-typename enable_if<weos_detail::is_duration<ToDurationT>::value,
+typename enable_if<weos_chrono_detail::is_duration<ToDurationT>::value,
                    ToDurationT>::type
 duration_cast(const duration<RepT, PeriodT>& d);
 
@@ -232,7 +233,7 @@ duration_cast(const duration<RepT, PeriodT>& d);
 template <typename RepT, typename PeriodT>
 class duration
 {
-    static_assert(!weos_detail::is_duration<RepT>::value,
+    static_assert(!weos_chrono_detail::is_duration<RepT>::value,
                   "The tick representation cannot be a duration");
     static_assert(PeriodT::num > 0, "The period must be positive");
 
@@ -270,10 +271,10 @@ public:
 
     //! Constructs a duration from the \p other duration.
     template <typename TRep2, typename TPeriod2,
-              typename _ = typename enable_if<!weos_detail::checked_division<TPeriod2, period>::overflow
-                                              && (treat_as_floating_point<rep>::value
-                                                  || (weos_detail::checked_division<TPeriod2, period>::type::den == 1
-                                                      && !treat_as_floating_point<TRep2>::value))>::type>
+              typename = typename enable_if<!weos_chrono_detail::checked_division<TPeriod2, period>::overflow
+                                            && (treat_as_floating_point<rep>::value
+                                                || (weos_chrono_detail::checked_division<TPeriod2, period>::type::den == 1
+                                                    && !treat_as_floating_point<TRep2>::value))>::type>
     constexpr
     duration(const duration<TRep2, TPeriod2>& other)
         : m_count(duration_cast<duration>(other).count())
@@ -406,7 +407,7 @@ typedef duration<std::int32_t, ratio<3600> >   hours;
 //     duration comparisons
 // ----=====================================================================----
 
-namespace weos_detail
+namespace weos_chrono_detail
 {
 
 // Compares two durations. General case.
@@ -457,54 +458,54 @@ struct duration_less<TDuration, TDuration>
     }
 };
 
-} // namespace weos_detail
+} // namespace weos_chrono_detail
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator==(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return weos_detail::duration_equal<duration<TRep1, TPeriod1>,
-                                       duration<TRep2, TPeriod2> >::cmp(d1, d2);
+    return weos_chrono_detail::duration_equal<duration<TRep1, TPeriod1>,
+                                              duration<TRep2, TPeriod2> >::cmp(d1, d2);
 }
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator!=(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return !weos_detail::duration_equal<duration<TRep1, TPeriod1>,
-                                        duration<TRep2, TPeriod2> >::cmp(d1, d2);
+    return !weos_chrono_detail::duration_equal<duration<TRep1, TPeriod1>,
+                                               duration<TRep2, TPeriod2> >::cmp(d1, d2);
 }
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator<(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return weos_detail::duration_less<duration<TRep1, TPeriod1>,
-                                      duration<TRep2, TPeriod2> >::cmp(d1, d2);
+    return weos_chrono_detail::duration_less<duration<TRep1, TPeriod1>,
+                                             duration<TRep2, TPeriod2> >::cmp(d1, d2);
 }
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator>(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return weos_detail::duration_less<duration<TRep2, TPeriod2>,
-                                      duration<TRep1, TPeriod1> >::cmp(d2, d1);
+    return weos_chrono_detail::duration_less<duration<TRep2, TPeriod2>,
+                                             duration<TRep1, TPeriod1> >::cmp(d2, d1);
 }
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator<=(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return !weos_detail::duration_less<duration<TRep2, TPeriod2>,
-                                       duration<TRep1, TPeriod1> >::cmp(d2, d1);
+    return !weos_chrono_detail::duration_less<duration<TRep2, TPeriod2>,
+                                              duration<TRep1, TPeriod1> >::cmp(d2, d1);
 }
 
 template <typename TRep1, typename TPeriod1, typename TRep2, typename TPeriod2>
 inline constexpr
 bool operator>=(const duration<TRep1, TPeriod1>& d1, const duration<TRep2, TPeriod2>& d2)
 {
-    return !weos_detail::duration_less<duration<TRep1, TPeriod1>,
-                                       duration<TRep2, TPeriod2> >::cmp(d1, d2);
+    return !weos_chrono_detail::duration_less<duration<TRep1, TPeriod1>,
+                                              duration<TRep2, TPeriod2> >::cmp(d1, d2);
 }
 
 // ----=====================================================================----
@@ -545,7 +546,7 @@ operator- (const duration<Rep1T, Period1T>& x,
 //     duration_cast
 // ----=====================================================================----
 
-namespace weos_detail
+namespace weos_chrono_detail
 {
 
 // This struct is a helper for casting durations. Generally, we seek to convert
@@ -650,7 +651,7 @@ struct duration_caster
     }
 };
 
-} // namespace weos_detail
+} // namespace weos_chrono_detail
 
 //! A utility function to cast durations.
 //! Cast from a <tt>duration<RepT, PeriodT></tt> given in \p d to another
@@ -662,12 +663,12 @@ struct duration_caster
 //! All values are cast to at least intmax_t before performing the computation.
 template <typename ToDurationT, typename RepT, typename PeriodT>
 inline constexpr
-typename enable_if<weos_detail::is_duration<ToDurationT>::value,
+typename enable_if<weos_chrono_detail::is_duration<ToDurationT>::value,
                    ToDurationT>::type
 duration_cast(const duration<RepT, PeriodT>& d)
 {
-    return weos_detail::duration_caster<duration<RepT, PeriodT>,
-                                        ToDurationT>().cast(d);
+    return weos_chrono_detail::duration_caster<duration<RepT, PeriodT>,
+                                               ToDurationT>().cast(d);
 }
 
 // ----=====================================================================----
@@ -678,7 +679,7 @@ duration_cast(const duration<RepT, PeriodT>& d)
 template <typename ClockT, typename DurationT = typename ClockT::duration>
 class time_point
 {
-    static_assert(weos_detail::is_duration<DurationT>::value,
+    static_assert(weos_chrono_detail::is_duration<DurationT>::value,
                   "The second template parameter must be a duration");
 
 public:
