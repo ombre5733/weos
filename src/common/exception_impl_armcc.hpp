@@ -163,6 +163,8 @@ public:
     {
     }
 
+    virtual ~CaptureableExceptionBase() {}
+
     virtual const CaptureableExceptionBase* clone() const = 0;
 
     /*TODO: [[noreturn]]*/
