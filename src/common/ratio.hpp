@@ -29,6 +29,12 @@
 #ifndef WEOS_COMMON_RATIO_HPP
 #define WEOS_COMMON_RATIO_HPP
 
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
+
 #ifdef __CC_ARM
 // -----------------------------------------------------------------------------
 // ARMCC

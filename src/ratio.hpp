@@ -30,6 +30,8 @@
 #define WEOS_RATIO_HPP
 
 #include "config.hpp"
+#include "_core.hpp"
+
 #include "common/ratio.hpp"
 
 #endif // WEOS_RATIO_HPP
