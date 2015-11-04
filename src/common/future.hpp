@@ -384,18 +384,28 @@ future<TResult> makeAsyncSharedState(thread::attributes attrs, TCallable&& f)
     static constexpr size_t alignment = alignment_of<shared_state_type>::value;
     static constexpr size_t size = sizeof(shared_state_type);
 
+    // Put the shared state on the stack.
     void* stack = attrs.stackBegin();
     size_t stackSize = attrs.stackSize();
     if (!align(alignment, size, stack, stackSize))
-        throw std::bad_alloc();
-
+    {
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::not_enough_memory,
+                    "makeAsyncSharedState: stack size too small");
+    }
     unique_ptr<shared_state_type, SharedStateBaseDeleter> state(
                 ::new (stack) shared_state_type(
                     false, WEOS_NAMESPACE::forward<TCallable>(f)));
-
     stack = static_cast<char*>(stack) + size;
     stackSize -= size;
-    weos_detail::max_align(stack, stackSize);
+
+    // Take care for maximum alignment.
+    if (!weos_detail::max_align(stack, stackSize))
+    {
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::not_enough_memory,
+                    "makeAsyncSharedState: stack size too small");
+    }
     attrs.setStack(stack, stackSize);
 
     thread(attrs, &shared_state_type::invoke, state.get()).detach();

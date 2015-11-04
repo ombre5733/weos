@@ -163,7 +163,7 @@ struct is_literal_type
 
 template <typename TType, typename... TArgs>
 struct is_nothrow_constructible
-        : public integral_constant<bool, __is_nothrow_constructible(TType(TArgs...))> {};
+        : public integral_constant<bool, __is_nothrow_constructible(TType, TArgs...)> {};
 
 // ---- is_nothrow_copy_constructible ------------------------------------------
 
