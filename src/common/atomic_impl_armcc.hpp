@@ -732,6 +732,7 @@ public:
                                  memory_order mo = memory_order_seq_cst) noexcept
     {
         using namespace std;
+        lock_guard<mutex> lock(weos_detail::g_atomicMutex);
         if (m_value == expected)
         {
             m_value = desired;
@@ -748,6 +749,7 @@ public:
                                  memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         using namespace std;
+        lock_guard<mutex> lock(weos_detail::g_atomicMutex);
         if (m_value == expected)
         {
             m_value = desired;
