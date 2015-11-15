@@ -4,7 +4,7 @@ A modern C++ threading library for embedded development.
 
 ## Overview
 
-WEOS is a C++ interface for ARM-Keil's RTOS guided by the ISO-standardized
+WEOS is a C++ interface for ARM's CMSIS RTOS guided by the ISO-standardized
 C++-STL interface. RTOS features which are covered by the standard use the
 standard API (e.g. `recursive_timed_mutex`, `thread`).
 Features which do not have a standard counterpart (semaphores, thread signals,
