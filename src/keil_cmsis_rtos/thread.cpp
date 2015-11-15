@@ -52,7 +52,7 @@ extern "C"
 {
 
 // The function which actually creates a thread. The signature can be found
-// in ../3rdparty/keil_cmsis_rtos/SRC/rt_Task.h.
+// in ${CMSIS-RTOS}/SRC/rt_Task.h.
 uint32_t rt_tsk_create(void(*task)(void),
                        uint32_t prio_stksz,
                        void* stk, void* argv);
@@ -61,7 +61,7 @@ uint32_t rt_tsk_create(void(*task)(void),
 int svcThreadTerminate(void* thread_id);
 
 // An array of pointers to task/thread control blocks. The declaration is
-// from ../3rdparty/keil_cmsis_rtos/INC/RTX_Config.h.
+// from ${CMSIS-RTOS}/INC/RTX_Config.h.
 extern void* os_active_TCB[];
 
 } // extern "C"

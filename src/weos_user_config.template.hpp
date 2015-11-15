@@ -41,7 +41,7 @@
 // #define WEOS_WRAP_CXX11
 
 // -----------------------------------------------------------------------------
-//     Keil CMSIS-RTOS
+//     ARM Germany CMSIS-RTOS
 // -----------------------------------------------------------------------------
 
 // Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
@@ -49,14 +49,19 @@
 
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
 
+// The include path for <cmsis_os.h>
+#define WEOS_CMSIS_OS_INCLUDE         <cmsis_os.h>
+// The include path for <core_cmX.h>
+#define WEOS_CMSIS_CORE_CMX_INCLUDE   <core_cm4.h>
+
 // The frequency of the system clock (in Hz).
-// \note In Keil's CMSIS RTOS this is the value of OS_CLOCK.
-#  define WEOS_SYSTEM_CLOCK_FREQUENCY       12000000
+// \note In ARM's CMSIS RTOS this is the value of OS_CLOCK.
+static constexpr unsigned WEOS_SYSTEM_CLOCK_FREQUENCY = 12000000;
 // The frequency of the SysTick timer (in Hz).
-// \note In Keil's CMSIS RTOS this is the value of (1000000 / OS_TICK).
-#  define WEOS_SYSTICK_FREQUENCY            1000
+// \note In ARM's CMSIS RTOS this is the value of (1000000 / OS_TICK).
+static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 // The maximum number of threads which can be active concurrently.
-#  define WEOS_MAX_NUM_CONCURRENT_THREADS   3
+static constexpr unsigned WEOS_MAX_NUM_CONCURRENT_THREADS = 3;
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 
@@ -161,6 +166,6 @@
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   5
+#define WEOS_USER_CONFIG_VERSION   6
 
 #endif // WEOS_USER_CONFIG_HPP
