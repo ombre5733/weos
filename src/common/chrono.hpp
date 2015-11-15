@@ -560,12 +560,6 @@ namespace weos_chrono_detail
 // 1) R = 1: The two periods are equal and we only need to cast the ticks.
 // 2) R = rN / 1 with rN != 1: The from-ticks have to be multiplied with rN.
 // 3) R = 1 / rD with rD != 1: The from-ticks have to be divided by rD.
-//
-// Note: This implementation differs from the standard as it does not perform
-// the computations in the widest type available but in the fastest. To be
-// more precise, the computation is done in the common type between the
-// input, output and the fastest integer type. The outcome is then converted
-// to the result type.
 template <typename FromDurationT, typename ToDurationT, typename RatioT,
           bool RatioNumeratorEqualsOne, bool RatioDenominatorEqualsOne>
 struct duration_cast_helper;
