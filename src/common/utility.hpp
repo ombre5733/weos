@@ -81,7 +81,7 @@ struct integer_sequence
 {
     typedef T value_type;
 
-    static constexpr std::size_t size()
+    static constexpr std::size_t size() noexcept
     {
         return sizeof...(TIndices);
     }
