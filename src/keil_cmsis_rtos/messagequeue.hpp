@@ -66,6 +66,11 @@ public:
     SmallMessageQueue()
         : m_id(0)
     {
+        static_assert(osCMSIS_RTX <= ((4<<16) | 78),
+                      "Check the overhead for the queue.");
+
+        // TODO: optimize the construction
+
         // Keil's CMSIS RTOS wants a zero'ed control block type for
         // initialization.
         m_queueData[0] = 0;
@@ -276,8 +281,11 @@ public:
 #endif
 
 private:
+    // The number of slots which are available.
     semaphore m_numAvailable;
+    // A pool to hold the elements which are currently enqueued.
     shared_memory_pool<TType, TQueueSize> m_memoryPool;
+    // A queue to pass element pointers from one thread to the other.
     SmallMessageQueue<void*, TQueueSize> m_pointerQueue;
 };
 
@@ -319,7 +327,8 @@ public:
     //! \brief Returns the capacity.
     //!
     //! Returns the maximum number of elements which the queue can hold.
-    std::size_t capacity() const
+    constexpr
+    std::size_t capacity() const noexcept
     {
         return TQueueSize;
     }
