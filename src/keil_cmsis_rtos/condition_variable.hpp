@@ -31,6 +31,7 @@
 
 #include "core.hpp"
 
+#include "_tq.hpp"
 #include "../chrono.hpp"
 #include "../mutex.hpp"
 #include "../semaphore.hpp"
@@ -48,6 +49,29 @@ WEOS_SCOPED_ENUM_END(cv_status)
 //! A condition variable.
 class condition_variable
 {
+    //! A helper class for temporarily releasing a lock.
+    //! The lock_releaser is a helper class to release a lock until the object
+    //! goes out of scope. The constructor calls unlock() and the destructor
+    //! calls lock(). It is somehow the dual to the lock_guard<> which calls
+    //! lock() in the constructor and unlock() in the destructor.
+    class lock_releaser
+    {
+    public:
+        explicit lock_releaser(unique_lock<mutex>& lock) noexcept
+            : m_lock(lock)
+        {
+            m_lock.unlock();
+        }
+
+        ~lock_releaser() noexcept(false)
+        {
+            m_lock.lock();
+        }
+
+    private:
+        unique_lock<mutex>& m_lock;
+    };
+
 public:
     typedef condition_variable* native_handle_type;
 
@@ -63,11 +87,15 @@ public:
     //! Notifies a thread waiting on this condition variable.
     //!
     //! Notifies one thread which is waiting on this condition variable.
+    //!
+    //! \note This method may be called in an interrupt context.
     void notify_one() noexcept;
 
     //! Notifies all threads waiting on this condition variable.
     //!
     //! Notifies all threads which are waiting on this condition variable.
+    //!
+    //! \note This method may be called in an interrupt context.
     void notify_all() noexcept;
 
     //! Waits on this condition variable.
@@ -75,7 +103,7 @@ public:
     //! The given \p lock is released and the current thread is added to a
     //! list of threads waiting for a notification. The calling thread is
     //! blocked until a notification is sent via notify() or notify_all()
-    //! or a spurious wakeup occurs. The \p lock is reacquired when the
+    //! or a spurious wakeup occurs. The \p lock is re-acquired when the
     //! function exits (either due to a notification or due to an exception).
     void wait(unique_lock<mutex>& lock);
 
@@ -104,19 +132,22 @@ public:
     //! of threads waiting for a notification. The thread is blocked until
     //! a notification is sent, a spurious wakeup occurs or the timeout
     //! period \p d expires. When the function returns, the \p lock is
-    //! reacquired no matter what has caused the wakeup.
+    //! re-acquired no matter what has caused the wakeup.
     template <typename TRep, typename TPeriod>
     inline
     cv_status wait_for(unique_lock<mutex>& lock,
                        const chrono::duration<TRep, TPeriod>& d)
     {
-        using namespace chrono;
-
-        milliseconds converted = duration_cast<milliseconds>(d);
-        if (converted < d)
-            ++converted;
-
-        return wait_for(lock, converted);
+        // First enqueue ourselves in the list of waiters.
+        weos_detail::_tq::_t t(m_tq);
+        // We can only unlock the lock when we are sure that a signal will
+        // reach our thread.
+        lock_releaser releaser(lock);
+        // Wait until we receive a signal, then re-lock the lock.
+        if (t.wait_for(d) || t.unlink())
+            return cv_status::no_timeout;
+        else
+            return cv_status::timeout;
     }
 
     template <typename TRep, typename TPeriod, typename TPredicate>
@@ -135,14 +166,42 @@ public:
         return true;
     }
 
-    //! \cond
     //! Waits on this condition variable with a timeout.
     //!
-    //! This is an overload if the duration is specified in milliseconds.
-    cv_status wait_for(unique_lock<mutex>& lock, chrono::milliseconds ms);
-    //! \endcond
+    //! Releases the given \p lock and adds the calling thread to a list
+    //! of threads waiting for a notification. The thread is blocked until
+    //! a notification is sent, a spurious wakeup occurs or the timeout
+    //! point \p time is reached. When the function returns, the \p lock is
+    //! re-acquired no matter what has caused the wakeup.
+    template <typename TClock, typename TDuration>
+    cv_status wait_until(unique_lock<mutex>& lock,
+                         const chrono::time_point<TClock, TDuration>& time)
+    {
+        // First enqueue ourselves in the list of waiters.
+        weos_detail::_tq::_t t(m_tq);
+        // We can only unlock the lock when we are sure that a signal will
+        // reach our thread.
+        lock_releaser releaser(lock);
+        // Wait until we receive a signal, then re-lock the lock.
+        if (t.wait_until(time) || t.unlink())
+            return cv_status::no_timeout;
+        else
+            return cv_status::timeout;
+    }
 
-    // TODO: wait_until()
+    template <typename TClock, typename TDuration, typename TPredicate>
+    inline
+    bool wait_until(unique_lock<mutex>& lock,
+                    const chrono::time_point<TClock, TDuration>& time,
+                    TPredicate pred)
+    {
+        while (!pred())
+        {
+            if (wait_until(lock, time) == cv_status::timeout)
+                return pred();
+        }
+        return true;
+    }
 
     //! Returns the native handle.
     native_handle_type native_handle()
@@ -154,35 +213,7 @@ public:
     condition_variable& operator=(const condition_variable&) = delete;
 
 private:
-    //! An object to wait on a signal.
-    //! A WaitingThread can be enqueued in a list of waiters. The condition
-    //! variable can either notify the first waiter or all waiters in the list.
-    struct WaitingThread
-    {
-        WaitingThread() noexcept
-            : next(0),
-              dequeued(false)
-        {
-        }
-
-        // The next waiting thread in the list.
-        WaitingThread* next;
-        // A semaphore to send a signal to this waiting thread.
-        semaphore signal;
-        // A flag which is set when the thread has been removed from the list.
-        bool dequeued;
-    };
-
-    //! Adds the waiter \p w to the queue.
-    void enqueue(WaitingThread& w);
-
-    //! Removes the waiter \p w from the queue.
-    void maybeDequeue(WaitingThread& w);
-
-    //! A mutex to protect the list of waiters from concurrent modifications.
-    mutex m_mutex;
-    //! A pointer to the first waiter.
-    WaitingThread* m_waitingThreads;
+    weos_detail::_tq m_tq;
 };
 
 WEOS_END_NAMESPACE

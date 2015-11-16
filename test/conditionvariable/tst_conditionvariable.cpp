@@ -26,10 +26,80 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "../../condition_variable.hpp"
-#include "sparring.hpp"
+#include <condition_variable.hpp>
+#include <mutex.hpp>
+#include <thread.hpp>
 
 #include "gtest/gtest.h"
+
+struct SparringData
+{
+    enum Action
+    {
+        None,
+        ConditionVariableWait,
+        ConditionVariableTryWait,
+        Terminate
+    };
+
+    SparringData(weos::mutex& _m, weos::condition_variable& _cv)
+        : mutex(_m),
+          cv(_cv),
+          action(None),
+          busy(false),
+          notified(false),
+          sparringStarted(false)
+    {
+    }
+
+    weos::mutex& mutex;
+    weos::condition_variable& cv;
+    volatile Action action;
+    volatile bool busy;
+    volatile bool notified;
+    volatile bool sparringStarted;
+};
+
+void sparring(SparringData* data)
+{
+    data->sparringStarted = true;
+
+    while (1)
+    {
+        if (data->action == SparringData::None)
+        {
+            osDelay(1);
+            continue;
+        }
+        else if (data->action == SparringData::Terminate)
+            break;
+
+        data->busy = true;
+        switch (data->action)
+        {
+            case SparringData::ConditionVariableWait:
+            {
+                weos::unique_lock<weos::mutex> l(data->mutex);
+                data->cv.wait(l);
+                data->notified = true;
+            } break;
+            case SparringData::ConditionVariableTryWait:
+            {
+                weos::unique_lock<weos::mutex> l(data->mutex);
+                if (data->cv.wait_for(l, weos::chrono::milliseconds(100))
+                    == weos::cv_status::no_timeout)
+                {
+                    data->notified = true;
+                }
+
+            } break;
+            default:
+                break;
+        }
+        data->busy = false;
+        data->action = SparringData::None;
+    }
+}
 
 TEST(condition_variable, Constructor)
 {
@@ -41,8 +111,7 @@ TEST(condition_variable, try_wait_for)
     weos::condition_variable cv;
     weos::mutex m;
     weos::unique_lock<weos::mutex> lock(m);
-    weos::cv_status::cv_status status
-            = cv.wait_for(lock, weos::chrono::milliseconds(1));
+    weos::cv_status status = cv.wait_for(lock, weos::chrono::milliseconds(1));
     ASSERT_EQ(weos::cv_status::timeout, status);
 }
 
@@ -65,16 +134,13 @@ TEST(condition_variable, notify)
     weos::mutex m;
     weos::condition_variable cv;
     SparringData data1(m, cv);
-    osThreadId id1 = osThreadCreate(&sparringThread, &data1);
-    ASSERT_TRUE(id1 != 0);
+    weos::thread sparringThread1(sparring, &data1);
     SparringData data2(m, cv);
-    osThreadId id2 = osThreadCreate(&sparringThread, &data2);
-    ASSERT_TRUE(id2 != 0);
+    weos::thread sparringThread2(sparring, &data2);
     SparringData data3(m, cv);
-    osThreadId id3 = osThreadCreate(&sparringThread, &data3);
-    ASSERT_TRUE(id3 != 0);
+    weos::thread sparringThread3(sparring, &data3);
 
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_TRUE(data1.sparringStarted);
     ASSERT_TRUE(data2.sparringStarted);
     ASSERT_TRUE(data3.sparringStarted);
@@ -85,21 +151,21 @@ TEST(condition_variable, notify)
     data1.action = SparringData::ConditionVariableWait;
     data2.action = SparringData::ConditionVariableWait;
     data3.action = SparringData::ConditionVariableWait;
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_TRUE(data1.busy);
     ASSERT_TRUE(data2.busy);
     ASSERT_TRUE(data3.busy);
 
     cv.notify_one();
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_EQ(1, numNotifications());
 
     cv.notify_one();
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_EQ(2, numNotifications());
 
     cv.notify_one();
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_EQ(3, numNotifications());
 
     ASSERT_FALSE(data1.busy);
@@ -112,13 +178,13 @@ TEST(condition_variable, notify)
     data1.action = SparringData::ConditionVariableWait;
     data2.action = SparringData::ConditionVariableWait;
     data3.action = SparringData::ConditionVariableWait;
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_TRUE(data1.busy);
     ASSERT_TRUE(data2.busy);
     ASSERT_TRUE(data3.busy);
 
     cv.notify_all();
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
     ASSERT_EQ(3, numNotifications());
 
     ASSERT_FALSE(data1.busy);
@@ -128,5 +194,9 @@ TEST(condition_variable, notify)
     data1.action = SparringData::Terminate;
     data2.action = SparringData::Terminate;
     data3.action = SparringData::Terminate;
-    osDelay(10);
+    weos::this_thread::sleep_for(weos::chrono::milliseconds(10));
+
+    sparringThread1.join();
+    sparringThread2.join();
+    sparringThread3.join();
 }

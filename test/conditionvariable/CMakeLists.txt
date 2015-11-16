@@ -27,4 +27,4 @@
 #*******************************************************************************
 
 set(test_SOURCES tst_conditionvariable.cpp)
-add_executable_and_bin(tst_conditionvariable "${COMMON_SOURCES};${test_SOURCES}")
+add_test_executable(tst_conditionvariable "${COMMON_SOURCES};${test_SOURCES}")

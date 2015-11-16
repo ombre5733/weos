@@ -26,44 +26,90 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "core.hpp"
+#ifndef WEOS_KEIL_CMSIS_RTOS_SQ_HPP
+#define WEOS_KEIL_CMSIS_RTOS_SQ_HPP
 
-#include "_tq.cpp"
-#include "condition_variable.cpp"
-#include "chrono.cpp"
-#include "mutex.cpp"
-#include "semaphore.cpp"
-#include "system_error.cpp"
-#include "thread.cpp"
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
+
+#include "../atomic.hpp"
+#include "../chrono.hpp"
+#include "../semaphore.hpp"
+
+#include <cstddef>
 
 
 WEOS_BEGIN_NAMESPACE
 
-class Weos
+namespace weos_detail
 {
-public:
-    Weos();
-    ~Weos();
 
-    Weos(const Weos&) = delete;
-    Weos& operator=(const Weos&) = delete;
+struct _tq
+{
+    struct _t
+    {
+        _t(_tq& q);
 
-private:
-    thread m_precisionTimeReader;
+        ~_t()
+        {
+            unlink();
+        }
+
+        _t(const _t&) = delete;
+        _t& operator=(const _t&) = delete;
+
+        bool unlink() noexcept;
+
+        explicit
+        operator bool() const noexcept
+        {
+            return m_v.load() & 1;
+        }
+
+        void wait()
+        {
+            m_s.wait();
+        }
+
+        template <typename TRep, typename TPeriod>
+        inline
+        bool wait_for(const chrono::duration<TRep, TPeriod>& timeout)
+        {
+            return m_s.try_wait_for(timeout);
+        }
+
+        template <typename TClock, typename TDuration>
+        inline
+        bool wait_until(const chrono::time_point<TClock, TDuration>& time)
+        {
+            return m_s.try_wait_until(time);
+        }
+
+        _tq& m_tq;
+        semaphore m_s;
+        atomic<std::uintptr_t> m_v;
+        osPriority m_p;
+    };
+
+
+
+    _tq() = default;
+
+    _tq(const _tq&) = delete;
+    _tq& operator=(const _tq&) = delete;
+
+    void notify_one() noexcept;
+    void notify_all() noexcept;
+
+
+
+    atomic<_t*> m_h{nullptr};
 };
 
-Weos::Weos()
-    : m_precisionTimeReader(
-          thread::attributes().setPriority(thread::attributes::priority::low)
-                              .setStack(precisionTimeReaderStack),
-          readPrecisionTimePeriodically)
-{
-}
-
-Weos::~Weos()
-{
-    m_precisionTimeReader.set_signals(1);
-    m_precisionTimeReader.join();
-}
+} // namespace weos_detail
 
 WEOS_END_NAMESPACE
+
+#endif // WEOS_KEIL_CMSIS_RTOS_SQ_HPP
