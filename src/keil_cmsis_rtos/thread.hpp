@@ -47,6 +47,125 @@
 
 WEOS_BEGIN_NAMESPACE
 
+// ----=====================================================================----
+//     thread_attributes
+// ----=====================================================================----
+
+//! The thread attributes.
+class thread_attributes
+{
+public:
+    //! An enumeration of thread priorities.
+    WEOS_SCOPED_ENUM_BEGIN(priority)
+    {
+        idle = osPriorityIdle,
+        low = osPriorityLow,
+        belowNormal = osPriorityBelowNormal,
+        normal = osPriorityNormal,
+        aboveNormal = osPriorityAboveNormal,
+        high = osPriorityHigh,
+        realtime = osPriorityRealtime
+    };
+    WEOS_SCOPED_ENUM_END(priority)
+
+    //! Creates default thread attributes.
+    thread_attributes() noexcept
+        : m_priority(priority::normal),
+          m_customStackSize(0),
+          m_customStack(nullptr),
+          m_name("")
+    {
+    }
+
+    //! Creates thread attributes.
+    //!
+    //! Creates thread attributes from a priority \p prio and a \p stack.
+    template <typename T>
+    thread_attributes(priority prio, T& stack) noexcept
+        : m_priority(prio),
+          m_customStackSize(sizeof(T)),
+          m_customStack(&stack),
+          m_name("")
+    {
+        static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
+    }
+
+    thread_attributes(const thread_attributes&) = default;
+    thread_attributes& operator=(const thread_attributes&) = default;
+
+    //! Returns the name.
+    const char* name() const noexcept
+    {
+        return m_name;
+    }
+
+    //! Sets the name.
+    //! Sets the name to \p name. The default is the empty string.
+    thread_attributes& setName(const char* name) noexcept
+    {
+        m_name = name;
+        return *this;
+    }
+
+    //! Sets the priority.
+    //! Sets the thread priority to \p prio.
+    //!
+    //! The default value is priority::normal.
+    thread_attributes& setPriority(priority prio) noexcept
+    {
+        m_priority = prio;
+        return *this;
+    }
+
+    //! Provides a custom stack.
+    //! Makes the thread use the memory pointed to by \p stack whose size
+    //! in bytes is passed in \p stackSize rather than the default stack.
+    //!
+    //! The default is a null-pointer for the stack and zero for its size.
+    thread_attributes& setStack(void* stack, std::size_t stackSize) noexcept
+    {
+        m_customStack = stack;
+        m_customStackSize = stackSize;
+        return *this;
+    }
+
+    //! Provides a custom stack.
+    //!
+    //! Sets the thread's stack to \p stack.
+    template <typename T>
+    thread_attributes& setStack(T& stack) noexcept
+    {
+        static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
+        m_customStack = &stack;
+        m_customStackSize = sizeof(T);
+        return *this;
+    }
+
+    //! Returns the start of the stack.
+    void* stackBegin() const noexcept
+    {
+        return m_customStack;
+    }
+
+    //! Returns the size of the stack.
+    std::size_t stackSize() const noexcept
+    {
+        return m_customStackSize;
+    }
+
+private:
+    //! The thread's priority.
+    priority m_priority;
+    //! The size of the custom stack.
+    std::size_t m_customStackSize;
+    //! A pointer to the custom stack.
+    void* m_customStack;
+    //! The thread's name.
+    const char* m_name;
+
+    friend class thread;
+};
+
 namespace weos_detail
 {
 
@@ -57,6 +176,9 @@ namespace weos_detail
 //! Data which is shared between the threaded function and the thread handle.
 struct SharedThreadData
 {
+    virtual
+    ~SharedThreadData() {}
+
     SharedThreadData(const SharedThreadData&) = delete;
     SharedThreadData& operator=(const SharedThreadData&) = delete;
 
@@ -66,6 +188,9 @@ struct SharedThreadData
 
     //! Destroys and deallocates this shared data.
     void destroy() noexcept;
+
+    virtual
+    void execute() { m_threadedFunction(); }
 
 
 
@@ -86,6 +211,14 @@ struct SharedThreadData
 
     //! The number of references to this shared data. Is initialized to 1.
     atomic_int m_referenceCount;
+
+    SharedThreadData* m_next;
+
+
+    // const char* m_name;
+    // void* m_allocationBegin;
+    // void* m_stackBegin;
+    // std::size_t m_stackSize;
 
 private:
     //! Creates the shared thread data.
@@ -140,124 +273,7 @@ public:
         friend class thread;
     };
 
-    // -------------------------------------------------------------------------
-    // Attributes
-    // -------------------------------------------------------------------------
-
-    //! The thread attributes.
-    class attributes
-    {
-    public:
-        //! An enumeration of thread priorities.
-        WEOS_SCOPED_ENUM_BEGIN(priority)
-        {
-            idle = osPriorityIdle,
-            low = osPriorityLow,
-            belowNormal = osPriorityBelowNormal,
-            normal = osPriorityNormal,
-            aboveNormal = osPriorityAboveNormal,
-            high = osPriorityHigh,
-            realtime = osPriorityRealtime
-        };
-        WEOS_SCOPED_ENUM_END(priority)
-
-        //! Creates default thread attributes.
-        attributes() noexcept
-            : m_priority(priority::normal),
-              m_customStackSize(0),
-              m_customStack(nullptr),
-              m_name("")
-        {
-        }
-
-        //! Creates thread attributes.
-        //!
-        //! Creates thread attributes from a priority \p prio and a \p stack.
-        template <typename T>
-        attributes(priority prio, T& stack) noexcept
-            : m_priority(prio),
-              m_customStackSize(sizeof(T)),
-              m_customStack(&stack),
-              m_name("")
-        {
-            static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
-        }
-
-        attributes(const attributes&) = default;
-        attributes& operator=(const attributes&) = default;
-
-        //! Returns the name.
-        const char* name() const noexcept
-        {
-            return m_name;
-        }
-
-        //! Sets the name.
-        //! Sets the name to \p name. The default is the empty string.
-        attributes& setName(const char* name) noexcept
-        {
-            m_name = name;
-            return *this;
-        }
-
-        //! Sets the priority.
-        //! Sets the thread priority to \p prio.
-        //!
-        //! The default value is priority::normal.
-        attributes& setPriority(priority prio) noexcept
-        {
-            m_priority = prio;
-            return *this;
-        }
-
-        //! Provides a custom stack.
-        //! Makes the thread use the memory pointed to by \p stack whose size
-        //! in bytes is passed in \p stackSize rather than the default stack.
-        //!
-        //! The default is a null-pointer for the stack and zero for its size.
-        attributes& setStack(void* stack, std::size_t stackSize) noexcept
-        {
-            m_customStack = stack;
-            m_customStackSize = stackSize;
-            return *this;
-        }
-
-        //! Provides a custom stack.
-        //!
-        //! Sets the thread's stack to \p stack.
-        template <typename T>
-        attributes& setStack(T& stack) noexcept
-        {
-            static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
-            m_customStack = &stack;
-            m_customStackSize = sizeof(T);
-            return *this;
-        }
-
-        //! Returns the start of the stack.
-        void* stackBegin() const noexcept
-        {
-            return m_customStack;
-        }
-
-        //! Returns the size of the stack.
-        std::size_t stackSize() const noexcept
-        {
-            return m_customStackSize;
-        }
-
-    private:
-        //! The thread's priority.
-        priority m_priority;
-        //! The size of the custom stack.
-        std::size_t m_customStackSize;
-        //! A pointer to the custom stack.
-        void* m_customStack;
-        //! The thread's name.
-        const char* m_name;
-
-        friend class thread;
-    };
+    using attributes = thread_attributes;
 
     // -------------------------------------------------------------------------
     // thread
@@ -273,7 +289,7 @@ public:
 
     template <typename F, typename... TArgs,
               typename _ = typename enable_if<!is_same<typename decay<F>::type, thread>::value &&
-                                              !is_same<typename decay<F>::type, attributes>::value>::type>
+                                              !is_same<typename decay<F>::type, thread_attributes>::value>::type>
     explicit
     thread(F&& f, TArgs&&... args)
         : m_data(weos_detail::SharedThreadData::allocate())
@@ -283,12 +299,12 @@ public:
         m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
                                           WEOS_NAMESPACE::forward<TArgs>(args)...);
 
-        invoke(attributes());
+        invoke(thread_attributes());
         data.release();
     }
 
     template <typename F, typename... TArgs>
-    thread(const attributes& attrs,
+    thread(const thread_attributes& attrs,
            F&& f, TArgs&&... args)
         : m_data(weos_detail::SharedThreadData::allocate())
     {
@@ -412,7 +428,7 @@ private:
 
     //! Invokes the function which is stored in the shared data in a new
     //! thread which is created with the attributes \p attrs.
-    void invoke(const attributes& attrs);
+    void invoke(const thread_attributes& attrs);
 };
 
 //! Compares two thread ids for equality.

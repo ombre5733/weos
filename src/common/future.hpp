@@ -378,7 +378,7 @@ private:
 };
 
 template <typename TResult, typename TCallable>
-future<TResult> makeAsyncSharedState(thread::attributes attrs, TCallable&& f)
+future<TResult> makeAsyncSharedState(thread_attributes attrs, TCallable&& f)
 {
     using shared_state_type = AsyncSharedState<TResult, TCallable>;
     static constexpr size_t alignment = alignment_of<shared_state_type>::value;
@@ -528,7 +528,7 @@ private:
     friend class promise;
 
     template <typename T, typename U>
-    friend future<T> weos_detail::makeAsyncSharedState(thread::attributes, U&&);
+    friend future<T> weos_detail::makeAsyncSharedState(thread_attributes, U&&);
 };
 
 // ----=====================================================================----
@@ -634,7 +634,7 @@ private:
     friend class promise;
 
     template <typename T, typename U>
-    friend future<T> weos_detail::makeAsyncSharedState(thread::attributes, U&&);
+    friend future<T> weos_detail::makeAsyncSharedState(thread_attributes, U&&);
 };
 
 //! Swaps two futures \p a and \p b.
@@ -727,7 +727,7 @@ inline
 future<typename weos_detail::invoke_result_type<
            typename decay<TFunction>::type,
            typename decay<TArgs>::type...>::type>
-async(launch launchPolicy, const thread::attributes& attrs,
+async(launch launchPolicy, const thread_attributes& attrs,
       TFunction&& f, TArgs&&... args)
 {
     using namespace weos_detail;
@@ -752,7 +752,7 @@ WEOS_FORCE_INLINE
 future<typename weos_detail::invoke_result_type<
            typename decay<TFunction>::type,
            typename decay<TArgs>::type...>::type>
-async(const thread::attributes& attrs, TFunction&& f, TArgs&&... args)
+async(const thread_attributes& attrs, TFunction&& f, TArgs&&... args)
 {
     return async(launch::any, attrs,
                  WEOS_NAMESPACE::forward<TFunction>(f),

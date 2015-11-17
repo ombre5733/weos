@@ -54,9 +54,9 @@ private:
 
 Weos::Weos()
     : m_precisionTimeReader(
-          thread::attributes().setPriority(thread::attributes::priority::low)
-                              .setStack(precisionTimeReaderStack),
-          readPrecisionTimePeriodically)
+          thread_attributes().setPriority(thread::attributes::priority::low)
+                             .setStack(precisionTimeReaderStack),
+          &readPrecisionTimePeriodically)
 {
 }
 

@@ -69,7 +69,7 @@ extern void* os_active_TCB[];
 
 //! Converts a weos priority to a CMSIS priority.
 static inline constexpr
-osPriority toNativePriority(weos::thread::attributes::priority priority) noexcept
+osPriority toNativePriority(weos::thread_attributes::priority priority) noexcept
 {
     return static_cast<osPriority>(int(priority));
 }
@@ -123,7 +123,7 @@ void weos_threadInvoker(const void* arg) noexcept
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     {
         // Call the threaded function.
-        data->m_threadedFunction();
+        data->execute();
     }
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     catch (...)
@@ -303,7 +303,7 @@ void thread::set_signals(signal_set flags)
     (void)result;
 }
 
-void thread::invoke(const attributes& attrs)
+void thread::invoke(const thread_attributes& attrs)
 {
     if (attrs.m_customStack != nullptr
         && (   attrs.m_customStackSize < minimum_custom_stack_size
