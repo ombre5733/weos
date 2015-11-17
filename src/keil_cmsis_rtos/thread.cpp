@@ -113,14 +113,14 @@ SVC_2(weos_terminateTask, int,   void*, void*)
 //! A helper function to invoke a thread.
 //! A CMSIS thread is a C function taking a <tt>const void*</tt> argument. This
 //! helper function adheres to this specification. The \p arg is a pointer to
-//! a weos::SharedThreadData object which contains thread-specific data such as
-//! the actual function to start.
+//! a weos_detail::SharedThreadState object which contains thread-specific data
+//! such as the actual function to start.
 extern "C"
 void weos_threadInvoker(const void* arg) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
-    auto data = static_cast<weos_detail::SharedThreadData*>(
+    auto state = static_cast<weos_detail::SharedThreadState*>(
                     const_cast<void*>(arg));
 
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
@@ -128,7 +128,7 @@ void weos_threadInvoker(const void* arg) noexcept
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     {
         // Call the threaded function.
-        data->execute();
+        state->execute();
     }
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     catch (...)
@@ -138,38 +138,38 @@ void weos_threadInvoker(const void* arg) noexcept
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 
     // Keep the thread alive because someone might still set a signal.
-    data->m_joinedOrDetached.wait();
+    state->m_joinedOrDetached.wait();
 
     // We do not want to deallocate the shared data in the interrupt context
     // because the allocator might want to lock a mutex. So the reference
     // counter is decreased right now although (part of) the shared data
     // is still needed.
-    if (--data->m_referenceCount == 0)
+    if (--state->m_referenceCount == 0)
     {
         // The invokee has to destroy the shared data. After that it will
         // cancel the thread.
-        osThreadId threadId = data->m_threadId;
-        data->destroy();
+        osThreadId threadId = state->m_threadId;
+        state->destroy();
         weos_terminateTask_indirect(nullptr, threadId);
     }
     else
     {
         // The invoker has to destroy the shared data. The invokee signals
         // the end of the threaded function and cancels the thread.
-        weos_terminateTask_indirect(&data->m_finished, data->m_threadId);
+        weos_terminateTask_indirect(&state->m_finished, state->m_threadId);
     }
 }
 
 
 extern "C"
 void* weos_createTask(void* stack, uint32_t stackSize_and_priority,
-                      void* data, uint32_t debugFunctionPtr) noexcept
+                      void* state, uint32_t debugFunctionPtr) noexcept
 {
     uint32_t taskId = rt_tsk_create(
                           (void (*)(void))weos_threadInvoker,
                           stackSize_and_priority,
                           stack,
-                          data);
+                          state);
     if (taskId)
     {
         void* pTCB = os_active_TCB[taskId - 1];
@@ -183,6 +183,7 @@ void* weos_createTask(void* stack, uint32_t stackSize_and_priority,
         // the uVision debugger).
         *reinterpret_cast<std::uint32_t*>(static_cast<char*>(pTCB) + offsetof_ptask)
                 = debugFunctionPtr;
+
         return pTCB;
     }
 
@@ -252,13 +253,13 @@ void ThreadProperties::offset_by(std::size_t size) noexcept
 } // namespace weos_detail
 
 // ----=====================================================================----
-//     SharedThreadData
+//     SharedThreadState
 // ----=====================================================================----
 
 namespace weos_detail
 {
 
-SharedThreadData::SharedThreadData(const ThreadProperties& props,
+SharedThreadState::SharedThreadState(const ThreadProperties& props,
                                    bool ownsStack) noexcept
     : m_threadId(0),
       m_referenceCount(1),
@@ -268,9 +269,9 @@ SharedThreadData::SharedThreadData(const ThreadProperties& props,
 {
 }
 
-void SharedThreadData::destroy() noexcept
+void SharedThreadState::destroy() noexcept
 {
-    this->~SharedThreadData();
+    this->~SharedThreadState();
     if (m_ownsStack)
         std::free(m_allocationBase);
 }
@@ -347,7 +348,7 @@ void thread::set_signals(signal_set flags)
 }
 
 void thread::do_create(weos_detail::ThreadProperties& props,
-                       weos_detail::SharedThreadData* state)
+                       weos_detail::SharedThreadState* state)
 {
     if (!props.max_align())
     {

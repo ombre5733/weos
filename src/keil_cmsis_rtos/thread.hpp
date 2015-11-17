@@ -240,22 +240,22 @@ struct ThreadProperties
 } // namespace weos_detail
 
 // ----=====================================================================----
-//     SharedThreadData
+//     SharedThreadState
 // ----=====================================================================----
 
 namespace weos_detail
 {
 
 //! Data which is shared between the threaded function and the thread handle.
-struct SharedThreadData
+struct SharedThreadState
 {
-    SharedThreadData(const ThreadProperties& props, bool ownsStack) noexcept;
+    SharedThreadState(const ThreadProperties& props, bool ownsStack) noexcept;
 
     virtual
-    ~SharedThreadData() {}
+    ~SharedThreadState() {}
 
-    SharedThreadData(const SharedThreadData&) = delete;
-    SharedThreadData& operator=(const SharedThreadData&) = delete;
+    SharedThreadState(const SharedThreadState&) = delete;
+    SharedThreadState& operator=(const SharedThreadState&) = delete;
 
     //! Destroys and deallocates this shared data.
     void destroy() noexcept;
@@ -283,7 +283,7 @@ struct SharedThreadData
     //! The number of references to this shared data. Is initialized to 1.
     atomic_int m_referenceCount;
 
-    SharedThreadData* m_next;
+    SharedThreadState* m_next;
 
 
     // const char* m_name;
@@ -296,7 +296,7 @@ struct SharedThreadData
 
 struct SharedThreadDataDeleter
 {
-    void operator()(SharedThreadData* data) noexcept
+    void operator()(SharedThreadState* data) noexcept
     {
         data->destroy();
     }
@@ -503,13 +503,13 @@ public:
 private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
-    weos_detail::SharedThreadData* m_data;
+    weos_detail::SharedThreadState* m_data;
 
     template <typename F, typename... TArgs>
     void create(weos_detail::ThreadProperties& props,
                 F&& f, TArgs&&... args)
     {
-        using BF = weos_detail::SharedThreadData;
+        using BF = weos_detail::SharedThreadState;
         static constexpr size_t alignment = alignment_of<BF>::value;
         static constexpr size_t size = sizeof(BF);
 
@@ -528,15 +528,15 @@ private:
 
         props.offset_by(size);
 
-        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
-                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
+        state->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
+                                         WEOS_NAMESPACE::forward<TArgs>(args)...);
 
         do_create(props, state.get());
         m_data = state.release();
     }
 
     void do_create(weos_detail::ThreadProperties& props,
-                   weos_detail::SharedThreadData* state);
+                   weos_detail::SharedThreadState* state);
 };
 
 //! Compares two thread ids for equality.
