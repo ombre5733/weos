@@ -29,6 +29,7 @@
 #include "thread.hpp"
 #include "svc_indirection.hpp"
 #include "../memorypool.hpp"
+#include "../memory.hpp"
 
 #include <cstdint>
 
@@ -66,6 +67,9 @@ extern void* os_active_TCB[];
 
 } // extern "C"
 
+// ----=====================================================================----
+//
+// ----=====================================================================----
 
 //! Converts a weos priority to a CMSIS priority.
 static inline constexpr
@@ -188,6 +192,52 @@ SVC_4(weos_createTask, void*,   void*, uint32_t, void*, uint32_t)
 
 
 WEOS_BEGIN_NAMESPACE
+
+// ----=====================================================================----
+//     ThreadProperties
+// ----=====================================================================----
+
+namespace weos_detail
+{
+
+ThreadProperties::ThreadProperties(const thread_attributes& attrs)
+    : m_priority(static_cast<int>(attrs.get_priority())),
+      m_allocationBegin(nullptr),
+      m_stackBegin(attrs.stackBegin()),
+      m_stackSize(attrs.stackSize())
+{
+}
+
+void* ThreadProperties::align(size_t alignment, size_t size)
+{
+    return ::WEOS_NAMESPACE::align(alignment, size, m_stackBegin, m_stackSize);
+}
+
+void* ThreadProperties::max_align()
+{
+    using namespace std;
+
+    static constexpr size_t alignment = alignment_of<long double>::value;
+    uintptr_t address = uintptr_t(m_stackBegin);
+    uintptr_t aligned_address = (address + (alignment - 1)) & -alignment;
+    size_t diff = aligned_address - address;
+    if (m_stackSize >= diff)
+    {
+        m_stackSize -= diff;
+        m_stackBegin = reinterpret_cast<void*>(aligned_address);
+        return m_stackBegin;
+    }
+    return nullptr;
+}
+
+
+ThreadProperties::Deleter ThreadProperties::allocate()
+{
+    // TODO: allocate if needed
+    return Deleter(nullptr, false);
+}
+
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     SharedThreadData

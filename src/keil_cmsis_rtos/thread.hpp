@@ -43,6 +43,7 @@
 #include "_sleep.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -117,6 +118,12 @@ public:
         return *this;
     }
 
+    //! Returs the priority.
+    priority get_priority() const noexcept
+    {
+        return m_priority;
+    }
+
     //! Provides a custom stack.
     //! Makes the thread use the memory pointed to by \p stack whose size
     //! in bytes is passed in \p stackSize rather than the default stack.
@@ -166,12 +173,69 @@ private:
     friend class thread;
 };
 
+// ----=====================================================================----
+//     ThreadProperties
+// ----=====================================================================----
+
 namespace weos_detail
 {
+
+struct ThreadProperties
+{
+    struct Deleter
+    {
+        Deleter(void* memory, bool deallocate)
+            : m_memory(memory),
+              m_deallocate(deallocate)
+        {
+        }
+
+        Deleter(Deleter&& other)
+            : m_memory(other.m_memory),
+              m_deallocate(other.m_deallocate)
+        {
+            other.m_deallocate = false;
+        }
+
+        ~Deleter()
+        {
+            if (m_deallocate)
+                std::free(m_memory);
+        }
+
+        Deleter(const Deleter&) = delete;
+        Deleter& operator=(const Deleter&) = delete;
+
+        void* m_memory;
+        bool m_deallocate;
+    };
+
+    ThreadProperties() = default;
+    ThreadProperties(const thread_attributes& attrs);
+
+    ThreadProperties(const ThreadProperties&) = delete;
+    ThreadProperties& operator=(const ThreadProperties&) = delete;
+
+    Deleter allocate();
+
+    void* align(std::size_t alignment, std::size_t size);
+    void* max_align();
+
+
+    int m_priority{static_cast<int>(thread_attributes::priority::normal)};
+    void* m_allocationBegin{nullptr};
+    void* m_stackBegin{nullptr};
+    std::size_t m_stackSize{0};
+};
+
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     SharedThreadData
 // ----=====================================================================----
+
+namespace weos_detail
+{
 
 //! Data which is shared between the threaded function and the thread handle.
 struct SharedThreadData
@@ -234,6 +298,10 @@ struct SharedThreadDataDeleter
 };
 
 } // namespace weos_detail
+
+// ----=====================================================================----
+//     thread
+// ----=====================================================================----
 
 //! A thread handle.
 class thread
