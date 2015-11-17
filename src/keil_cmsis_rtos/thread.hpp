@@ -97,7 +97,7 @@ public:
     thread_attributes& operator=(const thread_attributes&) = default;
 
     //! Returns the name.
-    const char* name() const noexcept
+    const char* name() const noexcept // TODO: deprecate
     {
         return m_name;
     }
@@ -108,6 +108,12 @@ public:
     {
         m_name = name;
         return *this;
+    }
+
+    //! Returns the name of the thread.
+    const char* get_name() const noexcept
+    {
+        return m_name;
     }
 
     //! Sets the priority.
@@ -176,6 +182,38 @@ private:
 };
 
 // ----=====================================================================----
+//     thread_info
+// ----=====================================================================----
+
+namespace weos_detail
+{
+class SharedThreadState;
+} // namespace weos_detail
+
+class thread_info
+{
+public:
+    thread_info(const thread_info&) = default;
+    thread_info& operator=(const thread_info&) = default;
+
+    const char* get_name() const noexcept;
+    std::size_t stack_size() const noexcept;
+    std::size_t used_stack() const noexcept;
+
+private:
+    thread_info(const weos_detail::SharedThreadState* state) noexcept
+        : m_state(state)
+    {
+    }
+
+    const weos_detail::SharedThreadState* m_state;
+
+    friend class weos_detail::SharedThreadState;
+};
+
+void for_each_thread(function<bool(thread_info)> f);
+
+// ----=====================================================================----
 //     ThreadProperties
 // ----=====================================================================----
 
@@ -231,6 +269,7 @@ struct ThreadProperties
     void offset_by(std::size_t size) noexcept;
 
 
+    const char* m_name{""};
     int m_priority{static_cast<int>(thread_attributes::priority::normal)};
     void* m_allocationBase{nullptr};
     void* m_stackBegin{nullptr};
@@ -263,6 +302,11 @@ struct SharedThreadState
     virtual
     void execute() { m_threadedFunction(); }
 
+    thread_info info() const noexcept
+    {
+        return thread_info(this);
+    }
+
 
 
     //! The bound function which will be called in the new thread.
@@ -286,11 +330,14 @@ struct SharedThreadState
     SharedThreadState* m_next;
 
 
-    // const char* m_name;
+    // Thread attributes
+    const char* m_name;
     void* m_allocationBase;
     // void* m_stackBegin;
     // std::size_t m_stackSize;
 
+
+    //! If set, this state owns the stack and must deallocate it upon destruction.
     bool m_ownsStack;
 };
 
