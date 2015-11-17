@@ -60,8 +60,6 @@ static constexpr unsigned WEOS_SYSTEM_CLOCK_FREQUENCY = 12000000;
 // The frequency of the SysTick timer (in Hz).
 // \note In ARM's CMSIS RTOS this is the value of (1000000 / OS_TICK).
 static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
-// The maximum number of threads which can be active concurrently.
-static constexpr unsigned WEOS_MAX_NUM_CONCURRENT_THREADS = 3;
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 

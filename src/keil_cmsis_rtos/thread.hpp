@@ -42,8 +42,8 @@
 #include "../common/thread_detail.hpp"
 #include "_sleep.hpp"
 
+#include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -61,9 +61,11 @@ public:
     {
         idle = osPriorityIdle,
         low = osPriorityLow,
-        belowNormal = osPriorityBelowNormal,
+        belowNormal = osPriorityBelowNormal, // TODO: deprecated
+        below_normal = osPriorityBelowNormal,
         normal = osPriorityNormal,
         aboveNormal = osPriorityAboveNormal,
+        above_normal = osPriorityAboveNormal, // TODO: deprecated
         high = osPriorityHigh,
         realtime = osPriorityRealtime
     };
@@ -184,46 +186,53 @@ struct ThreadProperties
 {
     struct Deleter
     {
-        Deleter(void* memory, bool deallocate)
+        Deleter(void* memory, bool deallocate) noexcept
             : m_memory(memory),
-              m_deallocate(deallocate)
+              m_ownsStack(deallocate)
         {
         }
 
-        Deleter(Deleter&& other)
+        Deleter(Deleter&& other) noexcept
             : m_memory(other.m_memory),
-              m_deallocate(other.m_deallocate)
+              m_ownsStack(other.m_ownsStack)
         {
-            other.m_deallocate = false;
+            other.m_ownsStack = false;
         }
 
-        ~Deleter()
-        {
-            if (m_deallocate)
-                std::free(m_memory);
-        }
+        ~Deleter() noexcept;
 
         Deleter(const Deleter&) = delete;
         Deleter& operator=(const Deleter&) = delete;
 
+        bool owns_stack() const noexcept
+        {
+            return m_ownsStack;
+        }
+
+        void release() noexcept
+        {
+            m_ownsStack = false;
+        }
+
         void* m_memory;
-        bool m_deallocate;
+        bool m_ownsStack;
     };
 
     ThreadProperties() = default;
-    ThreadProperties(const thread_attributes& attrs);
+    ThreadProperties(const thread_attributes& attrs) noexcept;
 
     ThreadProperties(const ThreadProperties&) = delete;
     ThreadProperties& operator=(const ThreadProperties&) = delete;
 
     Deleter allocate();
 
-    void* align(std::size_t alignment, std::size_t size);
-    void* max_align();
+    void* align(std::size_t alignment, std::size_t size) noexcept;
+    void* max_align() noexcept;
+    void offset_by(std::size_t size) noexcept;
 
 
     int m_priority{static_cast<int>(thread_attributes::priority::normal)};
-    void* m_allocationBegin{nullptr};
+    void* m_allocationBase{nullptr};
     void* m_stackBegin{nullptr};
     std::size_t m_stackSize{0};
 };
@@ -240,15 +249,13 @@ namespace weos_detail
 //! Data which is shared between the threaded function and the thread handle.
 struct SharedThreadData
 {
+    SharedThreadData(const ThreadProperties& props, bool ownsStack) noexcept;
+
     virtual
     ~SharedThreadData() {}
 
     SharedThreadData(const SharedThreadData&) = delete;
     SharedThreadData& operator=(const SharedThreadData&) = delete;
-
-    //! Allocates a ThreadData object from the global pool. An exception is
-    //! thrown if the pool is empty.
-    static SharedThreadData* allocate();
 
     //! Destroys and deallocates this shared data.
     void destroy() noexcept;
@@ -280,13 +287,11 @@ struct SharedThreadData
 
 
     // const char* m_name;
-    // void* m_allocationBegin;
+    void* m_allocationBase;
     // void* m_stackBegin;
     // std::size_t m_stackSize;
 
-private:
-    //! Creates the shared thread data.
-    SharedThreadData() noexcept;
+    bool m_ownsStack;
 };
 
 struct SharedThreadDataDeleter
@@ -356,33 +361,39 @@ public:
     }
 
     template <typename F, typename... TArgs,
-              typename _ = typename enable_if<!is_same<typename decay<F>::type, thread>::value &&
-                                              !is_same<typename decay<F>::type, thread_attributes>::value>::type>
+              typename = typename enable_if<!is_same<typename decay<F>::type, thread>::value &&
+                                            !is_same<typename decay<F>::type, thread_attributes>::value &&
+                                            !is_same<typename decay<F>::type, weos_detail::ThreadProperties>::value
+                                           >::type>
     explicit
     thread(F&& f, TArgs&&... args)
-        : m_data(weos_detail::SharedThreadData::allocate())
+        : m_data(nullptr)
     {
-        unique_ptr<weos_detail::SharedThreadData,
-                   weos_detail::SharedThreadDataDeleter> data(m_data);
-        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
-                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
-
-        invoke(thread_attributes());
-        data.release();
+        weos_detail::ThreadProperties props;
+        create(props,
+               WEOS_NAMESPACE::forward<F>(f),
+               WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
     template <typename F, typename... TArgs>
     thread(const thread_attributes& attrs,
            F&& f, TArgs&&... args)
-        : m_data(weos_detail::SharedThreadData::allocate())
+        : m_data(nullptr)
     {
-        unique_ptr<weos_detail::SharedThreadData,
-                   weos_detail::SharedThreadDataDeleter> data(m_data);
-        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
-                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
+        weos_detail::ThreadProperties props(attrs);
+        create(props,
+               WEOS_NAMESPACE::forward<F>(f),
+               WEOS_NAMESPACE::forward<TArgs>(args)...);
+    }
 
-        invoke(attrs);
-        data.release();
+    template <typename F, typename... TArgs>
+    thread(weos_detail::ThreadProperties& props,
+           F&& f, TArgs&&... args)
+        : m_data(nullptr)
+    {
+        create(props,
+               WEOS_NAMESPACE::forward<F>(f),
+               WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
     //! Move constructor.
@@ -494,9 +505,38 @@ private:
     //! function.
     weos_detail::SharedThreadData* m_data;
 
-    //! Invokes the function which is stored in the shared data in a new
-    //! thread which is created with the attributes \p attrs.
-    void invoke(const thread_attributes& attrs);
+    template <typename F, typename... TArgs>
+    void create(weos_detail::ThreadProperties& props,
+                F&& f, TArgs&&... args)
+    {
+        using BF = weos_detail::SharedThreadData;
+        static constexpr size_t alignment = alignment_of<BF>::value;
+        static constexpr size_t size = sizeof(BF);
+
+        auto deleter = props.allocate();
+
+        if (!props.align(alignment, size))
+        {
+            WEOS_THROW_SYSTEM_ERROR(
+                        errc::not_enough_memory,
+                        "thread::create: stack size is too small");
+        }
+
+        unique_ptr<BF, weos_detail::SharedThreadDataDeleter> state(
+            ::new (props.m_stackBegin) BF(props, deleter.owns_stack()));
+        deleter.release(); // managed by 'state' from now on
+
+        props.offset_by(size);
+
+        m_data->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
+                                          WEOS_NAMESPACE::forward<TArgs>(args)...);
+
+        do_create(props, state.get());
+        m_data = state.release();
+    }
+
+    void do_create(weos_detail::ThreadProperties& props,
+                   weos_detail::SharedThreadData* state);
 };
 
 //! Compares two thread ids for equality.

@@ -32,6 +32,7 @@
 #include "../memory.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 
 using namespace std;
 
@@ -200,20 +201,32 @@ WEOS_BEGIN_NAMESPACE
 namespace weos_detail
 {
 
-ThreadProperties::ThreadProperties(const thread_attributes& attrs)
+ThreadProperties::Deleter::~Deleter()
+{
+    if (m_ownsStack)
+        std::free(m_memory);
+}
+
+ThreadProperties::ThreadProperties(const thread_attributes& attrs) noexcept
     : m_priority(static_cast<int>(attrs.get_priority())),
-      m_allocationBegin(nullptr),
+      m_allocationBase(nullptr),
       m_stackBegin(attrs.stackBegin()),
       m_stackSize(attrs.stackSize())
 {
 }
 
-void* ThreadProperties::align(size_t alignment, size_t size)
+ThreadProperties::Deleter ThreadProperties::allocate()
+{
+    // TODO: allocate if needed
+    return Deleter(nullptr, false);
+}
+
+void* ThreadProperties::align(std::size_t alignment, std::size_t size) noexcept
 {
     return ::WEOS_NAMESPACE::align(alignment, size, m_stackBegin, m_stackSize);
 }
 
-void* ThreadProperties::max_align()
+void* ThreadProperties::max_align() noexcept
 {
     using namespace std;
 
@@ -230,11 +243,10 @@ void* ThreadProperties::max_align()
     return nullptr;
 }
 
-
-ThreadProperties::Deleter ThreadProperties::allocate()
+void ThreadProperties::offset_by(std::size_t size) noexcept
 {
-    // TODO: allocate if needed
-    return Deleter(nullptr, false);
+    m_stackBegin = static_cast<char*>(m_stackBegin) + size;
+    m_stackSize -= size;
 }
 
 } // namespace weos_detail
@@ -246,40 +258,21 @@ ThreadProperties::Deleter ThreadProperties::allocate()
 namespace weos_detail
 {
 
-namespace
-{
-typedef shared_memory_pool<SharedThreadData, WEOS_MAX_NUM_CONCURRENT_THREADS>
-    SharedThreadDataPool;
-
-SharedThreadDataPool& sharedThreadDataPool() noexcept
-{
-    static SharedThreadDataPool pool;
-    return pool;
-}
-
-} // anonymous namespace
-
-SharedThreadData::SharedThreadData() noexcept
+SharedThreadData::SharedThreadData(const ThreadProperties& props,
+                                   bool ownsStack) noexcept
     : m_threadId(0),
-      m_referenceCount(1)
+      m_referenceCount(1),
+      m_next(nullptr),
+      m_allocationBase(props.m_allocationBase),
+      m_ownsStack(ownsStack)
 {
 }
 
 void SharedThreadData::destroy() noexcept
 {
     this->~SharedThreadData();
-    sharedThreadDataPool().free(this);
-}
-
-SharedThreadData* SharedThreadData::allocate()
-{
-    void* mem = sharedThreadDataPool().try_allocate();
-    if (!mem)
-        WEOS_THROW_SYSTEM_ERROR(
-                    errc::not_enough_memory,
-                    "SharedThreadData::allocate: no more thread handle");
-
-    return new (mem) SharedThreadData;
+    if (m_ownsStack)
+        std::free(m_allocationBase);
 }
 
 } // namespace weos_detail
@@ -353,43 +346,39 @@ void thread::set_signals(signal_set flags)
     (void)result;
 }
 
-void thread::invoke(const thread_attributes& attrs)
+void thread::do_create(weos_detail::ThreadProperties& props,
+                       weos_detail::SharedThreadData* state)
 {
-    if (attrs.m_customStack != nullptr
-        && (   attrs.m_customStackSize < minimum_custom_stack_size
-            || attrs.m_customStackSize >= (std::uint32_t(1) << 24)))
+    if (!props.max_align())
+    {
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::not_enough_memory,
+                    "thread::do_create: stack size is too small");
+    }
+
+    if (   props.m_stackSize < minimum_custom_stack_size
+        || props.m_stackSize >= (std::size_t(1) << 24))
     {
         WEOS_THROW_SYSTEM_ERROR(
                     errc::invalid_argument,
-                    "thread::invoke: invalid thread attributes");
+                    "thread::do_create: invalid stack size");
     }
 
     // Start the new thread.
-    if (attrs.m_customStack)
+    void* taskId = weos_createTask_indirect(
+                       props.m_stackBegin,
+                       uint32_t(props.m_priority - osPriorityIdle + 1)
+                       | (props.m_stackSize << 8),
+                       state,
+                       (std::uint32_t)(&weos_threadInvoker));
+    if (taskId)
     {
-        void* taskId = weos_createTask_indirect(
-                           attrs.m_customStack,
-                           uint32_t(int(attrs.m_priority) - osPriorityIdle + 1)
-                           | (attrs.m_customStackSize << 8),
-                           m_data,
-                           (std::uint32_t)(&weos_threadInvoker));
-        m_data->m_threadId = static_cast<osThreadId>(taskId);
-    }
-    else
-    {
-        osThreadDef_t threadDef = { weos_threadInvoker,
-                                    toNativePriority(attrs.m_priority),
-                                    1, 0 };
-        m_data->m_threadId = osThreadCreate(&threadDef, m_data);
-    }
-
-    if (m_data->m_threadId)
-    {
+        state->m_threadId = static_cast<osThreadId>(taskId);
         // The invoked thread will only decrease the reference count. It is
         // impossible that the threaded function has already decreased the
         // reference count. Even if it has already ended, the wrapping
         // function blocks on the m_joinedOrDetached semaphore.
-        ++m_data->m_referenceCount;
+        ++state->m_referenceCount;
     }
     else
     {
