@@ -46,6 +46,8 @@ static constexpr auto offsetof_priv_stack = 38;
 static constexpr auto offsetof_ptask = 48;
 static_assert(osCMSIS_RTX <= ((4<<16) | 78), "Check that layout of OS_TCB.");
 
+static constexpr auto STACK_WATERMARK = 0xE25A2EA5U;
+
 // ----=====================================================================----
 //     Functions imported from the CMSIS implementation
 // ----=====================================================================----
@@ -101,15 +103,31 @@ int weos_unlinkSharedState(void* s) noexcept
 
 SVC_1(weos_unlinkSharedState, int,   void*)
 
+
+WEOS_BEGIN_NAMESPACE
+
+static inline
+bool weos_forEachThreadWorkaround(void* cbk,
+                                  weos_detail::SharedThreadState* iter) noexcept
+{
+    using f_type = function<bool(expert::thread_info)>;
+    f_type& f = *static_cast<f_type*>(cbk);
+    return f(iter->info());
+}
+
+WEOS_END_NAMESPACE
+
+
 extern "C"
 int weos_forEachThread(void* cbk) noexcept
 {
-    using namespace WEOS_NAMESPACE::weos_detail;
+    using namespace WEOS_NAMESPACE;
 
-    for (SharedThreadState* iter = g_sharedThreadStates;
+    for (weos_detail::SharedThreadState* iter = g_sharedThreadStates;
          iter != nullptr; iter = iter->m_next)
     {
-        // static_cast<function<bool(thread_info)>*>(cbk)->operator(iter->info());
+        if (!weos_forEachThreadWorkaround(cbk, iter))
+            break;
     }
 
     return 0;
@@ -120,10 +138,13 @@ SVC_1(weos_forEachThread, int,   void*)
 
 WEOS_BEGIN_NAMESPACE
 
+namespace expert
+{
 void for_each_thread(function<bool(thread_info)> f)
 {
     weos_forEachThread_indirect(&f);
 }
+} // namespace expert
 
 WEOS_END_NAMESPACE
 
@@ -257,10 +278,51 @@ WEOS_BEGIN_NAMESPACE
 //     thread_info
 // ----=====================================================================----
 
+namespace expert
+{
+
 const char* thread_info::get_name() const noexcept
 {
     return m_state->m_name;
 }
+
+void* thread_info::get_stack_begin() const noexcept
+{
+    return m_state->m_stackBegin;
+}
+
+std::size_t thread_info::get_stack_size() const noexcept
+{
+    return static_cast<const char*>(m_state->m_stackBegin)
+            + m_state->m_stackSize
+            - static_cast<const char*>(m_state->m_allocationBase);
+}
+
+std::size_t thread_info::get_used_stack() const noexcept
+{
+    if (m_usedStack == std::size_t(-1))
+    {
+        uintptr_t endAddr = uintptr_t(m_state->m_stackBegin) + m_state->m_stackSize;
+        const uint32_t* iter = static_cast<const uint32_t*>(m_state->m_stackBegin);
+        while (*iter == STACK_WATERMARK && uintptr_t(iter) < endAddr)
+        {
+            ++iter;
+        }
+
+        m_usedStack = static_cast<const char*>(m_state->m_stackBegin)
+                      - static_cast<const char*>(m_state->m_allocationBase);
+        if (uintptr_t(iter) < endAddr)
+            m_usedStack += endAddr - uintptr_t(iter);
+    }
+    return m_usedStack;
+}
+
+weos_detail::thread_id thread_info::get_id() const noexcept
+{
+    return weos_detail::thread_id(m_state->m_threadId);
+}
+
+} // namespace expert
 
 // ----=====================================================================----
 //     ThreadProperties
@@ -278,7 +340,7 @@ ThreadProperties::Deleter::~Deleter()
 ThreadProperties::ThreadProperties(const thread_attributes& attrs) noexcept
     : m_name(attrs.get_name()),
       m_priority(static_cast<int>(attrs.get_priority())),
-      m_allocationBase(nullptr),
+      m_allocationBase(attrs.stackBegin()),
       m_stackBegin(attrs.stackBegin()),
       m_stackSize(attrs.stackSize())
 {
@@ -334,6 +396,8 @@ SharedThreadState::SharedThreadState(const ThreadProperties& props,
       m_next(nullptr),
       m_name(props.m_name),
       m_allocationBase(props.m_allocationBase),
+      m_stackBegin(props.m_stackBegin),
+      m_stackSize(props.m_stackSize),
       m_ownsStack(ownsStack)
 {
 }

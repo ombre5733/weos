@@ -48,6 +48,24 @@
 
 WEOS_BEGIN_NAMESPACE
 
+class thread;
+
+namespace expert
+{
+class thread_info;
+} // namespace expert
+
+namespace weos_detail
+{
+class thread_id;
+} // namespace weos_detail
+
+namespace this_thread
+{
+weos_detail::thread_id get_id();
+} // namespace this_thread
+
+
 // ----=====================================================================----
 //     thread_attributes
 // ----=====================================================================----
@@ -182,6 +200,88 @@ private:
 };
 
 // ----=====================================================================----
+//     thread_id
+// ----=====================================================================----
+
+namespace weos_detail
+{
+
+//! A representation of a thread identifier.
+//! This class is a wrapper around a thread identifier. It has a small
+//! memory footprint such that it is inexpensive to pass copies around.
+class thread_id
+{
+public:
+    thread_id() noexcept
+        : m_id(0)
+    {
+    }
+
+    //! Compares two thread ids for equality.
+    //! Returns \p true, if \p lhs and \p rhs are equal.
+    friend
+    bool operator==(thread_id lhs, thread_id rhs) noexcept
+    {
+        return lhs.m_id == rhs.m_id;
+    }
+
+    //! Compares two thread ids for inequality.
+    //! Returns \p true, if \p lhs and \p rhs are not equal.
+    friend
+    bool operator!=(thread_id lhs, thread_id rhs) noexcept
+    {
+        return lhs.m_id != rhs.m_id;
+    }
+
+    //! Less-than comparison for thread ids.
+    //! Returns \p true, if \p lhs is less than \p rhs.
+    friend
+    bool operator<(thread_id lhs, thread_id rhs) noexcept
+    {
+        return lhs.m_id < rhs.m_id;
+    }
+
+    //! Less-than or equal comparison for thread ids.
+    //! Returns \p true, if \p lhs is less than or equal to \p rhs.
+    friend
+    bool operator<=(thread_id lhs, thread_id rhs) noexcept
+    {
+        return lhs.m_id <= rhs.m_id;
+    }
+
+    //! Greater-than comparison for thread ids.
+    //! Returns \p true, if \p lhs is greater than \p rhs.
+    friend
+    bool operator>(thread_id lhs, thread_id rhs) noexcept
+    {
+        return lhs.m_id > rhs.m_id;
+    }
+
+    //! Greater-than or equal comparison for thread ids.
+    //! Returns \p true, if \p lhs is greater than or equal to \p rhs.
+    friend
+    bool operator>=(thread_id lhs, thread_id rhs) noexcept
+    {
+        return lhs.m_id >= rhs.m_id;
+    }
+
+private:
+    osThreadId m_id;
+
+    explicit
+    thread_id(osThreadId _id) noexcept
+        : m_id(_id)
+    {
+    }
+
+    friend class WEOS_NAMESPACE::thread;
+    friend class WEOS_NAMESPACE::expert::thread_info;
+    friend thread_id WEOS_NAMESPACE::this_thread::get_id();
+};
+
+} // namespace weos_detail
+
+// ----=====================================================================----
 //     thread_info
 // ----=====================================================================----
 
@@ -190,6 +290,9 @@ namespace weos_detail
 class SharedThreadState;
 } // namespace weos_detail
 
+namespace expert
+{
+
 class thread_info
 {
 public:
@@ -197,21 +300,27 @@ public:
     thread_info& operator=(const thread_info&) = default;
 
     const char* get_name() const noexcept;
-    std::size_t stack_size() const noexcept;
-    std::size_t used_stack() const noexcept;
+    void* get_stack_begin() const noexcept;
+    std::size_t get_stack_size() const noexcept;
+    std::size_t get_used_stack() const noexcept;
+    weos_detail::thread_id get_id() const noexcept;
 
 private:
     thread_info(const weos_detail::SharedThreadState* state) noexcept
-        : m_state(state)
+        : m_state(state),
+          m_usedStack(std::size_t(-1))
     {
     }
 
     const weos_detail::SharedThreadState* m_state;
+    mutable std::size_t m_usedStack;
 
     friend class weos_detail::SharedThreadState;
 };
 
 void for_each_thread(function<bool(thread_info)> f);
+
+} // namespace expert
 
 // ----=====================================================================----
 //     ThreadProperties
@@ -302,9 +411,9 @@ struct SharedThreadState
     virtual
     void execute() { m_threadedFunction(); }
 
-    thread_info info() const noexcept
+    expert::thread_info info() const noexcept
     {
-        return thread_info(this);
+        return expert::thread_info(this);
     }
 
 
@@ -333,8 +442,8 @@ struct SharedThreadState
     // Thread attributes
     const char* m_name;
     void* m_allocationBase;
-    // void* m_stackBegin;
-    // std::size_t m_stackSize;
+    void* m_stackBegin;
+    std::size_t m_stackSize;
 
 
     //! If set, this state owns the stack and must deallocate it upon destruction.
@@ -365,33 +474,7 @@ public:
     //! A representation of a thread identifier.
     //! This class is a wrapper around a thread identifier. It has a small
     //! memory footprint such that it is inexpensive to pass copies around.
-    class id
-    {
-    public:
-        //! \cond
-        explicit id(osThreadId _id) noexcept
-            : m_id(_id)
-        {
-        }
-        //! \endcond
-
-        id() noexcept
-            : m_id(0)
-        {
-        }
-
-    private:
-        osThreadId m_id;
-
-        friend bool operator== (id lhs, id rhs) noexcept;
-        friend bool operator!= (id lhs, id rhs) noexcept;
-        friend bool operator< (id lhs, id rhs) noexcept;
-        friend bool operator<= (id lhs, id rhs) noexcept;
-        friend bool operator> (id lhs, id rhs) noexcept;
-        friend bool operator>= (id lhs, id rhs) noexcept;
-
-        friend class thread;
-    };
+    using id = weos_detail::thread_id;
 
     using attributes = thread_attributes;
 
@@ -585,54 +668,6 @@ private:
     void do_create(weos_detail::ThreadProperties& props,
                    weos_detail::SharedThreadState* state);
 };
-
-//! Compares two thread ids for equality.
-//! Returns \p true, if \p lhs and \p rhs are equal.
-inline
-bool operator== (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id == rhs.m_id;
-}
-
-//! Compares two thread ids for inequality.
-//! Returns \p true, if \p lhs and \p rhs are not equal.
-inline
-bool operator!= (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id != rhs.m_id;
-}
-
-//! Less-than comparison for thread ids.
-//! Returns \p true, if \p lhs is less than \p rhs.
-inline
-bool operator< (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id < rhs.m_id;
-}
-
-//! Less-than or equal comparison for thread ids.
-//! Returns \p true, if \p lhs is less than or equal to \p rhs.
-inline
-bool operator<= (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id <= rhs.m_id;
-}
-
-//! Greater-than comparison for thread ids.
-//! Returns \p true, if \p lhs is greater than \p rhs.
-inline
-bool operator> (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id > rhs.m_id;
-}
-
-//! Greater-than or equal comparison for thread ids.
-//! Returns \p true, if \p lhs is greater than or equal to \p rhs.
-inline
-bool operator>= (thread::id lhs, thread::id rhs) noexcept
-{
-    return lhs.m_id >= rhs.m_id;
-}
 
 // ----=====================================================================----
 //     this_thread
