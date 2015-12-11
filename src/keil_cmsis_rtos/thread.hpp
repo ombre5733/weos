@@ -44,6 +44,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <new>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -287,7 +288,7 @@ private:
 
 namespace weos_detail
 {
-class SharedThreadState;
+class SharedThreadStateBase;
 } // namespace weos_detail
 
 namespace expert
@@ -306,16 +307,16 @@ public:
     weos_detail::thread_id get_id() const noexcept;
 
 private:
-    thread_info(const weos_detail::SharedThreadState* state) noexcept
+    thread_info(const weos_detail::SharedThreadStateBase* state) noexcept
         : m_state(state),
           m_usedStack(std::size_t(-1))
     {
     }
 
-    const weos_detail::SharedThreadState* m_state;
+    const weos_detail::SharedThreadStateBase* m_state;
     mutable std::size_t m_usedStack;
 
-    friend class weos_detail::SharedThreadState;
+    friend class weos_detail::SharedThreadStateBase;
 };
 
 void for_each_thread(function<bool(thread_info)> f);
@@ -395,21 +396,21 @@ namespace weos_detail
 {
 
 //! Data which is shared between the threaded function and the thread handle.
-struct SharedThreadState
+struct SharedThreadStateBase
 {
-    SharedThreadState(const ThreadProperties& props, bool ownsStack) noexcept;
+    SharedThreadStateBase(const ThreadProperties& props, bool ownsStack) noexcept;
 
     virtual
-    ~SharedThreadState() {}
+    ~SharedThreadStateBase() {}
 
-    SharedThreadState(const SharedThreadState&) = delete;
-    SharedThreadState& operator=(const SharedThreadState&) = delete;
+    SharedThreadStateBase(const SharedThreadStateBase&) = delete;
+    SharedThreadStateBase& operator=(const SharedThreadStateBase&) = delete;
 
     //! Destroys and deallocates this shared data.
     void destroy() noexcept;
 
     virtual
-    void execute() { m_threadedFunction(); }
+    void execute() = 0;
 
     expert::thread_info info() const noexcept
     {
@@ -417,9 +418,6 @@ struct SharedThreadState
     }
 
 
-
-    //! The bound function which will be called in the new thread.
-    function<void()> m_threadedFunction; // TODO: this is wrong
 
     //! This semaphore is increased by the threaded function when it's
     //! execution finishes. thread::join() can block on it.
@@ -436,7 +434,7 @@ struct SharedThreadState
     //! The number of references to this shared data. Is initialized to 1.
     atomic_int m_referenceCount;
 
-    SharedThreadState* m_next;
+    SharedThreadStateBase* m_next;
 
 
     // Thread attributes
@@ -450,11 +448,41 @@ struct SharedThreadState
     bool m_ownsStack;
 };
 
-struct SharedThreadDataDeleter
+struct SharedThreadStateDeleter
 {
-    void operator()(SharedThreadState* data) noexcept
+    void operator()(SharedThreadStateBase* data) noexcept
     {
         data->destroy();
+    }
+};
+
+template <typename TF, typename... TArgs>
+class SharedThreadState : public SharedThreadStateBase
+{
+public:
+    SharedThreadState(const ThreadProperties& props, bool ownsStack,
+                      TF&& f, TArgs&&... args)
+        : SharedThreadStateBase(props, ownsStack),
+          m_fun(WEOS_NAMESPACE::move(f), WEOS_NAMESPACE::move(args)...)
+    {
+    }
+
+    virtual
+    void execute() override
+    {
+        typedef typename weos_detail::make_tuple_indices<
+                1 + sizeof...(TArgs), 1>::type indices_type;
+        return doExecute(indices_type());
+    }
+
+private:
+    tuple<TF, TArgs...> m_fun;
+
+    template <std::size_t... TIndices>
+    void doExecute(weos_detail::TupleIndices<TIndices...>)
+    {
+        invoke(WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<0>(m_fun)),
+               WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<TIndices>(m_fun))...);
     }
 };
 
@@ -633,13 +661,16 @@ public:
 private:
     //! The thread-data which is shared by this class and the invoker
     //! function.
-    weos_detail::SharedThreadState* m_data;
+    weos_detail::SharedThreadStateBase* m_data;
 
     template <typename F, typename... TArgs>
     void create(weos_detail::ThreadProperties& props,
                 F&& f, TArgs&&... args)
     {
-        using BF = weos_detail::SharedThreadState;
+        using namespace weos_detail;
+
+        using BF = SharedThreadState<
+            typename decay<F>::type, typename decay<TArgs>::type...>;
         static constexpr size_t alignment = alignment_of<BF>::value;
         static constexpr size_t size = sizeof(BF);
 
@@ -652,21 +683,21 @@ private:
                         "thread::create: stack size is too small");
         }
 
-        unique_ptr<BF, weos_detail::SharedThreadDataDeleter> state(
-            ::new (props.m_stackBegin) BF(props, deleter.owns_stack()));
+        unique_ptr<BF, SharedThreadStateDeleter> state(
+            ::new (props.m_stackBegin) BF(
+                        props, deleter.owns_stack(),
+                        decay_copy(WEOS_NAMESPACE::forward<F>(f)),
+                        decay_copy(WEOS_NAMESPACE::forward<TArgs>(args))...));
         deleter.release(); // managed by 'state' from now on
 
         props.offset_by(size);
-
-        state->m_threadedFunction = bind(WEOS_NAMESPACE::forward<F>(f),
-                                         WEOS_NAMESPACE::forward<TArgs>(args)...);
 
         do_create(props, state.get());
         m_data = state.release();
     }
 
     void do_create(weos_detail::ThreadProperties& props,
-                   weos_detail::SharedThreadState* state);
+                   weos_detail::SharedThreadStateBase* state);
 };
 
 // ----=====================================================================----

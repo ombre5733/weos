@@ -74,21 +74,21 @@ extern void* os_active_TCB[];
 //     Shared thread states list
 // ----=====================================================================----
 
-static WEOS_NAMESPACE::weos_detail::SharedThreadState* g_sharedThreadStates;
+static WEOS_NAMESPACE::weos_detail::SharedThreadStateBase* g_sharedThreadStates;
 
 extern "C"
 int weos_unlinkSharedState(void* s) noexcept
 {
     using namespace WEOS_NAMESPACE::weos_detail;
 
-    SharedThreadState* state = static_cast<SharedThreadState*>(s);
+    SharedThreadStateBase* state = static_cast<SharedThreadStateBase*>(s);
     if (g_sharedThreadStates == state)
     {
         g_sharedThreadStates = state->m_next;
     }
     else
     {
-        for (SharedThreadState* iter = g_sharedThreadStates;
+        for (SharedThreadStateBase* iter = g_sharedThreadStates;
              iter != nullptr; iter = iter->m_next)
         {
             if (iter->m_next == state)
@@ -108,7 +108,7 @@ WEOS_BEGIN_NAMESPACE
 
 static inline
 bool weos_forEachThreadWorkaround(void* cbk,
-                                  weos_detail::SharedThreadState* iter) noexcept
+                                  weos_detail::SharedThreadStateBase* iter) noexcept
 {
     using f_type = function<bool(expert::thread_info)>;
     f_type& f = *static_cast<f_type*>(cbk);
@@ -123,7 +123,7 @@ int weos_forEachThread(void* cbk) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
-    for (weos_detail::SharedThreadState* iter = g_sharedThreadStates;
+    for (weos_detail::SharedThreadStateBase* iter = g_sharedThreadStates;
          iter != nullptr; iter = iter->m_next)
     {
         if (!weos_forEachThreadWorkaround(cbk, iter))
@@ -193,7 +193,7 @@ void weos_threadInvoker(const void* arg) noexcept
 {
     using namespace WEOS_NAMESPACE;
 
-    auto state = static_cast<weos_detail::SharedThreadState*>(
+    auto state = static_cast<weos_detail::SharedThreadStateBase*>(
                     const_cast<void*>(arg));
 
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
@@ -260,8 +260,8 @@ void* weos_createTask(void* stack, uint32_t stackSize_and_priority,
                 = debugFunctionPtr;
 
         // Add the new thread to the linked list.
-        static_cast<SharedThreadState*>(state)->m_next = g_sharedThreadStates;
-        g_sharedThreadStates = static_cast<SharedThreadState*>(state);
+        static_cast<SharedThreadStateBase*>(state)->m_next = g_sharedThreadStates;
+        g_sharedThreadStates = static_cast<SharedThreadStateBase*>(state);
 
         return pTCB;
     }
@@ -389,7 +389,7 @@ void ThreadProperties::offset_by(std::size_t size) noexcept
 namespace weos_detail
 {
 
-SharedThreadState::SharedThreadState(const ThreadProperties& props,
+SharedThreadStateBase::SharedThreadStateBase(const ThreadProperties& props,
                                      bool ownsStack) noexcept
     : m_threadId(0),
       m_referenceCount(1),
@@ -402,10 +402,10 @@ SharedThreadState::SharedThreadState(const ThreadProperties& props,
 {
 }
 
-void SharedThreadState::destroy() noexcept
+void SharedThreadStateBase::destroy() noexcept
 {
     weos_unlinkSharedState_indirect(this);
-    this->~SharedThreadState();
+    this->~SharedThreadStateBase();
     if (m_ownsStack)
         std::free(m_allocationBase);
 }
@@ -482,7 +482,7 @@ void thread::set_signals(signal_set flags)
 }
 
 void thread::do_create(weos_detail::ThreadProperties& props,
-                       weos_detail::SharedThreadState* state)
+                       weos_detail::SharedThreadStateBase* state)
 {
     if (!props.max_align())
     {
