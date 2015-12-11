@@ -35,10 +35,10 @@
 #include "../memory.hpp"
 #include "../semaphore.hpp"
 #include "../system_error.hpp"
-#include "../thread.hpp"
 #include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
+#include "../_thread_detail.hpp"
 
 #include <stdexcept>
 

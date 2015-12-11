@@ -340,9 +340,9 @@ ThreadProperties::Deleter::~Deleter()
 ThreadProperties::ThreadProperties(const thread_attributes& attrs) noexcept
     : m_name(attrs.get_name()),
       m_priority(static_cast<int>(attrs.get_priority())),
-      m_allocationBase(attrs.stackBegin()),
-      m_stackBegin(attrs.stackBegin()),
-      m_stackSize(attrs.stackSize())
+      m_allocationBase(attrs.get_stack_begin()),
+      m_stackBegin(attrs.get_stack_begin()),
+      m_stackSize(attrs.get_stack_size())
 {
 }
 
