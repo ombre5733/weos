@@ -333,8 +333,8 @@ namespace weos_detail
 
 ThreadProperties::Deleter::~Deleter()
 {
-    if (m_ownsStack)
-        std::free(m_memory);
+    if (m_ownedStack)
+        std::free(m_ownedStack);
 }
 
 ThreadProperties::ThreadProperties(const thread_attributes& attrs) noexcept
@@ -349,7 +349,7 @@ ThreadProperties::ThreadProperties(const thread_attributes& attrs) noexcept
 ThreadProperties::Deleter ThreadProperties::allocate()
 {
     // TODO: allocate if needed
-    return Deleter(nullptr, false);
+    return Deleter(nullptr);
 }
 
 void* ThreadProperties::align(std::size_t alignment, std::size_t size) noexcept
@@ -390,15 +390,15 @@ namespace weos_detail
 {
 
 SharedThreadStateBase::SharedThreadStateBase(const ThreadProperties& props,
-                                     bool ownsStack) noexcept
+                                             void* ownedStack) noexcept
     : m_threadId(0),
       m_referenceCount(1),
       m_next(nullptr),
+      m_ownedStack(ownedStack),
       m_name(props.m_name),
       m_allocationBase(props.m_allocationBase),
       m_stackBegin(props.m_stackBegin),
-      m_stackSize(props.m_stackSize),
-      m_ownsStack(ownsStack)
+      m_stackSize(props.m_stackSize)
 {
 }
 
@@ -406,8 +406,8 @@ void SharedThreadStateBase::destroy() noexcept
 {
     weos_unlinkSharedState_indirect(this);
     this->~SharedThreadStateBase();
-    if (m_ownsStack)
-        std::free(m_allocationBase);
+    if (m_ownedStack)
+        std::free(m_ownedStack);
 }
 
 } // namespace weos_detail

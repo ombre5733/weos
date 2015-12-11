@@ -196,10 +196,10 @@ void for_each_thread(function<bool(thread_info)> f);
 namespace weos_detail
 {
 
-//! Data which is shared between the threaded function and the thread handle.
+// Data which is shared between the threaded function and the thread handle.
 struct SharedThreadStateBase
 {
-    SharedThreadStateBase(const ThreadProperties& props, bool ownsStack) noexcept;
+    SharedThreadStateBase(const ThreadProperties& props, void* ownedStack) noexcept;
 
     virtual
     ~SharedThreadStateBase() {}
@@ -207,7 +207,7 @@ struct SharedThreadStateBase
     SharedThreadStateBase(const SharedThreadStateBase&) = delete;
     SharedThreadStateBase& operator=(const SharedThreadStateBase&) = delete;
 
-    //! Destroys and deallocates this shared data.
+    // Destroys and deallocates this shared data.
     void destroy() noexcept;
 
     virtual
@@ -220,22 +220,26 @@ struct SharedThreadStateBase
 
 
 
-    //! This semaphore is increased by the threaded function when it's
-    //! execution finishes. thread::join() can block on it.
+    // This semaphore is increased by the threaded function when it's
+    // execution finishes. thread::join() can block on it.
     semaphore m_finished;
 
-    //! This semaphore is increased by the thread handle when join() or
-    //! detach() has been called. The threaded function blocks on it
-    //! in order to keep the thread alive (e.g. for setting signals).
+    // This semaphore is increased by the thread handle when join() or
+    // detach() has been called. The threaded function blocks on it
+    // in order to keep the thread alive (e.g. for setting signals).
     semaphore m_joinedOrDetached;
 
-    //! The native thread id.
+    // The native thread id.
     osThreadId m_threadId;
 
-    //! The number of references to this shared data. Is initialized to 1.
+    // The number of references to this shared data. Is initialized to 1.
     atomic_int m_referenceCount;
 
+    // Points to the next state in the linked list.
     SharedThreadStateBase* m_next;
+
+    // Pointer to the stack which is owned by the state.
+    void* m_ownedStack;
 
 
     // Thread attributes
@@ -243,10 +247,6 @@ struct SharedThreadStateBase
     void* m_allocationBase;
     void* m_stackBegin;
     std::size_t m_stackSize;
-
-
-    //! If set, this state owns the stack and must deallocate it upon destruction.
-    bool m_ownsStack;
 };
 
 struct SharedThreadStateDeleter
@@ -261,9 +261,9 @@ template <typename TF, typename... TArgs>
 class SharedThreadState : public SharedThreadStateBase
 {
 public:
-    SharedThreadState(const ThreadProperties& props, bool ownsStack,
+    SharedThreadState(const ThreadProperties& props, void* ownedStack,
                       TF&& f, TArgs&&... args)
-        : SharedThreadStateBase(props, ownsStack),
+        : SharedThreadStateBase(props, ownedStack),
           m_fun(WEOS_NAMESPACE::move(f), WEOS_NAMESPACE::move(args)...)
     {
     }
@@ -320,10 +320,11 @@ public:
     }
 
     template <typename F, typename... TArgs,
-              typename = typename enable_if<!is_same<typename decay<F>::type, thread>::value &&
-                                            !is_same<typename decay<F>::type, thread_attributes>::value &&
-                                            !is_same<typename decay<F>::type, weos_detail::ThreadProperties>::value
-                                           >::type>
+              typename = typename enable_if<
+                  !is_same<typename decay<F>::type, thread>::value &&
+                  !is_same<typename decay<F>::type, thread_attributes>::value &&
+                  !is_same<typename decay<F>::type, weos_detail::ThreadProperties>::value
+              >::type>
     explicit
     thread(F&& f, TArgs&&... args)
         : m_data(nullptr)
@@ -470,10 +471,10 @@ private:
     {
         using namespace weos_detail;
 
-        using BF = SharedThreadState<
+        using shared_state_type = SharedThreadState<
             typename decay<F>::type, typename decay<TArgs>::type...>;
-        static constexpr size_t alignment = alignment_of<BF>::value;
-        static constexpr size_t size = sizeof(BF);
+        static constexpr size_t alignment = alignment_of<shared_state_type>::value;
+        static constexpr size_t size = sizeof(shared_state_type);
 
         auto deleter = props.allocate();
 
@@ -484,9 +485,9 @@ private:
                         "thread::create: stack size is too small");
         }
 
-        unique_ptr<BF, SharedThreadStateDeleter> state(
-            ::new (props.m_stackBegin) BF(
-                        props, deleter.owns_stack(),
+        unique_ptr<shared_state_type, SharedThreadStateDeleter> state(
+            ::new (props.m_stackBegin) shared_state_type(
+                        props, deleter.owned_stack(),
                         decay_copy(WEOS_NAMESPACE::forward<F>(f)),
                         decay_copy(WEOS_NAMESPACE::forward<TArgs>(args))...));
         deleter.release(); // managed by 'state' from now on

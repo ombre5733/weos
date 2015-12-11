@@ -285,19 +285,18 @@ namespace weos_detail
 
 struct ThreadProperties
 {
-    struct Deleter
+    class Deleter
     {
-        Deleter(void* memory, bool deallocate) noexcept
-            : m_memory(memory),
-              m_ownsStack(deallocate)
+    public:
+        Deleter(void* ownedStack) noexcept
+            : m_ownedStack(ownedStack)
         {
         }
 
         Deleter(Deleter&& other) noexcept
-            : m_memory(other.m_memory),
-              m_ownsStack(other.m_ownsStack)
+            : m_ownedStack(other.m_ownedStack)
         {
-            other.m_ownsStack = false;
+            other.m_ownedStack = nullptr;
         }
 
         ~Deleter() noexcept;
@@ -305,18 +304,18 @@ struct ThreadProperties
         Deleter(const Deleter&) = delete;
         Deleter& operator=(const Deleter&) = delete;
 
-        bool owns_stack() const noexcept
+        void* owned_stack() const noexcept
         {
-            return m_ownsStack;
+            return m_ownedStack;
         }
 
         void release() noexcept
         {
-            m_ownsStack = false;
+            m_ownedStack = nullptr;
         }
 
-        void* m_memory;
-        bool m_ownsStack;
+    private:
+        void* m_ownedStack;
     };
 
     ThreadProperties() = default;

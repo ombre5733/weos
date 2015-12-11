@@ -28,6 +28,8 @@
 
 #include "future.hpp"
 
+#include <cstdlib>
+
 
 WEOS_BEGIN_NAMESPACE
 
@@ -130,10 +132,9 @@ void SharedStateBase::wait()
 
 void SharedStateBase::destroy() noexcept
 {
-    if (m_deallocateOnDestruction)
-        delete this;
-    else
-        this->~SharedStateBase();
+    this->~SharedStateBase();
+    if (m_ownedStack)
+        std::free(m_ownedStack);
 }
 
 } // namespace weos_detail
@@ -168,8 +169,21 @@ void future<void>::get()
 // ----=====================================================================----
 
 promise<void>::promise()
-    : m_state(new weos_detail::SharedStateBase(true))
 {
+    using namespace weos_detail;
+
+    struct Deleter
+    {
+        void operator()(void* p)
+        {
+            std::free(p);
+        }
+    };
+
+    // TODO: Do not bypass the new_handler here!!
+    unique_ptr<void, Deleter> p(std::malloc(sizeof(SharedStateBase)));
+    m_state = ::new (p.get()) SharedStateBase(p.get());
+    p.release();
 }
 
 promise<void>::~promise()

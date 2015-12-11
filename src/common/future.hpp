@@ -41,6 +41,7 @@
 #include "../_thread_detail.hpp"
 
 #include <stdexcept>
+#include <new>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -181,10 +182,10 @@ public:
     };
 
     explicit
-    SharedStateBase(bool deallocateOnDestruction) noexcept
+    SharedStateBase(void* ownedStack) noexcept
         : m_referenceCount(1),
           m_flags(0),
-          m_deallocateOnDestruction(deallocateOnDestruction)
+          m_ownedStack(ownedStack)
     {
     }
 
@@ -240,7 +241,8 @@ protected:
     atomic_uint m_flags;
     exception_ptr m_exception;
     OneshotConditionVariable m_cv;
-    bool m_deallocateOnDestruction;
+    void* m_allocationBase;
+    void* m_ownedStack;
 
     virtual
     void destroy() noexcept;
@@ -266,8 +268,8 @@ class SharedState : public SharedStateBase
 
 public:
     explicit
-    SharedState(bool deallocateOnDestruction) noexcept
-        : SharedStateBase(deallocateOnDestruction)
+    SharedState(void* ownedStack) noexcept
+        : SharedStateBase(ownedStack)
     {
     }
 
@@ -309,8 +311,8 @@ class AsyncSharedState : public SharedState<TResult>
 {
 public:
     explicit
-    AsyncSharedState(bool deallocateOnDestruction, TCallable&& callable)
-        : SharedState<TResult>(deallocateOnDestruction),
+    AsyncSharedState(void* ownedStack, TCallable&& callable)
+        : SharedState<TResult>(ownedStack),
           m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
     {
     }
@@ -345,8 +347,8 @@ class AsyncSharedState<void, TCallable> : public SharedStateBase
 {
 public:
     explicit
-    AsyncSharedState(bool deallocateOnDestruction, TCallable&& callable)
-        : SharedStateBase(deallocateOnDestruction),
+    AsyncSharedState(void* ownedStack, TCallable&& callable)
+        : SharedStateBase(ownedStack),
           m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
     {
     }
@@ -378,37 +380,32 @@ private:
 };
 
 template <typename TResult, typename TCallable>
-future<TResult> makeAsyncSharedState(thread_attributes attrs, TCallable&& f)
+future<TResult> makeAsyncSharedState(
+        ThreadProperties& props, TCallable&& f)
 {
     using shared_state_type = AsyncSharedState<TResult, TCallable>;
     static constexpr size_t alignment = alignment_of<shared_state_type>::value;
     static constexpr size_t size = sizeof(shared_state_type);
 
+    auto deleter = props.allocate();
+
+    if (!props.align(alignment, size))
+    {
+        WEOS_THROW_SYSTEM_ERROR(
+                    errc::not_enough_memory,
+                    "makeAsyncSharedState: stack size too small");
+    }
+
     // Put the shared state on the stack.
-    void* stack = attrs.stackBegin();
-    size_t stackSize = attrs.stackSize();
-    if (!align(alignment, size, stack, stackSize))
-    {
-        WEOS_THROW_SYSTEM_ERROR(
-                    errc::not_enough_memory,
-                    "makeAsyncSharedState: stack size too small");
-    }
     unique_ptr<shared_state_type, SharedStateBaseDeleter> state(
-                ::new (stack) shared_state_type(
-                    false, WEOS_NAMESPACE::forward<TCallable>(f)));
-    stack = static_cast<char*>(stack) + size;
-    stackSize -= size;
+                ::new (props.m_stackBegin) shared_state_type(
+                    deleter.owned_stack(),
+                    WEOS_NAMESPACE::forward<TCallable>(f)));
+    deleter.release(); // managed by 'state' from now on
 
-    // Take care for maximum alignment.
-    if (!weos_detail::max_align(stack, stackSize))
-    {
-        WEOS_THROW_SYSTEM_ERROR(
-                    errc::not_enough_memory,
-                    "makeAsyncSharedState: stack size too small");
-    }
-    attrs.setStack(stack, stackSize);
+    props.offset_by(size);
 
-    thread(attrs, &shared_state_type::invoke, state.get()).detach();
+    thread(props, &shared_state_type::invoke, state.get()).detach();
 
     return future<TResult>(state.get());
 }
@@ -528,7 +525,8 @@ private:
     friend class promise;
 
     template <typename T, typename U>
-    friend future<T> weos_detail::makeAsyncSharedState(thread_attributes, U&&);
+    friend future<T> weos_detail::makeAsyncSharedState(
+            weos_detail::ThreadProperties&, U&&);
 };
 
 // ----=====================================================================----
@@ -634,7 +632,8 @@ private:
     friend class promise;
 
     template <typename T, typename U>
-    friend future<T> weos_detail::makeAsyncSharedState(thread_attributes, U&&);
+    friend future<T> weos_detail::makeAsyncSharedState(
+            weos_detail::ThreadProperties&, U&&);
 };
 
 //! Swaps two futures \p a and \p b.
@@ -741,8 +740,9 @@ async(launch launchPolicy, const thread_attributes& attrs,
 
     // TODO: make use of launchPolicy
 
+    weos_detail::ThreadProperties props(attrs);
     return makeAsyncSharedState<result_type, function_type>(
-                attrs,
+                props,
                 function_type(decay_copy(WEOS_NAMESPACE::forward<TFunction>(f)),
                               decay_copy(WEOS_NAMESPACE::forward<TArgs>(args))...));
 }
