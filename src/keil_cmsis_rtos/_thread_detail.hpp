@@ -333,7 +333,7 @@ struct ThreadProperties
 
     const char* m_name{""};
     int m_priority{static_cast<int>(thread_attributes::priority::normal)};
-    void* m_allocationBase{nullptr};
+    void* m_initialStackBase{nullptr};
     void* m_stackBegin{nullptr};
     std::size_t m_stackSize{0};
 };

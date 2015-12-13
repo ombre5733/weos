@@ -54,6 +54,10 @@ class thread;
 namespace expert
 {
 class thread_info;
+
+bool set_stack_allocation_enabled(bool enable);
+std::size_t set_default_stack_size(std::size_t size);
+
 } // namespace expert
 
 namespace weos_detail
@@ -244,7 +248,7 @@ struct SharedThreadStateBase
 
     // Thread attributes
     const char* m_name;
-    void* m_allocationBase;
+    void* m_initialStackBase;
     void* m_stackBegin;
     std::size_t m_stackSize;
 };

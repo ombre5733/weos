@@ -33,6 +33,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 using namespace std;
 
@@ -295,7 +296,7 @@ std::size_t thread_info::get_stack_size() const noexcept
 {
     return static_cast<const char*>(m_state->m_stackBegin)
             + m_state->m_stackSize
-            - static_cast<const char*>(m_state->m_allocationBase);
+            - static_cast<const char*>(m_state->m_initialStackBase);
 }
 
 std::size_t thread_info::get_used_stack() const noexcept
@@ -310,7 +311,7 @@ std::size_t thread_info::get_used_stack() const noexcept
         }
 
         m_usedStack = static_cast<const char*>(m_state->m_stackBegin)
-                      - static_cast<const char*>(m_state->m_allocationBase);
+                      - static_cast<const char*>(m_state->m_initialStackBase);
         if (uintptr_t(iter) < endAddr)
             m_usedStack += endAddr - uintptr_t(iter);
     }
@@ -320,6 +321,28 @@ std::size_t thread_info::get_used_stack() const noexcept
 weos_detail::thread_id thread_info::get_id() const noexcept
 {
     return weos_detail::thread_id(m_state->m_threadId);
+}
+
+} // namespace expert
+
+// ----=====================================================================----
+//     stack allocation
+// ----=====================================================================----
+
+namespace expert
+{
+
+atomic<bool> g_stack_allocation_enabled{false};
+atomic<std::size_t> g_default_stack_size{0};
+
+bool set_stack_allocation_enabled(bool enable)
+{
+    return g_stack_allocation_enabled.exchange(enable);
+}
+
+std::size_t set_default_stack_size(std::size_t size)
+{
+    return g_default_stack_size.exchange(size);
 }
 
 } // namespace expert
@@ -340,7 +363,7 @@ ThreadProperties::Deleter::~Deleter()
 ThreadProperties::ThreadProperties(const thread_attributes& attrs) noexcept
     : m_name(attrs.get_name()),
       m_priority(static_cast<int>(attrs.get_priority())),
-      m_allocationBase(attrs.get_stack_begin()),
+      m_initialStackBase(attrs.get_stack_begin()),
       m_stackBegin(attrs.get_stack_begin()),
       m_stackSize(attrs.get_stack_size())
 {
@@ -348,7 +371,27 @@ ThreadProperties::ThreadProperties(const thread_attributes& attrs) noexcept
 
 ThreadProperties::Deleter ThreadProperties::allocate()
 {
-    // TODO: allocate if needed
+    if (!m_stackBegin)
+    {
+        std::size_t size = m_stackSize;
+        if (size == 0)
+            size = expert::g_default_stack_size;
+
+        if (!expert::g_stack_allocation_enabled || size == 0)
+        {
+            WEOS_THROW_SYSTEM_ERROR(
+                        errc::not_enough_memory,
+                        "ThreadProperties::allocate: stack allocation not allowed");
+        }
+
+        m_stackBegin = std::malloc(m_stackSize);
+        if (!m_stackBegin)
+            throw std::bad_alloc();
+
+        m_stackSize = size;
+        m_initialStackBase = m_stackBegin;
+        return Deleter(m_stackBegin);
+    }
     return Deleter(nullptr);
 }
 
@@ -396,7 +439,7 @@ SharedThreadStateBase::SharedThreadStateBase(const ThreadProperties& props,
       m_next(nullptr),
       m_ownedStack(ownedStack),
       m_name(props.m_name),
-      m_allocationBase(props.m_allocationBase),
+      m_initialStackBase(props.m_initialStackBase),
       m_stackBegin(props.m_stackBegin),
       m_stackSize(props.m_stackSize)
 {
