@@ -327,7 +327,6 @@ public:
     //! \brief Returns the capacity.
     //!
     //! Returns the maximum number of elements which the queue can hold.
-    constexpr
     std::size_t capacity() const noexcept
     {
         return TQueueSize;
