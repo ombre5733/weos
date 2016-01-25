@@ -189,6 +189,9 @@ private:
     friend class weos_detail::SharedThreadStateBase;
 };
 
+//! Loops over all existing threads and executes the function \p f on it.
+//! The loop executes in a privileged (interrupt) context. This means that
+//! locking a mutex within \p f is not possible, for example.
 void for_each_thread(function<bool(thread_info)> f);
 
 } // namespace expert

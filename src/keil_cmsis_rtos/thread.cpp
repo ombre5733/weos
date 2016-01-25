@@ -143,7 +143,17 @@ namespace expert
 {
 void for_each_thread(function<bool(thread_info)> f)
 {
-    weos_forEachThread_indirect(&f);
+    if (__get_IPSR() != 0U)
+    {
+        // In an interrupt context, loop over the threads directly.
+        weos_forEachThread(&f);
+    }
+    else
+    {
+        // In the task context, the loop has to be executed indirectly in
+        // an ISR.
+        weos_forEachThread_indirect(&f);
+    }
 }
 } // namespace expert
 
