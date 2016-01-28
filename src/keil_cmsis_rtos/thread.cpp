@@ -449,10 +449,14 @@ SharedThreadStateBase::SharedThreadStateBase(const ThreadProperties& props,
       m_next(nullptr),
       m_ownedStack(ownedStack),
       m_name(props.m_name),
-      m_initialStackBase(props.m_initialStackBase),
-      m_stackBegin(props.m_stackBegin),
-      m_stackSize(props.m_stackSize)
+      m_initialStackBase(props.m_initialStackBase)
 {
+}
+
+void SharedThreadStateBase::setStack(const ThreadProperties& props)
+{
+    m_stackBegin = props.m_stackBegin;
+    m_stackSize = props.m_stackSize;
 }
 
 void SharedThreadStateBase::destroy() noexcept
@@ -550,6 +554,17 @@ void thread::do_create(weos_detail::ThreadProperties& props,
         WEOS_THROW_SYSTEM_ERROR(
                     errc::invalid_argument,
                     "thread::do_create: invalid stack size");
+    }
+
+    // Tell the thread state, where the real stack (after alignment...) resides.
+    state->setStack(props);
+
+    // Fill the stack with the watermark pattern.
+    for (auto iter = static_cast<uint32_t*>(props.m_stackBegin),
+               end = static_cast<uint32_t*>(props.m_stackBegin) + props.m_stackSize / 4;
+         iter < end; ++iter)
+    {
+        *iter = STACK_WATERMARK;
     }
 
     // Start the new thread.

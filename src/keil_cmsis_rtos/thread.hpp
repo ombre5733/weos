@@ -214,6 +214,8 @@ struct SharedThreadStateBase
     SharedThreadStateBase(const SharedThreadStateBase&) = delete;
     SharedThreadStateBase& operator=(const SharedThreadStateBase&) = delete;
 
+    void setStack(const ThreadProperties& props);
+
     // Destroys and deallocates this shared data.
     void destroy() noexcept;
 
