@@ -2,7 +2,7 @@
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
-  Copyright (c) 2013-2015, Manuel Freiberger
+  Copyright (c) 2013-2016, Manuel Freiberger
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
