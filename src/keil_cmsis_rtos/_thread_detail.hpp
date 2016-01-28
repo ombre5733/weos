@@ -141,13 +141,15 @@ public:
 
     // Use get_name().
     constexpr
-    const char* name() const noexcept // TODO: deprecate
+    __attribute__((deprecated))
+    const char* name() const noexcept
     {
         return m_name;
     }
 
     // Use set_name().
-    thread_attributes& setName(const char* name) noexcept // TODO: deprecate
+    __attribute__((deprecated))
+    thread_attributes& setName(const char* name) noexcept
     {
         m_name = name;
         return *this;
@@ -169,7 +171,8 @@ public:
     }
 
     // Use set_priority().
-    thread_attributes& setPriority(priority prio) noexcept // TODO: deprecated
+    __attribute__((deprecated))
+    thread_attributes& setPriority(priority prio) noexcept
     {
         m_priority = prio;
         return *this;
@@ -193,7 +196,8 @@ public:
     }
 
     // Use set_stack().
-    thread_attributes& setStack(void* stack, std::size_t stackSize) noexcept // TODO: deprecated
+    __attribute__((deprecated))
+    thread_attributes& setStack(void* stack, std::size_t stackSize) noexcept
     {
         m_customStack = stack;
         m_customStackSize = stackSize;
@@ -214,7 +218,8 @@ public:
 
     // Use set_stack().
     template <typename T>
-    thread_attributes& setStack(T& stack) noexcept // TODO: deprecated
+    __attribute__((deprecated))
+    thread_attributes& setStack(T& stack) noexcept
     {
         static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
         m_customStack = &stack;
@@ -236,14 +241,16 @@ public:
 
     // Use get_stack_begin().
     constexpr
-    void* stackBegin() const noexcept // TODO: deprecated
+    __attribute__((deprecated))
+    void* stackBegin() const noexcept
     {
         return m_customStack;
     }
 
     // Use get_stack_size().
     constexpr
-    std::size_t stackSize() const noexcept // TODO: deprecated
+    __attribute__((deprecated))
+    std::size_t stackSize() const noexcept
     {
         return m_customStackSize;
     }
