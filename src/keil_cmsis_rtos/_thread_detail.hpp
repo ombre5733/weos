@@ -106,13 +106,14 @@ public:
         high = osPriorityHigh,
         realtime = osPriorityRealtime,
 
-        // TODO: deprecated
+        // Deprecated enums
         belowNormal = osPriorityBelowNormal,
         aboveNormal = osPriorityAboveNormal,
     };
     WEOS_SCOPED_ENUM_END(priority)
 
     //! Creates default thread attributes.
+    constexpr
     thread_attributes() noexcept
         : m_priority(priority::normal),
           m_customStackSize(0),
@@ -125,6 +126,7 @@ public:
     //!
     //! Creates thread attributes from a priority \p prio and a \p stack.
     template <typename T>
+    constexpr
     thread_attributes(priority prio, T& stack) noexcept
         : m_priority(prio),
           m_customStackSize(sizeof(T)),
@@ -137,14 +139,14 @@ public:
     thread_attributes(const thread_attributes&) = default;
     thread_attributes& operator=(const thread_attributes&) = default;
 
-    //! Returns the name.
+    // Use get_name().
+    constexpr
     const char* name() const noexcept // TODO: deprecate
     {
         return m_name;
     }
 
-    //! Sets the name.
-    //! Sets the name to \p name. The default is the empty string.
+    // Use set_name().
     thread_attributes& setName(const char* name) noexcept // TODO: deprecate
     {
         m_name = name;
@@ -160,15 +162,13 @@ public:
     }
 
     //! Returns the name of the thread.
+    constexpr
     const char* get_name() const noexcept
     {
         return m_name;
     }
 
-    //! Sets the priority.
-    //! Sets the thread priority to \p prio.
-    //!
-    //! The default value is priority::normal.
+    // Use set_priority().
     thread_attributes& setPriority(priority prio) noexcept // TODO: deprecated
     {
         m_priority = prio;
@@ -186,16 +186,13 @@ public:
     }
 
     //! Returs the priority.
+    constexpr
     priority get_priority() const noexcept
     {
         return m_priority;
     }
 
-    //! Provides a custom stack.
-    //! Makes the thread use the memory pointed to by \p stack whose size
-    //! in bytes is passed in \p stackSize rather than the default stack.
-    //!
-    //! The default is a null-pointer for the stack and zero for its size.
+    // Use set_stack().
     thread_attributes& setStack(void* stack, std::size_t stackSize) noexcept // TODO: deprecated
     {
         m_customStack = stack;
@@ -215,9 +212,7 @@ public:
         return *this;
     }
 
-    //! Provides a custom stack.
-    //!
-    //! Sets the thread's stack to \p stack.
+    // Use set_stack().
     template <typename T>
     thread_attributes& setStack(T& stack) noexcept // TODO: deprecated
     {
@@ -239,25 +234,29 @@ public:
         return *this;
     }
 
-    //! Returns the start of the stack.
+    // Use get_stack_begin().
+    constexpr
     void* stackBegin() const noexcept // TODO: deprecated
     {
         return m_customStack;
     }
 
-    //! Returns the size of the stack.
+    // Use get_stack_size().
+    constexpr
     std::size_t stackSize() const noexcept // TODO: deprecated
     {
         return m_customStackSize;
     }
 
     //! Returns the start of the stack.
+    constexpr
     void* get_stack_begin() const noexcept
     {
         return m_customStack;
     }
 
     //! Returns the size of the stack.
+    constexpr
     std::size_t get_stack_size() const noexcept
     {
         return m_customStackSize;
