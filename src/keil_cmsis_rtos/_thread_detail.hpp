@@ -112,48 +112,73 @@ public:
     };
     WEOS_SCOPED_ENUM_END(priority)
 
+private:
+    template <typename T>
+    struct can_be_stack
+    {
+        typedef typename decay<T>::type D;
+        static constexpr bool value = !is_same<D, priority>::value &&
+                                      !is_pointer<D>::value;
+    };
+
+public:
     //! Creates default thread attributes.
     constexpr
     thread_attributes() noexcept
-        : m_priority(priority::normal),
-          m_customStackSize(0),
-          m_customStack(nullptr),
-          m_name("")
+        : m_stackBegin(nullptr),
+          m_stackSize(0),
+          m_name(""),
+          m_priority(priority::normal)
     {
     }
 
     //! Creates thread attributes.
-    //!
-    //! Creates thread attributes from a priority \p prio and a \p stack.
-    template <typename T>
-    constexpr
-    thread_attributes(priority prio, T& stack) noexcept
-        : m_priority(prio),
-          m_customStackSize(sizeof(T)),
-          m_customStack(&stack),
-          m_name("")
+    template <typename T,
+              typename = typename enable_if<can_be_stack<T>::value>::type>
+    thread_attributes(T& stack, priority prio = priority::normal) noexcept
+        : m_stackBegin(&stack),
+          m_stackSize(sizeof(T)),
+          m_name(""),
+          m_priority(prio)
     {
         static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
     }
 
+    //! Creates thread attributes.
+    thread_attributes(void* stack, std::size_t stackSize,
+                      priority prio = priority::normal) noexcept
+        : m_stackBegin(stack),
+          m_stackSize(stackSize),
+          m_name(""),
+          m_priority(prio)
+    {
+    }
+
+    //! Creates thread attributes.
+    template <typename T,
+              typename = typename enable_if<can_be_stack<T>::value>::type>
+    thread_attributes(const char* name, T& stack,
+                      priority prio = priority::normal) noexcept
+        : m_stackBegin(&stack),
+          m_stackSize(sizeof(T)),
+          m_name(name),
+          m_priority(prio)
+    {
+        static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
+    }
+
+    //! Creates thread attributes.
+    thread_attributes(const char* name, void* stack, std::size_t stackSize,
+                      priority prio = priority::normal) noexcept
+        : m_stackBegin(stack),
+          m_stackSize(stackSize),
+          m_name(name),
+          m_priority(prio)
+    {
+    }
+
     thread_attributes(const thread_attributes&) = default;
     thread_attributes& operator=(const thread_attributes&) = default;
-
-    // Use get_name().
-    constexpr
-    __attribute__((deprecated))
-    const char* name() const noexcept
-    {
-        return m_name;
-    }
-
-    // Use set_name().
-    __attribute__((deprecated))
-    thread_attributes& setName(const char* name) noexcept
-    {
-        m_name = name;
-        return *this;
-    }
 
     //! Sets the name.
     //! Sets the name to \p name. The default is the empty string.
@@ -168,14 +193,6 @@ public:
     const char* get_name() const noexcept
     {
         return m_name;
-    }
-
-    // Use set_priority().
-    __attribute__((deprecated))
-    thread_attributes& setPriority(priority prio) noexcept
-    {
-        m_priority = prio;
-        return *this;
     }
 
     //! Sets the priority.
@@ -195,15 +212,6 @@ public:
         return m_priority;
     }
 
-    // Use set_stack().
-    __attribute__((deprecated))
-    thread_attributes& setStack(void* stack, std::size_t stackSize) noexcept
-    {
-        m_customStack = stack;
-        m_customStackSize = stackSize;
-        return *this;
-    }
-
     //! Provides a custom stack.
     //! Makes the thread use the memory pointed to by \p stack whose size
     //! in bytes is passed in \p stackSize rather than the default stack.
@@ -211,19 +219,8 @@ public:
     //! The default is a null-pointer for the stack and zero for its size.
     thread_attributes& set_stack(void* stack, std::size_t stackSize) noexcept
     {
-        m_customStack = stack;
-        m_customStackSize = stackSize;
-        return *this;
-    }
-
-    // Use set_stack().
-    template <typename T>
-    __attribute__((deprecated))
-    thread_attributes& setStack(T& stack) noexcept
-    {
-        static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
-        m_customStack = &stack;
-        m_customStackSize = sizeof(T);
+        m_stackBegin = stack;
+        m_stackSize = stackSize;
         return *this;
     }
 
@@ -234,8 +231,39 @@ public:
     thread_attributes& set_stack(T& stack) noexcept
     {
         static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
-        m_customStack = &stack;
-        m_customStackSize = sizeof(T);
+        m_stackBegin = &stack;
+        m_stackSize = sizeof(T);
+        return *this;
+    }
+
+    //! Returns the start of the stack.
+    constexpr
+    void* get_stack_begin() const noexcept
+    {
+        return m_stackBegin;
+    }
+
+    //! Returns the size of the stack.
+    constexpr
+    std::size_t get_stack_size() const noexcept
+    {
+        return m_stackSize;
+    }
+
+
+    // Use get_name().
+    constexpr
+    __attribute__((deprecated))
+    const char* name() const noexcept
+    {
+        return m_name;
+    }
+
+    // Use set_name().
+    __attribute__((deprecated))
+    thread_attributes& setName(const char* name) noexcept
+    {
+        m_name = name;
         return *this;
     }
 
@@ -244,7 +272,7 @@ public:
     __attribute__((deprecated))
     void* stackBegin() const noexcept
     {
-        return m_customStack;
+        return m_stackBegin;
     }
 
     // Use get_stack_size().
@@ -252,32 +280,46 @@ public:
     __attribute__((deprecated))
     std::size_t stackSize() const noexcept
     {
-        return m_customStackSize;
+        return m_stackSize;
     }
 
-    //! Returns the start of the stack.
-    constexpr
-    void* get_stack_begin() const noexcept
+    // Use set_stack().
+    __attribute__((deprecated))
+    thread_attributes& setStack(void* stack, std::size_t stackSize) noexcept
     {
-        return m_customStack;
+        m_stackBegin = stack;
+        m_stackSize = stackSize;
+        return *this;
     }
 
-    //! Returns the size of the stack.
-    constexpr
-    std::size_t get_stack_size() const noexcept
+    // Use set_stack().
+    template <typename T>
+    __attribute__((deprecated))
+    thread_attributes& setStack(T& stack) noexcept
     {
-        return m_customStackSize;
+        static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
+        m_stackBegin = &stack;
+        m_stackSize = sizeof(T);
+        return *this;
+    }
+
+    // Use set_priority().
+    __attribute__((deprecated))
+    thread_attributes& setPriority(priority prio) noexcept
+    {
+        m_priority = prio;
+        return *this;
     }
 
 private:
-    //! The thread's priority.
-    priority m_priority;
-    //! The size of the custom stack.
-    std::size_t m_customStackSize;
     //! A pointer to the custom stack.
-    void* m_customStack;
+    void* m_stackBegin;
+    //! The size of the custom stack.
+    std::size_t m_stackSize;
     //! The thread's name.
     const char* m_name;
+    //! The thread's priority.
+    priority m_priority;
 
     friend class thread;
 };
