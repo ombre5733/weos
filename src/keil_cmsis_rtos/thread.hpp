@@ -189,6 +189,9 @@ public:
     //! Returns the ID of the thread.
     weos_detail::thread_id get_id() const noexcept;
 
+    //! Returns the thread priority.
+    thread_attributes::priority get_priority() const noexcept;
+
     //! Returns the native thread handle.
     const void* native_handle() const noexcept;
 

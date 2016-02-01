@@ -104,6 +104,9 @@ int weos_unlinkSharedState(void* s) noexcept
 
 SVC_1(weos_unlinkSharedState, int,   void*)
 
+// ----=====================================================================----
+//     Thread observers
+// ----=====================================================================----
 
 WEOS_BEGIN_NAMESPACE
 
@@ -150,7 +153,7 @@ void for_each_thread(function<bool(thread_info)> f)
     }
     else
     {
-        // In the task context, the loop has to be executed indirectly in
+        // In a task context, the loop has to be executed indirectly in
         // an ISR.
         weos_forEachThread_indirect(&f);
     }
@@ -331,6 +334,13 @@ std::size_t thread_info::get_used_stack() const noexcept
 weos_detail::thread_id thread_info::get_id() const noexcept
 {
     return weos_detail::thread_id(m_state->m_threadId);
+}
+
+thread_attributes::priority thread_info::get_priority() const noexcept
+{
+    auto priority = osThreadGetPriority(m_state->m_threadId);
+    WEOS_ASSERT(priority != osPriorityError);
+    return static_cast<thread_attributes::priority>(priority);
 }
 
 const void* thread_info::native_handle() const noexcept
