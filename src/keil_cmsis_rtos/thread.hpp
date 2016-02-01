@@ -164,17 +164,33 @@ class SharedThreadStateBase;
 namespace expert
 {
 
+//! A collection of thread data.
+//!
+//! The thread_info contains a collection of thread data. It is generated
+//! when the user iterates over the current list of threads.
 class thread_info
 {
 public:
     thread_info(const thread_info&) = default;
     thread_info& operator=(const thread_info&) = default;
 
+    //! Returns the name of the stack.
     const char* get_name() const noexcept;
+
+    //! Returns a pointer to the beginning of the thread stack.
     void* get_stack_begin() const noexcept;
+
+    //! Returns the total size of the thread stack.
     std::size_t get_stack_size() const noexcept;
+
+    //! Returns the amount of stack space which has been used.
     std::size_t get_used_stack() const noexcept;
+
+    //! Returns the ID of the thread.
     weos_detail::thread_id get_id() const noexcept;
+
+    //! Returns the native thread handle.
+    const void* native_handle() const noexcept;
 
 private:
     thread_info(const weos_detail::SharedThreadStateBase* state) noexcept

@@ -333,6 +333,11 @@ weos_detail::thread_id thread_info::get_id() const noexcept
     return weos_detail::thread_id(m_state->m_threadId);
 }
 
+const void* thread_info::native_handle() const noexcept
+{
+    return m_state->m_threadId;
+}
+
 } // namespace expert
 
 // ----=====================================================================----
