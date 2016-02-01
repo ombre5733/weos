@@ -299,7 +299,7 @@ const char* thread_info::get_name() const noexcept
 
 void* thread_info::get_stack_begin() const noexcept
 {
-    return m_state->m_stackBegin;
+    return m_state->m_initialStackBase;
 }
 
 std::size_t thread_info::get_stack_size() const noexcept
