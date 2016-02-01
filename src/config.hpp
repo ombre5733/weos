@@ -39,8 +39,8 @@
 #endif // WEOS_USER_CONFIG
 
 // Check the version of the user configuration file.
-#if WEOS_USER_CONFIG_VERSION != 6
-    #error "Version 6 of the WEOS user configuration is required."
+#if WEOS_USER_CONFIG_VERSION != 7
+    #error "Version 7 of the WEOS user configuration is required."
 #endif // WEOS_USER_CONFIG_VERSION
 
 
@@ -51,8 +51,6 @@
 // Include the CMSIS header file if necessary.
 #if defined(WEOS_WRAP_CXX11)
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-#elif defined(WEOS_WRAP_OSAL)
 #else
     #error "No native OS has been defined in the user configuration file."
 #endif // WEOS_WRAP_KEIL_RL_RTX

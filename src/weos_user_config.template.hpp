@@ -63,13 +63,6 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 
 #endif // WEOS_WRAP_KEIL_CMSIS_RTOS
 
-// -----------------------------------------------------------------------------
-//     OSAL
-// -----------------------------------------------------------------------------
-
-// Set this macro to make WEOS wrap OSAL.
-// #define WEOS_WRAP_OSAL
-
 
 
 // ----=====================================================================----
@@ -135,6 +128,21 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 // deriving the given exception from weos::exception.
 // #define WEOS_EXCEPTION_CONTAINS_LOCATION
 
+// -----------------------------------------------------------------------------
+//     Thread hooks
+// -----------------------------------------------------------------------------
+
+// Define this macro to enable thread hooks, which are executed when a thread
+// has been created or destroyed. The thread hooks have to have the signatures
+//   void weos::thread_created(weos::expert::thread_info);
+//   void weos::thread_destroyed(weos::expert::thread_info);
+// The thread_created() hook is executed in the context of new thread just
+// before the threaded function is invoked. Similarly, thread_destroyed() is
+// executed just after the threaded function has ended. The given thread_info
+// object contains the information of the thread, which has been newly
+// created or is about to be destroyed, respectively.
+// The thread hooks are executed in a privileged context.
+// #define WEOS_ENABLE_THREAD_HOOKS
 
 
 // ----=====================================================================----
@@ -144,6 +152,6 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   6
+#define WEOS_USER_CONFIG_VERSION   7
 
 #endif // WEOS_USER_CONFIG_HPP

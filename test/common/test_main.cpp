@@ -26,6 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <thread.hpp>
+
 #include "stm32f4xx.h"
 #include "system_stm32f4xx.h"
 
@@ -106,6 +108,14 @@ void throw_exception(const std::exception& e)
 {
     printf("Exception: '%s'\n", e.what());
     while (1);
+}
+
+void thread_created(expert::thread_info)
+{
+}
+
+void thread_destroyed(expert::thread_info)
+{
 }
 } // namespace weos
 

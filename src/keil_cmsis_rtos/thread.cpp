@@ -163,6 +163,40 @@ void for_each_thread(function<bool(thread_info)> f)
 WEOS_END_NAMESPACE
 
 // ----=====================================================================----
+//     Thread hooks
+// ----=====================================================================----
+
+WEOS_BEGIN_NAMESPACE
+
+// Forward declare the hooks. The implementation has to be provided by the user.
+void thread_created(expert::thread_info);
+void thread_destroyed(expert::thread_info);
+
+WEOS_END_NAMESPACE
+
+extern "C"
+int weos_ThreadCreatedHook(void* state) noexcept
+{
+    using namespace WEOS_NAMESPACE;
+    thread_created(static_cast<weos_detail::SharedThreadStateBase*>(
+                       state)->info());
+    return 0;
+}
+
+SVC_1(weos_ThreadCreatedHook, int,   void*)
+
+extern "C"
+int weos_ThreadDestroyedHook(void* state) noexcept
+{
+    using namespace WEOS_NAMESPACE;
+    thread_destroyed(static_cast<weos_detail::SharedThreadStateBase*>(
+                         state)->info());
+    return 0;
+}
+
+SVC_1(weos_ThreadDestroyedHook, int,   void*)
+
+// ----=====================================================================----
 //     Helper functions
 // ----=====================================================================----
 
@@ -214,8 +248,16 @@ void weos_threadInvoker(const void* arg) noexcept
     try
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     {
+#ifdef WEOS_ENABLE_THREAD_HOOKS
+        weos_ThreadCreatedHook_indirect(state);
+#endif // WEOS_ENABLE_THREAD_HOOKS
+
         // Call the threaded function.
         state->execute();
+
+#ifdef WEOS_ENABLE_THREAD_HOOKS
+        weos_ThreadDestroyedHook_indirect(state);
+#endif // WEOS_ENABLE_THREAD_HOOKS
     }
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     catch (...)
