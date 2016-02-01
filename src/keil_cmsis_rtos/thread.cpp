@@ -356,6 +356,7 @@ std::size_t thread_info::get_stack_size() const noexcept
 
 std::size_t thread_info::get_used_stack() const noexcept
 {
+#ifdef WEOS_ENABLE_STACK_WATERMARKING
     if (m_usedStack == std::size_t(-1))
     {
         uintptr_t endAddr = uintptr_t(m_state->m_stackBegin) + m_state->m_stackSize;
@@ -371,6 +372,9 @@ std::size_t thread_info::get_used_stack() const noexcept
             m_usedStack += endAddr - uintptr_t(iter);
     }
     return m_usedStack;
+#else
+    return get_stack_size();
+#endif // WEOS_ENABLE_STACK_WATERMARKING
 }
 
 weos_detail::thread_id thread_info::get_id() const noexcept
@@ -616,6 +620,7 @@ void thread::do_create(weos_detail::ThreadProperties& props,
     // Tell the thread state, where the real stack (after alignment...) resides.
     state->setStack(props);
 
+#ifdef WEOS_ENABLE_STACK_WATERMARKING
     // Fill the stack with the watermark pattern.
     for (auto iter = static_cast<uint32_t*>(props.m_stackBegin),
                end = static_cast<uint32_t*>(props.m_stackBegin) + props.m_stackSize / 4;
@@ -623,6 +628,7 @@ void thread::do_create(weos_detail::ThreadProperties& props,
     {
         *iter = STACK_WATERMARK;
     }
+#endif // WEOS_ENABLE_STACK_WATERMARKING
 
     // Start the new thread.
     void* taskId = weos_createTask_indirect(

@@ -152,6 +152,16 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 // The thread hooks are executed in a privileged context.
 #define WEOS_ENABLE_THREAD_HOOKS
 
+// -----------------------------------------------------------------------------
+//     Stack watermarking
+// -----------------------------------------------------------------------------
+
+// Set this macro to enable stack watermarking. Watermarking fills a thread's
+// stack with a known pattern just before the thread is started. When data is
+// placed on the stack, this pattern will be destroyed. This allows to
+// approximately track the stack usage.
+#define WEOS_ENABLE_STACK_WATERMARKING
+
 
 // ----=====================================================================----
 //     Private section.
