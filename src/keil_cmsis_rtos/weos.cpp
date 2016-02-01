@@ -35,35 +35,3 @@
 #include "semaphore.cpp"
 #include "system_error.cpp"
 #include "thread.cpp"
-
-
-WEOS_BEGIN_NAMESPACE
-
-class Weos
-{
-public:
-    Weos();
-    ~Weos();
-
-    Weos(const Weos&) = delete;
-    Weos& operator=(const Weos&) = delete;
-
-private:
-    thread m_precisionTimeReader;
-};
-
-Weos::Weos()
-    : m_precisionTimeReader(
-          thread_attributes().setPriority(thread::attributes::priority::low)
-                             .setStack(precisionTimeReaderStack),
-          &readPrecisionTimePeriodically)
-{
-}
-
-Weos::~Weos()
-{
-    m_precisionTimeReader.set_signals(1);
-    m_precisionTimeReader.join();
-}
-
-WEOS_END_NAMESPACE

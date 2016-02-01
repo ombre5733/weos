@@ -117,22 +117,6 @@ static std::int64_t weos_chrono_getSystemClockTicks()
     return (((std::uint64_t)overflows << 32) | time) * (os_trv + 1) + ticks;
 }
 
-// The precision time has to be read periodically at least once before it
-// reaches 2^28 in order to track the overflows correctly.
-static aligned_storage<200>::type precisionTimeReaderStack;
-
-static void readPrecisionTimePeriodically()
-{
-    while (true)
-    {
-        thread::signal_set signal = this_thread::try_wait_for_any_signal_for(
-                                        chrono::seconds(1));
-        if (signal)
-            break;
-        weos_chrono_getSystemClockTicks();
-    }
-}
-
 namespace chrono
 {
 
