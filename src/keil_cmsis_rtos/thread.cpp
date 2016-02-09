@@ -388,9 +388,7 @@ weos_detail::thread_id thread_info::get_id() const noexcept
 
 thread_attributes::priority thread_info::get_priority() const noexcept
 {
-    auto priority = osThreadGetPriority(m_state->m_threadId);
-    WEOS_ASSERT(priority != osPriorityError);
-    return static_cast<thread_attributes::priority>(priority);
+    return m_state->m_initialPriority;
 }
 
 const void* thread_info::native_handle() const noexcept
@@ -514,7 +512,8 @@ SharedThreadStateBase::SharedThreadStateBase(const ThreadProperties& props,
       m_next(nullptr),
       m_ownedStack(ownedStack),
       m_name(props.m_name),
-      m_initialStackBase(props.m_initialStackBase)
+      m_initialStackBase(props.m_initialStackBase),
+      m_initialPriority(static_cast<thread_attributes::priority>(props.m_priority))
 {
 }
 

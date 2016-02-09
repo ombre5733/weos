@@ -275,6 +275,7 @@ struct SharedThreadStateBase
     void* m_initialStackBase;
     void* m_stackBegin;
     std::size_t m_stackSize;
+    thread_attributes::priority m_initialPriority;
 };
 
 struct SharedThreadStateDeleter
