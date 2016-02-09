@@ -166,6 +166,8 @@ WEOS_END_NAMESPACE
 //     Thread hooks
 // ----=====================================================================----
 
+#ifdef WEOS_ENABLE_THREAD_HOOKS
+
 WEOS_BEGIN_NAMESPACE
 
 // Forward declare the hooks. The implementation has to be provided by the user.
@@ -195,6 +197,8 @@ int weos_ThreadDestroyedHook(void* state) noexcept
 }
 
 SVC_1(weos_ThreadDestroyedHook, int,   void*)
+
+#endif // WEOS_ENABLE_THREAD_HOOKS
 
 // ----=====================================================================----
 //     Helper functions
