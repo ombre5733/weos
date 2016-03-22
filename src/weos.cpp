@@ -28,7 +28,10 @@
 
 #include "_config.hpp"
 
-#include "_common/atomic.cpp"
+#ifdef __CC_ARM
+#include "_armcc/_atomic.cpp"
+#endif // __CC_ARM
+
 #include "_common/exception.cpp"
 #include "_common/functional.cpp"
 #include "_common/future.cpp"

@@ -26,10 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "../atomic.hpp"
+#include "_atomic.hpp"
 
-
-#ifdef __CC_ARM
 
 WEOS_BEGIN_NAMESPACE
 
@@ -39,5 +37,3 @@ mutex g_atomicMutex;
 } // namespace weos_detail
 
 WEOS_END_NAMESPACE
-
-#endif // __CC_ARM

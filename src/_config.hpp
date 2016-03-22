@@ -162,7 +162,7 @@
 
 
 #define BOOST_EXCEPTION_DISABLE
-#define BOOST_COMPILER_CONFIG <weos/_common/boost_armcc_5050169_compiler_config.hpp>
+#define BOOST_COMPILER_CONFIG <weos/_armcc/_boost_armcc_5050169_compiler_config.hpp>
 #include <boost/config.hpp>
 
 

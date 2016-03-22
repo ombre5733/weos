@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_TYPE_TRAITS_IMPL_ARMCC_HPP
-#define WEOS_COMMON_TYPE_TRAITS_IMPL_ARMCC_HPP
+#ifndef WEOS_ARMCC_TYPE_TRAITS_HPP
+#define WEOS_ARMCC_TYPE_TRAITS_HPP
 
 #include <boost/type_traits.hpp>
 #include <boost/utility/result_of.hpp>
@@ -190,4 +190,4 @@ struct is_trivially_copyable : public integral_constant<bool, __is_trivially_cop
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_COMMON_TYPE_TRAITS_IMPL_ARMCC_HPP
+#endif // WEOS_ARMCC_TYPE_TRAITS_HPP

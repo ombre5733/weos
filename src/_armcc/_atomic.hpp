@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_ATOMIC_IMPL_ARMCC_HPP
-#define WEOS_COMMON_ATOMIC_IMPL_ARMCC_HPP
+#ifndef WEOS_ARMCC_ATOMIC_HPP
+#define WEOS_ARMCC_ATOMIC_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -1319,4 +1319,4 @@ WEOS_END_NAMESPACE
 //#pragma diag_warning 3731
 //#endif
 
-#endif // WEOS_COMMON_ATOMIC_IMPL_ARMCC_HPP
+#endif // WEOS_ARMCC_ATOMIC_HPP
