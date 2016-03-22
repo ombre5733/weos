@@ -63,13 +63,13 @@ struct array
 
     reference operator[](size_type index)
     {
-        WEOS_ASSERT(index < TSize);
         return _m_data[index];
     }
 
-    constexpr const_reference operator[](size_type index) const
+    constexpr
+    const_reference operator[](size_type index) const
     {
-        return index < TSize ? _m_data[index] : asserting_at(index);
+        return _m_data[index];
     }
 
     reference at(size_type index)
@@ -83,7 +83,8 @@ struct array
         return _m_data[index];
     }
 
-    constexpr const_reference at(size_type index) const
+    constexpr
+    const_reference at(size_type index) const
     {
 #ifdef WEOS_ENABLE_EXCEPTIONS
         return index < TSize ? _m_data[index] : throw WEOS_EXCEPTION(std::out_of_range("array::at()"));
@@ -98,9 +99,10 @@ struct array
         return _m_data[0];
     }
 
-    constexpr const_reference front() const
+    constexpr
+    const_reference front() const
     {
-        return TSize > 0 ? _m_data[0] : asserting_at(0);
+        return _m_data[0];
     }
 
     reference back()
@@ -109,9 +111,10 @@ struct array
         return _m_data[TSize > 0 ? TSize - 1 : 0];
     }
 
-    constexpr const_reference back() const
+    constexpr
+    const_reference back() const
     {
-        return TSize > 0 ? _m_data[TSize - 1] : asserting_at(0);
+        return _m_data[TSize > 0 ? TSize - 1 : 0];
     }
 
     value_type* data() noexcept
@@ -188,17 +191,20 @@ struct array
 
     // ---- Capacity
 
-    constexpr bool empty() const noexcept
+    constexpr
+    bool empty() const noexcept
     {
         return TSize == 0;
     }
 
-    constexpr size_type size() const noexcept
+    constexpr
+    size_type size() const noexcept
     {
         return TSize;
     }
 
-    constexpr size_type max_size() const noexcept
+    constexpr
+    size_type max_size() const noexcept
     {
         return TSize;
     }
