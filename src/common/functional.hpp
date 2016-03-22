@@ -665,8 +665,10 @@ public:
 
     virtual TResult operator()(TArgs&&...) = 0;
 
+#ifndef WEOS_NO_FUNCTION_TARGET
     virtual const void* target(const std::type_info& info) const noexcept = 0;
     virtual const std::type_info& targetType() const noexcept = 0;
+#endif // WEOS_NO_FUNCTION_TARGET
 
     InvokerBase(const InvokerBase&) = delete;
     InvokerBase& operator=(const InvokerBase&) = delete;
@@ -750,6 +752,7 @@ public:
                       WEOS_NAMESPACE::forward<TArgs>(args)...);
     }
 
+#ifndef WEOS_NO_FUNCTION_TARGET
     virtual const void* target(const std::type_info& info) const noexcept override
     {
         if (typeid(TCallable) == info)
@@ -762,6 +765,7 @@ public:
     {
         return typeid(TCallable);
     }
+#endif // WEOS_NO_FUNCTION_TARGET
 
 private:
     tuple<TCallable, TAllocator> m_callableAllocator;
@@ -1045,6 +1049,7 @@ public:
         return m_invoker != nullptr;
     }
 
+#ifndef WEOS_NO_FUNCTION_TARGET
     //! Returns a pointer to the stored target.
     template <typename T>
     T* target() noexcept
@@ -1073,6 +1078,7 @@ public:
         else
             return typeid(void);
     }
+#endif // WEOS_NO_FUNCTION_TARGET
 
 private:
     storage_type m_storage;

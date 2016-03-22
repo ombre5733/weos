@@ -66,7 +66,7 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 
 
 // ----=====================================================================----
-//     Wrapper configuration
+//     WEOS configuration
 // ----=====================================================================----
 
 // -----------------------------------------------------------------------------
@@ -153,6 +153,13 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 // placed on the stack, this pattern will be destroyed. This allows to
 // approximately track the stack usage.
 // #define WEOS_ENABLE_STACK_WATERMARKING
+
+// -----------------------------------------------------------------------------
+//     Misc
+// -----------------------------------------------------------------------------
+
+// Set this macro to disable function<>::target() and function<>::target_type().
+// #define WEOS_NO_FUNCTION_TARGET
 
 
 // ----=====================================================================----
