@@ -141,4 +141,88 @@
 
 #endif // WEOS_ENABLE_EXCEPTIONS
 
+
+// ----=====================================================================----
+//     Compiler specifica
+// ----=====================================================================----
+
+#if defined(__CC_ARM)
+// -----------------------------------------------------------------------------
+// ARMCC
+// -----------------------------------------------------------------------------
+
+#if __ARMCC_VERSION < 5050169 // Format is Mmmbbbb
+    #error "Only armcc 5.05u2 and greater is supported."
+#endif
+
+#if __cplusplus < 201103L
+    #error "Must be compiled in C++11 mode. Use the '--cpp11' flag. Remove the '--gnu' flag."
+#endif
+
+#if defined(__CC_ARM) && defined(__GNUC__)
+    #error "Must not be compiled in GNU compatibility mode. Remove the '--gnu' flag."
+#endif
+
+
+#define BOOST_EXCEPTION_DISABLE
+#define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_5050169_compiler_config.hpp>
+#include <boost/config.hpp>
+
+
+namespace std
+{
+    typedef decltype(nullptr) nullptr_t;
+} // namespace std
+
+WEOS_BEGIN_NAMESPACE
+
+using std::nullptr_t;
+
+WEOS_END_NAMESPACE
+
+
+#define WEOS_CONSTEXPR_FROM_CXX14
+#define WEOS_FORCE_INLINE   __attribute__((always_inline))
+
+#elif defined(__GNUC__)
+// -----------------------------------------------------------------------------
+// GCC
+// -----------------------------------------------------------------------------
+
+#define WEOS_CONSTEXPR_FROM_CXX14
+#define WEOS_FORCE_INLINE   __attribute__((always_inline))
+
+#include <cstddef>
+
+
+WEOS_BEGIN_NAMESPACE
+
+using std::nullptr_t;
+
+WEOS_END_NAMESPACE
+
+#else
+// -----------------------------------------------------------------------------
+// Unknown compiler
+// -----------------------------------------------------------------------------
+
+#define WEOS_CONSTEXPR_FROM_CXX14
+#define WEOS_FORCE_INLINE   inline
+
+#include <cstddef>
+
+
+WEOS_BEGIN_NAMESPACE
+
+using std::nullptr_t;
+
+WEOS_END_NAMESPACE
+
+#endif
+
+// TODO: Remove these legacy macros
+#define WEOS_SCOPED_ENUM_BEGIN(x) enum class x
+#define WEOS_SCOPED_ENUM_END(x)
+
+
 #endif // WEOS_CONFIG_HPP
