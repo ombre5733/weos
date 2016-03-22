@@ -40,8 +40,8 @@
 // ARMCC
 // -----------------------------------------------------------------------------
 
-#if __ARMCC_VERSION < 5050000 // Format is Mmmbbbb
-    #error "Only armcc 5.05 and greater is supported."
+#if __ARMCC_VERSION < 5050169 // Format is Mmmbbbb
+    #error "Only armcc 5.05u2 and greater is supported."
 #endif
 
 #if __cplusplus < 201103L
@@ -54,21 +54,9 @@
 
 
 #define BOOST_EXCEPTION_DISABLE
-
-#if __ARMCC_VERSION < 5050169
-    #define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_compiler_config.hpp>
-#else
-    #define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_5050169_compiler_config.hpp>
-#endif
+#define BOOST_COMPILER_CONFIG <weos/common/boost_armcc_5050169_compiler_config.hpp>
 #include <boost/config.hpp>
 
-
-#if __ARMCC_VERSION < 5050169
-
-#define WEOS_NO_NULLPTR
-#define WEOS_NO_SCOPED_ENUM
-
-#else
 
 namespace std
 {
@@ -81,7 +69,6 @@ using std::nullptr_t;
 
 WEOS_END_NAMESPACE
 
-#endif // ARMCC 5.05
 
 #define WEOS_CONSTEXPR_FROM_CXX14
 #define WEOS_FORCE_INLINE   __attribute__((always_inline))
@@ -116,75 +103,11 @@ WEOS_END_NAMESPACE
 
 
 // ----=====================================================================----
-//     nullptr & nullptr_t
-// ----=====================================================================----
-
-#ifdef WEOS_NO_NULLPTR
-
-WEOS_BEGIN_NAMESPACE
-struct nullptr_t
-{
-    bool operator==(nullptr_t) const noexcept
-    {
-        return true;
-    }
-
-    bool operator!=(nullptr_t) const noexcept
-    {
-        return false;
-    }
-
-    template <typename T>
-    bool operator==(T* t) const noexcept
-    {
-        return !t;
-    }
-
-    template <typename T>
-    bool operator!=(T* t) const noexcept
-    {
-        return t;
-    }
-
-    template <typename T>
-    operator T*() const noexcept
-    {
-        return 0;
-    }
-
-    explicit operator bool() const noexcept
-    {
-        return false;
-    }
-};
-
-WEOS_END_NAMESPACE
-
-#define nullptr WEOS_NAMESPACE::nullptr_t()
-
-#endif // WEOS_NO_NULLPTR
-
-
-// ----=====================================================================----
 //     Scoped enums
 // ----=====================================================================----
 
-#ifdef WEOS_NO_SCOPED_ENUM
-
-#define WEOS_SCOPED_ENUM_BEGIN(x) struct x { enum type
-#define WEOS_SCOPED_ENUM_END(x)                                                \
-        type m_value;                                                          \
-        x(type value) : m_value(value) {}                                      \
-        explicit x(int value) : m_value(static_cast<type>(m_value)) {}         \
-        operator int() const { return m_value; }                               \
-    };
-
-#else
-
 #define WEOS_SCOPED_ENUM_BEGIN(x) enum class x
 #define WEOS_SCOPED_ENUM_END(x)
-
-#endif // WEOS_NO_SCOPED_ENUM
 
 
 // ----=====================================================================----
@@ -194,10 +117,6 @@ WEOS_END_NAMESPACE
     #include "cxx11/core.hpp"
 #elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/core.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/core.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/core.hpp"
 #else
     #error "Invalid native OS."
 #endif
