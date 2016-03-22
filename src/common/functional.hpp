@@ -38,8 +38,9 @@
 #include "../utility.hpp"
 
 #include <new>
+#ifndef WEOS_NO_FUNCTION_TARGET
 #include <typeinfo>
-
+#endif // WEOS_NO_FUNCTION_TARGET
 
 WEOS_BEGIN_NAMESPACE
 
