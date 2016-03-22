@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/ratio.hpp"
+#include "_common/ratio.hpp"
 
 #endif // WEOS_RATIO_HPP

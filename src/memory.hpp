@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/memory.hpp"
+#include "_common/memory.hpp"
 
 #endif // WEOS_MEMORY_HPP

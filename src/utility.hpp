@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/utility.hpp"
+#include "_common/utility.hpp"
 
 #endif // WEOS_UTILITY_HPP

@@ -37,7 +37,7 @@
 // ARMCC
 // -----------------------------------------------------------------------------
 
-#include "common/tuple.hpp"
+#include "_common/tuple.hpp"
 
 #else
 // -----------------------------------------------------------------------------
@@ -58,7 +58,7 @@ using std::tuple_size;
 
 WEOS_END_NAMESPACE
 #else
-#include "common/tuple.hpp"
+#include "_common/tuple.hpp"
 #endif
 
 #endif // __CC_ARM

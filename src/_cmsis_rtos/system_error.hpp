@@ -31,7 +31,7 @@
 
 #include "core.hpp"
 
-#include "../common/system_error.hpp"
+#include "../_common/system_error.hpp"
 
 
 WEOS_BEGIN_NAMESPACE

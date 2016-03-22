@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/exception.hpp"
+#include "_common/exception.hpp"
 
 #endif // WEOS_EXCEPTION_HPP

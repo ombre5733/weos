@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/type_traits.hpp"
+#include "_common/type_traits.hpp"
 
 #endif // WEOS_TYPETRAITS_HPP

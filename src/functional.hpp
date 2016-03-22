@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/functional.hpp"
+#include "_common/functional.hpp"
 
 #endif // WEOS_FUNCTIONAL_HPP

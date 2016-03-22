@@ -28,12 +28,12 @@
 
 #include "_config.hpp"
 
-#include "common/atomic.cpp"
-#include "common/exception.cpp"
-#include "common/functional.cpp"
-#include "common/future.cpp"
-#include "common/memory.cpp"
-#include "common/system_error.cpp"
+#include "_common/atomic.cpp"
+#include "_common/exception.cpp"
+#include "_common/functional.cpp"
+#include "_common/future.cpp"
+#include "_common/memory.cpp"
+#include "_common/system_error.cpp"
 
 
 #if defined(WEOS_WRAP_CMSIS_RTOS)

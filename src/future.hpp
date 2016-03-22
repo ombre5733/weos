@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/future.hpp"
+#include "_common/future.hpp"
 
 #endif // WEOS_FUTURE_HPP

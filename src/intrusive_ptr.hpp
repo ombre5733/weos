@@ -31,6 +31,6 @@
 
 #include "_config.hpp"
 
-#include "common/intrusive_ptr.hpp"
+#include "_common/intrusive_ptr.hpp"
 
 #endif // WEOS_INTRUSIVE_PTR_HPP
