@@ -29,6 +29,7 @@
 #ifndef WEOS_CMSIS_RTOS_TQ_HPP
 #define WEOS_CMSIS_RTOS_TQ_HPP
 
+
 #ifndef WEOS_CONFIG_HPP
     #error "Do not include this file directly."
 #endif // WEOS_CONFIG_HPP

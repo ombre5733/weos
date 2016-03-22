@@ -29,7 +29,7 @@
 #ifndef WEOS_CMSIS_RTOS_THREAD_HPP
 #define WEOS_CMSIS_RTOS_THREAD_HPP
 
-#include "core.hpp"
+#include "_core.hpp"
 
 #include "../atomic.hpp"
 #include "../functional.hpp"

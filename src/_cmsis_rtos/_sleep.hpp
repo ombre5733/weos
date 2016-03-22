@@ -35,7 +35,7 @@
 #endif // WEOS_CONFIG_HPP
 
 
-#include "core.hpp"
+#include "_core.hpp"
 #include "../chrono.hpp"
 #include "../system_error.hpp"
 #include "../utility.hpp"

@@ -29,7 +29,7 @@
 #ifndef WEOS_CMSIS_RTOS_CHRONO_HPP
 #define WEOS_CMSIS_RTOS_CHRONO_HPP
 
-#include "core.hpp"
+#include "_core.hpp"
 
 #include "../ratio.hpp"
 #include "../type_traits.hpp"

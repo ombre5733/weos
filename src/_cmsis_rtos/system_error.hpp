@@ -29,7 +29,7 @@
 #ifndef WEOS_CMSIS_RTOS_SYSTEM_ERROR_HPP
 #define WEOS_CMSIS_RTOS_SYSTEM_ERROR_HPP
 
-#include "core.hpp"
+#include "_core.hpp"
 
 #include "../_common/system_error.hpp"
 

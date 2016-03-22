@@ -29,7 +29,7 @@
 #ifndef WEOS_CMSIS_RTOS_SEMAPHORE_HPP
 #define WEOS_CMSIS_RTOS_SEMAPHORE_HPP
 
-#include "core.hpp"
+#include "_core.hpp"
 
 #include "../chrono.hpp"
 #include "../system_error.hpp"

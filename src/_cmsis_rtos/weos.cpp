@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "core.hpp"
+#include "_core.hpp"
 
 #include "_tq.cpp"
 #include "condition_variable.cpp"

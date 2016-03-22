@@ -29,7 +29,11 @@
 #ifndef WEOS_CMSIS_RTOS_CORE_HPP
 #define WEOS_CMSIS_RTOS_CORE_HPP
 
-#include "../_config.hpp"
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
 
 #include WEOS_CMSIS_OS_INCLUDE
 

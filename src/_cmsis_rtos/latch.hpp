@@ -29,7 +29,7 @@
 #ifndef WEOS_CMSIS_RTOS_LATCH_HPP
 #define WEOS_CMSIS_RTOS_LATCH_HPP
 
-#include "core.hpp"
+#include "_core.hpp"
 #include "_tq.hpp"
 #include "../atomic.hpp"
 
