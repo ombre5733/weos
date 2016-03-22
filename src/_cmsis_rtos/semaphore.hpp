@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_SEMAPHORE_HPP
-#define WEOS_KEIL_CMSIS_RTOS_SEMAPHORE_HPP
+#ifndef WEOS_CMSIS_RTOS_SEMAPHORE_HPP
+#define WEOS_CMSIS_RTOS_SEMAPHORE_HPP
 
 #include "core.hpp"
 
@@ -158,4 +158,4 @@ private:
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_SEMAPHORE_HPP
+#endif // WEOS_CMSIS_RTOS_SEMAPHORE_HPP

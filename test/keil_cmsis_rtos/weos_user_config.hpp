@@ -34,20 +34,13 @@
 // ----=====================================================================----
 
 // -----------------------------------------------------------------------------
-//     C++11
-// -----------------------------------------------------------------------------
-
-// Set this macro to make WEOS wrap the native C++11 STL.
-// #define WEOS_WRAP_CXX11
-
-// -----------------------------------------------------------------------------
 //     ARM Germany CMSIS-RTOS
 // -----------------------------------------------------------------------------
 
 // Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
-#define WEOS_WRAP_KEIL_CMSIS_RTOS
+#define WEOS_WRAP_CMSIS_RTOS
 
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_CMSIS_RTOS)
 
 typedef int IRQn_Type;
 #define __CM4_REV                 0x0001
@@ -74,7 +67,7 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 
 
 // ----=====================================================================----
-//     Wrapper configuration
+//     WEOS configuration
 // ----=====================================================================----
 
 // -----------------------------------------------------------------------------
@@ -161,6 +154,13 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 // placed on the stack, this pattern will be destroyed. This allows to
 // approximately track the stack usage.
 #define WEOS_ENABLE_STACK_WATERMARKING
+
+// -----------------------------------------------------------------------------
+//     Misc
+// -----------------------------------------------------------------------------
+
+// Set this macro to disable function<>::target() and function<>::target_type().
+// #define WEOS_NO_FUNCTION_TARGET
 
 
 // ----=====================================================================----

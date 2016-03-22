@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_LATCH_HPP
-#define WEOS_KEIL_CMSIS_RTOS_LATCH_HPP
+#ifndef WEOS_CMSIS_RTOS_LATCH_HPP
+#define WEOS_CMSIS_RTOS_LATCH_HPP
 
 #include "core.hpp"
 #include "_tq.hpp"
@@ -116,4 +116,4 @@ private:
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_LATCH_HPP
+#endif // WEOS_CMSIS_RTOS_LATCH_HPP

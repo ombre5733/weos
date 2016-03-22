@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
-#define WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
+#ifndef WEOS_CMSIS_RTOS_MUTEX_HPP
+#define WEOS_CMSIS_RTOS_MUTEX_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -335,4 +335,4 @@ public:
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_MUTEX_HPP
+#endif // WEOS_CMSIS_RTOS_MUTEX_HPP

@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_CORE_HPP
-#define WEOS_KEIL_CMSIS_RTOS_CORE_HPP
+#ifndef WEOS_CMSIS_RTOS_CORE_HPP
+#define WEOS_CMSIS_RTOS_CORE_HPP
 
 #include "../_config.hpp"
 
@@ -37,4 +37,4 @@
     #error "The Keil CMSIS RTOS version must be in the range from 4.70 to 4.78."
 #endif
 
-#endif // WEOS_KEIL_CMSIS_RTOS_CORE_HPP
+#endif // WEOS_CMSIS_RTOS_CORE_HPP

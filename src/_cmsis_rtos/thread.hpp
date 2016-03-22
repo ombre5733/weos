@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
-#define WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
+#ifndef WEOS_CMSIS_RTOS_THREAD_HPP
+#define WEOS_CMSIS_RTOS_THREAD_HPP
 
 #include "core.hpp"
 
@@ -755,4 +755,4 @@ bool try_wait_for_all_signals_until(
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_THREAD_HPP
+#endif // WEOS_CMSIS_RTOS_THREAD_HPP

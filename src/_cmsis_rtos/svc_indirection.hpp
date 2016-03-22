@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_SVC_INDIRECTION_HPP
-#define WEOS_KEIL_CMSIS_RTOS_SVC_INDIRECTION_HPP
+#ifndef WEOS_CMSIS_RTOS_SVC_INDIRECTION_HPP
+#define WEOS_CMSIS_RTOS_SVC_INDIRECTION_HPP
 
 #if defined(__CC_ARM)
 
@@ -120,4 +120,4 @@
   #error "Compiler not supported"
 #endif
 
-#endif // WEOS_KEIL_CMSIS_RTOS_SVC_INDIRECTION_HPP
+#endif // WEOS_CMSIS_RTOS_SVC_INDIRECTION_HPP

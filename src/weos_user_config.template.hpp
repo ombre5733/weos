@@ -38,9 +38,9 @@
 // -----------------------------------------------------------------------------
 
 // Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
-// #define WEOS_WRAP_KEIL_CMSIS_RTOS
+// #define WEOS_WRAP_CMSIS_RTOS
 
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_CMSIS_RTOS)
 
 // The include path for <cmsis_os.h>
 #define WEOS_CMSIS_OS_INCLUDE         <cmsis_os.h>
@@ -54,7 +54,7 @@ static constexpr unsigned WEOS_SYSTEM_CLOCK_FREQUENCY = 12000000;
 // \note In ARM's CMSIS RTOS this is the value of (1000000 / OS_TICK).
 static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 
-#endif // WEOS_WRAP_KEIL_CMSIS_RTOS
+#endif // WEOS_WRAP_CMSIS_RTOS
 
 
 

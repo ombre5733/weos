@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_MEMORYPOOL_HPP
-#define WEOS_KEIL_CMSIS_RTOS_MEMORYPOOL_HPP
+#ifndef WEOS_CMSIS_RTOS_MEMORYPOOL_HPP
+#define WEOS_CMSIS_RTOS_MEMORYPOOL_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -153,4 +153,4 @@ private:
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_MEMORYPOOL_HPP
+#endif // WEOS_CMSIS_RTOS_MEMORYPOOL_HPP

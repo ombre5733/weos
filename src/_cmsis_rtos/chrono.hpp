@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
-#define WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
+#ifndef WEOS_CMSIS_RTOS_CHRONO_HPP
+#define WEOS_CMSIS_RTOS_CHRONO_HPP
 
 #include "core.hpp"
 
@@ -93,4 +93,4 @@ typedef system_clock steady_clock;
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_CHRONO_HPP
+#endif // WEOS_CMSIS_RTOS_CHRONO_HPP

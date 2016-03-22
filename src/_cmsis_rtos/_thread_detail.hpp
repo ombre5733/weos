@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_THREAD_DETAIL_HPP
-#define WEOS_KEIL_CMSIS_RTOS_THREAD_DETAIL_HPP
+#ifndef WEOS_CMSIS_RTOS_THREAD_DETAIL_HPP
+#define WEOS_CMSIS_RTOS_THREAD_DETAIL_HPP
 
 #include "../_config.hpp"
 
@@ -390,4 +390,4 @@ struct ThreadProperties
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_THREAD_DETAIL_HPP
+#endif // WEOS_CMSIS_RTOS_THREAD_DETAIL_HPP

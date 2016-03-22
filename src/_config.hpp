@@ -48,7 +48,7 @@
 //     Validation
 // ----=====================================================================----
 
-#if !defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if !defined(WEOS_WRAP_CMSIS_RTOS)
     #error "No native OS has been defined in the user configuration file."
 #endif
 

@@ -40,9 +40,9 @@
 // ----=====================================================================----
 
 // Set this macro to make WEOS wrap Keil's CMSIS-RTOS.
-#define WEOS_WRAP_KEIL_CMSIS_RTOS
+#define WEOS_WRAP_CMSIS_RTOS
 
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_CMSIS_RTOS)
 
 // The frequency of the system clock (in Hz).
 // \note In Keil's CMSIS RTOS this is the value of OS_CLOCK.
@@ -53,7 +53,7 @@
 // The maximum number of threads which can be active concurrently.
 #define WEOS_MAX_NUM_CONCURRENT_THREADS   5
 
-#endif // WEOS_WRAP_KEIL_CMSIS_RTOS
+#endif // WEOS_WRAP_CMSIS_RTOS
 
 // ----=====================================================================----
 //     General settings

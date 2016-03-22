@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_SLEEP_HPP
-#define WEOS_KEIL_CMSIS_RTOS_SLEEP_HPP
+#ifndef WEOS_CMSIS_RTOS_SLEEP_HPP
+#define WEOS_CMSIS_RTOS_SLEEP_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -76,4 +76,4 @@ void sleep_until(const chrono::time_point<TClock, TDuration>& time)
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_SLEEP_HPP
+#endif // WEOS_CMSIS_RTOS_SLEEP_HPP

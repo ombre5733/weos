@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
-#define WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#ifndef WEOS_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#define WEOS_CMSIS_RTOS_SYSTEM_ERROR_HPP
 
 #include "core.hpp"
 
@@ -92,4 +92,4 @@ weos::error_code make_error_condition(cmsis_error_t err)
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_KEIL_CMSIS_RTOS_SYSTEM_ERROR_HPP
+#endif // WEOS_CMSIS_RTOS_SYSTEM_ERROR_HPP

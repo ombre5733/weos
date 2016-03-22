@@ -36,7 +36,7 @@
 #include "common/system_error.cpp"
 
 
-#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_CMSIS_RTOS)
     #include "_cmsis_rtos/weos.cpp"
 #else
     #error "Invalid native OS."
