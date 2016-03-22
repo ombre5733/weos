@@ -71,11 +71,11 @@ WEOS_END_NAMESPACE
 #endif // __CC_ARM
 
 // ----=====================================================================----
-//     Specialized implementations of clocks
+//     System clock
 // ----=====================================================================----
 
 #if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/chrono.hpp"
+    #include "_cmsis_rtos/_system_clock.hpp"
 #else
     #error "Invalid native OS."
 #endif
