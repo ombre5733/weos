@@ -29,7 +29,7 @@
 #ifndef WEOS_MEMORYPOOL_HPP
 #define WEOS_MEMORYPOOL_HPP
 
-#include "config.hpp"
+#include "_config.hpp"
 
 #include "mutex.hpp"
 #include "semaphore.hpp"
@@ -193,14 +193,8 @@ private:
 WEOS_END_NAMESPACE
 
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/memorypool.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/memorypool.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/memorypool.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/memorypool.hpp"
 #else
     #error "Invalid native OS."
 #endif

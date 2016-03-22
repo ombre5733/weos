@@ -29,9 +29,8 @@
 #ifndef WEOS_INTRUSIVE_PTR_HPP
 #define WEOS_INTRUSIVE_PTR_HPP
 
-#include "config.hpp"
+#include "_config.hpp"
 
-#include "_core.hpp"
 #include "common/intrusive_ptr.hpp"
 
 #endif // WEOS_INTRUSIVE_PTR_HPP

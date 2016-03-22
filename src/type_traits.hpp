@@ -29,9 +29,8 @@
 #ifndef WEOS_TYPETRAITS_HPP
 #define WEOS_TYPETRAITS_HPP
 
-#include "config.hpp"
+#include "_config.hpp"
 
-#include "_core.hpp"
 #include "common/type_traits.hpp"
 
 #endif // WEOS_TYPETRAITS_HPP

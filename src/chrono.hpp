@@ -29,9 +29,7 @@
 #ifndef WEOS_CHRONO_HPP
 #define WEOS_CHRONO_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
-
+#include "_config.hpp"
 
 #ifdef __CC_ARM
 // -----------------------------------------------------------------------------
@@ -76,14 +74,8 @@ WEOS_END_NAMESPACE
 //     Specialized implementations of clocks
 // ----=====================================================================----
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/chrono.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/chrono.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/chrono.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/chrono.hpp"
 #else
     #error "Invalid native OS."
 #endif

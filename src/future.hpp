@@ -29,8 +29,7 @@
 #ifndef WEOS_FUTURE_HPP
 #define WEOS_FUTURE_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
 #include "common/future.hpp"
 

@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "config.hpp"
+#include "_config.hpp"
 
 #include "common/atomic.cpp"
 #include "common/exception.cpp"
@@ -36,12 +36,8 @@
 #include "common/system_error.cpp"
 
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/weos.cpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/weos.cpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/weos.cpp"
 #else
     #error "Invalid native OS."
 #endif

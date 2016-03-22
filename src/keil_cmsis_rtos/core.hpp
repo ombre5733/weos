@@ -29,7 +29,7 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_CORE_HPP
 #define WEOS_KEIL_CMSIS_RTOS_CORE_HPP
 
-#include "../config.hpp"
+#include "../_config.hpp"
 
 #include WEOS_CMSIS_OS_INCLUDE
 

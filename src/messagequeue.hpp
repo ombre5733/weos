@@ -29,16 +29,10 @@
 #ifndef WEOS_MESSAGEQUEUE_HPP
 #define WEOS_MESSAGEQUEUE_HPP
 
-#include "config.hpp"
+#include "_config.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/messagequeue.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/messagequeue.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/messagequeue.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/messagequeue.hpp"
 #else
     #error "Invalid native OS."
 #endif

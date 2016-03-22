@@ -29,8 +29,7 @@
 #ifndef WEOS_SCOPEGUARD_HPP
 #define WEOS_SCOPEGUARD_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
 
 WEOS_BEGIN_NAMESPACE

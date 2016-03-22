@@ -29,8 +29,7 @@
 #ifndef WEOS_UTILITY_HPP
 #define WEOS_UTILITY_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
 #include "common/utility.hpp"
 

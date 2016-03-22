@@ -29,8 +29,7 @@
 #ifndef WEOS_FUNCTIONAL_HPP
 #define WEOS_FUNCTIONAL_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
 #include "common/functional.hpp"
 

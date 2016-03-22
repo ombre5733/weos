@@ -29,8 +29,7 @@
 #ifndef WEOS_MEMORY_HPP
 #define WEOS_MEMORY_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
 #include "common/memory.hpp"
 

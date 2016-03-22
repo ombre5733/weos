@@ -29,8 +29,7 @@
 #ifndef WEOS_ATOMIC_HPP
 #define WEOS_ATOMIC_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
 #ifdef __CC_ARM
 // -----------------------------------------------------------------------------

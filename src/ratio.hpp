@@ -29,8 +29,7 @@
 #ifndef WEOS_RATIO_HPP
 #define WEOS_RATIO_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
 #include "common/ratio.hpp"
 

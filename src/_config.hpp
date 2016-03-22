@@ -48,12 +48,9 @@
 //     Validation
 // ----=====================================================================----
 
-// Include the CMSIS header file if necessary.
-#if defined(WEOS_WRAP_CXX11)
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-#else
+#if !defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #error "No native OS has been defined in the user configuration file."
-#endif // WEOS_WRAP_KEIL_RL_RTX
+#endif
 
 
 // ----=====================================================================----

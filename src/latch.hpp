@@ -29,14 +29,10 @@
 #ifndef WEOS_LATCH_HPP
 #define WEOS_LATCH_HPP
 
-#include "config.hpp"
+#include "_config.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    //#include "cxx11/semaphore.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/latch.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    //#include "osal/semaphore.hpp"
 #else
     #error "Invalid native OS."
 #endif

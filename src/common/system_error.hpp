@@ -29,7 +29,7 @@
 #ifndef WEOS_COMMON_SYSTEMERROR_HPP
 #define WEOS_COMMON_SYSTEMERROR_HPP
 
-#include "../config.hpp"
+#include "../_config.hpp"
 
 #include "../type_traits.hpp"
 

@@ -29,7 +29,7 @@
 #ifndef WEOS_COMMON_FUNCTIONAL_HPP
 #define WEOS_COMMON_FUNCTIONAL_HPP
 
-#include "../config.hpp"
+#include "../_config.hpp"
 
 #include "../exception.hpp"
 #include "../memory.hpp"

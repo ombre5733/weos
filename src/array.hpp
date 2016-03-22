@@ -29,8 +29,7 @@
 #ifndef WEOS_ARRAY
 #define WEOS_ARRAY
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 #include "exception.hpp"
 
 #include <algorithm>

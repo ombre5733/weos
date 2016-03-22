@@ -29,61 +29,12 @@
 #ifndef WEOS_MUTEX_HPP
 #define WEOS_MUTEX_HPP
 
-#include "config.hpp"
-#include "_core.hpp"
+#include "_config.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/mutex.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/mutex.hpp"
-#elif defined(WEOS_WRAP_KEIL_RL_RTX)
-    #include "keil_rl_rtx/mutex.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/mutex.hpp"
 #else
     #error "Invalid native OS."
 #endif
-
-#include "chrono.hpp"
-
-
-
-WEOS_BEGIN_NAMESPACE
-
-//! A null-mutex.
-//! The null-mutex is a class which implements the Lockable concept but
-//! does not block a thread. It can be used as a stub for a mutex in
-//! single-threaded applications.
-class null_mutex
-{
-public:
-    //! Locks the null-mutex.
-    void lock()
-    {
-    }
-
-    //! Tries to lock the null-mutex which always succeeds.
-    bool try_lock()
-    {
-        return true;
-    }
-
-    template <typename RepT, typename PeriodT>
-    bool try_lock_for(const chrono::duration<RepT, PeriodT>& d)
-    {
-        return true;
-    }
-
-    //! Unlocks the null-mutex.
-    void unlock()
-    {
-    }
-
-private:
-    null_mutex(const null_mutex&);
-    null_mutex& operator= (const null_mutex&);
-};
-
-WEOS_END_NAMESPACE
 
 #endif // WEOS_MUTEX_HPP

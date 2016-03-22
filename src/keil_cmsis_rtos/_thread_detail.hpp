@@ -29,7 +29,7 @@
 #ifndef WEOS_KEIL_CMSIS_RTOS_THREAD_DETAIL_HPP
 #define WEOS_KEIL_CMSIS_RTOS_THREAD_DETAIL_HPP
 
-#include "../config.hpp"
+#include "../_config.hpp"
 
 #include "../functional.hpp"
 #include "../tuple.hpp"

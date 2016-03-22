@@ -29,14 +29,10 @@
 #ifndef WEOS_THREAD_HPP
 #define WEOS_THREAD_HPP
 
-#include "config.hpp"
+#include "_config.hpp"
 
-#if defined(WEOS_WRAP_CXX11)
-    #include "cxx11/thread.hpp"
-#elif defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
+#if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
     #include "keil_cmsis_rtos/thread.hpp"
-#elif defined(WEOS_WRAP_OSAL)
-    #include "osal/thread.hpp"
 #else
     #error "Invalid native OS."
 #endif

@@ -29,9 +29,8 @@
 #ifndef WEOS_EXCEPTION_HPP
 #define WEOS_EXCEPTION_HPP
 
-#include "config.hpp"
+#include "_config.hpp"
 
-#include "_core.hpp"
 #include "common/exception.hpp"
 
 #endif // WEOS_EXCEPTION_HPP
