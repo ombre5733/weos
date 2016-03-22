@@ -32,7 +32,7 @@
 #include "_config.hpp"
 
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/_thread_detail.hpp"
+    #include "_cmsis_rtos/_thread_detail.hpp"
 #else
     #error "Invalid native OS."
 #endif

@@ -31,7 +31,7 @@
 
 #include "../../../config.hpp"
 
-#include "../../../3rdparty/keil_cmsis_rtos/INC/cmsis_os.h"
+#include "../../../3rdparty/_cmsis_rtos/INC/cmsis_os.h"
 #include "gtest/gtest.h"
 
 #include <stdio.h>

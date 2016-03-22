@@ -194,7 +194,7 @@ WEOS_END_NAMESPACE
 
 
 #if defined(WEOS_WRAP_KEIL_CMSIS_RTOS)
-    #include "keil_cmsis_rtos/memorypool.hpp"
+    #include "_cmsis_rtos/memorypool.hpp"
 #else
     #error "Invalid native OS."
 #endif
