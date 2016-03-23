@@ -60,6 +60,7 @@
 #define WEOS_NAMESPACE         weos
 #define WEOS_BEGIN_NAMESPACE   namespace WEOS_NAMESPACE {
 #define WEOS_END_NAMESPACE     }
+#define WEOS_STD_NAMESPACE     weos
 
 
 // ----=====================================================================----

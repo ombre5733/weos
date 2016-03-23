@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_CMSIS_RTOS_CHRONO_HPP
-#define WEOS_CMSIS_RTOS_CHRONO_HPP
+#ifndef WEOS_CMSIS_RTOS_CHRONO_CLOCKS_HPP
+#define WEOS_CMSIS_RTOS_CHRONO_CLOCKS_HPP
 
 #include "_core.hpp"
 
@@ -37,8 +37,8 @@
 #include <cstdint>
 
 
-WEOS_BEGIN_NAMESPACE
-
+namespace WEOS_STD_NAMESPACE
+{
 namespace chrono
 {
 
@@ -90,7 +90,6 @@ public:
 typedef system_clock steady_clock;
 
 } // namespace chrono
+} // namespace WEOS_STD_NAMESPACE
 
-WEOS_END_NAMESPACE
-
-#endif // WEOS_CMSIS_RTOS_CHRONO_HPP
+#endif // WEOS_CMSIS_RTOS_CHRONO_CLOCKS_HPP
