@@ -41,8 +41,8 @@
 #include <cstdint>
 
 
-WEOS_BEGIN_NAMESPACE
-
+namespace WEOS_STD_NAMESPACE
+{
 namespace chrono
 {
 
@@ -814,7 +814,7 @@ template <typename TClock, typename TDuration1, typename TDuration2>
 inline constexpr
 bool
 operator>(const time_point<TClock, TDuration1>& x,
-           const time_point<TClock, TDuration2>& y)
+          const time_point<TClock, TDuration2>& y)
 {
     return x.time_since_epoch() > y.time_since_epoch();
 }
@@ -884,14 +884,13 @@ operator-(const time_point<TClock, TDuration1>& tp,
 template <typename ClockT, typename Duration1T, typename Duration2T>
 inline constexpr
 typename common_type<Duration1T, Duration2T>::type
-operator- (const time_point<ClockT, Duration1T>& x,
-           const time_point<ClockT, Duration2T>& y)
+operator-(const time_point<ClockT, Duration1T>& x,
+          const time_point<ClockT, Duration2T>& y)
 {
     return x.time_since_epoch() - y.time_since_epoch();
 }
 
 } // namespace chrono
-
-WEOS_END_NAMESPACE
+} // namespace WEOS_STD_NAMESPACE
 
 #endif // WEOS_COMMON_CHRONO_HPP
