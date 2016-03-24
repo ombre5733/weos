@@ -111,7 +111,7 @@ public:
 
 private:
     atomic<std::ptrdiff_t> m_count;
-    weos_detail::_tq m_tq;
+    mutable weos_detail::_tq m_tq;
 };
 
 WEOS_END_NAMESPACE
