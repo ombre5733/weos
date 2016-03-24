@@ -31,6 +31,8 @@
 
 #include "_core.hpp"
 
+#include "_thread_detail.hpp"
+#include "_sleep.hpp"
 #include "../atomic.hpp"
 #include "../functional.hpp"
 #include "../chrono.hpp"
@@ -39,8 +41,7 @@
 #include "../system_error.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
-#include "_thread_detail.hpp"
-#include "_sleep.hpp"
+#include "../_common/_index_sequence.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -293,26 +294,27 @@ public:
     SharedThreadState(const ThreadProperties& props, void* ownedStack,
                       TF&& f, TArgs&&... args)
         : SharedThreadStateBase(props, ownedStack),
-          m_fun(WEOS_NAMESPACE::move(f), WEOS_NAMESPACE::move(args)...)
+          m_fun(std::move(f), std::move(args)...)
     {
     }
 
     virtual
     void execute() override
     {
-        typedef typename weos_detail::make_tuple_indices<
-                1 + sizeof...(TArgs), 1>::type indices_type;
+        using indices_type = typename WEOS_NAMESPACE::weos_detail::makeIndexSequence<
+                                 1 + sizeof...(TArgs), 1>::type;
         return doExecute(indices_type());
     }
 
 private:
-    tuple<TF, TArgs...> m_fun;
+    std::tuple<TF, TArgs...> m_fun;
 
     template <std::size_t... TIndices>
-    void doExecute(weos_detail::TupleIndices<TIndices...>)
+    void doExecute(WEOS_NAMESPACE::weos_detail::IndexSequence<TIndices...>)
     {
-        invoke(WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<0>(m_fun)),
-               WEOS_NAMESPACE::move(WEOS_NAMESPACE::get<TIndices>(m_fun))...);
+        WEOS_NAMESPACE::weos_detail::invoke(
+                    std::move(std::get<0>(m_fun)),
+                    std::move(std::get<TIndices>(m_fun))...);
     }
 };
 
@@ -359,9 +361,7 @@ public:
         : m_data(nullptr)
     {
         weos_detail::ThreadProperties props;
-        create(props,
-               WEOS_NAMESPACE::forward<F>(f),
-               WEOS_NAMESPACE::forward<TArgs>(args)...);
+        create(props, std::forward<F>(f), std::forward<TArgs>(args)...);
     }
 
     template <typename F, typename... TArgs>
@@ -370,9 +370,7 @@ public:
         : m_data(nullptr)
     {
         weos_detail::ThreadProperties props(attrs);
-        create(props,
-               WEOS_NAMESPACE::forward<F>(f),
-               WEOS_NAMESPACE::forward<TArgs>(args)...);
+        create(props, std::forward<F>(f), std::forward<TArgs>(args)...);
     }
 
     template <typename F, typename... TArgs>
@@ -380,9 +378,7 @@ public:
            F&& f, TArgs&&... args)
         : m_data(nullptr)
     {
-        create(props,
-               WEOS_NAMESPACE::forward<F>(f),
-               WEOS_NAMESPACE::forward<TArgs>(args)...);
+        create(props, std::forward<F>(f), std::forward<TArgs>(args)...);
     }
 
     //! Move constructor.
@@ -517,8 +513,8 @@ private:
         unique_ptr<shared_state_type, SharedThreadStateDeleter> state(
             ::new (props.m_stackBegin) shared_state_type(
                         props, deleter.owned_stack(),
-                        decay_copy(WEOS_NAMESPACE::forward<F>(f)),
-                        decay_copy(WEOS_NAMESPACE::forward<TArgs>(args))...));
+                        decay_copy(std::forward<F>(f)),
+                        decay_copy(std::forward<TArgs>(args))...));
         deleter.release(); // managed by 'state' from now on
 
         props.offset_by(size);

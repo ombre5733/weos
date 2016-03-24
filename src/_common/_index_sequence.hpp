@@ -26,66 +26,57 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <tuple.hpp>
+#ifndef WEOS_COMMON_INDEX_SEQUENCE_HPP
+#define WEOS_COMMON_INDEX_SEQUENCE_HPP
 
-#include "../common/testutils.hpp"
-#include "gtest/gtest.h"
 
-using namespace weos;
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
 
-struct A {};
 
-TEST(tuple, default_construction)
+#include "../type_traits.hpp"
+#include <cstddef>
+
+
+WEOS_BEGIN_NAMESPACE
+
+namespace weos_detail
 {
-    tuple<> t1;
-    (void)t1;
 
-    tuple<int> t2;
-    (void)t2;
-
-    tuple<int[2], void*> t3;
-    (void)t3;
-
-    tuple<A, A, A> t4;
-    (void)t4;
-}
-#if 0
-TEST(tuple, nothrow_default_construction)
+template <std::size_t... TIndices>
+struct IndexSequence
 {
-    static_assert(is_nothrow_default_constructible<tuple<>>::value, "");
-    static_assert(is_nothrow_default_constructible<tuple<int>>::value, "");
-    static_assert(is_nothrow_default_constructible<tuple<int[2], void*>>::value, "");
-    static_assert(is_nothrow_default_constructible<tuple<A, A, A>>::value, "");
-}
-#endif
-TEST(tuple, construction)
+};
+
+template <std::size_t TStart, std::size_t TEnd, typename TTemporary>
+struct makeIndexSequenceImpl;
+
+template <std::size_t TStart, std::size_t TEnd, std::size_t... TIndices>
+struct makeIndexSequenceImpl<TStart, TEnd, IndexSequence<TIndices...>>
 {
-    tuple<int> t1(10);
-    (void)t1;
+    using type = typename makeIndexSequenceImpl<
+                     TStart + 1,
+                     TEnd,
+                     IndexSequence<TIndices..., TStart>>::type;
+};
 
-    int i = 10;
-    float f = 2106.f;
-    tuple<int&, float&> t2(i, f);
-    (void)t2;
-
-    tuple<A, A, A> t3(A(), A(), A());
-    (void)t3;
-}
-
-TEST(tuple, access)
+// Specialization for TStart == TEnd.
+template <std::size_t TStart, std::size_t... TIndices>
+struct makeIndexSequenceImpl<TStart, TStart, IndexSequence<TIndices...>>
 {
-    tuple<int> t1(10);
-    ASSERT_EQ(10, get<0>(t1));
-    get<0>(t1) = 20;
-    ASSERT_EQ(20, get<0>(t1));
+    using type = IndexSequence<TIndices...>;
+};
 
-    int i = 10;
-    float f = 2106.f;
-    tuple<int&, float&> t2(i, f);
-    ASSERT_EQ(10, get<0>(t2));
-    ASSERT_EQ(2106.f, get<1>(t2));
-    get<0>(t2) = 42;
-    get<1>(t2) = -1;
-    ASSERT_EQ(42, i);
-    ASSERT_EQ(-1.f, f);
-}
+template <std::size_t TEnd, std::size_t TStart = 0>
+struct makeIndexSequence
+{
+    static_assert(TStart <= TEnd, "makeIndexSequence: invalid range");
+    using type = typename makeIndexSequenceImpl<TStart, TEnd, IndexSequence<>>::type;
+};
+
+} // namespace weos_detail
+
+WEOS_END_NAMESPACE
+
+#endif // WEOS_COMMON_INDEX_SEQUENCE_HPP

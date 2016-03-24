@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_TUPLE_HPP
-#define WEOS_COMMON_TUPLE_HPP
+#ifndef WEOS_ARMCC_TUPLE_HPP
+#define WEOS_ARMCC_TUPLE_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -39,7 +39,8 @@
 #include "../utility.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 //! A tuple.
 template <typename... TTypes>
@@ -199,7 +200,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
                                               && is_constructible<TType, UType>::value>::type>
     constexpr
     IndexedTupleElement(UType&& u)
-        : TType(WEOS_NAMESPACE::forward<UType>(u))
+        : TType(std::forward<UType>(u))
     {
     }
 
@@ -208,7 +209,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
 
     // Move-constructs a tuple element.
     IndexedTupleElement(IndexedTupleElement&& other) // TODO: noexcept
-        : TType(WEOS_NAMESPACE::move(other))
+        : TType(std::move(other))
     {
     }
 
@@ -217,7 +218,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     template <typename T>
     IndexedTupleElement& operator=(T&& t)
     {
-        TType::operator=(WEOS_NAMESPACE::forward<T>(t));
+        TType::operator=(std::forward<T>(t));
         return *this;
     }
 
@@ -239,7 +240,7 @@ struct IndexedTupleElement<TIndex, TType, true> : private TType
     // be void because we want to use variadicCall() on it.
     int swap(IndexedTupleElement& other) // noexcept if TType is noexcept-swappable
     {
-        WEOS_NAMESPACE::weos_detail::swap(*this, other);
+        std::weos_detail::swap(*this, other);
         return 0;
     }
 };
@@ -263,7 +264,7 @@ struct IndexedTupleElement<TIndex, TType, false>
                                               && is_constructible<TType, UType>::value>::type>
     constexpr
     IndexedTupleElement(UType&& u)
-        : m_value(WEOS_NAMESPACE::forward<UType>(u))
+        : m_value(std::forward<UType>(u))
     {
     }
 
@@ -272,7 +273,7 @@ struct IndexedTupleElement<TIndex, TType, false>
 
     // Move-constructs a tuple element.
     IndexedTupleElement(IndexedTupleElement&& other)
-        : m_value(WEOS_NAMESPACE::forward<TType>(other.m_value))
+        : m_value(std::forward<TType>(other.m_value))
     {
     }
 
@@ -281,7 +282,7 @@ struct IndexedTupleElement<TIndex, TType, false>
     template <typename T>
     IndexedTupleElement& operator=(T&& t)
     {
-        m_value = WEOS_NAMESPACE::forward<T>(t);
+        m_value = std::forward<T>(t);
         return *this;
     }
 
@@ -303,7 +304,7 @@ struct IndexedTupleElement<TIndex, TType, false>
     // be void because we want to use variadicCall() on it.
     int swap(IndexedTupleElement& other) // noexcept if TType is noexcept-swappable
     {
-        WEOS_NAMESPACE::weos_detail::swap(*this, other);
+        std::weos_detail::swap(*this, other);
         return 0;
     }
 
@@ -355,7 +356,7 @@ public:
     // Move-constructs from another TupleImpl.
     TupleImpl(TupleImpl&& other)
         : IndexedTupleElement<TIndices, TTypes>(
-              WEOS_NAMESPACE::forward<TTypes>(
+              std::forward<TTypes>(
                   static_cast<IndexedTupleElement<TIndices, TTypes>&>(other).get()))...
     {
     }
@@ -365,9 +366,9 @@ public:
     constexpr
     TupleImpl(TTuple&& t)
         : IndexedTupleElement<TIndices, TTypes>(
-              WEOS_NAMESPACE::forward<typename tuple_element<
+              std::forward<typename tuple_element<
                   TIndices, typename make_tuple_types<TTuple>::type>::type>(
-                      WEOS_NAMESPACE::get<TIndices>(t)))...
+                      std::get<TIndices>(t)))...
     {
     }
 
@@ -383,7 +384,7 @@ public:
     TupleImpl& operator=(TupleImpl&& other)
     {
         variadicCall(IndexedTupleElement<TIndices, TTypes>::operator=(
-            WEOS_NAMESPACE::forward<TTypes>(
+            std::forward<TTypes>(
                 static_cast<IndexedTupleElement<TIndices, TTypes>&>(other).get()))...);
         return *this;
     }
@@ -393,9 +394,9 @@ public:
     TupleImpl& operator=(TTuple&& t)
     {
         variadicCall(IndexedTupleElement<TIndices, TTypes>::operator=(
-            WEOS_NAMESPACE::forward<typename tuple_element<
+            std::forward<typename tuple_element<
                 TIndices, typename make_tuple_types<TTuple>::type>::type>(
-                    WEOS_NAMESPACE::get<TIndices>(t)))...);
+                    std::get<TIndices>(t)))...);
         return *this;
     }
 
@@ -408,18 +409,18 @@ public:
 };
 
 template <typename... T>
-struct all : WEOS_NAMESPACE::true_type {};
+struct all : true_type {};
 
 template <typename H, typename... T>
-struct all<H, T...> : WEOS_NAMESPACE::conditional<H::value, all<T...>, WEOS_NAMESPACE::false_type>::type
+struct all<H, T...> : conditional<H::value, all<T...>, false_type>::type
 {
 };
 
 template <typename... T>
-struct any : WEOS_NAMESPACE::false_type {};
+struct any : false_type {};
 
 template <typename H, typename... T>
-struct any<H, T...> : WEOS_NAMESPACE::conditional<H::value, WEOS_NAMESPACE::true_type, any<T...>>::type
+struct any<H, T...> : conditional<H::value, true_type, any<T...>>::type
 {
 };
 
@@ -651,7 +652,7 @@ template <typename... TTypes>
 WEOS_FORCE_INLINE
 constexpr tuple<TTypes&&...> forward_as_tuple(TTypes&&... args) noexcept
 {
-    return tuple<TTypes&&...>(WEOS_NAMESPACE::forward<TTypes>(args)...);
+    return tuple<TTypes&&...>(std::forward<TTypes>(args)...);
 }
 
 // ----=====================================================================----
@@ -665,6 +666,6 @@ void swap(tuple<TTypes...>& a, tuple<TTypes...>& b)
     a.swap(b);
 }
 
-WEOS_END_NAMESPACE
+} // namespace std
 
-#endif // WEOS_COMMON_TUPLE_HPP
+#endif // WEOS_ARMCC_TUPLE_HPP

@@ -33,21 +33,13 @@
 
 
 #ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
-
-#include "_common/tuple.hpp"
-
+#include "_armcc/_tuple.hpp"
 #else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
-
-#if 0
 #include <tuple>
+#endif // __CC_ARM
 
 
+// TODO:CLEAN
 WEOS_BEGIN_NAMESPACE
 
 using std::get;
@@ -57,10 +49,5 @@ using std::tuple_element;
 using std::tuple_size;
 
 WEOS_END_NAMESPACE
-#else
-#include "_common/tuple.hpp"
-#endif
-
-#endif // __CC_ARM
 
 #endif // WEOS_TUPLE_HPP

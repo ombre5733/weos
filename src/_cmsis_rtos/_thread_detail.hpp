@@ -35,6 +35,7 @@
 #include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
+#include "../_common/_index_sequence.hpp"
 #include "../_common/_invoke.hpp"
 
 
@@ -62,21 +63,21 @@ public:
 
     result_type operator()()
     {
-        typedef typename weos_detail::make_tuple_indices<
-                1 + sizeof...(TArgs), 1>::type indices_type;
+        using indices_type = typename WEOS_NAMESPACE::weos_detail::makeIndexSequence<
+                                 1 + sizeof...(TArgs), 1>::type;
         return WEOS_NAMESPACE::weos_detail::invoke(indices_type());
     }
 
 private:
     template <std::size_t... TIndices>
-    result_type invoke(weos_detail::TupleIndices<TIndices...>)
+    result_type invoke(WEOS_NAMESPACE::weos_detail::IndexSequence<TIndices...>)
     {
         return WEOS_NAMESPACE::weos_detail::invoke(
                     std::move(std::get<0>(m_boundFunction)),
                     std::move(std::get<TIndices>(m_boundFunction))...);
     }
 
-    tuple<TFunction, TArgs...> m_boundFunction;
+    std::tuple<TFunction, TArgs...> m_boundFunction;
 };
 
 // 30.2.6
