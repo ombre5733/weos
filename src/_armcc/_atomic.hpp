@@ -45,7 +45,8 @@
 #endif
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 enum memory_order
 {
@@ -411,197 +412,197 @@ public:
 
     // Integral
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_add(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, +, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_add(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, +, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_sub(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, -, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_sub(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, -, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_and(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, &, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_and(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, &, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_or(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, |, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_or(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, |, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_xor(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_ATOMIC_MODIFY(T, ^, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_ATOMIC_MODIFY(T, ^, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++() noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++() volatile noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++ (int) noexcept
     {
         return fetch_add(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++ (int) volatile noexcept
     {
         return fetch_add(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator--() noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator--() volatile noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-- (int) noexcept
     {
         return fetch_sub(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-- (int) volatile noexcept
     {
         return fetch_sub(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator+= (T value) noexcept
     {
         return fetch_add(value) + value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator+= (T value) volatile noexcept
     {
         return fetch_add(value) + value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-= (T value) noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-= (T value) volatile noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator&= (T value) noexcept
     {
         return fetch_and(value) & value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator&= (T value) volatile noexcept
     {
         return fetch_and(value) & value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator|= (T value) noexcept
     {
         return fetch_or(value) | value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator|= (T value) volatile noexcept
     {
         return fetch_or(value) | value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator^= (T value) noexcept
     {
         return fetch_xor(value) ^ value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator^= (T value) volatile noexcept
     {
         return fetch_xor(value) ^ value;
@@ -779,197 +780,197 @@ public:
 
     // Integral
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_add(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_LOCKED_MODIFY(T, +, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_add(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_LOCKED_MODIFY(T, +, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_sub(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_LOCKED_MODIFY(T, -, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_sub(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_LOCKED_MODIFY(T, -, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_and(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_LOCKED_MODIFY(T, &, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_and(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_LOCKED_MODIFY(T, &, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_or(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_LOCKED_MODIFY(T, |, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_or(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_LOCKED_MODIFY(T, |, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_xor(T arg, memory_order mo = memory_order_seq_cst) noexcept
     {
         WEOS_LOCKED_MODIFY(T, ^, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     fetch_xor(T arg, memory_order mo = memory_order_seq_cst) volatile noexcept
     {
         WEOS_LOCKED_MODIFY(T, ^, arg);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++() noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++() volatile noexcept
     {
         return fetch_add(1) + 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++ (int) noexcept
     {
         return fetch_add(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator++ (int) volatile noexcept
     {
         return fetch_add(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator--() noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator--() volatile noexcept
     {
         return fetch_sub(1) - 1;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-- (int) noexcept
     {
         return fetch_sub(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-- (int) volatile noexcept
     {
         return fetch_sub(1);
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator+= (T value) noexcept
     {
         return fetch_add(value) + value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator+= (T value) volatile noexcept
     {
         return fetch_add(value) + value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-= (T value) noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator-= (T value) volatile noexcept
     {
         return fetch_sub(value) - value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator&= (T value) noexcept
     {
         return fetch_and(value) & value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator&= (T value) volatile noexcept
     {
         return fetch_and(value) & value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator|= (T value) noexcept
     {
         return fetch_or(value) | value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator|= (T value) volatile noexcept
     {
         return fetch_or(value) | value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator^= (T value) noexcept
     {
         return fetch_xor(value) ^ value;
     }
 
-    template <bool Q = WEOS_NAMESPACE::is_integral<T>::value>
-    typename WEOS_NAMESPACE::enable_if<Q, T>::type
+    template <bool Q = is_integral<T>::value>
+    typename enable_if<Q, T>::type
     operator^= (T value) volatile noexcept
     {
         return fetch_xor(value) ^ value;
@@ -1311,7 +1312,7 @@ public:
 #undef WEOS_ATOMIC_MODIFY
 #undef WEOS_LOCKED_MODIFY
 
-WEOS_END_NAMESPACE
+} // namespace std
 
 // Actually, the pragma should be disabled again. But then ARMCC issues warnings
 // whenever atomic<> is instanciated.

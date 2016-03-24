@@ -26,52 +26,47 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_RATIO_HPP
-#define WEOS_RATIO_HPP
-
-#include "_config.hpp"
+#ifndef WEOS_COMMON_ALLOC_HPP
+#define WEOS_COMMON_ALLOC_HPP
 
 
-#ifdef __CC_ARM
-#include "_armcc/_ratio.hpp"
-#else
-#include <ratio>
-#endif // __CC_ARM
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
 
 
-// TODO:CLEAN
+#include "../memory.hpp"
+
+
 WEOS_BEGIN_NAMESPACE
 
-using std::ratio;
-using std::ratio_add;
-using std::ratio_subtract;
-using std::ratio_multiply;
-using std::ratio_divide;
+namespace weos_detail
+{
 
-using std::ratio_equal;
-using std::ratio_not_equal;
-using std::ratio_less;
-using std::ratio_less_equal;
-using std::ratio_greater;
-using std::ratio_greater_equal;
+// A deallocator usable for unique_ptr.
+template <typename TAllocator>
+class deallocator
+{
+public:
+    using pointer = typename std::allocator_traits<TAllocator>::pointer;
 
-using std::atto;
-using std::femto;
-using std::pico;
-using std::nano;
-using std::micro;
-using std::milli;
-using std::centi;
-using std::deci;
-using std::deca;
-using std::hecto;
-using std::kilo;
-using std::mega;
-using std::giga;
-using std::tera;
-using std::peta;
-using std::exa;
+    explicit
+    deallocator(TAllocator& allocator) noexcept
+        : m_allocator(allocator)
+    {
+    }
+
+    void operator()(pointer ptr) noexcept
+    {
+        std::allocator_traits<TAllocator>::deallocate(m_allocator, ptr, 1);
+    }
+
+private:
+    TAllocator& m_allocator;
+};
+
+} // namespace weos_detail
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_RATIO_HPP
+#endif // WEOS_COMMON_ALLOC_HPP

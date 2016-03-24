@@ -31,6 +31,7 @@
 
 #include "../_config.hpp"
 
+#include "_alloc.hpp"
 #include "../exception.hpp"
 #include "../memory.hpp"
 #include "../tuple.hpp"

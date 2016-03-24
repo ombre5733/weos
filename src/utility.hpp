@@ -31,6 +31,20 @@
 
 #include "_config.hpp"
 
-#include "_common/utility.hpp"
+#ifdef __CC_ARM
+#include "_armcc/_utility.hpp"
+#else
+#include <utility>
+#endif // __CC_ARM
+
+
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::declval;
+using std::forward;
+using std::move;
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_UTILITY_HPP

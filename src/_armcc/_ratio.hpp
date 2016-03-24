@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_RATIO_HPP
-#define WEOS_COMMON_RATIO_HPP
+#ifndef WEOS_ARMCC_RATIO_HPP
+#define WEOS_ARMCC_RATIO_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -35,59 +35,41 @@
 #endif // WEOS_CONFIG_HPP
 
 
-#ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
-
 #include <boost/ratio.hpp>
-#define WEOS_IMPL_NAMESPACE   boost
 
-#else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
+namespace std
+{
 
-#include <ratio>
-#define WEOS_IMPL_NAMESPACE   std
+using boot::ratio;
+using boot::ratio_add;
+using boot::ratio_subtract;
+using boot::ratio_multiply;
+using boot::ratio_divide;
 
-#endif // __CC_ARM
+using boot::ratio_equal;
+using boot::ratio_not_equal;
+using boot::ratio_less;
+using boot::ratio_less_equal;
+using boot::ratio_greater;
+using boot::ratio_greater_equal;
 
+using boot::atto;
+using boot::femto;
+using boot::pico;
+using boot::nano;
+using boot::micro;
+using boot::milli;
+using boot::centi;
+using boot::deci;
+using boot::deca;
+using boot::hecto;
+using boot::kilo;
+using boot::mega;
+using boot::giga;
+using boot::tera;
+using boot::peta;
+using boot::exa;
 
-WEOS_BEGIN_NAMESPACE
+} // namespace std
 
-using WEOS_IMPL_NAMESPACE::ratio;
-using WEOS_IMPL_NAMESPACE::ratio_add;
-using WEOS_IMPL_NAMESPACE::ratio_subtract;
-using WEOS_IMPL_NAMESPACE::ratio_multiply;
-using WEOS_IMPL_NAMESPACE::ratio_divide;
-
-using WEOS_IMPL_NAMESPACE::ratio_equal;
-using WEOS_IMPL_NAMESPACE::ratio_not_equal;
-using WEOS_IMPL_NAMESPACE::ratio_less;
-using WEOS_IMPL_NAMESPACE::ratio_less_equal;
-using WEOS_IMPL_NAMESPACE::ratio_greater;
-using WEOS_IMPL_NAMESPACE::ratio_greater_equal;
-
-using WEOS_IMPL_NAMESPACE::atto;
-using WEOS_IMPL_NAMESPACE::femto;
-using WEOS_IMPL_NAMESPACE::pico;
-using WEOS_IMPL_NAMESPACE::nano;
-using WEOS_IMPL_NAMESPACE::micro;
-using WEOS_IMPL_NAMESPACE::milli;
-using WEOS_IMPL_NAMESPACE::centi;
-using WEOS_IMPL_NAMESPACE::deci;
-using WEOS_IMPL_NAMESPACE::deca;
-using WEOS_IMPL_NAMESPACE::hecto;
-using WEOS_IMPL_NAMESPACE::kilo;
-using WEOS_IMPL_NAMESPACE::mega;
-using WEOS_IMPL_NAMESPACE::giga;
-using WEOS_IMPL_NAMESPACE::tera;
-using WEOS_IMPL_NAMESPACE::peta;
-using WEOS_IMPL_NAMESPACE::exa;
-
-WEOS_END_NAMESPACE
-
-#undef WEOS_IMPL_NAMESPACE
-
-#endif // WEOS_COMMON_RATIO_HPP
+#endif // WEOS_ARMCC_RATIO_HPP

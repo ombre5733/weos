@@ -29,11 +29,10 @@
 #include "_atomic.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
-
+namespace std
+{
 namespace weos_detail
 {
 mutex g_atomicMutex;
 } // namespace weos_detail
-
-WEOS_END_NAMESPACE
+} // namespace std

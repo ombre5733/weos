@@ -31,6 +31,37 @@
 
 #include "_config.hpp"
 
-#include "_common/memory.hpp"
+#ifdef __CC_ARM
+
+#include "_armcc/_memory.hpp"
+
+#else
+
+#include <memory>
+
+namespace std
+{
+void* align(std::size_t alignment, std::size_t size, void*& ptr, std::size_t& space);
+} // namespace std
+
+#endif // __CC_ARM
+
+
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::addressof;
+using std::default_delete;
+using std::unique_ptr;
+
+using std::allocator;
+using std::allocator_traits;
+using std::allocator_arg;
+using std::allocator_arg_t;
+using std::uses_allocator;
+
+using std::align;
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_MEMORY_HPP

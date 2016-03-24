@@ -26,9 +26,10 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "memory.hpp"
+#include "_memory.hpp"
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 void* align(std::size_t alignment, std::size_t size,
             void*& ptr, std::size_t& space)
@@ -50,26 +51,4 @@ void* align(std::size_t alignment, std::size_t size,
     return nullptr;
 }
 
-namespace weos_detail
-{
-
-void* max_align(void*& ptr, std::size_t& space)
-{
-    using namespace std;
-
-    static constexpr size_t alignment = alignment_of<long double>::value;
-    uintptr_t address = uintptr_t(ptr);
-    uintptr_t aligned_address = (address + (alignment - 1)) & -alignment;
-    size_t diff = aligned_address - address;
-    if (space >= diff)
-    {
-        space -= diff;
-        ptr = reinterpret_cast<void*>(aligned_address);
-        return ptr;
-    }
-    return nullptr;
-}
-
-} // namespace weos_detail
-
-WEOS_END_NAMESPACE
+} // namespace std

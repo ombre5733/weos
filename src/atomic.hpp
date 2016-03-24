@@ -32,19 +32,12 @@
 #include "_config.hpp"
 
 #ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
-
 #include "_armcc/_atomic.hpp"
-
 #else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
-
 #include <atomic>
+#endif
 
+// TODO:CLEAN
 WEOS_BEGIN_NAMESPACE
 
 using std::memory_order;
@@ -70,7 +63,5 @@ using std::atomic_long;
 using std::atomic_ulong;
 
 WEOS_END_NAMESPACE
-
-#endif // __CC_ARM
 
 #endif // WEOS_ATOMIC_HPP

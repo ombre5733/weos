@@ -26,19 +26,14 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_MEMORY_HPP
-#define WEOS_COMMON_MEMORY_HPP
+#ifndef WEOS_ARMCC_MEMORY_HPP
+#define WEOS_ARMCC_MEMORY_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
     #error "Do not include this file directly."
 #endif // WEOS_CONFIG_HPP
 
-
-#ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
 
 #include "../tuple.hpp"
 #include "../type_traits.hpp"
@@ -54,7 +49,12 @@
 #include <boost/container/scoped_allocator.hpp>
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
+
+// ----=====================================================================----
+//     default_delete
+// ----=====================================================================----
 
 //! The default deleter.
 //!
@@ -79,6 +79,10 @@ struct default_delete
 };
 
 // TODO: add a default_delete specialization for arrays
+
+// ----=====================================================================----
+//     unique_ptr
+// ----=====================================================================----
 
 namespace weos_detail
 {
@@ -119,8 +123,6 @@ struct deleter_pointer_or_fallback<TType, TDeleter, false>
 };
 
 } // namespace weos_detail
-
-
 
 //! A unique pointer.
 template <typename TPointee, typename TDeleter = default_delete<TPointee> >
@@ -181,7 +183,7 @@ public:
                typename add_rvalue_reference<
                    typename remove_reference<TDeleter>::type
                >::type deleter)
-        : m_pointerDeleter(ptr, WEOS_NAMESPACE::move(deleter))
+        : m_pointerDeleter(ptr, std::move(deleter))
     {
     }
 
@@ -189,7 +191,7 @@ public:
     //! Creates a unique pointer by moving from the \p other pointer.
     unique_ptr(unique_ptr&& other) noexcept
         :  m_pointerDeleter(other.release(),
-                            WEOS_NAMESPACE::forward<TDeleter>(other.get_deleter()))
+                            std::forward<TDeleter>(other.get_deleter()))
     {
     }
 
@@ -214,8 +216,8 @@ public:
     unique_ptr& operator=(unique_ptr&& other) noexcept
     {
         reset(other.release());
-        WEOS_NAMESPACE::get<1>(m_pointerDeleter)
-                = WEOS_NAMESPACE::forward<TDeleter>(other.get_deleter());
+        std::get<1>(m_pointerDeleter)
+                = std::forward<TDeleter>(other.get_deleter());
         return *this;
     }
 
@@ -226,27 +228,27 @@ public:
     //! ownership.
     pointer get() const noexcept
     {
-        return WEOS_NAMESPACE::get<0>(m_pointerDeleter);
+        return std::get<0>(m_pointerDeleter);
     }
 
     //! Returns the associated deleter.
     deleter_type& get_deleter() noexcept
     {
-        return WEOS_NAMESPACE::get<1>(m_pointerDeleter);
+        return std::get<1>(m_pointerDeleter);
     }
 
     //! Returns the associated deleter.
     const deleter_type& get_deleter() const noexcept
     {
-        return WEOS_NAMESPACE::get<1>(m_pointerDeleter);
+        return std::get<1>(m_pointerDeleter);
     }
 
     //! Releases the ownership.
     //! Transfers the ownership of the stored object to the caller.
     pointer release() noexcept
     {
-        pointer temp = WEOS_NAMESPACE::get<0>(m_pointerDeleter);
-        WEOS_NAMESPACE::get<0>(m_pointerDeleter) = pointer();
+        pointer temp = std::get<0>(m_pointerDeleter);
+        std::get<0>(m_pointerDeleter) = pointer();
         return temp;
     }
 
@@ -254,14 +256,14 @@ public:
     void reset(pointer ptr = pointer()) noexcept
     {
         // Watch out for self-assignment.
-        if (WEOS_NAMESPACE::get<0>(m_pointerDeleter) != ptr)
+        if (std::get<0>(m_pointerDeleter) != ptr)
         {
             // Note: The order of these expressions is important.
             // See 20.8.1.2.5.
-            pointer temp = WEOS_NAMESPACE::get<0>(m_pointerDeleter);
-            WEOS_NAMESPACE::get<0>(m_pointerDeleter) = ptr;
+            pointer temp = std::get<0>(m_pointerDeleter);
+            std::get<0>(m_pointerDeleter) = ptr;
             if (temp)
-                WEOS_NAMESPACE::get<1>(m_pointerDeleter)(temp);
+                std::get<1>(m_pointerDeleter)(temp);
         }
     }
 
@@ -275,13 +277,13 @@ public:
     //! Returns a reference to the owned object.
     typename add_lvalue_reference<element_type>::type operator*() const
     {
-        return *WEOS_NAMESPACE::get<0>(m_pointerDeleter);
+        return *std::get<0>(m_pointerDeleter);
     }
 
     //! Accesses the owned object.
     pointer operator->() const noexcept
     {
-        return WEOS_NAMESPACE::get<0>(m_pointerDeleter);
+        return std::get<0>(m_pointerDeleter);
     }
 
     //! Checks if the smart pointer owns an object.
@@ -289,7 +291,7 @@ public:
     explicit
     operator bool() const noexcept
     {
-        return WEOS_NAMESPACE::get<0>(m_pointerDeleter) != nullptr;
+        return std::get<0>(m_pointerDeleter) != nullptr;
     }
 
 private:
@@ -337,88 +339,26 @@ bool operator==(nullptr_t, const unique_ptr<T1, D1>& x) noexcept
 template <typename TType, typename... TArgs>
 unique_ptr<TType> make_unique(TArgs&&... args )
 {
-    return unique_ptr<TType>(new TType(WEOS_NAMESPACE::forward<TArgs>(args)...));
+    return unique_ptr<TType>(new TType(std::forward<TArgs>(args)...));
 }
+
+// ----=====================================================================----
+//     allocator
+// ----=====================================================================----
 
 using boost::addressof;
 
-using std::allocator;
 using boost::container::allocator_traits;
 using boost::container::allocator_arg;
 using boost::container::allocator_arg_t;
 using boost::container::uses_allocator;
 
-void* align(std::size_t alignment, std::size_t size, void*& ptr, std::size_t& space);
-
-namespace weos_detail
-{
-
-void* max_align(void*& ptr, std::size_t& space);
-
-} // namespace weos_detail
-
-WEOS_END_NAMESPACE
-
-
-#else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
-
-#include <memory>
-
-
-WEOS_BEGIN_NAMESPACE
-
-using std::addressof;
-using std::default_delete;
-using std::unique_ptr;
-
-using std::allocator;
-using std::allocator_traits;
-using std::allocator_arg;
-using std::allocator_arg_t;
-using std::uses_allocator;
+// ----=====================================================================----
+//     align
+// ----=====================================================================----
 
 void* align(std::size_t alignment, std::size_t size, void*& ptr, std::size_t& space);
 
-WEOS_END_NAMESPACE
+} // namespace std
 
-#endif // __CC_ARM
-
-
-WEOS_BEGIN_NAMESPACE
-
-namespace weos_detail
-{
-
-// A deallocator usable for unique_ptr.
-template <typename TAllocator>
-class deallocator
-{
-public:
-    using pointer = typename WEOS_NAMESPACE::allocator_traits<TAllocator>::pointer;
-
-    explicit
-    deallocator(TAllocator& allocator) noexcept
-        : m_allocator(allocator)
-    {
-    }
-
-    void operator()(pointer ptr) noexcept
-    {
-        WEOS_NAMESPACE::allocator_traits<TAllocator>::deallocate(
-                    m_allocator, ptr, 1);
-    }
-
-private:
-    TAllocator& m_allocator;
-};
-
-void* max_align(void*& ptr, std::size_t& space);
-
-} // namespace weos_detail
-
-WEOS_END_NAMESPACE
-
-#endif // WEOS_COMMON_MEMORY_HPP
+#endif // WEOS_ARMCC_MEMORY_HPP

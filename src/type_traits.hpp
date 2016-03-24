@@ -32,20 +32,23 @@
 #include "_config.hpp"
 
 #ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
 
 #include "_armcc/_type_traits.hpp"
 
 #else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
 
 #include <type_traits>
 
+namespace std
+{
+template <typename T>
+struct is_trivially_copyable : public std::is_pod<T> {};
+} // namespace std
 
+#endif // __CC_ARM
+
+
+// TODO:CLEAN
 WEOS_BEGIN_NAMESPACE
 
 template <typename... T>
@@ -113,12 +116,8 @@ using std::is_nothrow_constructible;
 using std::is_nothrow_copy_constructible;
 using std::is_nothrow_default_constructible;
 using std::is_union;
-// TODO: using std::is_trivially_copyable;
-template <typename T>
-struct is_trivially_copyable : public std::is_pod<T> {};
+using std::is_trivially_copyable;
 
 WEOS_END_NAMESPACE
-
-#endif // __CC_ARM
 
 #endif // WEOS_TYPE_TRAITS_HPP

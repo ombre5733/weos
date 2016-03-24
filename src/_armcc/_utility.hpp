@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_UTILITY_HPP
-#define WEOS_COMMON_UTILITY_HPP
+#ifndef WEOS_ARMCC_UTILITY_HPP
+#define WEOS_ARMCC_UTILITY_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -35,21 +35,23 @@
 #endif // WEOS_CONFIG_HPP
 
 
-#ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
-
 #include "../type_traits.hpp"
 #include <cstddef>
 
-
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
+// ----=====================================================================----
+//     declval
+// ----=====================================================================----
 
 // "Creates" a reference type from T. Note that there is no definition for
 // declval, it may only be used in an unevaluated context, e.g. a decltype().
 template <typename T>
 typename add_rvalue_reference<T>::type declval() noexcept;
+
+// ----=====================================================================----
+//     move
+// ----=====================================================================----
 
 template <typename T>
 inline
@@ -57,6 +59,10 @@ constexpr typename remove_reference<T>::type&& move(T&& t) noexcept
 {
     return static_cast<typename remove_reference<T>::type&&>(t);
 }
+
+// ----=====================================================================----
+//     forward
+// ----=====================================================================----
 
 template <typename T>
 inline
@@ -144,24 +150,6 @@ using make_index_sequence = make_integer_sequence<std::size_t, N>;
 template <typename... TArgs>
 using index_sequence_for = make_index_sequence<sizeof...(TArgs)>;
 
-WEOS_END_NAMESPACE
+} // namespace std
 
-#else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
-
-#include <utility>
-
-
-WEOS_BEGIN_NAMESPACE
-
-using std::declval;
-using std::forward;
-using std::move;
-
-WEOS_END_NAMESPACE
-
-#endif // __CC_ARM
-
-#endif // WEOS_COMMON_UTILITY_HPP
+#endif // WEOS_ARMCC_UTILITY_HPP

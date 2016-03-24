@@ -29,11 +29,18 @@
 #ifndef WEOS_ARMCC_TYPE_TRAITS_HPP
 #define WEOS_ARMCC_TYPE_TRAITS_HPP
 
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
+
 #include <boost/type_traits.hpp>
 #include <boost/utility/result_of.hpp>
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 #if !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
 template <typename... T>
@@ -188,6 +195,6 @@ struct is_union : public integral_constant<bool, __is_union(TType)> {};
 template <typename TType>
 struct is_trivially_copyable : public integral_constant<bool, __is_trivially_copyable(TType)> {};
 
-WEOS_END_NAMESPACE
+} // namespace std
 
 #endif // WEOS_ARMCC_TYPE_TRAITS_HPP
