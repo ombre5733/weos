@@ -30,11 +30,11 @@
 
 #ifdef __CC_ARM
 #include "_armcc/_atomic.cpp"
+#include "_armcc/_functional.cpp"
 #include "_armcc/_memory.cpp"
 #endif // __CC_ARM
 
 #include "_common/exception.cpp"
-#include "_common/functional.cpp"
 #include "_common/future.cpp"
 #include "_common/system_error.cpp"
 

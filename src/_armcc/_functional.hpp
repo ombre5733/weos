@@ -26,24 +26,33 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_FUNCTIONAL_HPP
-#define WEOS_COMMON_FUNCTIONAL_HPP
+#ifndef WEOS_ARMCC_FUNCTIONAL_HPP
+#define WEOS_ARMCC_FUNCTIONAL_HPP
+
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
 
 #include "../_config.hpp"
 
-#include "_alloc.hpp"
 #include "../exception.hpp"
 #include "../memory.hpp"
 #include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
+#include "../_common/_alloc.hpp"
+#include "../_common/_invoke.hpp"
 
 #include <new>
 #ifndef WEOS_NO_FUNCTION_TARGET
 #include <typeinfo>
 #endif // WEOS_NO_FUNCTION_TARGET
 
-WEOS_BEGIN_NAMESPACE
+
+namespace std
+{
 
 struct bad_function_call : public std::exception
 {
@@ -65,13 +74,13 @@ extern const placeholder<4> _4;
 } // namespace placeholders
 
 template <typename T>
-struct is_placeholder : WEOS_NAMESPACE::integral_constant<int, 0>
+struct is_placeholder : integral_constant<int, 0>
 {
 };
 
 template <int TIndex>
 struct is_placeholder<placeholders::placeholder<TIndex>>
-        : WEOS_NAMESPACE::integral_constant<int, TIndex>
+        : integral_constant<int, TIndex>
 {
 };
 
@@ -85,69 +94,6 @@ struct weos_is_placeholder<placeholders::placeholder<I>> : true_type
 {
     static constexpr int index = I - 1;
 };
-
-// ----=====================================================================----
-//     invoke
-// ----=====================================================================----
-
-// Invokes a Callable. See: http://en.cppreference.com/w/cpp/concept/Callable
-
-// Pointer to member function + object of/reference to matching class.
-template <typename F, typename A0, typename... An>
-inline
-auto invoke(F&& f, A0&& a0, An&&... an)
-    -> decltype((WEOS_NAMESPACE::forward<A0>(a0).*f)(WEOS_NAMESPACE::forward<An>(an)...))
-{
-    return (WEOS_NAMESPACE::forward<A0>(a0).*f)(WEOS_NAMESPACE::forward<An>(an)...);
-}
-
-// Pointer to member function + pointer to matching class.
-template <typename F, typename A0, typename... An>
-inline
-auto invoke(F&& f, A0&& a0, An&&... an)
-    -> decltype(((*WEOS_NAMESPACE::forward<A0>(a0)).*f)(WEOS_NAMESPACE::forward<An>(an)...))
-{
-    return ((*WEOS_NAMESPACE::forward<A0>(a0)).*f)(WEOS_NAMESPACE::forward<An>(an)...);
-}
-
-// Pointer to data member + object of/reference to matching class.
-template <typename F, typename A0>
-inline
-auto invoke(F&& f, A0&& a0)
-    -> decltype(WEOS_NAMESPACE::forward<A0>(a0).*f)
-{
-    return WEOS_NAMESPACE::forward<A0>(a0).*f;
-}
-
-// Pointer to data member + pointer to matching class.
-template <typename F, typename A0>
-inline
-auto invoke(F&& f, A0&& a0)
-    -> decltype((*WEOS_NAMESPACE::forward<A0>(a0)).*f)
-{
-    return (*WEOS_NAMESPACE::forward<A0>(a0)).*f;
-}
-
-// Function object
-template <typename F, typename... An>
-inline
-auto invoke(F&& f, An&&... an)
-    -> decltype(WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...))
-{
-    return WEOS_NAMESPACE::forward<F>(f)(WEOS_NAMESPACE::forward<An>(an)...);
-}
-
-namespace weos_detail
-{
-
-template <typename F, typename... An>
-struct invoke_result_type
-{
-    typedef decltype(invoke(WEOS_NAMESPACE::declval<F>(),
-                            WEOS_NAMESPACE::declval<An>()...)) type;
-};
-
-} // namespace weos_detail
 
 // ----=====================================================================----
 //     WeakResultType
@@ -252,7 +198,7 @@ public:
     typedef T type;
 
     reference_wrapper(T& t) noexcept
-        : m_wrapped(WEOS_NAMESPACE::addressof(t))
+        : m_wrapped(addressof(t))
     {
     }
 
@@ -274,7 +220,7 @@ public:
     template <typename... TArgs>
     typename result_of<T&(TArgs&&...)>::type operator()(TArgs&&... args) const
     {
-        return invoke(*m_wrapped, WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return WEOS_NAMESPACE::weos_detail::invoke(*m_wrapped, std::forward<TArgs>(args)...);
     }
 
 private:
@@ -353,10 +299,10 @@ public:
     }
 
     template <typename... TArgs>
-    typename invoke_result_type<TMemberPointer, TArgs...>::type
+    typename WEOS_NAMESPACE::weos_detail::invoke_result_type<TMemberPointer, TArgs...>::type
     operator()(TArgs&&... args) const
     {
-        return invoke(m_pm, WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return WEOS_NAMESPACE::weos_detail::invoke(m_pm, std::forward<TArgs>(args)...);
     }
 
 private:
@@ -384,7 +330,7 @@ namespace weos_detail
 {
 
 template <typename T>
-struct is_bind_expression : WEOS_NAMESPACE::false_type {}; // TODO
+struct is_bind_expression : false_type {}; // TODO
 
 } // namespace weos_detail
 
@@ -434,8 +380,7 @@ struct ArgumentSelector<TBoundArg, TUnboundArgs, false, true, false>
 
     static type select(TBoundArg& /*bound*/, TUnboundArgs& unbound)
     {
-        return WEOS_NAMESPACE::forward<type>(
-                WEOS_NAMESPACE::get<index>(unbound));
+        return std::forward<type>(std::get<index>(unbound));
     }
 };
 
@@ -452,8 +397,9 @@ struct bind_expression_result_type;
 template <typename TF, typename... TBoundArgs, typename TUnboundArgs>
 struct bind_expression_result_type<TF, tuple<TBoundArgs...>, TUnboundArgs>
 {
-    typedef decltype(invoke(WEOS_NAMESPACE::declval<TF&>(),
-                            WEOS_NAMESPACE::declval<typename ArgumentSelector<TBoundArgs, TUnboundArgs>::type>()...))
+    typedef decltype(WEOS_NAMESPACE::weos_detail::invoke(
+                         std::declval<TF&>(),
+                         std::declval<typename ArgumentSelector<TBoundArgs, TUnboundArgs>::type>()...))
           type;
 };
 
@@ -464,10 +410,11 @@ invokeBindExpression(TF& functor,
                      TBoundArgs& boundArgs, TupleIndices<TBoundIndices...>,
                      TUnboundArgs&& unboundArgs)
 {
-    return invoke(functor,
-                  ArgumentSelector<typename tuple_element<TBoundIndices, TBoundArgs>::type,
-                                   TUnboundArgs>::select(
-                      WEOS_NAMESPACE::get<TBoundIndices>(boundArgs), unboundArgs)...);
+    return WEOS_NAMESPACE::weos_detail::invoke(
+                functor,
+                ArgumentSelector<typename tuple_element<TBoundIndices, TBoundArgs>::type,
+                                 TUnboundArgs>::select(
+                    std::get<TBoundIndices>(boundArgs), unboundArgs)...);
 }
 
 // The result of a bind<>() call.
@@ -485,8 +432,8 @@ public:
                                               && !is_same<typename decay<F>::type,
                                                           BindExpression>::value>::type>
     explicit BindExpression(F&& f, TArgs&&... boundArgs)
-        : m_functor(WEOS_NAMESPACE::forward<F>(f)),
-          m_boundArgs(WEOS_NAMESPACE::forward<TArgs>(boundArgs)...)
+        : m_functor(std::forward<F>(f)),
+          m_boundArgs(std::forward<TArgs>(boundArgs)...)
     {
     }
 
@@ -494,15 +441,15 @@ public:
     BindExpression& operator=(const BindExpression& other) = default;
 
     BindExpression(BindExpression&& other)
-        : m_functor(WEOS_NAMESPACE::move(other.m_functor)),
-          m_boundArgs(WEOS_NAMESPACE::move(other.m_boundArgs))
+        : m_functor(std::move(other.m_functor)),
+          m_boundArgs(std::move(other.m_boundArgs))
     {
     }
 
     BindExpression& operator=(BindExpression&& other)
     {
-        m_functor = WEOS_NAMESPACE::move(other.m_functor);
-        m_boundArgs = WEOS_NAMESPACE::move(other.m_boundArgs);
+        m_functor = std::move(other.m_functor);
+        m_boundArgs = std::move(other.m_boundArgs);
         return *this;
     }
 
@@ -512,7 +459,7 @@ public:
     {
         return invokeBindExpression(m_functor,
                                     m_boundArgs, bound_indices_type(),
-                                    forward_as_tuple(WEOS_NAMESPACE::forward<TArgs>(args)...));
+                                    forward_as_tuple(std::forward<TArgs>(args)...));
     }
 
     template <typename... TArgs>
@@ -521,7 +468,7 @@ public:
     {
         return invokeBindExpression(m_functor,
                                     m_boundArgs, bound_indices_type(),
-                                    forward_as_tuple(WEOS_NAMESPACE::forward<TArgs>(args)...));
+                                    forward_as_tuple(std::forward<TArgs>(args)...));
     }
 
 private:
@@ -530,8 +477,7 @@ private:
 };
 
 template <typename TFunctor, typename... TBoundArgs>
-struct is_bind_expression<BindExpression<TFunctor, TBoundArgs...>>
-        : WEOS_NAMESPACE::true_type
+struct is_bind_expression<BindExpression<TFunctor, TBoundArgs...>> : true_type
 {
 };
 
@@ -550,8 +496,8 @@ public:
                                               && !is_same<typename decay<F>::type,
                                                           BindExpressionResult>::value>::type>
     explicit BindExpressionResult(F&& f, TArgs&&... boundArgs)
-        : base_type(WEOS_NAMESPACE::forward<F>(f),
-                    WEOS_NAMESPACE::forward<TArgs>(boundArgs)...)
+        : base_type(std::forward<F>(f),
+                    std::forward<TArgs>(boundArgs)...)
     {
     }
 
@@ -559,32 +505,32 @@ public:
     BindExpressionResult& operator=(const BindExpressionResult& other) = default;
 
     BindExpressionResult(BindExpressionResult&& other)
-        : base_type(WEOS_NAMESPACE::forward<base_type>(other))
+        : base_type(std::forward<base_type>(other))
     {
     }
 
     BindExpressionResult& operator=(BindExpressionResult&& other)
     {
-        base_type::operator=(WEOS_NAMESPACE::forward<base_type>(other));
+        base_type::operator=(std::forward<base_type>(other));
         return *this;
     }
 
     template <typename... TArgs>
     result_type operator()(TArgs&&... args)
     {
-        return base_type::operator()(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return base_type::operator()(std::forward<TArgs>(args)...);
     }
 
     template <typename... TArgs>
     result_type operator()(TArgs&&... args) const
     {
-        return base_type::operator()(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return base_type::operator()(std::forward<TArgs>(args)...);
     }
 };
 
 template <typename TResult, typename TFunctor, typename... TBoundArgs>
 struct is_bind_expression<BindExpressionResult<TResult, TFunctor, TBoundArgs...>>
-        : WEOS_NAMESPACE::true_type
+        : true_type
 {
 };
 
@@ -599,8 +545,8 @@ inline
 weos_detail::BindExpression<F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
 {
     typedef weos_detail::BindExpression<F, TBoundArgs...> type;
-    return type(WEOS_NAMESPACE::forward<F>(f),
-                WEOS_NAMESPACE::forward<TBoundArgs>(boundArgs)...);
+    return type(std::forward<F>(f),
+                std::forward<TBoundArgs>(boundArgs)...);
 }
 
 template <typename R, typename F, typename... TBoundArgs>
@@ -608,8 +554,8 @@ inline
 weos_detail::BindExpressionResult<R, F, TBoundArgs...> bind(F&& f, TBoundArgs&&... boundArgs)
 {
     typedef weos_detail::BindExpressionResult<R, F, TBoundArgs...> type;
-    return type(WEOS_NAMESPACE::forward<F>(f),
-                WEOS_NAMESPACE::forward<TBoundArgs>(boundArgs)...);
+    return type(std::forward<F>(f),
+                std::forward<TBoundArgs>(boundArgs)...);
 }
 
 // ----=====================================================================----
@@ -689,20 +635,20 @@ public:
 
     explicit
     Invoker(TCallable&& f)
-        : m_callableAllocator(WEOS_NAMESPACE::move(f), TAllocator())
+        : m_callableAllocator(std::move(f), TAllocator())
     {
     }
 
     explicit
     Invoker(TCallable&& f, TAllocator&& allocator)
-        : m_callableAllocator(WEOS_NAMESPACE::move(f),
-                              WEOS_NAMESPACE::move(allocator))
+        : m_callableAllocator(std::move(f),
+                              std::move(allocator))
     {
     }
 
     explicit
     Invoker(const TCallable& f, TAllocator&& allocator)
-        : m_callableAllocator(f, WEOS_NAMESPACE::move(allocator))
+        : m_callableAllocator(f, std::move(allocator))
     {
     }
 
@@ -719,18 +665,18 @@ public:
         using deallocator_t = weos_detail::deallocator<allocator_t>;
 
 
-        allocator_t allocator(WEOS_NAMESPACE::get<1>(m_callableAllocator));
+        allocator_t allocator(std::get<1>(m_callableAllocator));
         unique_ptr<Invoker, deallocator_t> mem(
                     allocator.allocate(1), deallocator_t(allocator));
-        new (mem.get()) Invoker(WEOS_NAMESPACE::get<0>(m_callableAllocator),
+        new (mem.get()) Invoker(std::get<0>(m_callableAllocator),
                                 TAllocator(allocator));
         return mem.release();
     }
 
     virtual void clone(base_type* memory) const override
     {
-        new (memory) Invoker(WEOS_NAMESPACE::get<0>(m_callableAllocator),
-                             WEOS_NAMESPACE::get<1>(m_callableAllocator));
+        new (memory) Invoker(std::get<0>(m_callableAllocator),
+                             std::get<1>(m_callableAllocator));
     }
 
     virtual void destroy() noexcept override
@@ -743,22 +689,22 @@ public:
         using traits = allocator_traits<TAllocator>;
         using allocator_t = typename traits::template rebind_alloc<Invoker>;
 
-        allocator_t allocator(WEOS_NAMESPACE::get<1>(m_callableAllocator));
+        allocator_t allocator(std::get<1>(m_callableAllocator));
         m_callableAllocator.~tuple<TCallable, TAllocator>();
         allocator.deallocate(this, 1);
     }
 
     virtual TResult operator()(TArgs&&... args) override
     {
-        return invoke(WEOS_NAMESPACE::get<0>(m_callableAllocator),
-                      WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return WEOS_NAMESPACE::weos_detail::invoke(std::get<0>(m_callableAllocator),
+                                                   std::forward<TArgs>(args)...);
     }
 
 #ifndef WEOS_NO_FUNCTION_TARGET
     virtual const void* target(const std::type_info& info) const noexcept override
     {
         if (typeid(TCallable) == info)
-            return &WEOS_NAMESPACE::get<0>(m_callableAllocator);
+            return &std::get<0>(m_callableAllocator);
         else
             return nullptr;
     }
@@ -785,7 +731,8 @@ class function<TResult(TArgs...)>
     using storage_type = typename aligned_storage<sizeof(weos_detail::SmallFunctor)>::type;
 
     template <typename F>
-    using invokeResult = decltype(invoke(declval<F&>(), declval<TArgs>()...));
+    using invokeResult = decltype(WEOS_NAMESPACE::weos_detail::invoke(
+                                      declval<F&>(), declval<TArgs>()...));
 
     template <typename F>
     using isCallable = is_convertible<invokeResult<F>, TResult>;
@@ -880,14 +827,14 @@ public:
             {
                 // Construct inplace using placement new.
                 m_invoker = (invoker_base_type*)&m_storage;
-                new (m_invoker) invoker_type(WEOS_NAMESPACE::move(f));
+                new (m_invoker) invoker_type(std::move(f));
             }
             else
             {
                 allocator_t alloc;
                 unique_ptr<invoker_type, deallocator_t> mem(
                             alloc.allocate(1), deallocator_t(alloc));
-                new (mem.get()) invoker_type(WEOS_NAMESPACE::move(f),
+                new (mem.get()) invoker_type(std::move(f),
                                                allocator<TCallable>(alloc));
                 m_invoker = mem.release();
             }
@@ -934,14 +881,14 @@ public:
             {
                 // Construct inplace using placement new.
                 m_invoker = (invoker_base_type*)&m_storage;
-                new (m_invoker) invoker_type(WEOS_NAMESPACE::move(f), alloc);
+                new (m_invoker) invoker_type(std::move(f), alloc);
             }
             else
             {
                 allocator_t allocator(alloc);
                 unique_ptr<invoker_type, deallocator_t> mem(
                             allocator.allocate(1), deallocator_t(allocator));
-                new (mem.get()) invoker_type(WEOS_NAMESPACE::move(f),
+                new (mem.get()) invoker_type(std::move(f),
                                              TAllocator(allocator));
                 m_invoker = mem.release();
             }
@@ -988,7 +935,7 @@ public:
                                             && isCallable<typename decay<TCallable>::type>::value>::type>
     function& operator=(TCallable&& f)
     {
-        function(WEOS_NAMESPACE::forward<TCallable>(f)).swap(*this);
+        function(std::forward<TCallable>(f)).swap(*this);
         return *this;
     }
 
@@ -996,7 +943,7 @@ public:
     {
         if (!m_invoker)
             throw WEOS_EXCEPTION(bad_function_call());
-        return (*m_invoker)(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        return (*m_invoker)(std::forward<TArgs>(args)...);
     }
 
     void swap(function& other) noexcept
@@ -1131,6 +1078,6 @@ void swap(function<TResult(TArgs...)>& x, function<TResult(TArgs...)>& y)
     x.swap(y);
 }
 
-WEOS_END_NAMESPACE
+} // namespace std
 
-#endif // WEOS_COMMON_FUNCTIONAL_HPP
+#endif // WEOS_ARMCC_FUNCTIONAL_HPP

@@ -1,4 +1,3 @@
-
 /*******************************************************************************
   WEOS - Wrapper for embedded operating systems
 
@@ -27,10 +26,10 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "functional.hpp"
+#include "_functional.hpp"
 
-WEOS_BEGIN_NAMESPACE
-
+namespace std
+{
 namespace placeholders
 {
 
@@ -38,7 +37,6 @@ const placeholder<1> _1;
 const placeholder<2> _2;
 const placeholder<3> _3;
 const placeholder<4> _4;
+
 } // namespace placeholders
-
-WEOS_END_NAMESPACE
-
+} // namespace std

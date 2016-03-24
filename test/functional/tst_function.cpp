@@ -64,10 +64,10 @@ TEST(function, constructor)
     ASSERT_TRUE(!f1);
     weos::function<void()> f2(nullptr);
     ASSERT_TRUE(!f2);
-    weos::function<void()> f3(weos::allocator_arg, std::allocator<char>{});
+    /*weos::function<void()> f3(weos::allocator_arg, std::allocator<char>{});
     ASSERT_TRUE(!f3);
     weos::function<void()> f4(weos::allocator_arg, std::allocator<char>{}, nullptr);
-    ASSERT_TRUE(!f4);
+    ASSERT_TRUE(!f4);*/
 }
 
 TEST(function, assignment)
@@ -238,7 +238,7 @@ void testFunction()
                             typename make_type_list<I>::type());
     ASSERT_TRUE(f() == I * (I + 1) / 2);
 }
-
+/*
 void doExecute(weos::integral_constant<int, 0>)
 {
     testFunction<0>();
@@ -261,3 +261,4 @@ TEST(function, various_sizes)
 {
     execute<64>();
 }
+*/

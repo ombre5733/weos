@@ -31,6 +31,30 @@
 
 #include "_config.hpp"
 
-#include "_common/functional.hpp"
+#ifdef __CC_ARM
+#include "_armcc/_functional.hpp"
+#else
+#include <functional>
+#endif // __CC_ARM
+
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::bad_function_call;
+using std::bind;
+using std::cref;
+using std::function;
+using std::is_bind_expression;
+using std::is_placeholder;
+using std::mem_fn;
+using std::ref;
+using std::reference_wrapper;
+
+namespace placeholders
+{
+using namespace std::placeholders;
+} // namespace placeholders
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_FUNCTIONAL_HPP
