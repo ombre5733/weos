@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_MUTEXLOCKS_HPP
-#define WEOS_COMMON_MUTEXLOCKS_HPP
+#ifndef WEOS_COMMON_LOCK_GUARDS_HPP
+#define WEOS_COMMON_LOCK_GUARDS_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -35,29 +35,23 @@
 #endif // WEOS_CONFIG_HPP
 
 
-#include "system_error.hpp"
+#include "../system_error.hpp"
+#include "../utility.hpp" // for std::swap()
 
-#ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
+namespace std
+{
 
-#include <algorithm> // for swap()
-
-
-WEOS_BEGIN_NAMESPACE
-
+struct adopt_lock_t {};
 struct defer_lock_t {};
 struct try_to_lock_t {};
-struct adopt_lock_t {};
 
+//! A tag to assume that the caller has already acquired the ownership of
+//! a mutex.
+constexpr adopt_lock_t adopt_lock = adopt_lock_t();
 //! A tag to defer the acquisition of a mutex.
 constexpr defer_lock_t defer_lock = defer_lock_t();
 //! A tag to try to acquire the ownership of a mutex without blocking the thread.
 constexpr try_to_lock_t try_to_lock = try_to_lock_t();
-//! A tag to assume that the caller has already acquired the ownership of
-//! a mutex.
-constexpr adopt_lock_t adopt_lock = adopt_lock_t();
 
 //! A lock guard for RAII-style mutex locking.
 template <typename MutexT>
@@ -68,7 +62,8 @@ public:
 
     //! Creates a lock guard.
     //! Creates a lock guard and locks the given \p mutex.
-    explicit lock_guard(mutex_type& mutex)
+    explicit
+    lock_guard(mutex_type& mutex)
         : m_mutex(mutex)
     {
         m_mutex.lock();
@@ -91,13 +86,12 @@ public:
         m_mutex.unlock();
     }
 
+    lock_guard(const lock_guard&) = delete;
+    lock_guard& operator=(const lock_guard&) = delete;
+
 private:
     //! The mutex which is guarded.
     mutex_type& m_mutex;
-
-
-    lock_guard(const lock_guard&) = delete;
-    lock_guard& operator= (const lock_guard&) = delete;
 };
 
 //! A unique lock for a mutex.
@@ -116,7 +110,8 @@ public:
 
     //! Creates a unique lock with locking.
     //! Creates a unique lock tied to the \p mutex and locks it.
-    explicit unique_lock(mutex_type& mutex)
+    explicit
+    unique_lock(mutex_type& mutex)
         : m_mutex(&mutex),
           m_locked(true)
     {
@@ -189,11 +184,14 @@ public:
             m_mutex->unlock();
     }
 
+    unique_lock(const unique_lock&) = delete;
+    unique_lock& operator=(const unique_lock&) = delete;
+
     //! Move assignment.
     //!
     //! Moves the \p other lock to this lock. If this lock owns a mutex, it
     //! will be released.
-    unique_lock& operator= (unique_lock&& other) noexcept
+    unique_lock& operator=(unique_lock&& other) noexcept
     {
         if (m_locked)
             m_mutex->unlock();
@@ -327,7 +325,8 @@ public:
     //!
     //! Checks if this lock owns the mutex. This is equivalent to calling
     //! owns_lock().
-    explicit operator bool() const noexcept
+    explicit
+    operator bool() const noexcept
     {
         return m_locked;
     }
@@ -337,9 +336,6 @@ private:
     mutex_type* m_mutex;
     //! A flag indicating if the mutex has been locked.
     bool m_locked;
-
-    unique_lock(const unique_lock&) = delete;
-    unique_lock& operator=(const unique_lock&) = delete;
 };
 
 //! Swap two unique locks \p x and \p y.
@@ -407,34 +403,6 @@ int try_lock(TLockable1& lockable1, TLockable2& lockable2)
     }
 }
 
-WEOS_END_NAMESPACE
+} // namespace std
 
-#else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
-
-#include <mutex>
-
-
-WEOS_BEGIN_NAMESPACE
-
-using std::adopt_lock_t;
-using std::adopt_lock;
-
-using std::defer_lock_t;
-using std::defer_lock;
-
-using std::try_to_lock_t;
-using std::try_to_lock;
-
-using std::lock_guard;
-using std::unique_lock;
-
-using std::lock;
-
-WEOS_END_NAMESPACE
-
-#endif // __CC_ARM
-
-#endif // WEOS_COMMON_MUTEXLOCKS_HPP
+#endif // WEOS_COMMON_LOCK_GUARDS_HPP

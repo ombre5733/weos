@@ -37,4 +37,22 @@
     #error "Invalid native OS."
 #endif
 
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::adopt_lock_t;
+using std::adopt_lock;
+using std::defer_lock_t;
+using std::defer_lock;
+using std::try_to_lock_t;
+using std::try_to_lock;
+
+using std::lock_guard;
+using std::unique_lock;
+
+using std::lock;
+using std::try_lock;
+
+WEOS_END_NAMESPACE
+
 #endif // WEOS_MUTEX_HPP
