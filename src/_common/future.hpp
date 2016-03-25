@@ -53,38 +53,30 @@ class future;
 //     Types
 // ----=====================================================================----
 
-WEOS_SCOPED_ENUM_BEGIN(launch)
+enum class launch
 {
     async = 1,
     deferred = 2,
     any = async | deferred
 };
-WEOS_SCOPED_ENUM_END(launch)
 
-WEOS_SCOPED_ENUM_BEGIN(future_status)
+enum class future_status
 {
     ready,
     timeout,
     deferred
 };
-WEOS_SCOPED_ENUM_END(future_status)
 
-WEOS_SCOPED_ENUM_BEGIN(future_errc)
+enum class future_errc
 {
     broken_promise = 1,
     future_already_retrieved,
     promise_already_satisfied,
     no_state
 };
-WEOS_SCOPED_ENUM_END(future_errc)
 
 template <>
 struct is_error_code_enum<future_errc> : public true_type {};
-
-#ifdef WEOS_NO_SCOPED_ENUM
-template <>
-struct is_error_code_enum<future_errc::type> : public true_type {};
-#endif
 
 const error_category& future_category() noexcept;
 

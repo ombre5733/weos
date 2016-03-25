@@ -226,7 +226,7 @@ bool operator==(const error_code& a, const error_code& b) noexcept
 //! Returns the generic error category.
 const error_category& generic_category();
 
-WEOS_SCOPED_ENUM_BEGIN(errc)
+enum class errc
 {
     invalid_argument              = 22,
     no_child_process              = 10,
@@ -234,20 +234,12 @@ WEOS_SCOPED_ENUM_BEGIN(errc)
     operation_not_permitted       =  1,
     resource_deadlock_would_occur = 35,
 };
-WEOS_SCOPED_ENUM_END(errc)
 
 // Specialization for errc.
 template <>
 struct is_error_code_enum<errc> : public true_type
 {
 };
-
-#ifdef WEOS_NO_SCOPED_ENUM
-template <>
-struct is_error_code_enum<errc::type> : public true_type
-{
-};
-#endif // WEOS_NO_SCOPED_ENUM
 
 //! Creates an error code from errc.
 inline

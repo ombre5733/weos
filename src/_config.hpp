@@ -218,9 +218,5 @@ WEOS_END_NAMESPACE
 
 #endif
 
-// TODO:CLEAN Remove these legacy macros
-#define WEOS_SCOPED_ENUM_BEGIN(x) enum class x
-#define WEOS_SCOPED_ENUM_END(x)
-
 
 #endif // WEOS_CONFIG_HPP

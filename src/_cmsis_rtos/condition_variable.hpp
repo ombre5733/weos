@@ -39,12 +39,11 @@
 
 WEOS_BEGIN_NAMESPACE
 
-WEOS_SCOPED_ENUM_BEGIN(cv_status)
+enum class cv_status
 {
     no_timeout,
     timeout
 };
-WEOS_SCOPED_ENUM_END(cv_status)
 
 //! A condition variable.
 class condition_variable
