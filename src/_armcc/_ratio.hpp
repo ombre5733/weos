@@ -40,35 +40,35 @@
 namespace std
 {
 
-using boot::ratio;
-using boot::ratio_add;
-using boot::ratio_subtract;
-using boot::ratio_multiply;
-using boot::ratio_divide;
+using boost::ratio;
+using boost::ratio_add;
+using boost::ratio_subtract;
+using boost::ratio_multiply;
+using boost::ratio_divide;
 
-using boot::ratio_equal;
-using boot::ratio_not_equal;
-using boot::ratio_less;
-using boot::ratio_less_equal;
-using boot::ratio_greater;
-using boot::ratio_greater_equal;
+using boost::ratio_equal;
+using boost::ratio_not_equal;
+using boost::ratio_less;
+using boost::ratio_less_equal;
+using boost::ratio_greater;
+using boost::ratio_greater_equal;
 
-using boot::atto;
-using boot::femto;
-using boot::pico;
-using boot::nano;
-using boot::micro;
-using boot::milli;
-using boot::centi;
-using boot::deci;
-using boot::deca;
-using boot::hecto;
-using boot::kilo;
-using boot::mega;
-using boot::giga;
-using boot::tera;
-using boot::peta;
-using boot::exa;
+using boost::atto;
+using boost::femto;
+using boost::pico;
+using boost::nano;
+using boost::micro;
+using boost::milli;
+using boost::centi;
+using boost::deci;
+using boost::deca;
+using boost::hecto;
+using boost::kilo;
+using boost::mega;
+using boost::giga;
+using boost::tera;
+using boost::peta;
+using boost::exa;
 
 } // namespace std
 
