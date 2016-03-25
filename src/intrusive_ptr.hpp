@@ -31,6 +31,228 @@
 
 #include "_config.hpp"
 
-#include "_common/intrusive_ptr.hpp"
+#include "type_traits.hpp"
+#include "utility.hpp" // for std::swap
+
+
+WEOS_BEGIN_NAMESPACE
+
+struct keep_reference_count_t {};
+
+constexpr keep_reference_count_t keep_reference_count = keep_reference_count_t();
+
+//! A smart pointer for intrusive reference counting.
+//!
+//! Two more functions are required in combination with the intrusive_ptr<T>:
+//!
+//! void intrusive_ptr_add_ref(T* t);
+//! void intrusive_ptr_release_ref(T* t);
+template <typename TType>
+class intrusive_ptr
+{
+public:
+    typedef TType element_type;
+    typedef TType* pointer;
+
+    //! Creates an intrusive pointer equivalent to nullptr.
+    constexpr
+    intrusive_ptr() noexcept
+        : m_pointer()
+    {
+    }
+
+    //! Creates an intrusive pointer equivalent to nullptr.
+    constexpr
+    intrusive_ptr(std::nullptr_t) noexcept
+        : m_pointer()
+    {
+    }
+
+    //! Creates an intrusive pointer to an object given by \p ptr.
+    explicit
+    intrusive_ptr(pointer ptr) // TODO: noexept if add_ref is so
+        : m_pointer(ptr)
+    {
+        if (m_pointer)
+            intrusive_ptr_add_ref(m_pointer);
+    }
+
+    //! Creates an intrusive pointer, which manages the object given
+    //! by \p ptr. The reference count of that object is not increased.
+    constexpr
+    intrusive_ptr(pointer ptr, keep_reference_count_t) noexcept
+        : m_pointer(ptr)
+    {
+    }
+
+    //! Copy-constructs an intrusive pointer from the \p other pointer.
+    intrusive_ptr(const intrusive_ptr& other)  // TODO: noexept if add_ref is so
+        : m_pointer(other.m_pointer)
+    {
+        if (m_pointer)
+            intrusive_ptr_add_ref(m_pointer);
+    }
+
+    //! Move-constructs an intrusive pointer by moving from the \p other
+    //! pointer.
+    intrusive_ptr(intrusive_ptr&& other) noexcept
+        : m_pointer(other.m_pointer)
+    {
+        other.m_pointer = pointer();
+    }
+
+    //! Destroys the intrusive pointer.
+    //! The reference count of the managed object is decreased by one.
+    ~intrusive_ptr()
+    {
+        reset();
+    }
+
+    //! Copy-assigns the \p other pointer to this pointer.
+    intrusive_ptr& operator=(const intrusive_ptr& other)  // TODO: noexept if add_ref is so
+    {
+        if (this != &other)
+        {
+            if (m_pointer)
+                intrusive_ptr_release_ref(m_pointer);
+            m_pointer = other.m_pointer;
+            if (m_pointer)
+                intrusive_ptr_add_ref(m_pointer);
+        }
+
+        return *this;
+    }
+
+    //! Move-assigns the \p other pointer to this pointer.
+    intrusive_ptr& operator=(intrusive_ptr&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (m_pointer)
+                intrusive_ptr_release_ref(m_pointer);
+
+            m_pointer = other.m_pointer;
+            other.m_pointer = pointer();
+        }
+
+        return *this;
+    }
+
+    //! Resets this pointer.
+    intrusive_ptr& operator=(std::nullptr_t) noexcept
+    {
+        if (m_pointer)
+            intrusive_ptr_release_ref(m_pointer);
+        m_pointer = pointer();
+
+        return *this;
+    }
+
+    //! Releases the ownership.
+    //! Transfers the ownership of the stored object to the caller.
+    pointer release() noexcept
+    {
+        pointer temp = m_pointer;
+        m_pointer = pointer();
+        return temp;
+    }
+
+    //! Decreases the reference count of the owned object and destroys it,
+    //! if the reference counter reaches zero. Then the ownership of the
+    //! given \p ptr is taken.
+    void reset(pointer ptr = pointer()) // TODO: noexept if add_ref is so
+    {
+        if (m_pointer)
+            intrusive_ptr_release_ref(m_pointer);
+        m_pointer = ptr;
+        if (m_pointer)
+            intrusive_ptr_add_ref(m_pointer);
+    }
+
+    //! Returns a reference to the managed object.
+    typename std::add_lvalue_reference<element_type>::type operator*() const // // TODO: noexept if operator* is so
+    {
+        WEOS_ASSERT(m_pointer);
+        return *m_pointer;
+    }
+
+    //! Accesses the owned object.
+    pointer operator->() const noexcept
+    {
+        WEOS_ASSERT(m_pointer);
+        return m_pointer;
+    }
+
+    //! Returns a pointer to the managed object.
+    pointer get() const noexcept
+    {
+        return m_pointer;
+    }
+
+    //! Returns \p true, if the managed pointer is not a nullptr.
+    explicit
+    operator bool() const noexcept
+    {
+        return m_pointer;
+    }
+
+    //! Swaps this intrusive pointer with the \p other pointer.
+    void swap(intrusive_ptr& other) noexcept
+    {
+        using std::swap;
+        swap(m_pointer, other.m_pointer);
+    }
+
+    bool operator==(const intrusive_ptr& other) const noexcept
+    {
+        return m_pointer == other.m_pointer;
+    }
+
+    bool operator!=(const intrusive_ptr& other) const noexcept
+    {
+        return !(m_pointer == other.m_pointer);
+    }
+
+private:
+    //! A pointer to the managed object.
+    pointer m_pointer;
+};
+
+//! Swaps two intrusive pointers \p a and \p b.
+template <typename TType>
+void swap(intrusive_ptr<TType>& a, intrusive_ptr<TType>& b) noexcept
+{
+    a.swap(b);
+}
+
+template <typename TType>
+inline
+bool operator==(const intrusive_ptr<TType>& x, std::nullptr_t) noexcept
+{
+    return !x;
+}
+
+template <typename TType>
+inline
+bool operator==(std::nullptr_t, const intrusive_ptr<TType>& x) noexcept
+{
+    return !x;
+}
+
+template <typename TType>
+inline
+bool operator!=(const intrusive_ptr<TType>& x, std::nullptr_t) noexcept
+{
+    return (bool)x;
+}
+
+template <typename TType>
+inline
+bool operator!=(std::nullptr_t, const intrusive_ptr<TType>& x) noexcept
+{
+    return (bool)x;
+}
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_INTRUSIVE_PTR_HPP

@@ -36,6 +36,8 @@
 
 
 #include "../type_traits.hpp"
+
+#include <algorithm> // for std::swap
 #include <cstddef>
 
 namespace std
