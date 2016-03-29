@@ -37,7 +37,8 @@
 #include "../semaphore.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 enum class cv_status
 {
@@ -56,7 +57,8 @@ class condition_variable
     class lock_releaser
     {
     public:
-        explicit lock_releaser(unique_lock<mutex>& lock) noexcept
+        explicit
+        lock_releaser(unique_lock<mutex>& lock) noexcept
             : m_lock(lock)
         {
             m_lock.unlock();
@@ -138,7 +140,7 @@ public:
                        const chrono::duration<TRep, TPeriod>& d)
     {
         // First enqueue ourselves in the list of waiters.
-        weos_detail::_tq::_t t(m_tq);
+        WEOS_NAMESPACE::weos_detail::_tq::_t t(m_tq);
         // We can only unlock the lock when we are sure that a signal will
         // reach our thread.
         lock_releaser releaser(lock);
@@ -177,7 +179,7 @@ public:
                          const chrono::time_point<TClock, TDuration>& time)
     {
         // First enqueue ourselves in the list of waiters.
-        weos_detail::_tq::_t t(m_tq);
+        WEOS_NAMESPACE::weos_detail::_tq::_t t(m_tq);
         // We can only unlock the lock when we are sure that a signal will
         // reach our thread.
         lock_releaser releaser(lock);
@@ -212,9 +214,9 @@ public:
     condition_variable& operator=(const condition_variable&) = delete;
 
 private:
-    weos_detail::_tq m_tq;
+    WEOS_NAMESPACE::weos_detail::_tq m_tq;
 };
 
-WEOS_END_NAMESPACE
+} // namespace std
 
 #endif // WEOS_CMSIS_RTOS_CONDITIONVARIABLE_HPP

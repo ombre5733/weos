@@ -53,6 +53,11 @@ using std::unique_lock;
 using std::lock;
 using std::try_lock;
 
+using std::mutex;
+using std::timed_mutex;
+using std::recursive_mutex;
+using std::recursive_timed_mutex;
+
 WEOS_END_NAMESPACE
 
 #endif // WEOS_MUTEX_HPP

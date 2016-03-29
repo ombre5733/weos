@@ -37,4 +37,12 @@
     #error "Invalid native OS."
 #endif
 
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::cv_status;
+using std::condition_variable;
+
+WEOS_END_NAMESPACE
+
 #endif // WEOS_CONDITION_VARIABLE_HPP

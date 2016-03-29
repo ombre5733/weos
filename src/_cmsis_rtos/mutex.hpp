@@ -44,7 +44,8 @@
 #include <cstdint>
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 //! A plain mutex.
 class mutex
@@ -177,7 +178,7 @@ public:
                                                 "timed_mutex::try_lock_until failed");
                     }
                     if (!timeout)
-                        weos_detail::sleep_until(time);
+                        WEOS_NAMESPACE::weos_detail::sleep_until(time);
                     return false;
                 }
             }
@@ -333,6 +334,6 @@ public:
     }
 };
 
-WEOS_END_NAMESPACE
+} // namespace std
 
 #endif // WEOS_CMSIS_RTOS_MUTEX_HPP

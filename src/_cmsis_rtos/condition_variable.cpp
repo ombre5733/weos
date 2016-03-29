@@ -29,7 +29,8 @@
 #include "condition_variable.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 condition_variable::condition_variable()
 {
@@ -52,7 +53,7 @@ void condition_variable::notify_all() noexcept
 void condition_variable::wait(unique_lock<mutex>& lock)
 {
     // First enqueue ourselves in the list of waiters.
-    weos_detail::_tq::_t t(m_tq);
+    WEOS_NAMESPACE::weos_detail::_tq::_t t(m_tq);
     // We can only release the lock when we are sure that a signal will
     // reach our thread.
     lock_releaser releaser(lock);
@@ -60,4 +61,4 @@ void condition_variable::wait(unique_lock<mutex>& lock)
     t.wait();
 }
 
-WEOS_END_NAMESPACE
+} // namespace std

@@ -28,7 +28,8 @@
 
 #include "mutex.hpp"
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 // ----=====================================================================----
 //     mutex
@@ -170,4 +171,4 @@ bool recursive_timed_mutex::try_lock_for(chrono::milliseconds ms)
     return false;
 }
 
-WEOS_END_NAMESPACE
+} // namespace std
