@@ -558,10 +558,7 @@ void sleep_for(const chrono::duration<TRep, TPeriod>& d)
     using namespace chrono;
     if (d > d.zero())
     {
-        milliseconds converted = duration_cast<milliseconds>(d);
-        if (converted < d)
-            ++converted;
-        sleep_for(converted);
+        sleep_for(ceil<milliseconds>(d));
     }
 }
 
@@ -616,12 +613,7 @@ thread::signal_set try_wait_for_any_signal_for(
             const chrono::duration<RepT, PeriodT>& d)
 {
     using namespace chrono;
-
-    milliseconds converted = duration_cast<milliseconds>(d);
-    if (converted < d)
-        ++converted;
-
-    return try_wait_for_any_signal_for(converted);
+    return try_wait_for_any_signal_for(ceil<milliseconds>(d));
 }
 
 template <typename TClock, typename TDuration>
@@ -697,12 +689,7 @@ bool try_wait_for_all_signals_for(thread::signal_set flags,
                                   const chrono::duration<RepT, PeriodT>& d)
 {
     using namespace chrono;
-
-    milliseconds converted = duration_cast<milliseconds>(d);
-    if (converted < d)
-        ++converted;
-
-    return try_wait_for_all_signals_for(flags, converted);
+    return try_wait_for_all_signals_for(flags, ceil<milliseconds>(d));
 }
 
 template <typename TClock, typename TDuration>
