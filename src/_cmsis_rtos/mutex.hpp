@@ -118,6 +118,13 @@ protected:
 class timed_mutex : public mutex
 {
 public:
+    //! \cond
+    //! Tries to lock the mutex with a timeout.
+    //!
+    //! This is overload for the case when the timeout is given in milliseconds.
+    bool try_lock_for(chrono::milliseconds ms);
+    //! \endcond
+
     //! Tries to lock the mutex.
     //!
     //! Tries to lock the mutex and returns either when it has been locked or
@@ -127,7 +134,8 @@ public:
     inline
     bool try_lock_for(const chrono::duration<TRep, TPeriod>& timeout)
     {
-        return try_lock_until(chrono::steady_clock::now() + timeout);
+        using namespace chrono;
+        return try_lock_for(ceil<milliseconds>(timeout));
     }
 
     //! Tries to lock the mutex.
@@ -282,12 +290,7 @@ public:
     bool try_lock_for(const chrono::duration<TRep, TPeriod>& timeout)
     {
         using namespace chrono;
-
-        milliseconds converted = duration_cast<milliseconds>(timeout);
-        if (converted < timeout)
-            ++converted;
-
-        return try_lock_for(converted);
+        return try_lock_for(ceil<milliseconds>(timeout));
     }
 
     //! Tries to lock the mutex.

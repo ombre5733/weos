@@ -107,6 +107,42 @@ void mutex::unlock() noexcept
 }
 
 // ----=====================================================================----
+//     timed_mutex
+// ----=====================================================================----
+
+bool timed_mutex::try_lock_for(chrono::milliseconds ms)
+{
+    using namespace chrono;
+
+    if (ms < ms.zero())
+        ms = ms.zero();
+
+    do
+    {
+        static_assert(osCMSIS_RTX <= ((4<<16) | 78),
+                      "Check the maximum timeout.");
+        milliseconds truncated = ms <= milliseconds(0xFFFE)
+                                 ? ms
+                                 : milliseconds(0xFFFE);
+        ms -= truncated;
+
+        osStatus result = osMutexWait(native_handle(), truncated.count());
+        if (result == osOK)
+            return true;
+
+        if (   result != osErrorResource
+            && result != osErrorTimeoutResource)
+        {
+            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+                                    "semaphore::try_wait_for failed");
+        }
+
+    } while (ms > ms.zero());
+
+    return false;
+}
+
+// ----=====================================================================----
 //     recursive_mutex
 // ----=====================================================================----
 
