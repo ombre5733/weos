@@ -39,6 +39,7 @@
 #include "../type_traits.hpp"
 
 #include <cstdint>
+#include <limits>
 
 
 namespace WEOS_STD_NAMESPACE
@@ -663,6 +664,18 @@ duration_cast(const duration<RepT, PeriodT>& d)
 {
     return weos_chrono_detail::duration_caster<duration<RepT, PeriodT>,
                                                ToDurationT>().cast(d);
+}
+
+template <typename TToDuration, typename TRep, typename TPeriod>
+inline
+typename enable_if<weos_chrono_detail::is_duration<TToDuration>::value,
+                   TToDuration>::type
+ceil(const duration<TRep, TPeriod>& d)
+{
+    auto casted = duration_cast<TToDuration>(d);
+    if (casted < d)
+        ++casted;
+    return casted;
 }
 
 // ----=====================================================================----

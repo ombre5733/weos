@@ -50,12 +50,16 @@ WEOS_BEGIN_NAMESPACE
 namespace chrono
 {
 
+using std::chrono::treat_as_floating_point;
+
 using std::chrono::duration;
-using std::chrono::duration_cast;
 using std::chrono::duration_values;
+
+using std::chrono::duration_cast;
+using std::chrono::ceil;
+
 using std::chrono::time_point;
 using std::chrono::time_point_cast;
-using std::chrono::treat_as_floating_point;
 
 using std::chrono::nanoseconds;
 using std::chrono::microseconds;
