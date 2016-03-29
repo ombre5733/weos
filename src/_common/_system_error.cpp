@@ -29,7 +29,8 @@
 #include "system_error.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 //! The generic error category.
 class generic_category_impl : public error_category
@@ -66,4 +67,4 @@ const error_category& generic_category()
     return categoryInstance;
 }
 
-WEOS_END_NAMESPACE
+} // namespace std

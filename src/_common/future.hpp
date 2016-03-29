@@ -75,8 +75,19 @@ enum class future_errc
     no_state
 };
 
+WEOS_END_NAMESPACE
+
+
+namespace std
+{
+
 template <>
-struct is_error_code_enum<future_errc> : public true_type {};
+struct is_error_code_enum<WEOS_NAMESPACE::future_errc> : public true_type {};
+
+} // namespace std
+
+
+WEOS_BEGIN_NAMESPACE
 
 const error_category& future_category() noexcept;
 

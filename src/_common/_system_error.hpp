@@ -36,7 +36,8 @@
 #include <exception>
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 // ----=====================================================================----
 //     is_error_code_enum
@@ -289,6 +290,6 @@ private:
     error_code m_errorCode;
 };
 
-WEOS_END_NAMESPACE
+} // namespace std
 
 #endif // WEOS_COMMON_SYSTEMERROR_HPP

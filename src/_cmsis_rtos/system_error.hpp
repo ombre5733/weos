@@ -31,13 +31,13 @@
 
 #include "_core.hpp"
 
-#include "../_common/system_error.hpp"
+#include "../_common/_system_error.hpp"
 
 
 WEOS_BEGIN_NAMESPACE
 
 //! Returns the category for CMSIS errors.
-const error_category& cmsis_category();
+const std::error_category& cmsis_category();
 
 namespace cmsis_error
 {
@@ -62,11 +62,22 @@ enum cmsis_error_t
 
 } // namespace cmsis_error
 
+WEOS_END_NAMESPACE
+
+
+namespace std
+{
+
 // Specialization for CMSIS error enum.
 template <>
-struct is_error_code_enum<cmsis_error::cmsis_error_t> : public true_type
+struct is_error_code_enum<WEOS_NAMESPACE::cmsis_error::cmsis_error_t> : public true_type
 {
 };
+
+} // namespace std
+
+
+WEOS_BEGIN_NAMESPACE
 
 namespace cmsis_error
 {
@@ -75,9 +86,9 @@ namespace cmsis_error
 //! Creates a CMSIS error code whose error value will be set to \p err. The
 //! category is the one returned by cmsis_category().
 inline
-weos::error_code make_error_code(cmsis_error_t err)
+std::error_code make_error_code(cmsis_error_t err)
 {
-    return error_code(static_cast<int>(err), cmsis_category());
+    return std::error_code(static_cast<int>(err), cmsis_category());
 }
 
 /*

@@ -37,4 +37,13 @@
     #error "Invalid native OS."
 #endif
 
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::error_category;
+using std::error_code;
+using std::system_error;
+
+WEOS_END_NAMESPACE
+
 #endif // WEOS_SYSTEM_ERROR_HPP
