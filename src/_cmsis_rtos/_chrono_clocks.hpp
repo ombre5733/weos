@@ -37,7 +37,7 @@
 #include <cstdint>
 
 
-namespace WEOS_STD_NAMESPACE
+namespace std
 {
 namespace chrono
 {
@@ -90,6 +90,6 @@ public:
 typedef system_clock steady_clock;
 
 } // namespace chrono
-} // namespace WEOS_STD_NAMESPACE
+} // namespace std
 
 #endif // WEOS_CMSIS_RTOS_CHRONO_CLOCKS_HPP

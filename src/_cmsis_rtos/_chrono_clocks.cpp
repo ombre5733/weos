@@ -48,8 +48,8 @@ extern std::uint32_t os_tick_ovf(void);
 } // extern "C"
 
 
-WEOS_BEGIN_NAMESPACE
-
+namespace std
+{
 // ----=====================================================================----
 //     Internals
 // ----=====================================================================----
@@ -146,5 +146,4 @@ high_resolution_clock::time_point high_resolution_clock::now()
 }
 
 } // namespace chrono
-
-WEOS_END_NAMESPACE
+} // namespace std

@@ -42,7 +42,7 @@
 #include <limits>
 
 
-namespace WEOS_STD_NAMESPACE
+namespace std
 {
 namespace chrono
 {
@@ -904,6 +904,6 @@ operator-(const time_point<ClockT, Duration1T>& x,
 }
 
 } // namespace chrono
-} // namespace WEOS_STD_NAMESPACE
+} // namespace std
 
 #endif // WEOS_COMMON_CHRONO_HPP

@@ -30,21 +30,16 @@
 #define WEOS_CHRONO_HPP
 
 #include "_config.hpp"
-
-#ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
-
 #include "_common/_chrono.hpp"
 
+#if defined(WEOS_WRAP_CMSIS_RTOS)
+    #include "_cmsis_rtos/_chrono_clocks.hpp"
 #else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
+    #error "Invalid native OS."
+#endif
 
-#include <chrono>
 
+// TODO:CLEAN
 WEOS_BEGIN_NAMESPACE
 
 namespace chrono
@@ -68,20 +63,12 @@ using std::chrono::seconds;
 using std::chrono::minutes;
 using std::chrono::hours;
 
+using std::chrono::system_clock;
+using std::chrono::high_resolution_clock;
+using std::chrono::steady_clock;
+
 } // namespace chrono
 
 WEOS_END_NAMESPACE
-
-#endif // __CC_ARM
-
-// ----=====================================================================----
-//     System clock
-// ----=====================================================================----
-
-#if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/_chrono_clocks.hpp"
-#else
-    #error "Invalid native OS."
-#endif
 
 #endif // WEOS_CHRONO_HPP
