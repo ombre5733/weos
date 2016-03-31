@@ -662,7 +662,7 @@ public:
     {
         using traits = allocator_traits<TAllocator>;
         using allocator_t = typename traits::template rebind_alloc<Invoker>;
-        using deallocator_t = weos_detail::deallocator<allocator_t>;
+        using deallocator_t = WEOS_NAMESPACE::weos_detail::deallocator<allocator_t>;
 
 
         allocator_t allocator(std::get<1>(m_callableAllocator));
@@ -818,7 +818,7 @@ public:
     {
         typedef weos_detail::Invoker<allocator<TCallable>, TCallable, TResult(TArgs...)> invoker_type;
         using allocator_t = allocator<invoker_type>;
-        using deallocator_t = weos_detail::deallocator<allocator_t>;
+        using deallocator_t = WEOS_NAMESPACE::weos_detail::deallocator<allocator_t>;
 
         if (notNull<TCallable>::check(f))
         {
@@ -871,7 +871,7 @@ public:
         typedef weos_detail::Invoker<TAllocator, TCallable, TResult(TArgs...)> invoker_type;
         using traits = allocator_traits<TAllocator>;
         using allocator_t = typename traits::template rebind_alloc<invoker_type>;
-        using deallocator_t = weos_detail::deallocator<allocator_t>;
+        using deallocator_t = WEOS_NAMESPACE::weos_detail::deallocator<allocator_t>;
 
         if (notNull<TCallable>::check(f))
         {
