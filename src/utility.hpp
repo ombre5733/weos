@@ -33,8 +33,10 @@
 
 #ifdef __CC_ARM
 #include "_armcc/_utility.hpp"
+#include "_common/_integer_sequence.hpp"
 #else
 #include <utility>
+#include "_common/_integer_sequence.hpp"
 #endif // __CC_ARM
 
 
