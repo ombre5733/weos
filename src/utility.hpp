@@ -45,6 +45,12 @@ using std::declval;
 using std::forward;
 using std::move;
 
+using std::integer_sequence;
+using std::index_sequence;
+using std::make_integer_sequence;
+using std::make_index_sequence;
+using std::index_sequence_for;
+
 WEOS_END_NAMESPACE
 
 #endif // WEOS_UTILITY_HPP
