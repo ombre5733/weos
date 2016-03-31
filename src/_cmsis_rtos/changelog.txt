@@ -1,9 +1,0 @@
-- Since 4.73 the mutex control block has the size of std::uint32_t[4] (instead
-  of std::uint32_t[3]) and the first word has the layout
-      struct MutexControlBlockHeader
-      {
-          std::uint8_t controlBlockType;
-          // The owner priority has been removed.
-          std::uint16_t nestingLevel;
-      };
-    See also ${Keil-CMSIS-RTOS}/SRC/rt_TypeDef.h.
