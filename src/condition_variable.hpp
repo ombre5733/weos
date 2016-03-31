@@ -32,7 +32,7 @@
 #include "_config.hpp"
 
 #if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/condition_variable.hpp"
+    #include "_cmsis_rtos/_condition_variable.hpp"
 #else
     #error "Invalid native OS."
 #endif

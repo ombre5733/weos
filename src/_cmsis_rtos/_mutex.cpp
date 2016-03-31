@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "mutex.hpp"
+#include "_mutex.hpp"
 
 namespace std
 {

@@ -29,9 +29,9 @@
 #include "_core.hpp"
 
 #include "_chrono_clocks.cpp"
+#include "_condition_variable.cpp"
+#include "_mutex.cpp"
 #include "_tq.cpp"
-#include "condition_variable.cpp"
-#include "mutex.cpp"
 #include "semaphore.cpp"
 #include "system_error.cpp"
 #include "thread.cpp"

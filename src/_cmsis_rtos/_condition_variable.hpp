@@ -29,7 +29,11 @@
 #ifndef WEOS_CMSIS_RTOS_CONDITIONVARIABLE_HPP
 #define WEOS_CMSIS_RTOS_CONDITIONVARIABLE_HPP
 
-#include "_core.hpp"
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
 
 #include "_tq.hpp"
 #include "../chrono.hpp"

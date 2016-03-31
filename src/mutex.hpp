@@ -32,7 +32,7 @@
 #include "_config.hpp"
 
 #if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/mutex.hpp"
+    #include "_cmsis_rtos/_mutex.hpp"
 #else
     #error "Invalid native OS."
 #endif
