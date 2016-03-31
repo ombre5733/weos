@@ -32,11 +32,17 @@
 #include "_config.hpp"
 
 #ifdef __CC_ARM
+
 #include "_armcc/_utility.hpp"
 #include "_common/_integer_sequence.hpp"
+
 #else
+
 #include <utility>
+#if __cplusplus <= 201103L
 #include "_common/_integer_sequence.hpp"
+#endif
+
 #endif // __CC_ARM
 
 
