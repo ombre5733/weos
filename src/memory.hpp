@@ -32,18 +32,9 @@
 #include "_config.hpp"
 
 #ifdef __CC_ARM
-
 #include "_armcc/_memory.hpp"
-
 #else
-
-#include <memory>
-
-namespace std
-{
-void* align(std::size_t alignment, std::size_t size, void*& ptr, std::size_t& space);
-} // namespace std
-
+#include "_gcc/_memory.hpp"
 #endif // __CC_ARM
 
 

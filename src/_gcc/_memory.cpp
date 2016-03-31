@@ -26,22 +26,29 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "_config.hpp"
+#include "_memory.hpp"
 
-#ifdef __CC_ARM
-#include "_armcc/_atomic.cpp"
-#include "_armcc/_functional.cpp"
-#include "_armcc/_memory.cpp"
-#else
-#include "_gcc/_memory.cpp"
-#endif // __CC_ARM
+namespace std
+{
 
-#include "_common/exception.cpp"
-#include "_common/future.cpp"
-#include "_common/_system_error.cpp"
+void* align(std::size_t alignment, std::size_t size,
+            void*& ptr, std::size_t& space)
+{
+    using namespace std;
 
-#if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/weos.cpp"
-#else
-    #error "Invalid native OS."
-#endif
+    uintptr_t address = uintptr_t(ptr);
+    // Clearing the low-order bits is done by masking them (since
+    // -2 = 0b11111110, -4 = 0b11111100...). This is portable code because
+    // std::size_t is guaranteed to be unsigned.
+    uintptr_t aligned_address = (address + (alignment - 1)) & -alignment;
+    size_t diff = aligned_address - address;
+    if (space >= size + diff)
+    {
+        space -= diff;
+        ptr = reinterpret_cast<void*>(aligned_address);
+        return ptr;
+    }
+    return nullptr;
+}
+
+} // namespace std
