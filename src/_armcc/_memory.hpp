@@ -350,8 +350,9 @@ using boost::addressof;
 
 using boost::container::allocator_traits;
 using boost::container::allocator_arg;
-using boost::container::allocator_arg_t;
 using boost::container::uses_allocator;
+
+struct allocator_arg_t {};
 
 // ----=====================================================================----
 //     align
