@@ -26,9 +26,16 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_FUTURE_HPP
-#define WEOS_COMMON_FUTURE_HPP
+#ifndef WEOS_CMSIS_RTOS_FUTURE_HPP
+#define WEOS_CMSIS_RTOS_FUTURE_HPP
 
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
+
+#include "_thread_detail.hpp"
 #include "../atomic.hpp"
 #include "../chrono.hpp"
 #include "../exception.hpp"
@@ -38,13 +45,13 @@
 #include "../tuple.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
-#include "../_thread_detail.hpp"
 
 #include <stdexcept>
 #include <new>
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 template <typename TResult>
 class future;
@@ -75,19 +82,8 @@ enum class future_errc
     no_state
 };
 
-WEOS_END_NAMESPACE
-
-
-namespace std
-{
-
 template <>
-struct is_error_code_enum<WEOS_NAMESPACE::future_errc> : public true_type {};
-
-} // namespace std
-
-
-WEOS_BEGIN_NAMESPACE
+struct is_error_code_enum<future_errc> : public true_type {};
 
 const error_category& future_category() noexcept;
 
@@ -122,7 +118,7 @@ private:
 namespace weos_detail
 {
 
-class OneshotConditionVariable : private semaphore
+class OneshotConditionVariable : private WEOS_NAMESPACE::semaphore
 {
 public:
     OneshotConditionVariable()
@@ -280,7 +276,7 @@ public:
     void setValue(T&& value)
     {
         this->startSettingValue();
-        ::new (&m_value) TResult(WEOS_NAMESPACE::forward<T>(value));
+        ::new (&m_value) TResult(std::forward<T>(value));
         this->m_flags |= SharedStateBase::ValueConstructed | SharedStateBase::Ready;
         this->m_cv.notify();
     }
@@ -290,7 +286,7 @@ public:
         this->wait();
         if (this->m_exception != nullptr)
             rethrow_exception(this->m_exception);
-        return WEOS_NAMESPACE::move(*reinterpret_cast<TResult*>(&m_value));
+        return std::move(*reinterpret_cast<TResult*>(&m_value));
     }
 
 protected:
@@ -316,7 +312,7 @@ public:
     explicit
     AsyncSharedState(void* ownedStack, TCallable&& callable)
         : SharedState<TResult>(ownedStack),
-          m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
+          m_callable(std::forward<TCallable>(callable))
     {
     }
 
@@ -352,7 +348,7 @@ public:
     explicit
     AsyncSharedState(void* ownedStack, TCallable&& callable)
         : SharedStateBase(ownedStack),
-          m_callable(WEOS_NAMESPACE::forward<TCallable>(callable))
+          m_callable(std::forward<TCallable>(callable))
     {
     }
 
@@ -384,7 +380,7 @@ private:
 
 template <typename TResult, typename TCallable>
 future<TResult> makeAsyncSharedState(
-        ThreadProperties& props, TCallable&& f)
+        WEOS_NAMESPACE::weos_detail::ThreadProperties& props, TCallable&& f)
 {
     using shared_state_type = AsyncSharedState<TResult, TCallable>;
     static constexpr size_t alignment = alignment_of<shared_state_type>::value;
@@ -403,7 +399,7 @@ future<TResult> makeAsyncSharedState(
     unique_ptr<shared_state_type, SharedStateBaseDeleter> state(
                 ::new (props.m_stackBegin) shared_state_type(
                     deleter.owned_stack(),
-                    WEOS_NAMESPACE::forward<TCallable>(f)));
+                    std::forward<TCallable>(f)));
     deleter.release(); // managed by 'state' from now on
 
     props.offset_by(size);
@@ -516,7 +512,8 @@ private:
 
     // This constructor is used in a promise to create a future with the
     // same shared state.
-    explicit future(shared_state_type* state)
+    explicit
+    future(shared_state_type* state)
         : m_state(state)
     {
         m_state->attachFuture();
@@ -529,7 +526,7 @@ private:
 
     template <typename T, typename U>
     friend future<T> weos_detail::makeAsyncSharedState(
-            weos_detail::ThreadProperties&, U&&);
+            WEOS_NAMESPACE::weos_detail::ThreadProperties&, U&&);
 };
 
 // ----=====================================================================----
@@ -628,7 +625,8 @@ private:
 
     // This constructor is used in a promise to create a future with the
     // same shared state.
-    explicit future(weos_detail::SharedStateBase* state);
+    explicit
+    future(weos_detail::SharedStateBase* state);
 
 
     template <typename T>
@@ -636,7 +634,7 @@ private:
 
     template <typename T, typename U>
     friend future<T> weos_detail::makeAsyncSharedState(
-            weos_detail::ThreadProperties&, U&&);
+            WEOS_NAMESPACE::weos_detail::ThreadProperties&, U&&);
 };
 
 //! Swaps two futures \p a and \p b.
@@ -685,7 +683,7 @@ public:
     //! Move-assigns the \p other promise to this one.
     promise& operator=(promise&& other) noexcept
     {
-        promise(WEOS_NAMESPACE::move(other)).swap(*this);
+        promise(std::move(other)).swap(*this);
         return *this;
     }
 
@@ -720,48 +718,52 @@ void swap(promise<T>& a, promise<T>& b) noexcept
     a.swap(b);
 }
 
+} // namespace std
+
+
+WEOS_BEGIN_NAMESPACE
+
 // ----=====================================================================----
 //     async()
 // ----=====================================================================----
 
 template <typename TFunction, typename... TArgs>
 inline
-future<typename weos_detail::invoke_result_type<
-           typename decay<TFunction>::type,
-           typename decay<TArgs>::type...>::type>
-async(launch launchPolicy, const thread_attributes& attrs,
+std::future<typename weos_detail::invoke_result_type<
+                typename std::decay<TFunction>::type,
+                typename std::decay<TArgs>::type...>::type>
+async(std::launch launchPolicy, const thread_attributes& attrs,
       TFunction&& f, TArgs&&... args)
 {
-    using namespace weos_detail;
+    using result_type = typename weos_detail::invoke_result_type<
+                            typename std::decay<TFunction>::type,
+                            typename std::decay<TArgs>::type...>::type;
 
-    using result_type = typename invoke_result_type<
-                            typename decay<TFunction>::type,
-                            typename decay<TArgs>::type...>::type;
-
-    using function_type = DecayedFunction<typename decay<TFunction>::type,
-                                          typename decay<TArgs>::type...>;
+    using function_type = weos_detail::DecayedFunction<
+                              typename std::decay<TFunction>::type,
+                              typename std::decay<TArgs>::type...>;
 
     // TODO: make use of launchPolicy
 
     weos_detail::ThreadProperties props(attrs);
-    return makeAsyncSharedState<result_type, function_type>(
+    return std::weos_detail::makeAsyncSharedState<result_type, function_type>(
                 props,
-                function_type(decay_copy(WEOS_NAMESPACE::forward<TFunction>(f)),
-                              decay_copy(WEOS_NAMESPACE::forward<TArgs>(args))...));
+                function_type(weos_detail::decay_copy(std::forward<TFunction>(f)),
+                              weos_detail::decay_copy(std::forward<TArgs>(args))...));
 }
 
 template <typename TFunction, typename... TArgs>
 WEOS_FORCE_INLINE
-future<typename weos_detail::invoke_result_type<
-           typename decay<TFunction>::type,
-           typename decay<TArgs>::type...>::type>
+std::future<typename weos_detail::invoke_result_type<
+                typename std::decay<TFunction>::type,
+                typename std::decay<TArgs>::type...>::type>
 async(const thread_attributes& attrs, TFunction&& f, TArgs&&... args)
 {
-    return async(launch::any, attrs,
-                 WEOS_NAMESPACE::forward<TFunction>(f),
-                 WEOS_NAMESPACE::forward<TArgs>(args)...);
+    return async(std::launch::any, attrs,
+                 std::forward<TFunction>(f),
+                 std::forward<TArgs>(args)...);
 }
 
 WEOS_END_NAMESPACE
 
-#endif // WEOS_COMMON_FUTURE_HPP
+#endif // WEOS_CMSIS_RTOS_FUTURE_HPP

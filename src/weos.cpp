@@ -37,7 +37,6 @@
 #endif // __CC_ARM
 
 #include "_common/exception.cpp"
-#include "_common/future.cpp"
 #include "_common/_system_error.cpp"
 
 #if defined(WEOS_WRAP_CMSIS_RTOS)

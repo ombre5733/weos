@@ -26,8 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "_chrono_clocks.hpp"
-
+#include "../chrono.hpp"
 #include "../atomic.hpp"
 #include "../thread.hpp"
 #include "../type_traits.hpp"

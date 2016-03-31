@@ -26,12 +26,13 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "future.hpp"
+#include "_future.hpp"
 
 #include <cstdlib>
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 // ----=====================================================================----
 //     Error
@@ -224,4 +225,4 @@ void promise<void>::set_exception(exception_ptr exc)
     m_state->setException(exc);
 }
 
-WEOS_END_NAMESPACE
+} // namespace std
