@@ -395,7 +395,7 @@ future<TResult> makeAsyncSharedState(
     if (!props.align(alignment, size))
     {
         WEOS_THROW_SYSTEM_ERROR(
-                    errc::not_enough_memory,
+                    std::errc::not_enough_memory,
                     "makeAsyncSharedState: stack size too small");
     }
 

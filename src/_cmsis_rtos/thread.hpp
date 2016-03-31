@@ -506,7 +506,7 @@ private:
         if (!props.align(alignment, size))
         {
             WEOS_THROW_SYSTEM_ERROR(
-                        errc::not_enough_memory,
+                        std::errc::not_enough_memory,
                         "thread::create: stack size is too small");
         }
 
@@ -648,7 +648,7 @@ thread::signal_set try_wait_for_any_signal_until(
         if (   result.status != osOK
             && result.status != osEventTimeout)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                     "try_wait_for_any_signal_until failed");
         }
     }
@@ -726,7 +726,7 @@ bool try_wait_for_all_signals_until(
         if (   result.status != osOK
             && result.status != osEventTimeout)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                     "try_wait_for_all_signals_until failed");
         }
     }

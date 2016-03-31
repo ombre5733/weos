@@ -77,7 +77,7 @@ public:
         osMessageQDef_t queueDef = { TQueueSize, m_queueData };
         m_id = osMessageCreate(&queueDef, NULL);
         if (m_id == 0)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::osErrorOS,
                                     "message_queue::message_queue failed");
     }
 
@@ -88,7 +88,7 @@ public:
     {
         osEvent result = osMessageGet(m_id, osWaitForever);
         if (result.status != osEventMessage)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                     "message_queue::receive failed");
 
         return *reinterpret_cast<value_type*>(&result.value.v);
@@ -103,7 +103,7 @@ public:
         }
         else if (result.status != osEventMessage)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                     "message_queue::try_receive failed");
         }
 
@@ -116,7 +116,7 @@ public:
         std::uint32_t datum = toUint32(value, align_tag());
         osStatus status = osMessagePut(m_id, datum, osWaitForever);
         if (status != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(status),
                                     "message_queue::send failed");
     }
 
@@ -130,7 +130,7 @@ public:
         if (   status != osErrorTimeoutResource
             && status != osErrorResource)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(status),
                                     "message_queue::try_send failed");
         }
 

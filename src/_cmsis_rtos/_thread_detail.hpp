@@ -65,7 +65,7 @@ public:
     {
         using indices_type = typename WEOS_NAMESPACE::weos_detail::makeIndexSequence<
                                  1 + sizeof...(TArgs), 1>::type;
-        return WEOS_NAMESPACE::weos_detail::invoke(indices_type());
+        return invoke(indices_type());
     }
 
 private:

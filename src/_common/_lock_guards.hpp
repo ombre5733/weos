@@ -209,10 +209,10 @@ public:
     void lock()
     {
         if (m_mutex == nullptr)
-            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::operation_not_permitted,
                                     "unique_lock::lock: no mutex");
         if (m_locked)
-            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::resource_deadlock_would_occur,
                                     "unique_lock::lock: already locked");
 
         m_mutex->lock();
@@ -264,10 +264,10 @@ public:
     bool try_lock()
     {
         if (m_mutex == nullptr)
-            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::operation_not_permitted,
                                     "unique_lock::try_lock: no mutex");
         if (m_locked)
-            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::resource_deadlock_would_occur,
                                     "unique_lock::try_lock: already locked");
 
         m_locked = m_mutex->try_lock();
@@ -282,10 +282,10 @@ public:
     bool try_lock_for(const chrono::duration<RepT, PeriodT>& duration)
     {
         if (m_mutex == nullptr)
-            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::operation_not_permitted,
                                     "unique_lock::try_lock_for: no mutex");
         if (m_locked)
-            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::resource_deadlock_would_occur,
                                     "unique_lock::try_lock_for: already locked");
 
         m_locked = m_mutex->try_lock_for(duration);
@@ -300,10 +300,10 @@ public:
     bool try_lock_until(const chrono::time_point<ClockT, DurationT>& timePoint)
     {
         if (m_mutex == nullptr)
-            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::operation_not_permitted,
                                     "unique_lock::try_lock_until: no mutex");
         if (m_locked)
-            WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::resource_deadlock_would_occur,
                                     "unique_lock::try_lock_until: already locked");
 
         m_locked = m_mutex->try_lock_until(timePoint);
@@ -314,7 +314,7 @@ public:
     void unlock()
     {
         if (!m_locked)
-            WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+            WEOS_THROW_SYSTEM_ERROR(std::errc::operation_not_permitted,
                                     "unique_lock::unlock: not locked");
 
         m_mutex->unlock();

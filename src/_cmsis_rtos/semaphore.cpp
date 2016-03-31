@@ -40,7 +40,7 @@ void semaphore::post()
 {
     osStatus status = osSemaphoreRelease(native_handle());
     if (status != osOK)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(status),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(status),
                                 "semaphore::post failed");
 }
 
@@ -48,7 +48,7 @@ void semaphore::wait()
 {
     std::int32_t result = osSemaphoreWait(native_handle(), osWaitForever);
     if (result <= 0)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::osErrorOS,
                                 "semaphore::wait failed");
 }
 
@@ -56,7 +56,7 @@ bool semaphore::try_wait()
 {
     std::int32_t result = osSemaphoreWait(native_handle(), 0);
     if (result < 0)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::osErrorOS,
                                 "semaphore::try_wait failed");
 
     return result != 0;
@@ -85,7 +85,7 @@ bool semaphore::try_wait_for(chrono::milliseconds ms)
 
         if (result < 0)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::osErrorOS,
                                     "semaphore::try_wait_for failed");
         }
 

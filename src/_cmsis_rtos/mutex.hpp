@@ -182,7 +182,7 @@ public:
                     result = osMutexRelease(native_handle());
                     if (result != osOK)
                     {
-                        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+                        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                                 "timed_mutex::try_lock_until failed");
                     }
                     if (!timeout)
@@ -194,7 +194,7 @@ public:
             if (   result != osErrorResource
                 && result != osErrorTimeoutResource)
             {
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+                WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                         "timed_mutex::try_lock_until failed");
             }
         }
@@ -328,7 +328,7 @@ public:
             if (   result != osErrorResource
                 && result != osErrorTimeoutResource)
             {
-                WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+                WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                         "recursive_timed_mutex::try_lock_until failed");
             }
         }

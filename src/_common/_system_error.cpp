@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "system_error.hpp"
+#include "_system_error.hpp"
 
 
 namespace std
@@ -43,17 +43,17 @@ public:
 
     virtual const char* message(int err_val) const override
     {
-        switch (static_cast<errc>(err_val))
+        switch (static_cast<std::errc>(err_val))
         {
-        case errc::invalid_argument:
+        case std::errc::invalid_argument:
             return "Invalid argument";
-        case errc::no_child_process:
+        case std::errc::no_child_process:
             return "No child process";
-        case errc::not_enough_memory:
+        case std::errc::not_enough_memory:
             return "Not enough memory";
-        case errc::operation_not_permitted:
+        case std::errc::operation_not_permitted:
             return "Operation not permitted";
-        case errc::resource_deadlock_would_occur:
+        case std::errc::resource_deadlock_would_occur:
             return "Resource deadlock would occur";
         default:
             return "Unknown error";

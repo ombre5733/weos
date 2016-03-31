@@ -66,7 +66,7 @@ void sleep_until(const chrono::time_point<TClock, TDuration>& time)
         osStatus result = osDelay(converted.count());
         if (result != osOK && result != osEventTimeout)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                     "sleep_until failed");
         }
     }

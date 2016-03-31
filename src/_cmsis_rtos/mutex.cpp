@@ -45,7 +45,7 @@ void mutex::lock()
 {
     osStatus result = osMutexWait(native_handle(), osWaitForever);
     if (result != osOK)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                 "mutex::lock failed");
 
     if (!m_locked)
@@ -58,9 +58,9 @@ void mutex::lock()
         // exception.
         result = osMutexRelease(native_handle());
         if (result != osOK)
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                     "mutex::lock failed");
-        WEOS_THROW_SYSTEM_ERROR(errc::resource_deadlock_would_occur,
+        WEOS_THROW_SYSTEM_ERROR(std::errc::resource_deadlock_would_occur,
                                 "deadlock in mutex::lock");
     }
 }
@@ -133,7 +133,7 @@ bool timed_mutex::try_lock_for(chrono::milliseconds ms)
         if (   result != osErrorResource
             && result != osErrorTimeoutResource)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::osErrorOS,
                                     "semaphore::try_wait_for failed");
         }
 
@@ -155,7 +155,7 @@ void recursive_mutex::lock()
 {
     osStatus result = osMutexWait(native_handle(), osWaitForever);
     if (result != osOK)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                 "recursive_mutex::lock failed");
 }
 
@@ -198,7 +198,7 @@ bool recursive_timed_mutex::try_lock_for(chrono::milliseconds ms)
         if (   result != osErrorResource
             && result != osErrorTimeoutResource)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::osErrorOS,
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::osErrorOS,
                                     "semaphore::try_wait_for failed");
         }
 

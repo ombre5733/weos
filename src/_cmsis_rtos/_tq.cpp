@@ -178,7 +178,7 @@ _tq::_t::_t(_tq& q)
 {
     if (__get_IPSR() != 0U)
     {
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(osErrorISR),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(osErrorISR),
                                 "not allowed in ISR");
     }
 

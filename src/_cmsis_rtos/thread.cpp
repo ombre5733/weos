@@ -108,26 +108,19 @@ SVC_1(weos_unlinkSharedState, int,   void*)
 //     Thread observers
 // ----=====================================================================----
 
-WEOS_BEGIN_NAMESPACE
-
 static inline
 bool weos_forEachThreadWorkaround(void* cbk,
-                                  weos_detail::SharedThreadStateBase* iter) noexcept
+                                  WEOS_NAMESPACE::weos_detail::SharedThreadStateBase* iter) noexcept
 {
-    using f_type = function<bool(expert::thread_info)>;
+    using f_type = std::function<bool(WEOS_NAMESPACE::expert::thread_info)>;
     f_type& f = *static_cast<f_type*>(cbk);
     return f(iter->info());
 }
 
-WEOS_END_NAMESPACE
-
-
 extern "C"
 int weos_forEachThread(void* cbk) noexcept
 {
-    using namespace WEOS_NAMESPACE;
-
-    for (weos_detail::SharedThreadStateBase* iter = g_sharedThreadStates;
+    for (WEOS_NAMESPACE::weos_detail::SharedThreadStateBase* iter = g_sharedThreadStates;
          iter != nullptr; iter = iter->m_next)
     {
         if (!weos_forEachThreadWorkaround(cbk, iter))
@@ -179,9 +172,9 @@ WEOS_END_NAMESPACE
 extern "C"
 int weos_ThreadCreatedHook(void* state) noexcept
 {
-    using namespace WEOS_NAMESPACE;
-    thread_created(static_cast<weos_detail::SharedThreadStateBase*>(
-                       state)->info());
+    WEOS_NAMESPACE::thread_created(
+                static_cast<WEOS_NAMESPACE::weos_detail::SharedThreadStateBase*>(
+                    state)->info());
     return 0;
 }
 
@@ -190,9 +183,9 @@ SVC_1(weos_ThreadCreatedHook, int,   void*)
 extern "C"
 int weos_ThreadDestroyedHook(void* state) noexcept
 {
-    using namespace WEOS_NAMESPACE;
-    thread_destroyed(static_cast<weos_detail::SharedThreadStateBase*>(
-                         state)->info());
+    WEOS_NAMESPACE::thread_destroyed(
+                static_cast<WEOS_NAMESPACE::weos_detail::SharedThreadStateBase*>(
+                    state)->info());
     return 0;
 }
 
@@ -243,9 +236,7 @@ SVC_2(weos_terminateTask, int,   void*, void*)
 extern "C"
 void weos_threadInvoker(const void* arg) noexcept
 {
-    using namespace WEOS_NAMESPACE;
-
-    auto state = static_cast<weos_detail::SharedThreadStateBase*>(
+    auto state = static_cast<WEOS_NAMESPACE::weos_detail::SharedThreadStateBase*>(
                     const_cast<void*>(arg));
 
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
@@ -453,7 +444,7 @@ ThreadProperties::Deleter ThreadProperties::allocate()
         if (!expert::g_stack_allocation_enabled || size == 0)
         {
             WEOS_THROW_SYSTEM_ERROR(
-                        errc::not_enough_memory,
+                        std::errc::not_enough_memory,
                         "ThreadProperties::allocate: stack allocation not allowed");
         }
 
@@ -540,7 +531,7 @@ void SharedThreadStateBase::destroy() noexcept
 void thread::detach()
 {
     if (!joinable())
-        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+        WEOS_THROW_SYSTEM_ERROR(std::errc::operation_not_permitted,
                                 "thread::detach: thread is not joinable");
 
     m_data->m_joinedOrDetached.post();
@@ -559,7 +550,7 @@ void thread::detach()
 void thread::join()
 {
     if (!joinable())
-        WEOS_THROW_SYSTEM_ERROR(errc::operation_not_permitted,
+        WEOS_THROW_SYSTEM_ERROR(std::errc::operation_not_permitted,
                                 "thread::join: thread is not joinable");
 
     m_data->m_joinedOrDetached.post();
@@ -577,7 +568,7 @@ void thread::clear_signals(signal_set flags)
     if (!joinable())
     {
         WEOS_THROW_SYSTEM_ERROR(
-                    errc::operation_not_permitted,
+                    std::errc::operation_not_permitted,
                     "thread::clear_signals: thread is not joinable");
     }
 
@@ -592,7 +583,7 @@ void thread::set_signals(signal_set flags)
     if (!joinable())
     {
         WEOS_THROW_SYSTEM_ERROR(
-                    errc::operation_not_permitted,
+                    std::errc::operation_not_permitted,
                     "thread::set_signals: thread is not joinable");
     }
 
@@ -608,7 +599,7 @@ void thread::do_create(weos_detail::ThreadProperties& props,
     if (!props.max_align())
     {
         WEOS_THROW_SYSTEM_ERROR(
-                    errc::not_enough_memory,
+                    std::errc::not_enough_memory,
                     "thread::do_create: stack size is too small");
     }
 
@@ -616,7 +607,7 @@ void thread::do_create(weos_detail::ThreadProperties& props,
         || props.m_stackSize >= (std::size_t(1) << 24))
     {
         WEOS_THROW_SYSTEM_ERROR(
-                    errc::invalid_argument,
+                    std::errc::invalid_argument,
                     "thread::do_create: invalid stack size");
     }
 
@@ -652,7 +643,7 @@ void thread::do_create(weos_detail::ThreadProperties& props,
     else
     {
         WEOS_THROW_SYSTEM_ERROR(
-                    errc::no_child_process,
+                    std::errc::no_child_process,
                     "thread::invoke: new thread was not created");
     }
 }
@@ -692,7 +683,7 @@ void sleep_for(chrono::milliseconds ms)
         osStatus result = osDelay(truncated.count());
         if (result != osOK && result != osEventTimeout)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result),
                                     "sleep_for failed");
         }
     }
@@ -706,7 +697,7 @@ thread::signal_set wait_for_any_signal()
 {
     osEvent result = osSignalWait(0, osWaitForever);
     if (result.status != osEventSignal)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                 "wait_for_any_signal failed");
 
     return result.value.signals;
@@ -723,7 +714,7 @@ thread::signal_set try_wait_for_any_signal()
     if (   result.status != osOK
         && result.status != osEventTimeout)
     {
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                 "try_wait_for_any_signal failed");
     }
 
@@ -753,7 +744,7 @@ thread::signal_set try_wait_for_any_signal_for(chrono::milliseconds ms)
         if (   result.status != osOK
             && result.status != osEventTimeout)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                     "try_wait_for_any_signal_for failed");
         }
 
@@ -767,7 +758,7 @@ void wait_for_all_signals(thread::signal_set flags)
     WEOS_ASSERT(flags > 0 && flags <= thread::all_signals());
     osEvent result = osSignalWait(flags, osWaitForever);
     if (result.status != osEventSignal)
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                 "wait_for_signalflags failed");
 }
 
@@ -783,7 +774,7 @@ bool try_wait_for_all_signals(thread::signal_set flags)
     if (   result.status != osOK
         && result.status != osEventTimeout)
     {
-        WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+        WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                 "try_wait_for_all_signals failed");
     }
 
@@ -816,7 +807,7 @@ bool try_wait_for_all_signals_for(thread::signal_set flags,
         if (   result.status != osOK
             && result.status != osEventTimeout)
         {
-            WEOS_THROW_SYSTEM_ERROR(cmsis_error::cmsis_error_t(result.status),
+            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                     "try_wait_for_all_signals_for failed");
         }
 
