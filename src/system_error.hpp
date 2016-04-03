@@ -43,6 +43,7 @@ WEOS_BEGIN_NAMESPACE
 using std::error_category;
 using std::error_code;
 using std::system_error;
+using std::make_error_code;
 
 WEOS_END_NAMESPACE
 
