@@ -31,6 +31,24 @@
 
 #include "_config.hpp"
 
-#include "_cmsis_rtos/_future.hpp"
+#if defined(WEOS_WRAP_CMSIS_RTOS)
+    #include "_cmsis_rtos/_future.hpp"
+#else
+    #error "Invalid native OS."
+#endif
+
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::launch;
+using std::future_status;
+using std::future_errc;
+using std::future_category;
+using std::future_error;
+
+using std::future;
+using std::promise;
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_FUTURE_HPP

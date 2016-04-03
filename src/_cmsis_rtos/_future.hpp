@@ -36,6 +36,7 @@
 
 
 #include "_thread_detail.hpp"
+#include "thread.hpp"
 #include "../atomic.hpp"
 #include "../chrono.hpp"
 #include "../exception.hpp"
@@ -404,7 +405,7 @@ future<TResult> makeAsyncSharedState(
 
     props.offset_by(size);
 
-    thread(props, &shared_state_type::invoke, state.get()).detach();
+    WEOS_NAMESPACE::thread(props, &shared_state_type::invoke, state.get()).detach();
 
     return future<TResult>(state.get());
 }
