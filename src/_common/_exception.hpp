@@ -71,11 +71,6 @@ WEOS_BEGIN_NAMESPACE
 
 class exception;
 
-namespace weos_detail
-{
-void cloneErrorInfoList(const exception* src, exception* dest);
-} // namespace weos_detail
-
 struct throw_location
 {
     throw_location(const char* file, int line, const char* function)
@@ -106,21 +101,19 @@ public:
     exception(const exception& other) noexcept
         : m_file(other.m_file),
           m_line(other.m_line),
-          m_function(other.m_function),
-          m_errorInfoList(nullptr)
+          m_function(other.m_function)
     {
     }
 
     exception(exception&& other) noexcept
         : m_file(other.m_file),
           m_line(other.m_line),
-          m_function(other.m_function),
-          m_errorInfoList(other.m_errorInfoList)
+          m_function(other.m_function)
     {
-        other.m_errorInfoList = nullptr;
     }
 
-    virtual ~exception() throw()
+    virtual
+    ~exception() throw()
     {
     }
 
@@ -129,7 +122,6 @@ public:
         m_file = other.m_file;
         m_line = other.m_line;
         m_function = other.m_function;
-        m_errorInfoList = nullptr;
         return *this;
     }
 
@@ -138,8 +130,6 @@ public:
         m_file = other.m_file;
         m_line = other.m_line;
         m_function = other.m_function;
-        m_errorInfoList = other.m_errorInfoList;
-        other.m_errorInfoList = nullptr;
         return *this;
     }
 
@@ -164,8 +154,7 @@ protected:
     exception() noexcept
         : m_file(""),
           m_line(0),
-          m_function(""),
-          m_errorInfoList(nullptr)
+          m_function("")
     {
     }
 
@@ -173,33 +162,23 @@ private:
     const char* m_file;
     int m_line;
     const char* m_function;
-    mutable void* m_errorInfoList;
-
-    friend void weos_detail::cloneErrorInfoList(const exception*, exception*);
 };
 
 namespace weos_detail
 {
-inline
-void cloneErrorInfoList(const exception* src, exception* dest)
-{
-}
-
-inline
-void cloneErrorInfoList(const void* /*src*/, void* /*dest*/)
-{
-}
 
 template <typename TType>
 struct ExceptionInfoBase : public TType,
                            public exception
 {
-    explicit ExceptionInfoBase(const TType& exc)
+    explicit
+    ExceptionInfoBase(const TType& exc)
         : TType(exc)
     {
     }
 
-    virtual ~ExceptionInfoBase() throw() {}
+    virtual
+    ~ExceptionInfoBase() throw() {}
 
     ExceptionInfoBase& operator<<(const throw_location& loc)
     {
@@ -215,71 +194,28 @@ struct ExceptionInfoBase : public TType,
 // ----=====================================================================----
 
 template <typename TType>
-typename enable_if<is_class<typename remove_reference<TType>::type>::value
-                   && !is_base_of<exception,
-                                  typename remove_reference<TType>::type>::value,
+typename enable_if<std::is_class<typename std::remove_reference<TType>::type>::value
+                   && !std::is_base_of<exception,
+                                       typename std::remove_reference<TType>::type>::value,
                    weos_detail::ExceptionInfoBase<
-                       typename remove_reference<TType>::type>
+                       typename std::remove_reference<TType>::type>
                   >::type
 enable_exception_info(TType&& exc)
 {
-    return weos_detail::ExceptionInfoBase<typename remove_reference<TType>::type>(
-                WEOS_NAMESPACE::forward<TType>(exc));
+    return weos_detail::ExceptionInfoBase<typename std::remove_reference<TType>::type>(
+                std::forward<TType>(exc));
 }
 
 template <typename TType>
-typename enable_if<!is_class<typename remove_reference<TType>::type>::value
-                   || is_base_of<exception,
-                                 typename remove_reference<TType>::type>::value,
+typename enable_if<!std::is_class<typename std::remove_reference<TType>::type>::value
+                   || std::is_base_of<exception,
+                                      typename std::remove_reference<TType>::type>::value,
                    TType&&>::type
 enable_exception_info(TType&& exc) noexcept
-{
-    return WEOS_NAMESPACE::forward<TType>(exc);
-}
-
-WEOS_END_NAMESPACE
-
-// ----=====================================================================----
-//
-// ----=====================================================================----
-
-#ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
-
-#include "exception_impl_armcc.hpp"
-
-#else
-// -----------------------------------------------------------------------------
-// C++11 conforming STL
-// -----------------------------------------------------------------------------
-
-#include <exception>
-#include <utility>
-
-
-WEOS_BEGIN_NAMESPACE
-
-template <typename TType>
-inline
-TType&& enable_current_exception(TType&& exc)
 {
     return std::forward<TType>(exc);
 }
 
-using std::current_exception;
-using std::exception_ptr;
-using std::make_exception_ptr;
-using std::rethrow_exception;
-using std::nested_exception;
-using std::throw_with_nested;
-using std::rethrow_if_nested;
-
-int uncaught_exceptions() noexcept;
-
 WEOS_END_NAMESPACE
-
-#endif // __CC_ARM
 
 #endif // WEOS_COMMON_EXCEPTION_HPP

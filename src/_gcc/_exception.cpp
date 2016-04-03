@@ -26,35 +26,26 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "exception.hpp"
+#include "_exception.hpp"
 
-
-#ifdef __CC_ARM
-// -----------------------------------------------------------------------------
-// ARMCC
-// -----------------------------------------------------------------------------
-
-#include "exception_impl_armcc.cpp"
-
-#elif __GNUC__
 
 struct __cxa_eh_globals;
 
 namespace __cxxabiv1
 {
-extern "C" __cxa_eh_globals* __cxa_get_globals();
+
+extern "C"
+__cxa_eh_globals* __cxa_get_globals();
+
 } // namespace __cxxabiv1
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 int uncaught_exceptions() noexcept
 {
     return *reinterpret_cast<int*>(static_cast<char*>(static_cast<void*>(__cxxabiv1::__cxa_get_globals())) + sizeof(void*));
 }
 
-WEOS_END_NAMESPACE
-
-#else
-#error "Unknown compiler"
-#endif
+} // namespace std

@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_COMMON_EXCEPTION_IMPL_ARMCC_HPP
-#define WEOS_COMMON_EXCEPTION_IMPL_ARMCC_HPP
+#ifndef WEOS_ARMCC_EXCEPTION_HPP
+#define WEOS_ARMCC_EXCEPTION_HPP
 
 
 #ifndef WEOS_CONFIG_HPP
@@ -44,7 +44,8 @@
 #include <stdexcept>
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 //! A pointer-like type to access an exception.
 //!
@@ -141,6 +142,12 @@ class nested_exception;
 //! Returns the number of uncaught exceptions.
 int uncaught_exceptions() noexcept;
 
+} // namespace std
+
+
+
+WEOS_BEGIN_NAMESPACE
+
 // ----=====================================================================----
 //     CaptureableException
 // ----=====================================================================----
@@ -163,12 +170,15 @@ public:
     {
     }
 
-    virtual ~CaptureableExceptionBase() {}
+    virtual
+    ~CaptureableExceptionBase() {}
 
-    virtual const CaptureableExceptionBase* clone() const = 0;
+    virtual
+    const CaptureableExceptionBase* clone() const = 0;
 
     /*TODO: [[noreturn]]*/
-    virtual void rethrow() const = 0;
+    virtual
+    void rethrow() const = 0;
 
 private:
     mutable WEOS_NAMESPACE::atomic<int> m_refCount;
@@ -202,20 +212,22 @@ public:
     static_assert(!derivesTwice, "Derived twice from CaptureableExceptionBase");
 
     // TODO: use perfect forwarding here
-    explicit CaptureableException(const TType& other)
+    explicit
+    CaptureableException(const TType& other)
         : TType(other)
     {
-        cloneErrorInfoList(&other, this);
     }
 
 private:
-    virtual const CaptureableException* clone() const override
+    virtual
+    const CaptureableException* clone() const override
     {
         return new CaptureableException(*this);
     }
 
     /*TODO: [[noreturn]]*/
-    virtual void rethrow() const override
+    virtual
+    void rethrow() const override
     {
         throw *this;
     }
@@ -250,6 +262,12 @@ enable_current_exception(TType&& exc) noexcept
     return WEOS_NAMESPACE::forward<TType>(exc);
 }
 
+WEOS_END_NAMESPACE
+
+
+
+namespace std
+{
 // ----=====================================================================----
 //     exception_ptr
 // ----=====================================================================----
@@ -267,7 +285,8 @@ public:
     {
     }
 
-    explicit exception_ptr(const pointer_type& ptr)
+    explicit
+    exception_ptr(const pointer_type& ptr)
         : m_capturedException(ptr)
     {
     }
@@ -299,7 +318,8 @@ public:
         return m_capturedException != other.m_capturedException;
     }
 
-    explicit operator bool() const
+    explicit
+    operator bool() const
     {
         return !!m_capturedException;
     }
@@ -346,7 +366,7 @@ exception_ptr cloneException(const TType& exc)
 {
     try
     {
-        throw enable_current_exception(exc);
+        throw WEOS_NAMESPACE::enable_current_exception(exc);
     }
     catch (...)
     {
@@ -359,7 +379,8 @@ class StdExceptionWrapper : public TStdException,
                             public WEOS_NAMESPACE::exception
 {
 public:
-    explicit StdExceptionWrapper(const TStdException& exc)
+    explicit
+    StdExceptionWrapper(const TStdException& exc)
         : TStdException(exc)
     {
     }
@@ -371,7 +392,8 @@ public:
     {
     }
 
-    virtual ~StdExceptionWrapper() throw() {}
+    virtual
+    ~StdExceptionWrapper() throw() {}
 };
 
 template <typename TStdException>
@@ -392,25 +414,29 @@ exception_ptr wrapStdException(const TStdException& exc)
 struct BadAlloc : public WEOS_NAMESPACE::exception,
                   public std::bad_alloc
 {
-    virtual ~BadAlloc() throw() {}
+    virtual
+    ~BadAlloc() throw() {}
 };
 
 struct BadException : public WEOS_NAMESPACE::exception,
                       public std::bad_exception
 {
-    virtual ~BadException() throw() {}
+    virtual
+    ~BadException() throw() {}
 };
 
 struct UnknownStdException : public WEOS_NAMESPACE::exception,
                              public std::exception
 {
-    virtual ~UnknownStdException() throw() {}
+    virtual
+    ~UnknownStdException() throw() {}
 };
 
 struct UnknownException : public WEOS_NAMESPACE::exception,
                           public std::exception
 {
-    virtual ~UnknownException() throw() {}
+    virtual
+    ~UnknownException() throw() {}
 };
 
 template <typename TException>
@@ -463,7 +489,8 @@ public:
 
     nested_exception& operator=(const nested_exception&) noexcept = default;
 
-    virtual ~nested_exception() = default;
+    virtual
+    ~nested_exception() = default;
 
     /*TODO: [[noreturn]]*/
     void rethrow_nested() const;
@@ -484,7 +511,8 @@ template <typename TType>
 struct NestedException : public TType,
                          public nested_exception
 {
-    explicit NestedException(const TType& exception)
+    explicit
+    NestedException(const TType& exception)
         : TType(exception)
     {
     }
@@ -518,6 +546,6 @@ void throw_with_nested(TType&& exc,
 template <typename TType>
 void rethrow_if_nested(const TType& exc);
 
-WEOS_END_NAMESPACE
+} // namespace std
 
-#endif // WEOS_COMMON_EXCEPTION_IMPL_ARMCC_HPP
+#endif // WEOS_ARMCC_EXCEPTION_HPP

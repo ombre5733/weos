@@ -30,13 +30,14 @@
 
 #ifdef __CC_ARM
 #include "_armcc/_atomic.cpp"
+#include "_armcc/_exception.cpp"
 #include "_armcc/_functional.cpp"
 #include "_armcc/_memory.cpp"
 #else
+#include "_gcc/_exception.cpp"
 #include "_gcc/_memory.cpp"
 #endif // __CC_ARM
 
-#include "_common/exception.cpp"
 #include "_common/_system_error.cpp"
 
 #if defined(WEOS_WRAP_CMSIS_RTOS)

@@ -31,6 +31,31 @@
 
 #include "_config.hpp"
 
-#include "_common/exception.hpp"
+#include <exception>
+
+#include "_common/_exception.hpp"
+
+#ifdef __CC_ARM
+#include "_armcc/_exception.hpp"
+#else
+#include "_gcc/_exception.hpp"
+#endif // __CC_ARM
+
+
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+using std::exception_ptr;
+using std::make_exception_ptr;
+using std::current_exception;
+using std::rethrow_exception;
+
+using std::nested_exception;
+using std::throw_with_nested;
+using std::rethrow_if_nested;
+
+using std::uncaught_exceptions;
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_EXCEPTION_HPP

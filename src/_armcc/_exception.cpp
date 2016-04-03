@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "exception_impl_armcc.hpp"
+#include "_exception.hpp"
 
 #include <stdexcept>
 
@@ -35,7 +35,8 @@ struct __cxa_eh_globals;
 extern "C" __cxa_eh_globals* __cxa_get_globals();
 
 
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
 // ----=====================================================================----
 //     uncaught_exceptions
@@ -175,4 +176,4 @@ exception_ptr current_exception() noexcept
     return result;
 }
 
-WEOS_END_NAMESPACE
+} // namespace std
