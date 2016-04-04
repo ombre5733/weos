@@ -47,7 +47,8 @@ class latch
 {
 public:
     //! Creates a latch whose counter is set to \p count (>= 0).
-    explicit latch(std::ptrdiff_t count)
+    explicit
+    latch(std::ptrdiff_t count)
         : m_count(count)
     {
     }

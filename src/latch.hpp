@@ -32,7 +32,7 @@
 #include "_config.hpp"
 
 #if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/latch.hpp"
+    #include "_cmsis_rtos/_latch.hpp"
 #else
     #error "Invalid native OS."
 #endif
