@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "_exception.hpp"
+#include "../exception.hpp"
 
 #include <stdexcept>
 
@@ -91,7 +91,7 @@ exception_ptr getCurrentException()
     {
         throw;
     }
-    catch (weos_detail::CaptureableExceptionBase& exc)
+    catch (WEOS_NAMESPACE::weos_detail::CaptureableExceptionBase& exc)
     {
         // Note: The clone() method can throw std::bad_alloc. This exception
         // is caught in the caller.

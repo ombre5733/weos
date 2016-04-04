@@ -275,7 +275,8 @@ namespace std
 class exception_ptr
 {
 public:
-    typedef intrusive_ptr<const weos_detail::CaptureableExceptionBase> pointer_type;
+    using pointer_type = WEOS_NAMESPACE::intrusive_ptr<
+                             const WEOS_NAMESPACE::weos_detail::CaptureableExceptionBase> ;
 
     exception_ptr() noexcept
     {
@@ -448,7 +449,8 @@ struct StaticExceptionFactory
     {
         TException exc;
         return exception_ptr(exception_ptr::pointer_type(
-                                 new CaptureableException<TException>(exc)));
+                                 new WEOS_NAMESPACE::weos_detail::
+                                     CaptureableException<TException>(exc)));
     }
 };
 
@@ -468,7 +470,7 @@ exception_ptr make_exception_ptr(T exc)
 {
     try
     {
-        throw enable_current_exception(exc);
+        throw WEOS_NAMESPACE::enable_current_exception(exc);
     }
     catch(...)
     {
