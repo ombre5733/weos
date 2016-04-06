@@ -197,6 +197,7 @@ public:
     const void* native_handle() const noexcept;
 
 private:
+    explicit
     thread_info(const weos_detail::SharedThreadStateBase* state) noexcept
         : m_state(state),
           m_usedStack(std::size_t(-1))
