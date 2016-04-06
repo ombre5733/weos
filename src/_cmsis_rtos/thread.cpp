@@ -528,6 +528,33 @@ void SharedThreadStateBase::destroy() noexcept
 //     thread
 // ----=====================================================================----
 
+thread::thread(thread&& other) noexcept
+    : m_data(other.m_data)
+{
+    other.m_data = nullptr;
+}
+
+thread::~thread()
+{
+    if (joinable())
+        std::terminate();
+}
+
+thread& thread::operator=(thread&& other) noexcept
+{
+    m_data = other.m_data;
+    other.m_data = nullptr;
+    return *this;
+}
+
+thread::id thread::get_id() const noexcept
+{
+    if (m_data)
+        return id(m_data->m_threadId);
+    else
+        return id();
+}
+
 void thread::detach()
 {
     if (!joinable())

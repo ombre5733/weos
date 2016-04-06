@@ -384,46 +384,27 @@ public:
 
     //! Move constructor.
     //! Constructs a thread by moving from the \p other thread.
-    thread(thread&& other) noexcept
-        : m_data(other.m_data)
-    {
-        other.m_data = nullptr;
-    }
+    thread(thread&& other) noexcept;
 
     //! Destroys the thread handle.
     //! Destroys this thread handle.
     //! \note If the thread handle is still associated with a joinable thread,
     //! its destruction will call std::terminate(). It is mandatory to either
-    //! call join() or detach().
-    ~thread()
-    {
-        if (joinable())
-            std::terminate();
-    }
+    //! call join() or detach() before destructing a thread.
+    ~thread();
 
     thread(const thread&) = delete;
     thread& operator=(const thread&) = delete;
 
     //! Move assignment.
     //! Move-assigns the \p other thread to this thread.
-    thread& operator=(thread&& other) noexcept
-    {
-        m_data = other.m_data;
-        other.m_data = nullptr;
-        return *this;
-    }
+    thread& operator=(thread&& other) noexcept;
 
     //! Separates the executing thread from this thread handle.
     void detach();
 
     //! Returns the id of the thread.
-    id get_id() const noexcept
-    {
-        if (m_data)
-            return id(m_data->m_threadId);
-        else
-            return id();
-    }
+    id get_id() const noexcept;
 
     //! Blocks until the associated thread has been finished.
     //! Blocks the calling thread until the thread which is associated with

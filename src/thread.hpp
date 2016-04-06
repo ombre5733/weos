@@ -37,4 +37,17 @@
     #error "Invalid native OS."
 #endif
 
+/*
+// TODO:CLEAN
+WEOS_BEGIN_NAMESPACE
+
+namespace this_thread
+{
+using std::this_thread::get_id;
+
+} // namespace this_thread
+
+WEOS_END_NAMESPACE
+*/
+
 #endif // WEOS_THREAD_HPP
