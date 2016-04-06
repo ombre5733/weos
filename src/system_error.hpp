@@ -30,12 +30,7 @@
 #define WEOS_SYSTEM_ERROR_HPP
 
 #include "_config.hpp"
-
-#if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/system_error.hpp"
-#else
-    #error "Invalid native OS."
-#endif
+#include "_common/_system_error.hpp"
 
 // TODO:CLEAN
 WEOS_BEGIN_NAMESPACE
