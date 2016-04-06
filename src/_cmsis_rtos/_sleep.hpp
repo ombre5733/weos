@@ -36,6 +36,8 @@
 
 
 #include "_core.hpp"
+
+#include "cmsis_error.hpp"
 #include "../chrono.hpp"
 #include "../system_error.hpp"
 #include "../utility.hpp"

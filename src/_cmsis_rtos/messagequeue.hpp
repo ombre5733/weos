@@ -31,10 +31,10 @@
 
 #include "_core.hpp"
 
+#include "cmsis_error.hpp"
 #include "../chrono.hpp"
 #include "../semaphore.hpp"
 #include "../memorypool.hpp"
-#include "../system_error.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 

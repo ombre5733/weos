@@ -35,9 +35,11 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#include "_core.hpp"
+
+#include "semaphore.hpp"
 #include "../atomic.hpp"
 #include "../chrono.hpp"
-#include "../semaphore.hpp"
 
 #include <cstddef>
 

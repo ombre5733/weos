@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "system_error.hpp"
+#include "cmsis_error.hpp"
 
 
 WEOS_BEGIN_NAMESPACE

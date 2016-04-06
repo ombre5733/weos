@@ -30,6 +30,7 @@
 #define WEOS_CMSIS_RTOS_SYNCHRONIC_HPP
 
 #include "_core.hpp"
+
 #include "_tq.hpp"
 #include "../atomic.hpp"
 #include "../chrono.hpp"

@@ -35,11 +35,13 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#include "_core.hpp"
+
+#include "cmsis_error.hpp"
+#include "_sleep.hpp"
 #include "../chrono.hpp"
-#include "../system_error.hpp"
 #include "../type_traits.hpp"
 #include "../_common/_lock_guards.hpp"
-#include "_sleep.hpp"
 
 #include <cstdint>
 

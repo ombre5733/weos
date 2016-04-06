@@ -35,6 +35,8 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#include "_core.hpp"
+
 #include "../memorypool.hpp"
 #include "../atomic.hpp"
 

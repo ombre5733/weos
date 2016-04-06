@@ -35,6 +35,8 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#include "_core.hpp"
+
 #include "_tq.hpp"
 #include "../chrono.hpp"
 #include "../mutex.hpp"

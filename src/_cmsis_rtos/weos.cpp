@@ -33,6 +33,6 @@
 #include "_future.cpp"
 #include "_mutex.cpp"
 #include "_tq.cpp"
+#include "cmsis_error.cpp"
 #include "semaphore.cpp"
-#include "system_error.cpp"
 #include "thread.cpp"

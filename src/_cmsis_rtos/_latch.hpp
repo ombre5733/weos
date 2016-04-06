@@ -30,6 +30,7 @@
 #define WEOS_CMSIS_RTOS_LATCH_HPP
 
 #include "_core.hpp"
+
 #include "_tq.hpp"
 #include "../atomic.hpp"
 

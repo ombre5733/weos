@@ -31,6 +31,7 @@
 
 #include "_core.hpp"
 
+#include "cmsis_error.hpp"
 #include "_thread_detail.hpp"
 #include "_sleep.hpp"
 #include "../atomic.hpp"
@@ -38,7 +39,6 @@
 #include "../chrono.hpp"
 #include "../memory.hpp"
 #include "../semaphore.hpp"
-#include "../system_error.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 #include "../_common/_index_sequence.hpp"

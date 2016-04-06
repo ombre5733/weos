@@ -29,7 +29,13 @@
 #ifndef WEOS_CMSIS_RTOS_THREAD_DETAIL_HPP
 #define WEOS_CMSIS_RTOS_THREAD_DETAIL_HPP
 
-#include "../_config.hpp"
+
+#ifndef WEOS_CONFIG_HPP
+    #error "Do not include this file directly."
+#endif // WEOS_CONFIG_HPP
+
+
+#include "_core.hpp"
 
 #include "../functional.hpp"
 #include "../tuple.hpp"
