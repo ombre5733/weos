@@ -188,7 +188,7 @@ public:
                                                 "timed_mutex::try_lock_until failed");
                     }
                     if (!timeout)
-                        WEOS_NAMESPACE::weos_detail::sleep_until(time);
+                        this_thread::sleep_until(time);
                     return false;
                 }
             }

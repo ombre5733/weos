@@ -43,11 +43,35 @@
 #include "../utility.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
-
-namespace weos_detail
+namespace std
+{
+namespace this_thread
 {
 
+//! \cond
+//! Puts the current thread to sleep.
+//!
+//! This is an overload if the duration is specified in milliseconds.
+void sleep_for(chrono::milliseconds ms);
+//! \endcond
+
+//! \brief Puts the current thread to sleep.
+//!
+//! Blocks the execution of the current thread for the given duration \p d.
+template <typename TRep, typename TPeriod>
+inline
+void sleep_for(const chrono::duration<TRep, TPeriod>& d)
+{
+    using namespace chrono;
+    if (d > d.zero())
+    {
+        sleep_for(ceil<milliseconds>(d));
+    }
+}
+
+//! \brief Puts the current thread to sleep.
+//!
+//! Blocks the execution of the current thread until the given \p time point.
 template <typename TClock, typename TDuration>
 void sleep_until(const chrono::time_point<TClock, TDuration>& time)
 {
@@ -74,8 +98,7 @@ void sleep_until(const chrono::time_point<TClock, TDuration>& time)
     }
 }
 
-} // namespace weos_detail
-
-WEOS_END_NAMESPACE
+} // namespace this_thread
+} // namespace std
 
 #endif // WEOS_CMSIS_RTOS_SLEEP_HPP

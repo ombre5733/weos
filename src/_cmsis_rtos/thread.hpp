@@ -523,37 +523,6 @@ thread::id get_id()
     return thread::id(osThreadGetId());
 }
 
-//! \cond
-//! Puts the current thread to sleep.
-//!
-//! This is an overload if the duration is specified in milliseconds.
-void sleep_for(chrono::milliseconds ms);
-//! \endcond
-
-//! \brief Puts the current thread to sleep.
-//!
-//! Blocks the execution of the current thread for the given duration \p d.
-template <typename TRep, typename TPeriod>
-inline
-void sleep_for(const chrono::duration<TRep, TPeriod>& d)
-{
-    using namespace chrono;
-    if (d > d.zero())
-    {
-        sleep_for(ceil<milliseconds>(d));
-    }
-}
-
-//! \brief Puts the current thread to sleep.
-//!
-//! Blocks the execution of the current thread until the given \p time point.
-template <typename TClock, typename TDuration>
-inline
-void sleep_until(const chrono::time_point<TClock, TDuration>& time)
-{
-    weos_detail::sleep_until(time);
-}
-
 //! Triggers a rescheduling of the executing threads.
 inline
 void yield()

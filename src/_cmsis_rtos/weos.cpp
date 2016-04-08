@@ -32,6 +32,7 @@
 #include "_condition_variable.cpp"
 #include "_future.cpp"
 #include "_mutex.cpp"
+#include "_sleep.cpp"
 #include "_tq.cpp"
 #include "cmsis_error.cpp"
 #include "semaphore.cpp"
