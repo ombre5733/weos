@@ -48,6 +48,10 @@
 #include <new>
 
 
+// ----=====================================================================----
+//     forward declarations
+// ----=====================================================================----
+
 WEOS_BEGIN_NAMESPACE
 
 class thread;
@@ -61,6 +65,12 @@ std::size_t set_default_stack_size(std::size_t size);
 
 } // namespace expert
 
+WEOS_END_NAMESPACE
+
+
+namespace std
+{
+
 namespace weos_detail
 {
 class thread_id;
@@ -71,10 +81,14 @@ namespace this_thread
 weos_detail::thread_id get_id();
 } // namespace this_thread
 
+} // namespace std
+
 // ----=====================================================================----
-//     thread_id
+//     thread_id & yield
 // ----=====================================================================----
 
+namespace std
+{
 namespace weos_detail
 {
 
@@ -148,14 +162,37 @@ private:
 
     friend class WEOS_NAMESPACE::thread;
     friend class WEOS_NAMESPACE::expert::thread_info;
-    friend thread_id WEOS_NAMESPACE::this_thread::get_id();
+    friend thread_id std::this_thread::get_id();
 };
 
 } // namespace weos_detail
 
+namespace this_thread
+{
+//! Returns the id of the current thread.
+inline
+weos_detail::thread_id get_id()
+{
+    return weos_detail::thread_id(osThreadGetId());
+}
+
+//! Triggers a rescheduling of the executing threads.
+inline
+void yield()
+{
+    osStatus status = osThreadYield();
+    WEOS_ASSERT(status == osOK);
+    (void)status;
+}
+
+} // namespace this_thread
+} // namespace std
+
 // ----=====================================================================----
 //     thread_info
 // ----=====================================================================----
+
+WEOS_BEGIN_NAMESPACE
 
 namespace weos_detail
 {
@@ -188,7 +225,7 @@ public:
     std::size_t get_used_stack() const noexcept;
 
     //! Returns the ID of the thread.
-    weos_detail::thread_id get_id() const noexcept;
+    std::weos_detail::thread_id get_id() const noexcept;
 
     //! Returns the thread priority.
     thread_attributes::priority get_priority() const noexcept;
@@ -335,7 +372,7 @@ public:
     //! A representation of a thread identifier.
     //! This class is a wrapper around a thread identifier. It has a small
     //! memory footprint such that it is inexpensive to pass copies around.
-    using id = weos_detail::thread_id;
+    using id = std::weos_detail::thread_id;
 
     using attributes = thread_attributes;
 
@@ -510,31 +547,11 @@ private:
 };
 
 // ----=====================================================================----
-//     this_thread
+//     Waiting for signals
 // ----=====================================================================----
 
 namespace this_thread
 {
-
-//! Returns the id of the current thread.
-inline
-thread::id get_id()
-{
-    return thread::id(osThreadGetId());
-}
-
-//! Triggers a rescheduling of the executing threads.
-inline
-void yield()
-{
-    osStatus status = osThreadYield();
-    WEOS_ASSERT(status == osOK);
-    (void)status;
-}
-
-// ----=====================================================================----
-//     Waiting for signals
-// ----=====================================================================----
 
 //! Waits for any signal.
 //! Blocks the current thread until one or more signal flags have been set,

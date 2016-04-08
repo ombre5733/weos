@@ -372,9 +372,9 @@ std::size_t thread_info::get_used_stack() const noexcept
 #endif // WEOS_ENABLE_STACK_WATERMARKING
 }
 
-weos_detail::thread_id thread_info::get_id() const noexcept
+std::weos_detail::thread_id thread_info::get_id() const noexcept
 {
-    return weos_detail::thread_id(m_state->m_threadId);
+    return std::weos_detail::thread_id(m_state->m_threadId);
 }
 
 thread_attributes::priority thread_info::get_priority() const noexcept
@@ -675,12 +675,12 @@ void thread::do_create(weos_detail::ThreadProperties& props,
     }
 }
 
-namespace this_thread
-{
-
 // ----=====================================================================----
 //     Waiting for signals
 // ----=====================================================================----
+
+namespace this_thread
+{
 
 thread::signal_set wait_for_any_signal()
 {

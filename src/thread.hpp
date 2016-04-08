@@ -43,8 +43,12 @@ WEOS_BEGIN_NAMESPACE
 
 namespace this_thread
 {
+using std::this_thread::get_id;
+
 using std::this_thread::sleep_for;
 using std::this_thread::sleep_until;
+
+using std::this_thread::yield;
 
 } // namespace this_thread
 
