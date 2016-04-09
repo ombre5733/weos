@@ -183,7 +183,7 @@ public:
     {
         void* mem = m_pointerQueue.receive();
         WEOS_ASSERT(mem != nullptr);
-        value_type temp(weos::move(*static_cast<value_type*>(mem)));
+        value_type temp(std::move(*static_cast<value_type*>(mem)));
         static_cast<value_type*>(mem)->~TType();
         m_memoryPool.free(mem);
         m_numAvailable.post();
@@ -197,7 +197,7 @@ public:
         if (result)
         {
             WEOS_ASSERT(mem != nullptr);
-            value = weos::move(*static_cast<value_type*>(mem));
+            value = std::move(*static_cast<value_type*>(mem));
             static_cast<value_type*>(mem)->~TType();
             m_memoryPool.free(mem);
             m_numAvailable.post();
@@ -243,7 +243,7 @@ public:
     {
         void* mem = m_pointerQueue.receive();
         WEOS_ASSERT(mem != nullptr);
-        value_type temp(weos::move(*static_cast<value_type*>(mem)));
+        value_type temp(std::move(*static_cast<value_type*>(mem)));
         static_cast<value_type*>(mem)->~TType();
         m_memoryPool.free(mem);
         if (++m_numAvailable <= 0)
@@ -318,9 +318,7 @@ public:
     //! \brief Creates a message queue.
     //!
     //! Creates an empty message queue.
-    message_queue()
-    {
-    }
+    message_queue() = default;
 
     message_queue(const message_queue&) = delete;
     message_queue& operator=(const message_queue&) = delete;
