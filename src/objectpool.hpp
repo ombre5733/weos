@@ -185,13 +185,13 @@ public:
 
     //! Checks if the pool is empty.
     //! Returns \p true if the pool is empty.
-    bool empty() const
+    bool empty() const noexcept
     {
         return m_memoryPool.empty();
     }
 
     //! Returns the number of available elements.
-    std::size_t size() const
+    std::size_t size() const noexcept
     {
         return m_memoryPool.size();
     }
