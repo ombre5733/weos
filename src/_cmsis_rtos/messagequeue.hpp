@@ -40,6 +40,7 @@
 #include "../utility.hpp"
 
 #include <cstdint>
+#include <new>
 
 
 WEOS_BEGIN_NAMESPACE
@@ -212,11 +213,12 @@ public:
     void send(const value_type& element)
     {
         m_numAvailable.wait();
-        void* mem = m_memoryPool.try_allocate();
+
+        unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
+                                      Deleter(m_memoryPool));
         WEOS_ASSERT(mem != nullptr);
-        // TODO: unique_ptr
-        new (mem) value_type(element);
-        m_pointerQueue.send(mem);
+        new (mem.get()) value_type(element);
+        m_pointerQueue.send(mem.release());
     }
 
     bool try_send(const value_type& element) noexcept
