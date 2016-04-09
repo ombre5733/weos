@@ -29,6 +29,7 @@
 #ifndef WEOS_OBJECTPOOL_HPP
 #define WEOS_OBJECTPOOL_HPP
 
+#inlcude "memory.hpp"
 #include "memorypool.hpp"
 
 
@@ -58,9 +59,8 @@ class object_pool
         {
         }
 
-        void operator() (pointer p)
+        void operator()(pointer p) noexcept
         {
-            WEOS_ASSERT(p);
             m_pool.free(p);
         }
 
@@ -113,7 +113,7 @@ public:
                                       Deleter(m_memoryPool));
         if (!mem)
             return 0;
-        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        new (mem.get()) element_type(std::forward<TArgs>(args)...);
         return static_cast<element_type*>(mem.release());
     }
 
@@ -153,9 +153,8 @@ class shared_object_pool
         {
         }
 
-        void operator() (pointer p)
+        void operator()(pointer p) noexcept
         {
-            WEOS_ASSERT(p);
             m_pool.free(p);
         }
 
@@ -206,7 +205,7 @@ public:
     {
         unique_ptr<void, Deleter> mem(m_memoryPool.allocate(),
                                       Deleter(m_memoryPool));
-        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        new (mem.get()) element_type(std::forward<TArgs>(args)...);
         return static_cast<element_type*>(mem.release());
     }
 
@@ -221,7 +220,7 @@ public:
                                       Deleter(m_memoryPool));
         if (!mem)
             return 0;
-        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        new (mem.get()) element_type(std::forward<TArgs>(args)...);
         return static_cast<element_type*>(mem.release());
     }
 
@@ -239,7 +238,7 @@ public:
                                       Deleter(m_memoryPool));
         if (!mem)
             return 0;
-        new (mem.get()) element_type(WEOS_NAMESPACE::forward<TArgs>(args)...);
+        new (mem.get()) element_type(std::forward<TArgs>(args)...);
         return static_cast<element_type*>(mem.release());
     }
 
