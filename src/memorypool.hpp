@@ -35,6 +35,8 @@
 #include "semaphore.hpp"
 #include "type_traits.hpp"
 
+#include <cstddef>
+
 
 WEOS_BEGIN_NAMESPACE
 
