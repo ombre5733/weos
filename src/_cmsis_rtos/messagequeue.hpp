@@ -34,6 +34,7 @@
 #include "cmsis_error.hpp"
 #include "../chrono.hpp"
 #include "../semaphore.hpp"
+#include "../memory.hpp"
 #include "../memorypool.hpp"
 #include "../type_traits.hpp"
 #include "../utility.hpp"
@@ -57,8 +58,6 @@ class SmallMessageQueue
                   "Type must be bit-wise copyable.");
 
     static_assert(TQueueSize > 0, "The queue size must be non-zero.");
-
-    using align_tag = alignment_of<TType>;
 
 public:
     typedef TType value_type;
@@ -91,7 +90,12 @@ public:
             WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(result.status),
                                     "message_queue::receive failed");
 
-        return *reinterpret_cast<value_type*>(&result.value.v);
+        value_type value;
+        const char* from = reinterpret_cast<const char*>(&result.value.v);
+        char* to = reinterpret_cast<char*>(&value);
+        for (unsigned idx = 0; idx < sizeof(value); ++idx)
+            to[idx] = from[idx];
+        return value;
     }
 
     bool try_receive(value_type& value)
@@ -107,61 +111,37 @@ public:
                                     "message_queue::try_receive failed");
         }
 
-        value = *reinterpret_cast<value_type*>(&result.value.v);
+        const char* from = reinterpret_cast<const char*>(&result.value.v);
+        char* to = reinterpret_cast<char*>(&value);
+        for (unsigned idx = 0; idx < sizeof(value); ++idx)
+            to[idx] = from[idx];
         return true;
     }
 
     void send(value_type value)
     {
-        std::uint32_t datum = toUint32(value, align_tag());
+        std::uint32_t datum = 0;
+        const char* from = reinterpret_cast<const char*>(&value);
+        char* to = reinterpret_cast<char*>(&datum);
+        for (unsigned idx = 0; idx < sizeof(value); ++idx)
+            to[idx] = from[idx];
         osStatus status = osMessagePut(m_id, datum, osWaitForever);
         if (status != osOK)
             WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(status),
                                     "message_queue::send failed");
     }
 
-    bool try_send(value_type value)
+    bool try_send(value_type value) noexcept
     {
-        std::uint32_t datum = toUint32(value, align_tag());
-        osStatus status = osMessagePut(m_id, datum, 0);
-        if (status == osOK)
-            return true;
-
-        if (   status != osErrorTimeoutResource
-            && status != osErrorResource)
-        {
-            WEOS_THROW_SYSTEM_ERROR(WEOS_NAMESPACE::cmsis_error::cmsis_error_t(status),
-                                    "message_queue::try_send failed");
-        }
-
-        return false;
+        std::uint32_t datum = 0;
+        const char* from = reinterpret_cast<const char*>(&value);
+        char* to = reinterpret_cast<char*>(&datum);
+        for (unsigned idx = 0; idx < sizeof(value); ++idx)
+            to[idx] = from[idx];
+        return osMessagePut(m_id, datum, 0) == osOK;
     }
 
 private:
-    inline
-    std::uint32_t toUint32(value_type value, integral_constant<std::size_t, 1>)
-    {
-        std::uint32_t datum;
-        for (std::size_t i = 0; i < sizeof(value_type); ++i)
-            reinterpret_cast<char*>(&datum)[i] = reinterpret_cast<char*>(&value)[i];
-        return datum;
-    }
-
-    inline
-    std::uint32_t toUint32(value_type value, integral_constant<std::size_t, 2>)
-    {
-        std::uint32_t datum;
-        for (std::size_t i = 0; i < sizeof(value_type) / sizeof(std::uint16_t); ++i)
-            reinterpret_cast<std::uint16_t*>(&datum)[i] = reinterpret_cast<std::uint16_t*>(&value)[i];
-        return datum;
-    }
-
-    inline
-    std::uint32_t toUint32(value_type value, integral_constant<std::size_t, 4>)
-    {
-        return *reinterpret_cast<std::uint32_t*>(&value);
-    }
-
     //! The storage for the message queue.
     std::uint32_t m_queueData[4 + TQueueSize];
     //! The id of the message queue.
@@ -171,6 +151,26 @@ private:
 template <typename TType, std::size_t TQueueSize>
 class LargeMessageQueue
 {
+    using memory_pool_t = shared_memory_pool<TType, TQueueSize>;
+
+    struct Deleter
+    {
+        typedef void* pointer;
+
+        Deleter(memory_pool_t& pool)
+            : m_pool(pool)
+        {
+        }
+
+        void operator()(pointer p) noexcept
+        {
+            m_pool.free(p);
+        }
+
+    private:
+        memory_pool_t& m_pool;
+    };
+
 public:
     typedef TType value_type;
 
@@ -219,16 +219,17 @@ public:
         m_pointerQueue.send(mem);
     }
 
-    bool try_send(const value_type& element)
+    bool try_send(const value_type& element) noexcept
     {
         // TODO: Make this work in an interrupt context.
         if (!m_numAvailable.try_wait())
             return false;
-        void* mem = m_memoryPool.try_allocate();
+
+        unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
+                                      Deleter(m_memoryPool));
         WEOS_ASSERT(mem != nullptr);
-        // TODO: unique_ptr
-        new (mem) value_type(element);
-        bool result = m_pointerQueue.try_send(mem);
+        new (mem.get()) value_type(element);
+        bool result = m_pointerQueue.try_send(mem.release());
         WEOS_ASSERT(result);
         (void)result;
         return true;
@@ -284,7 +285,7 @@ private:
     // The number of slots which are available.
     semaphore m_numAvailable;
     // A pool to hold the elements which are currently enqueued.
-    shared_memory_pool<TType, TQueueSize> m_memoryPool;
+    memory_pool_t m_memoryPool;
     // A queue to pass element pointers from one thread to the other.
     SmallMessageQueue<void*, TQueueSize> m_pointerQueue;
 };
