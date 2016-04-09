@@ -39,6 +39,7 @@
 #include "../type_traits.hpp"
 #include "../utility.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <new>
 
@@ -182,9 +183,13 @@ public:
 
     value_type receive()
     {
+        using namespace std;
+
         void* mem = m_pointerQueue.receive();
         WEOS_ASSERT(mem != nullptr);
-        value_type temp(std::move(*static_cast<value_type*>(mem)));
+
+        // TODO: this could throw, so we need a unique_ptr here
+        value_type temp(move(*static_cast<value_type*>(mem)));
         static_cast<value_type*>(mem)->~TType();
         m_memoryPool.free(mem);
         m_numAvailable.post();
@@ -193,12 +198,14 @@ public:
 
     bool try_receive(value_type& value)
     {
+        using namespace std;
+
         void* mem;
         bool result = m_pointerQueue.try_receive(mem);
         if (result)
         {
             WEOS_ASSERT(mem != nullptr);
-            value = std::move(*static_cast<value_type*>(mem));
+            value = move(*static_cast<value_type*>(mem));
             static_cast<value_type*>(mem)->~TType();
             m_memoryPool.free(mem);
             m_numAvailable.post();
@@ -212,6 +219,8 @@ public:
 
     void send(const value_type& element)
     {
+        using namespace std;
+
         m_numAvailable.wait();
 
         unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
@@ -221,8 +230,23 @@ public:
         m_pointerQueue.send(mem.release());
     }
 
-    bool try_send(const value_type& element) noexcept
+    void send(value_type&& element)
     {
+        using namespace std;
+
+        m_numAvailable.wait();
+
+        unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
+                                      Deleter(m_memoryPool));
+        WEOS_ASSERT(mem != nullptr);
+        new (mem.get()) value_type(move(element));
+        m_pointerQueue.send(mem.release());
+    }
+
+    bool try_send(const value_type& element) // TODO: noexcept if constructor does not throw
+    {
+        using namespace std;
+
         // TODO: Make this work in an interrupt context.
         if (!m_numAvailable.try_wait())
             return false;
@@ -231,6 +255,24 @@ public:
                                       Deleter(m_memoryPool));
         WEOS_ASSERT(mem != nullptr);
         new (mem.get()) value_type(element);
+        bool result = m_pointerQueue.try_send(mem.release());
+        WEOS_ASSERT(result);
+        (void)result;
+        return true;
+    }
+
+    bool try_send(value_type&& element) // TODO: noexcept if constructor does not throw
+    {
+        using namespace std;
+
+        // TODO: Make this work in an interrupt context.
+        if (!m_numAvailable.try_wait())
+            return false;
+
+        unique_ptr<void, Deleter> mem(m_memoryPool.try_allocate(),
+                                      Deleter(m_memoryPool));
+        WEOS_ASSERT(mem != nullptr);
+        new (mem.get()) value_type(move(element));
         bool result = m_pointerQueue.try_send(mem.release());
         WEOS_ASSERT(result);
         (void)result;
@@ -296,12 +338,13 @@ template <typename TType, std::size_t TQueueSize>
 struct select_message_queue_implementation
 {
     static const bool is_small = sizeof(TType) <= sizeof(std::uint32_t);
-    static const bool has_small_alignment = alignment_of<TType>::value <= alignment_of<std::uint32_t>::value;
-    static const bool can_be_copied = is_trivially_copyable<TType>::value;
+    static const bool has_small_alignment = std::alignment_of<TType>::value
+                                            <= std::alignment_of<std::uint32_t>::value;
+    static const bool can_be_copied = std::is_trivially_copyable<TType>::value;
 
-    typedef typename conditional<is_small && has_small_alignment && can_be_copied,
-                                 SmallMessageQueue<TType, TQueueSize>,
-                                 LargeMessageQueue<TType, TQueueSize>>::type type;
+    typedef typename std::conditional<is_small && has_small_alignment && can_be_copied,
+                                      SmallMessageQueue<TType, TQueueSize>,
+                                      LargeMessageQueue<TType, TQueueSize>>::type type;
 };
 
 } // namespace weos_detail
