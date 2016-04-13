@@ -181,7 +181,7 @@ public:
     void rethrow() const = 0;
 
 private:
-    mutable WEOS_NAMESPACE::atomic<int> m_refCount;
+    mutable std::atomic<int> m_refCount;
 
     CaptureableExceptionBase& operator=(const CaptureableExceptionBase&);
 
@@ -249,7 +249,7 @@ typename enable_if<is_class<typename remove_reference<TType>::type>::value
 enable_current_exception(TType&& exc)
 {
     return weos_detail::CaptureableException<typename remove_reference<TType>::type>(
-                WEOS_NAMESPACE::forward<TType>(exc));
+                std::forward<TType>(exc));
 }
 
 template <typename TType>
@@ -259,7 +259,7 @@ typename enable_if<!is_class<typename remove_reference<TType>::type>::value
                    TType&&>::type
 enable_current_exception(TType&& exc) noexcept
 {
-    return WEOS_NAMESPACE::forward<TType>(exc);
+    return std::forward<TType>(exc);
 }
 
 WEOS_END_NAMESPACE
@@ -531,7 +531,7 @@ void throw_with_nested(TType&& exc,
                        >::type* = 0)
 {
     throw weos_detail::NestedException<typename remove_reference<TType>::type>(
-                WEOS_NAMESPACE::forward<TType>(exc));
+                std::forward<TType>(exc));
 }
 
 template <typename TType>
@@ -542,7 +542,7 @@ void throw_with_nested(TType&& exc,
                            || is_base_of<nested_exception, typename remove_reference<TType>::type>::value
                        >::type* = 0)
 {
-    throw WEOS_NAMESPACE::forward<TType>(exc);
+    throw std::forward<TType>(exc);
 }
 
 template <typename TType>

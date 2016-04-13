@@ -31,6 +31,10 @@
 
 #include "_config.hpp"
 
+#include "exception.hpp"
+#include "type_traits.hpp"
+#include "utility.hpp"
+
 
 WEOS_BEGIN_NAMESPACE
 
@@ -42,8 +46,8 @@ class ScopeGuard
 {
 public:
     template <typename T,
-              typename _ = typename WEOS_NAMESPACE::enable_if<!WEOS_NAMESPACE::is_same<typename WEOS_NAMESPACE::decay<T>::type,
-                                                                                       ScopeGuard>::value>::type>
+              typename _ = typename std::enable_if<!std::is_same<typename std::decay<T>::type,
+                                                   ScopeGuard>::value>::type>
     explicit ScopeGuard(T&& callable) // TODO: noexcept
         : m_callable(callable),
           m_dismissed(false)
@@ -51,7 +55,7 @@ public:
     }
 
     ScopeGuard(ScopeGuard&& other) // TODO: noexcept
-        : m_callable(WEOS_NAMESPACE::move(other.m_callable)),
+        : m_callable(std::move(other.m_callable)),
           m_dismissed(other.m_dismissed)
     {
         other.m_dismissed = true;
@@ -83,16 +87,16 @@ class ExceptionScopeGuard
 {
 public:
     template <typename T,
-              typename _ = typename WEOS_NAMESPACE::enable_if<!WEOS_NAMESPACE::is_same<typename WEOS_NAMESPACE::decay<T>::type,
-                                                                                       ExceptionScopeGuard>::value>::type>
+              typename _ = typename std::enable_if<!std::is_same<typename std::decay<T>::type,
+                                                   ExceptionScopeGuard>::value>::type>
     explicit ExceptionScopeGuard(T&& callable) // TODO: noexcept
-        : m_callable(WEOS_NAMESPACE::forward<T>(callable)),
-          m_numExceptions(WEOS_NAMESPACE::uncaught_exceptions())
+        : m_callable(std::forward<T>(callable)),
+          m_numExceptions(std::uncaught_exceptions())
     {
     }
 
     ExceptionScopeGuard(ExceptionScopeGuard&& other) // TODO: noexcept
-        : m_callable(WEOS_NAMESPACE::move(other.m_callable)),
+        : m_callable(std::move(other.m_callable)),
           m_numExceptions(other.m_numExceptions)
     {
     }
@@ -100,7 +104,7 @@ public:
     ~ExceptionScopeGuard() noexcept(TExecuteOnException)
     {
         if (TExecuteOnException
-            == (WEOS_NAMESPACE::uncaught_exceptions() > m_numExceptions))
+            == (std::uncaught_exceptions() > m_numExceptions))
         {
             m_callable();
         }
@@ -121,27 +125,27 @@ struct OnScopeFailure {};
 struct OnScopeSuccess {};
 
 template <typename TCallable>
-weos_detail::ScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type> operator+(
+weos_detail::ScopeGuard<typename std::decay<TCallable>::type> operator+(
         OnScopeExit, TCallable&& callable)
 {
-    return weos_detail::ScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type>(
-                WEOS_NAMESPACE::forward<TCallable>(callable));
+    return weos_detail::ScopeGuard<typename std::decay<TCallable>::type>(
+                std::forward<TCallable>(callable));
 }
 
 template <typename TCallable>
-weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, true> operator+(
+weos_detail::ExceptionScopeGuard<typename std::decay<TCallable>::type, true> operator+(
         OnScopeFailure, TCallable&& callable)
 {
-    return weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, true>(
-                WEOS_NAMESPACE::forward<TCallable>(callable));
+    return weos_detail::ExceptionScopeGuard<typename std::decay<TCallable>::type, true>(
+                std::forward<TCallable>(callable));
 }
 
 template <typename TCallable>
-weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, false> operator+(
+weos_detail::ExceptionScopeGuard<typename std::decay<TCallable>::type, false> operator+(
         OnScopeSuccess, TCallable&& callable)
 {
-    return weos_detail::ExceptionScopeGuard<typename WEOS_NAMESPACE::decay<TCallable>::type, false>(
-                WEOS_NAMESPACE::forward<TCallable>(callable));
+    return weos_detail::ExceptionScopeGuard<typename std::decay<TCallable>::type, false>(
+                std::forward<TCallable>(callable));
 }
 
 // Helper macros for the generation of anonymous variables.

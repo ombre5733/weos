@@ -461,7 +461,7 @@ ThreadProperties::Deleter ThreadProperties::allocate()
 
 void* ThreadProperties::align(std::size_t alignment, std::size_t size) noexcept
 {
-    return ::WEOS_NAMESPACE::align(alignment, size, m_stackBegin, m_stackSize);
+    return std::align(alignment, size, m_stackBegin, m_stackSize);
 }
 
 void* ThreadProperties::max_align() noexcept
