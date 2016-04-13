@@ -26,24 +26,79 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_INITIALIZER_LIST_HPP
-#define WEOS_INITIALIZER_LIST_HPP
+#ifndef WEOS_ARMCC_INITIALIZER_LIST_HPP
+#define WEOS_ARMCC_INITIALIZER_LIST_HPP
 
-#include "_config.hpp"
+#include "../_config.hpp"
 
-#ifdef __CC_ARM
-#include "_armcc/_initializer_list.hpp"
-#else
-#include <initializer_list>
-#endif // __CC_ARM
+#include <cstddef>
 
-// TODO:CLEAN
-WEOS_BEGIN_NAMESPACE
+namespace std
+{
 
-using std::begin;
-using std::initializer_list;
-using std::end;
+template <typename TType>
+class initializer_list
+{
+public:
+    typedef TType value_type;
+    typedef const TType& reference;
+    typedef const TType& const_reference;
+    typedef std::size_t size_type;
+    typedef const TType* iterator;
+    typedef const TType* const_iterator;
 
-WEOS_END_NAMESPACE
+    inline constexpr
+    initializer_list() noexcept
+        : m_begin(0),
+          m_size(0)
+    {
+    }
 
-#endif // WEOS_INITIALIZER_LIST_HPP
+    inline constexpr
+    size_type size() const noexcept
+    {
+        return m_size;
+    }
+
+    inline constexpr
+    const TType* begin() const noexcept
+    {
+        return m_begin;
+    }
+
+    inline constexpr
+    const TType* end() const noexcept
+    {
+        return m_begin + m_size;
+    }
+
+private:
+    const TType* m_begin;
+    size_type m_size;
+
+    // This constructor is used by ARMCC to create an initializer_list.
+    inline constexpr
+    initializer_list(const TType* begin, size_type size) noexcept
+        : m_begin(begin),
+          m_size(size)
+    {
+    }
+};
+
+template <typename TType>
+constexpr
+const TType* begin(initializer_list<TType> list) noexcept
+{
+    return list.begin();
+}
+
+template <typename TType>
+constexpr
+const TType* end(initializer_list<TType> list) noexcept
+{
+    return list.end();
+}
+
+} // namespace std
+
+#endif // WEOS_ARMCC_INITIALIZER_LIST_HPP
