@@ -32,19 +32,9 @@
 #include "_config.hpp"
 
 #ifdef __CC_ARM
-
 #include "_armcc/_type_traits.hpp"
-
 #else
-
-#include <type_traits>
-
-namespace std
-{
-template <typename T>
-struct is_trivially_copyable : public std::is_pod<T> {};
-} // namespace std
-
+#include "_gcc/_type_traits.hpp"
 #endif // __CC_ARM
 
 
@@ -110,7 +100,7 @@ using std::is_convertible;
 using std::is_default_constructible;
 using std::is_empty;
 using std::is_enum;
-//using std::is_final;
+using std::is_final;
 using std::is_literal_type;
 using std::is_nothrow_constructible;
 using std::is_nothrow_copy_constructible;
