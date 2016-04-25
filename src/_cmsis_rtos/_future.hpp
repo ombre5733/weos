@@ -727,6 +727,26 @@ void swap(promise<T>& a, promise<T>& b) noexcept
 WEOS_BEGIN_NAMESPACE
 
 // ----=====================================================================----
+//     future utilities
+// ----=====================================================================----
+
+template <typename T>
+std::future<T> make_exceptional_future(std::exception_ptr exc)
+{
+    std::promise<T> promise;
+    promise.set_exception(exc);
+    return promise.get_future();
+}
+
+template <typename T, typename TException>
+std::future<T> make_exceptional_future(TException&& exc)
+{
+    std::promise<T> promise;
+    promise.set_exception(std::make_exception_ptr(std::forward<TException>(exc)));
+    return promise.get_future();
+}
+
+// ----=====================================================================----
 //     async()
 // ----=====================================================================----
 
