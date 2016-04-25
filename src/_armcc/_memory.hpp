@@ -333,6 +333,21 @@ bool operator==(nullptr_t, const unique_ptr<T1, D1>& x) noexcept
     return !x;
 }
 
+template <class T, class D>
+inline
+bool operator!=(const unique_ptr<T, D>& x, nullptr_t) noexcept
+{
+    return static_cast<bool>(x);
+}
+
+template <class T, class D>
+inline
+bool operator!=(nullptr_t, const unique_ptr<T, D>& x) noexcept
+{
+    return static_cast<bool>(x);
+}
+
+
 // TODO: add other operators
 
 // TODO: Must not participate in overload resolution for arrays.
