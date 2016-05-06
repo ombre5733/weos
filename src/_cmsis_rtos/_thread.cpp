@@ -28,8 +28,6 @@
 
 #include "_thread.hpp"
 #include "_svc_indirection.hpp"
-#include "../memorypool.hpp"
-#include "../memory.hpp"
 
 #include <cstdint>
 #include <cstdlib>
@@ -257,7 +255,7 @@ void weos_threadInvoker(const void* arg) noexcept
 #ifdef WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
     catch (...)
     {
-        ::WEOS_NAMESPACE::unhandled_thread_exception(weos::current_exception());
+        ::WEOS_NAMESPACE::unhandled_thread_exception(std::current_exception());
     }
 #endif // WEOS_ENABLE_THREAD_EXCEPTION_HANDLER
 

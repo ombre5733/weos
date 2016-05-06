@@ -28,6 +28,7 @@
 
 #include "_core.hpp"
 
+#include "cmsis_error.cpp"
 #include "_chrono_clocks.cpp"
 #include "_condition_variable.cpp"
 #include "_future.cpp"
@@ -36,4 +37,3 @@
 #include "_sleep.cpp"
 #include "_thread.cpp"
 #include "_tq.cpp"
-#include "cmsis_error.cpp"

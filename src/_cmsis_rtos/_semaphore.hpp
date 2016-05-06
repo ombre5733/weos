@@ -62,16 +62,16 @@ class semaphore
 
 public:
     //! The type of the native mutex handle.
-    typedef osSemaphoreId native_handle_type;
+    using native_handle_type = osSemaphoreId;
 
     //! The counter type used for the semaphore.
-    typedef std::uint16_t value_type;
+    using value_type = std::uint16_t;
 
     //! \brief Creates a semaphore.
     //!
     //! Creates a semaphore with an initial number of \p value tokens.
-    constexpr
-    explicit semaphore(value_type value = 0) noexcept
+    constexpr explicit
+    semaphore(value_type value = 0) noexcept
         : m_cmsisSemaphoreControlBlock{2, 0, value, 0}
     {
     }
