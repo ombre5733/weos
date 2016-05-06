@@ -113,10 +113,6 @@ public:
         above_normal = osPriorityAboveNormal,
         high = osPriorityHigh,
         realtime = osPriorityRealtime,
-
-        // Deprecated enums
-        belowNormal = osPriorityBelowNormal,
-        aboveNormal = osPriorityAboveNormal,
     };
 
 private:
@@ -142,6 +138,7 @@ public:
     //! Creates thread attributes.
     template <typename T,
               typename = typename enable_if<can_be_stack<T>::value>::type>
+    constexpr
     thread_attributes(T& stack, priority prio = priority::normal) noexcept
         : m_stackBegin(&stack),
           m_stackSize(sizeof(T)),
@@ -152,6 +149,7 @@ public:
     }
 
     //! Creates thread attributes.
+    constexpr
     thread_attributes(void* stack, std::size_t stackSize,
                       priority prio = priority::normal) noexcept
         : m_stackBegin(stack),
@@ -164,6 +162,7 @@ public:
     //! Creates thread attributes.
     template <typename T,
               typename = typename enable_if<can_be_stack<T>::value>::type>
+    constexpr
     thread_attributes(const char* name, T& stack,
                       priority prio = priority::normal) noexcept
         : m_stackBegin(&stack),
@@ -175,6 +174,7 @@ public:
     }
 
     //! Creates thread attributes.
+    constexpr
     thread_attributes(const char* name, void* stack, std::size_t stackSize,
                       priority prio = priority::normal) noexcept
         : m_stackBegin(stack),
@@ -255,67 +255,6 @@ public:
     std::size_t get_stack_size() const noexcept
     {
         return m_stackSize;
-    }
-
-
-    // Use get_name().
-    constexpr
-    __attribute__((deprecated))
-    const char* name() const noexcept
-    {
-        return m_name;
-    }
-
-    // Use set_name().
-    __attribute__((deprecated))
-    thread_attributes& setName(const char* name) noexcept
-    {
-        m_name = name;
-        return *this;
-    }
-
-    // Use get_stack_begin().
-    constexpr
-    __attribute__((deprecated))
-    void* stackBegin() const noexcept
-    {
-        return m_stackBegin;
-    }
-
-    // Use get_stack_size().
-    constexpr
-    __attribute__((deprecated))
-    std::size_t stackSize() const noexcept
-    {
-        return m_stackSize;
-    }
-
-    // Use set_stack().
-    __attribute__((deprecated))
-    thread_attributes& setStack(void* stack, std::size_t stackSize) noexcept
-    {
-        m_stackBegin = stack;
-        m_stackSize = stackSize;
-        return *this;
-    }
-
-    // Use set_stack().
-    template <typename T>
-    __attribute__((deprecated))
-    thread_attributes& setStack(T& stack) noexcept
-    {
-        static_assert(sizeof(T) >= 4 * 16, "The stack is too small.");
-        m_stackBegin = &stack;
-        m_stackSize = sizeof(T);
-        return *this;
-    }
-
-    // Use set_priority().
-    __attribute__((deprecated))
-    thread_attributes& setPriority(priority prio) noexcept
-    {
-        m_priority = prio;
-        return *this;
     }
 
 private:
