@@ -35,8 +35,8 @@
 #include "_thread_detail.hpp"
 #include "_sleep.hpp"
 #include "../atomic.hpp"
-#include "../functional.hpp"
 #include "../chrono.hpp"
+#include "../functional.hpp"
 #include "../memory.hpp"
 #include "../semaphore.hpp"
 #include "../type_traits.hpp"
@@ -584,6 +584,8 @@ thread::signal_set try_wait_for_any_signal_for(
     return try_wait_for_any_signal_for(ceil<milliseconds>(d));
 }
 
+//! Waits until a signal occurs or the time-point \p time is reached. Returns
+//! the signals that arrive or a zero in case of a timeout.
 template <typename TClock, typename TDuration>
 thread::signal_set try_wait_for_any_signal_until(
             const chrono::time_point<TClock, TDuration>& time)
@@ -660,6 +662,9 @@ bool try_wait_for_all_signals_for(thread::signal_set flags,
     return try_wait_for_all_signals_for(flags, ceil<milliseconds>(d));
 }
 
+//! Waits until a set of signals is set or the time-point \p time is reached.
+//! Returns \p true if the signals are set before the timeout and \p false
+//! otherwise.
 template <typename TClock, typename TDuration>
 bool try_wait_for_all_signals_until(
             thread::signal_set flags,

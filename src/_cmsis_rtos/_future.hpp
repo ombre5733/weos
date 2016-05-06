@@ -38,7 +38,7 @@
 #include "_core.hpp"
 
 #include "_thread_detail.hpp"
-#include "thread.hpp"
+#include "_thread.hpp"
 #include "../atomic.hpp"
 #include "../chrono.hpp"
 #include "../exception.hpp"

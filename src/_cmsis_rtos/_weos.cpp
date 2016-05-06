@@ -34,6 +34,6 @@
 #include "_mutex.cpp"
 #include "_semaphore.cpp"
 #include "_sleep.cpp"
+#include "_thread.cpp"
 #include "_tq.cpp"
 #include "cmsis_error.cpp"
-#include "thread.cpp"

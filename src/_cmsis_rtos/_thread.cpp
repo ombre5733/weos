@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "thread.hpp"
-#include "svc_indirection.hpp"
+#include "_thread.hpp"
+#include "_svc_indirection.hpp"
 #include "../memorypool.hpp"
 #include "../memory.hpp"
 

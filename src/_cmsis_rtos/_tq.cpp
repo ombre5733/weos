@@ -28,7 +28,7 @@
 
 #include "_tq.hpp"
 #include "cmsis_error.hpp"
-#include "svc_indirection.hpp"
+#include "_svc_indirection.hpp"
 
 #include WEOS_CMSIS_CORE_CMX_INCLUDE
 
