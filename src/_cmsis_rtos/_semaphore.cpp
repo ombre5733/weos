@@ -26,7 +26,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "semaphore.hpp"
+#include "_semaphore.hpp"
 
 
 WEOS_BEGIN_NAMESPACE

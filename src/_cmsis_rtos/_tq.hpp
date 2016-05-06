@@ -37,7 +37,7 @@
 
 #include "_core.hpp"
 
-#include "semaphore.hpp"
+#include "_semaphore.hpp"
 #include "../atomic.hpp"
 #include "../chrono.hpp"
 
