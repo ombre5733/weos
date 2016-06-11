@@ -32,7 +32,7 @@ namespace std
 {
 
 void* align(std::size_t alignment, std::size_t size,
-            void*& ptr, std::size_t& space)
+            void*& ptr, std::size_t& space) noexcept
 {
     using namespace std;
 

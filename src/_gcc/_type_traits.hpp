@@ -29,7 +29,7 @@
 #ifndef WEOS_GCC_TYPE_TRAITS_HPP
 #define WEOS_GCC_TYPE_TRAITS_HPP
 
-#include "_config.hpp"
+#include "../_config.hpp"
 
 #include <type_traits>
 
