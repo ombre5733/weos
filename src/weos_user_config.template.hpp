@@ -34,6 +34,14 @@
 // ----=====================================================================----
 
 // -----------------------------------------------------------------------------
+//     CXX11
+// -----------------------------------------------------------------------------
+
+// Set this macro in order to make WEOS wrap the operating system exposed by
+// the C++11 API.
+// #define WEOS_WRAP_CXX11
+
+// -----------------------------------------------------------------------------
 //     ARM Germany CMSIS-RTOS
 // -----------------------------------------------------------------------------
 
@@ -162,6 +170,6 @@ static constexpr unsigned WEOS_SYSTICK_FREQUENCY = 1000;
 
 // The version of the WEOS user configuration file. The WEOS library can
 // check this version to guarantee the compatibility of the configuration file.
-#define WEOS_USER_CONFIG_VERSION   7
+#define WEOS_USER_CONFIG_VERSION   8
 
 #endif // WEOS_USER_CONFIG_HPP

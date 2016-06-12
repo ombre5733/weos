@@ -40,8 +40,10 @@
 
 #include "_common/_system_error.cpp"
 
-#if defined(WEOS_WRAP_CMSIS_RTOS)
-    #include "_cmsis_rtos/weos.cpp"
+#if defined(WEOS_WRAP_CXX11)
+    #include "_cxx11/_weos.cpp"
+#elif defined(WEOS_WRAP_CMSIS_RTOS)
+    #include "_cmsis_rtos/_weos.cpp"
 #else
     #error "Invalid native OS."
 #endif

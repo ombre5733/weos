@@ -31,7 +31,9 @@
 
 #include "_config.hpp"
 
-#if defined(WEOS_WRAP_CMSIS_RTOS)
+#if defined(WEOS_WRAP_CXX11)
+    #include "_cxx11/_thread.hpp"
+#elif defined(WEOS_WRAP_CMSIS_RTOS)
     #include "_cmsis_rtos/_thread.hpp"
 #else
     #error "Invalid native OS."

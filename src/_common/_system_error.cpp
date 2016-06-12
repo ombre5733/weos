@@ -26,6 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#if !defined(WEOS_WRAP_CXX11)
+
 #include "_system_error.hpp"
 
 
@@ -68,3 +70,5 @@ const error_category& generic_category()
 }
 
 } // namespace std
+
+#endif // !defined(WEOS_WRAP_CXX11)

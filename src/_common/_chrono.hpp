@@ -35,6 +35,8 @@
 #endif // WEOS_CONFIG_HPP
 
 
+#if !defined(WEOS_WRAP_CXX11)
+
 #include "../ratio.hpp"
 #include "../type_traits.hpp"
 
@@ -905,5 +907,51 @@ operator-(const time_point<ClockT, Duration1T>& x,
 
 } // namespace chrono
 } // namespace std
+
+#else
+
+#include <chrono>
+
+namespace std
+{
+namespace chrono
+{
+namespace weos_chrono_detail
+{
+
+// A trait to determine if a type is a duration.
+template <typename TypeT>
+struct is_duration : public false_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<duration<RepT, PeriodT> > : public true_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<const duration<RepT, PeriodT> > : public true_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<volatile duration<RepT, PeriodT> > : public true_type {};
+
+template <typename RepT, typename PeriodT>
+struct is_duration<const volatile duration<RepT, PeriodT> > : public true_type {};
+
+} // weos_chrono_detail
+
+template <typename TToDuration, typename TRep, typename TPeriod>
+inline
+typename enable_if<weos_chrono_detail::is_duration<TToDuration>::value,
+                   TToDuration>::type
+ceil(const duration<TRep, TPeriod>& d)
+{
+    auto casted = duration_cast<TToDuration>(d);
+    if (casted < d)
+        ++casted;
+    return casted;
+}
+
+}
+} // namespace std
+
+#endif // !defined(WEOS_WRAP_CXX11)
 
 #endif // WEOS_COMMON_CHRONO_HPP

@@ -30,7 +30,12 @@
 #define WEOS_SYSTEM_ERROR_HPP
 
 #include "_config.hpp"
-#include "_common/_system_error.hpp"
+
+#if defined(WEOS_WRAP_CXX11)
+    #include <system_error>
+#else
+    #include "_common/_system_error.hpp"
+#endif
 
 // TODO:CLEAN
 WEOS_BEGIN_NAMESPACE

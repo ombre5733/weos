@@ -39,8 +39,8 @@
 #endif // WEOS_USER_CONFIG
 
 // Check the version of the user configuration file.
-#if WEOS_USER_CONFIG_VERSION != 7
-    #error "Version 7 of the WEOS user configuration is required."
+#if WEOS_USER_CONFIG_VERSION != 8
+    #error "Version 8 of the WEOS user configuration is required."
 #endif // WEOS_USER_CONFIG_VERSION
 
 
@@ -48,7 +48,7 @@
 //     Validation
 // ----=====================================================================----
 
-#if !defined(WEOS_WRAP_CMSIS_RTOS)
+#if !defined(WEOS_WRAP_CXX11) && !defined(WEOS_WRAP_CMSIS_RTOS)
     #error "No native OS has been defined in the user configuration file."
 #endif
 
