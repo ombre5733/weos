@@ -43,12 +43,13 @@ endif()
 
 project(Keil-CMSIS-RTOS-test C CXX ASM)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../src")
-find_package(WEOS REQUIRED)
+#list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../src")
+#find_package(WEOS REQUIRED)
 
 include_directories(
     ${WEOS_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
     ../common
     ../3rdparty
     ../3rdparty/cmsis
@@ -64,10 +65,12 @@ set(COMMON_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/test_main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/testutils.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/gtest-stripped/gtest/gtest-all.cc
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../src/weos.cpp
 )
 
 # Add the sources for the wrapper to COMMON_SOURCES.
-weos_use_wrapper(Keil-CMSIS-RTOS SOURCE_LIST COMMON_SOURCES)
+#weos_use_wrapper(Keil-CMSIS-RTOS SOURCE_LIST COMMON_SOURCES)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "ARM")
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} --cpu=Cortex-M4 --apcs=interwork")
