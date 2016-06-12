@@ -29,6 +29,8 @@
 #ifndef WEOS_OBJECTPOOL_HPP
 #define WEOS_OBJECTPOOL_HPP
 
+#include "_config.hpp"
+
 #inlcude "memory.hpp"
 #include "memorypool.hpp"
 

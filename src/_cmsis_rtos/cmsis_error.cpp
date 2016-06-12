@@ -32,7 +32,7 @@
 WEOS_BEGIN_NAMESPACE
 
 //! An error category for CMSIS errors.
-class cmsis_category_impl : public error_category
+class cmsis_category_impl : public std::error_category
 {
 public:
     virtual const char* name() const noexcept
@@ -68,7 +68,7 @@ public:
     }
 };
 
-const error_category& cmsis_category()
+const std::error_category& cmsis_category()
 {
     static cmsis_category_impl categoryInstance;
     return categoryInstance;

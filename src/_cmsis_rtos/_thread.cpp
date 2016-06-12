@@ -33,6 +33,8 @@
 #include <cstdlib>
 #include <new>
 
+#include WEOS_CMSIS_CORE_CMX_INCLUDE
+
 using namespace std;
 
 
