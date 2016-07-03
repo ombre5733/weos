@@ -32,7 +32,9 @@
 #include "../_config.hpp"
 #include "../_common/_chrono.hpp"
 
-#if defined(WEOS_WRAP_CMSIS_RTOS)
+#if defined(WEOS_WRAP_CXX11)
+    #include_next <chrono>
+#elif defined(WEOS_WRAP_CMSIS_RTOS)
     #include "../_cmsis_rtos/_chrono_clocks.hpp"
 #else
     #error "Invalid native OS."
