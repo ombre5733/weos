@@ -36,11 +36,15 @@
 namespace std
 {
 
+#if __cplusplus < 201402L
 template <typename T>
 struct is_final : public false_type {};
+#endif
 
+#if !defined(__clang__) && __GNUC__ < 5
 template <typename T>
 struct is_trivially_copyable : public is_pod<T> {};
+#endif
 
 } // namespace std
 
