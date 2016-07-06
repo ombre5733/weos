@@ -175,16 +175,21 @@ promise<void>::promise()
 
     struct Deleter
     {
-        void operator()(void* p)
+        void operator()(void* p) noexcept
         {
-            std::free(p);
+            ::operator delete(p);
         }
     };
 
-    // TODO: Do not bypass the new_handler here!!
-    unique_ptr<void, Deleter> p(std::malloc(sizeof(SharedStateBase)));
+    unique_ptr<void, Deleter> p(::operator new(sizeof(SharedStateBase)));
     m_state = ::new (p.get()) SharedStateBase(p.get());
     p.release();
+}
+
+promise<void>::promise(promise&& other) noexcept
+    : m_state(other.m_state)
+{
+    other.m_state = nullptr;
 }
 
 promise<void>::~promise()
@@ -202,6 +207,12 @@ promise<void>::~promise()
 
         m_state->decReferenceCount();
     }
+}
+
+promise<void>& promise<void>::operator=(promise&& other) noexcept
+{
+    promise(std::move(other)).swap(*this);
+    return *this;
 }
 
 future<void> promise<void>::get_future()
@@ -223,6 +234,11 @@ void promise<void>::set_exception(exception_ptr exc)
     if (m_state == nullptr)
         throw future_error(make_error_code(future_errc::no_state));
     m_state->setException(exc);
+}
+
+void promise<void>::swap(promise& other) noexcept
+{
+    std::swap(m_state, other.m_state);
 }
 
 } // namespace std

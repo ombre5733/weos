@@ -652,9 +652,111 @@ void swap(future<T>& a, future<T>& b) noexcept
 //     promise<T>
 // ----=====================================================================----
 
-// TODO: Implement this
 template <typename T>
-class promise;
+class promise
+{
+public:
+    //! Default-constructs a promise.
+    //!
+    //! The shared state will be empty.
+    promise()
+    {
+        using namespace weos_detail;
+
+        struct Deleter
+        {
+            void operator()(void* p) noexcept
+            {
+                ::operator delete(p);
+            }
+        };
+
+        unique_ptr<void, Deleter> p(::operator new(sizeof(SharedState<T>)));
+        m_state = ::new (p.get()) SharedState<T>(p.get());
+        p.release();
+    }
+
+    // TODO:
+    // template <typename TAllocator>
+    // promise(allocator_arg_t, const TAllocator& allocator);
+
+    //! Constructs a promise by moving from the \p other promise.
+    promise(promise&& other) noexcept
+        : m_state(other.m_state)
+    {
+        other.m_state = nullptr;
+    }
+
+    //! Destroys the promise.
+    ~promise()
+    {
+        if (m_state)
+        {
+            // If no value or exception has been set in the shared state and
+            // at least one future is still attached to it, we have to
+            // signal a broken promise.
+            if (!m_state->isReady() && m_state->referenceCount() > 1)
+            {
+                m_state->setException(make_exception_ptr(
+                                           future_error(make_error_code(future_errc::broken_promise))));
+            }
+
+            m_state->decReferenceCount();
+        }
+    }
+
+    //! Move-assigns the \p other promise to this one.
+    promise& operator=(promise&& other) noexcept
+    {
+        promise(std::move(other)).swap(*this);
+        return *this;
+    }
+
+    promise(const promise& other) = delete;
+    promise& operator=(const promise& other) = delete;
+
+    //! Returns a future associated with this promise.
+    future<T> get_future()
+    {
+        if (m_state == nullptr)
+            throw future_error(make_error_code(future_errc::no_state));
+        return future<T>(m_state);
+    }
+
+    void set_value(const T& value)
+    {
+        if (m_state == nullptr)
+            throw future_error(make_error_code(future_errc::no_state));
+        m_state->setValue(value);
+    }
+
+    void set_value(T&& value)
+    {
+        if (m_state == nullptr)
+            throw future_error(make_error_code(future_errc::no_state));
+        m_state->setValue(std::move(value));
+    }
+
+    void set_exception(exception_ptr exc)
+    {
+        if (m_state == nullptr)
+            throw future_error(make_error_code(future_errc::no_state));
+        m_state->setException(exc);
+    }
+
+    // TODO:
+    // void set_value_at_thread_exit();
+    // void set_exception_at_thread_exit(exception_ptr exc);
+
+    //! Swaps this promise with the \p other promise.
+    void swap(promise& other) noexcept
+    {
+        std::swap(m_state, other.m_state);
+    }
+
+private:
+    weos_detail::SharedState<T>* m_state;
+};
 
 // ----=====================================================================----
 //     promise<void>
@@ -674,21 +776,13 @@ public:
     // promise(allocator_arg_t, const TAllocator& allocator);
 
     //! Constructs a promise by moving from the \p other promise.
-    promise(promise&& other) noexcept
-        : m_state(other.m_state)
-    {
-        other.m_state = nullptr;
-    }
+    promise(promise&& other) noexcept;
 
     //! Destroys the promise.
     ~promise();
 
     //! Move-assigns the \p other promise to this one.
-    promise& operator=(promise&& other) noexcept
-    {
-        promise(std::move(other)).swap(*this);
-        return *this;
-    }
+    promise& operator=(promise&& other) noexcept;
 
     promise(const promise& other) = delete;
     promise& operator=(const promise& other) = delete;
@@ -704,10 +798,7 @@ public:
     // void set_exception_at_thread_exit(exception_ptr exc);
 
     //! Swaps this promise with the \p other promise.
-    void swap(promise& other) noexcept
-    {
-        std::swap(m_state, other.m_state);
-    }
+    void swap(promise& other) noexcept;
 
 private:
     weos_detail::SharedStateBase* m_state;
