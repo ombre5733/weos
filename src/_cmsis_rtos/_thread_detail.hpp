@@ -78,9 +78,8 @@ private:
     template <std::size_t... TIndices>
     result_type invoke(WEOS_NAMESPACE::weos_detail::IndexSequence<TIndices...>)
     {
-        return WEOS_NAMESPACE::weos_detail::invoke(
-                    std::move(std::get<0>(m_boundFunction)),
-                    std::move(std::get<TIndices>(m_boundFunction))...);
+        return std::invoke(std::move(std::get<0>(m_boundFunction)),
+                           std::move(std::get<TIndices>(m_boundFunction))...);
     }
 
     std::tuple<TFunction, TArgs...> m_boundFunction;

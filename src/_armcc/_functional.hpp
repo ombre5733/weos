@@ -220,7 +220,7 @@ public:
     template <typename... TArgs>
     typename result_of<T&(TArgs&&...)>::type operator()(TArgs&&... args) const
     {
-        return WEOS_NAMESPACE::weos_detail::invoke(*m_wrapped, std::forward<TArgs>(args)...);
+        return std::invoke(*m_wrapped, std::forward<TArgs>(args)...);
     }
 
 private:
@@ -302,7 +302,7 @@ public:
     typename WEOS_NAMESPACE::weos_detail::invoke_result_type<TMemberPointer, TArgs...>::type
     operator()(TArgs&&... args) const
     {
-        return WEOS_NAMESPACE::weos_detail::invoke(m_pm, std::forward<TArgs>(args)...);
+        return std::invoke(m_pm, std::forward<TArgs>(args)...);
     }
 
 private:
@@ -397,7 +397,7 @@ struct bind_expression_result_type;
 template <typename TF, typename... TBoundArgs, typename TUnboundArgs>
 struct bind_expression_result_type<TF, tuple<TBoundArgs...>, TUnboundArgs>
 {
-    typedef decltype(WEOS_NAMESPACE::weos_detail::invoke(
+    typedef decltype(std::invoke(
                          std::declval<TF&>(),
                          std::declval<typename ArgumentSelector<TBoundArgs, TUnboundArgs>::type>()...))
           type;
@@ -410,7 +410,7 @@ invokeBindExpression(TF& functor,
                      TBoundArgs& boundArgs, TupleIndices<TBoundIndices...>,
                      TUnboundArgs&& unboundArgs)
 {
-    return WEOS_NAMESPACE::weos_detail::invoke(
+    return std::invoke(
                 functor,
                 ArgumentSelector<typename tuple_element<TBoundIndices, TBoundArgs>::type,
                                  TUnboundArgs>::select(
@@ -696,8 +696,8 @@ public:
 
     virtual TResult operator()(TArgs&&... args) override
     {
-        return WEOS_NAMESPACE::weos_detail::invoke(std::get<0>(m_callableAllocator),
-                                                   std::forward<TArgs>(args)...);
+        return std::invoke(std::get<0>(m_callableAllocator),
+                           std::forward<TArgs>(args)...);
     }
 
 #ifndef WEOS_NO_FUNCTION_TARGET
@@ -731,8 +731,7 @@ class function<TResult(TArgs...)>
     using storage_type = typename aligned_storage<sizeof(weos_detail::SmallFunctor)>::type;
 
     template <typename F>
-    using invokeResult = decltype(WEOS_NAMESPACE::weos_detail::invoke(
-                                      declval<F&>(), declval<TArgs>()...));
+    using invokeResult = decltype(std::invoke(declval<F&>(), declval<TArgs>()...));
 
     template <typename F>
     using isCallable = is_convertible<invokeResult<F>, TResult>;

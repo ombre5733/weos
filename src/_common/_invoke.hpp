@@ -38,9 +38,9 @@
 #include "../utility.hpp"
 
 
-WEOS_BEGIN_NAMESPACE
+#if __cplusplus <= 201402L
 
-namespace weos_detail
+namespace std
 {
 
 // Invokes a Callable. See: http://en.cppreference.com/w/cpp/concept/Callable
@@ -90,10 +90,21 @@ auto invoke(F&& f, An&&... an)
     return std::forward<F>(f)(std::forward<An>(an)...);
 }
 
+} // namespace std
+
+#endif // __cplusplus <= 201402L
+
+
+
+WEOS_BEGIN_NAMESPACE
+
+namespace weos_detail
+{
+
 template <typename F, typename... An>
 struct invoke_result_type
 {
-    using type = decltype(invoke(std::declval<F>(), std::declval<An>()...));
+    using type = decltype(std::invoke(std::declval<F>(), std::declval<An>()...));
 };
 
 } // namespace weos_detail

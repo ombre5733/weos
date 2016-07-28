@@ -218,8 +218,7 @@ private:
     template <std::size_t... TIndices>
     void doExecute(WEOS_NAMESPACE::weos_detail::IndexSequence<TIndices...>)
     {
-        WEOS_NAMESPACE::weos_detail::invoke(
-                    std::move(std::get<0>(m_fun)),
+        std::invoke(std::move(std::get<0>(m_fun)),
                     std::move(std::get<TIndices>(m_fun))...);
     }
 };
