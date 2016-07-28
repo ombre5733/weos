@@ -586,6 +586,9 @@ struct tuple_element<TIndex, const volatile TTuple>
                 typename tuple_element<TIndex, TTuple>::type>::type type;
 };
 
+template <std::size_t TIndex, class TTuple>
+using tuple_element_t = typename tuple_element<TIndex, TTuple>::type;
+
 // ----=====================================================================----
 //     tuple_size
 // ----=====================================================================----
