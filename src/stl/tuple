@@ -37,4 +37,6 @@
 #include_next <tuple>
 #endif // __CC_ARM
 
+#include "../_common/_apply.hpp"
+
 #endif // WEOS_STL_TUPLE_HPP

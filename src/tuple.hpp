@@ -38,6 +38,8 @@
 #include <tuple>
 #endif // __CC_ARM
 
+#include "_common/_apply.hpp"
+
 
 // TODO:CLEAN
 WEOS_BEGIN_NAMESPACE
