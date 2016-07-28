@@ -71,7 +71,7 @@ bool semaphore::try_wait_for(chrono::milliseconds ms)
 
     do
     {
-        static_assert(osCMSIS_RTX <= ((4<<16) | 78),
+        static_assert(osCMSIS_RTX <= ((4<<16) | 80),
                       "Check the maximum timeout.");
         milliseconds truncated = ms <= milliseconds(0xFFFE)
                                  ? ms

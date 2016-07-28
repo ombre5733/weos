@@ -67,7 +67,7 @@ public:
     SmallMessageQueue()
         : m_id(0)
     {
-        static_assert(osCMSIS_RTX <= ((4<<16) | 78),
+        static_assert(osCMSIS_RTX <= ((4<<16) | 80),
                       "Check the overhead for the queue.");
 
         // TODO: optimize the construction

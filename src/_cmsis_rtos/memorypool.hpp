@@ -78,7 +78,7 @@ private:
 
     // The control block of a memory box. Defined as OS_BM in
     // ${CMSIS-RTOS}/SRC/rt_TypeDef.h.
-    static_assert(osCMSIS_RTX <= ((4<<16) | 78), "Check the layout of OS_BM.");
+    static_assert(osCMSIS_RTX <= ((4<<16) | 80), "Check the layout of OS_BM.");
     struct ControlBlock
     {
         void* free;

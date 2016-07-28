@@ -119,7 +119,7 @@ bool timed_mutex::try_lock_for(chrono::milliseconds ms)
 
     do
     {
-        static_assert(osCMSIS_RTX <= ((4<<16) | 78),
+        static_assert(osCMSIS_RTX <= ((4<<16) | 80),
                       "Check the maximum timeout.");
         milliseconds truncated = ms <= milliseconds(0xFFFE)
                                  ? ms
@@ -184,7 +184,7 @@ bool recursive_timed_mutex::try_lock_for(chrono::milliseconds ms)
 
     do
     {
-        static_assert(osCMSIS_RTX <= ((4<<16) | 78),
+        static_assert(osCMSIS_RTX <= ((4<<16) | 80),
                       "Check the maximum timeout.");
         milliseconds truncated = ms <= milliseconds(0xFFFE)
                                  ? ms

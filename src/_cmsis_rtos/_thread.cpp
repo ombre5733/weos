@@ -45,7 +45,7 @@ static constexpr size_t minimum_custom_stack_size = 64;
 // ${CMSIS-RTOS}/SRC/rt_TypeDef.h. The following offsets are needed:
 static constexpr auto offsetof_priv_stack = 38;
 static constexpr auto offsetof_ptask = 48;
-static_assert(osCMSIS_RTX <= ((4<<16) | 78), "Check that layout of OS_TCB.");
+static_assert(osCMSIS_RTX <= ((4<<16) | 80), "Check that layout of OS_TCB.");
 
 static constexpr auto STACK_WATERMARK = 0xE25A2EA5U;
 

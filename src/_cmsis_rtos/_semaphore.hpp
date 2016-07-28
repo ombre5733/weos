@@ -51,7 +51,7 @@ class semaphore
     //     uint16_t tokens;
     //     void* p_lnk;
     // };
-    static_assert(osCMSIS_RTX <= ((4<<16) | 78), "Check the layout of OS_SCB.");
+    static_assert(osCMSIS_RTX <= ((4<<16) | 80), "Check the layout of OS_SCB.");
     struct ControlBlock
     {
         std::uint8_t cb_type;
