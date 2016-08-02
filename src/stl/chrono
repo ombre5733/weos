@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_STL_CHRONO_HPP
-#define WEOS_STL_CHRONO_HPP
+#ifndef WEOS_STL_CHRONO
+#define WEOS_STL_CHRONO
 
 #include "../_config.hpp"
 #include "../_common/_chrono.hpp"
@@ -40,4 +40,4 @@
     #error "Invalid native OS."
 #endif
 
-#endif // WEOS_STL_CHRONO_HPP
+#endif // WEOS_STL_CHRONO

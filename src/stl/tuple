@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_STL_TUPLE_HPP
-#define WEOS_STL_TUPLE_HPP
+#ifndef WEOS_STL_TUPLE
+#define WEOS_STL_TUPLE
 
 #include "../_config.hpp"
 
@@ -39,4 +39,4 @@
 
 #include "../_common/_apply.hpp"
 
-#endif // WEOS_STL_TUPLE_HPP
+#endif // WEOS_STL_TUPLE

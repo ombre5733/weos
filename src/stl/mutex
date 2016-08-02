@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_STL_MUTEX_HPP
-#define WEOS_STL_MUTEX_HPP
+#ifndef WEOS_STL_MUTEX
+#define WEOS_STL_MUTEX
 
 #include "../_config.hpp"
 
@@ -39,4 +39,4 @@
     #error "Invalid native OS."
 #endif
 
-#endif // WEOS_STL_MUTEX_HPP
+#endif // WEOS_STL_MUTEX

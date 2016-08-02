@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_STL_TYPE_TRAITS_HPP
-#define WEOS_STL_TYPE_TRAITS_HPP
+#ifndef WEOS_STL_TYPE_TRAITS
+#define WEOS_STL_TYPE_TRAITS
 
 #include "../_config.hpp"
 
@@ -37,4 +37,4 @@
 #include "../_gcc/_type_traits.hpp"
 #endif // __CC_ARM
 
-#endif // WEOS_STL_TYPE_TRAITS_HPP
+#endif // WEOS_STL_TYPE_TRAITS

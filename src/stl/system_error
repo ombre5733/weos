@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_STL_SYSTEM_ERROR_HPP
-#define WEOS_STL_SYSTEM_ERROR_HPP
+#ifndef WEOS_STL_SYSTEM_ERROR
+#define WEOS_STL_SYSTEM_ERROR
 
 #include "../_config.hpp"
 
@@ -37,4 +37,4 @@
     #include "../_common/_system_error.hpp"
 #endif
 
-#endif // WEOS_STL_SYSTEM_ERROR_HPP
+#endif // WEOS_STL_SYSTEM_ERROR

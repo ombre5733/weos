@@ -26,8 +26,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_STL_ARRAY_HPP
-#define WEOS_STL_ARRAY_HPP
+#ifndef WEOS_STL_ARRAY
+#define WEOS_STL_ARRAY
 
 #include "../_config.hpp"
 
@@ -37,4 +37,4 @@
 #include_next <array>
 #endif
 
-#endif // WEOS_STL_ARRAY_HPP
+#endif // WEOS_STL_ARRAY
