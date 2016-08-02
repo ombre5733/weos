@@ -26,23 +26,15 @@
   POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#ifndef WEOS_ARRAY_HPP
-#define WEOS_ARRAY_HPP
+#ifndef WEOS_STL_ARRAY_HPP
+#define WEOS_STL_ARRAY_HPP
 
-#include "_config.hpp"
+#include "../_config.hpp"
 
 #ifdef __CC_ARM
-#include "_armcc/_array.hpp"
+#include "../_armcc/_array.hpp"
 #else
-#include <array>
+#include_next <array>
 #endif
 
-
-// TODO:CLEAN
-WEOS_BEGIN_NAMESPACE
-
-using std::array;
-
-WEOS_END_NAMESPACE
-
-#endif  // WEOS_ARRAY_HPP
+#endif // WEOS_STL_ARRAY_HPP
