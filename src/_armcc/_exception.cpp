@@ -28,6 +28,7 @@
 
 #include "../exception.hpp"
 
+#include <list>
 #include <stdexcept>
 
 
@@ -77,6 +78,35 @@ void nested_exception::rethrow_nested() const
     // There was no nested exception.
     std::terminate();
 }
+
+// ----=====================================================================----
+//     Exception registration
+// ----=====================================================================----
+
+namespace weos_detail
+{
+
+static
+std::list<ExceptionConverterBase*> g_exceptionConverterRegistry;
+
+void registerConverter(ExceptionConverterBase* converter)
+{
+    g_exceptionConverterRegistry.push_front(converter);
+}
+
+static
+std::exception_ptr tryConvert(const std::exception& exc)
+{
+    for (auto converter : g_exceptionConverterRegistry)
+    {
+        std::exception_ptr eptr = converter->doConvert(exc);
+        if (eptr)
+            return eptr;
+    }
+    return std::exception_ptr();
+}
+
+} // namespace weos_detail
 
 // ----=====================================================================----
 //     current_exception
@@ -145,8 +175,11 @@ exception_ptr getCurrentException()
         return wrapStdException(exc);
     }
 
-    catch (std::exception&)
+    catch (std::exception& exc)
     {
+        if (auto ptr = tryConvert(exc))
+            return ptr;
+
         return cloneException(UnknownStdException());
     }
 

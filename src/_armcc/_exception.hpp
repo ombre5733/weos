@@ -42,6 +42,7 @@
 
 #include <new>
 #include <stdexcept>
+#include <type_traits>
 
 
 namespace std
@@ -548,6 +549,54 @@ void throw_with_nested(TType&& exc,
 template <typename TType>
 void rethrow_if_nested(const TType& exc);
 
+// ----=====================================================================----
+//     Exception registration
+// ----=====================================================================----
+
+namespace weos_detail
+{
+
+class ExceptionConverterBase
+{
+public:
+    virtual
+    std::exception_ptr doConvert(const std::exception& exc) const = 0;
+};
+
+template <typename T>
+class ExceptionConverter : public ExceptionConverterBase
+{
+public:
+    virtual
+    std::exception_ptr doConvert(const std::exception& exc) const override
+    {
+        if (const T* derived = dynamic_cast<const T*>(&exc))
+            return std::make_exception_ptr(*derived);
+        else
+            return std::exception_ptr();
+    }
+};
+
+void registerConverter(ExceptionConverterBase* converter);
+
+} // namespace weos_detail
+
 } // namespace std
+
+
+
+WEOS_BEGIN_NAMESPACE
+
+template <typename T>
+void registerExceptionType()
+{
+    static_assert(std::is_base_of<std::exception, T>::value,
+                  "The registered exception must derive from std::exception.");
+
+    static std::weos_detail::ExceptionConverter<T> converter;
+    std::weos_detail::registerConverter(&converter);
+}
+
+WEOS_END_NAMESPACE
 
 #endif // WEOS_ARMCC_EXCEPTION_HPP
