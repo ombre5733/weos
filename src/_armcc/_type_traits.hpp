@@ -198,7 +198,28 @@ struct is_union : public integral_constant<bool, __is_union(TType)> {};
 template <typename TType>
 struct is_trivially_copyable : public integral_constant<bool, __is_trivially_copyable(TType)> {};
 
-// ----=----
+// ---- underlying_type --------------------------------------------------------
+
+namespace weos_detail
+{
+template <typename TType, bool = is_enum<TType>::value>
+struct UnderlyingTypeSelector
+{
+};
+
+template <typename TType>
+struct UnderlyingTypeSelector<TType, true>
+{
+    using type = __underlying_type(TType);
+};
+
+} // weos_detail
+
+template <typename TType>
+struct underlying_type : public weos_detail::UnderlyingTypeSelector<TType> {};
+
+// ----=====================================================================----
+
 // 20.13.7.1, const-volatile modifications:
 template <class T>
 using remove_const_t = typename remove_const<T>::type;
@@ -250,7 +271,7 @@ template <class T>
 using add_pointer_t = typename add_pointer<T>::type;
 
 // 20.13.7.6, other transformations:
-template <std::size_t Len, std::size_t Align = std::size_t(-1)> 
+template <std::size_t Len, std::size_t Align = std::size_t(-1)>
 using aligned_storage_t = typename aligned_storage<Len, Align>::type;
 
 //template <std::size_t Len, class... Types>
@@ -268,8 +289,8 @@ using conditional_t = typename conditional<b, T, F>::type;
 template <class... T>
 using common_type_t = typename common_type<T...>::type;
 
-//template <class T>
-//using underlying_type_t = typename underlying_type<T>::type;
+template <class T>
+using underlying_type_t = typename underlying_type<T>::type;
 
 template <class T>
 using result_of_t = typename result_of<T>::type;
