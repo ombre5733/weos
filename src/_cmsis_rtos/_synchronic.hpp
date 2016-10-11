@@ -95,6 +95,9 @@ public:
                 std::memory_order order = std::memory_order_seq_cst,
                 expect_hint /*hint*/ = expect_urgent) const noexcept
     {
+        if (object.load(order) == desired)
+            return;
+
         for (;;)
         {
             WEOS_NAMESPACE::weos_detail::_tq::_t t(m_tq);
@@ -111,6 +114,9 @@ public:
     void expect(const atomic_type& /*object*/, F&& pred,
                 expect_hint /*hint*/ = expect_urgent) const
     {
+        if (pred())
+            return;
+
         for (;;)
         {
             WEOS_NAMESPACE::weos_detail::_tq::_t t(m_tq);
@@ -129,6 +135,9 @@ public:
                        std::memory_order order = std::memory_order_seq_cst,
                        expect_hint /*hint*/ = expect_urgent) const noexcept
     {
+        if (object.load(order) != current)
+            return;
+
         for (;;)
         {
             WEOS_NAMESPACE::weos_detail::_tq::_t t(m_tq);

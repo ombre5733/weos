@@ -198,6 +198,9 @@ bool _tq::_t::unlink() noexcept
 
 void _tq::notify_one() noexcept
 {
+    if (m_h.load() == nullptr)
+        return;
+
     if (__get_IPSR() != 0U)
         weos_tq_notify(this, 0);
     else
@@ -206,6 +209,9 @@ void _tq::notify_one() noexcept
 
 void _tq::notify_all() noexcept
 {
+    if (m_h.load() == nullptr)
+        return;
+
     if (__get_IPSR() != 0U)
         weos_tq_notify(this, 1);
     else
