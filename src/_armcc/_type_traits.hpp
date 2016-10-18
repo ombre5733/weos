@@ -85,6 +85,8 @@ using boost::is_reference;
 using boost::is_rvalue_reference;
 using boost::is_same;
 using boost::is_scalar;
+using boost::is_signed;
+using boost::is_unsigned;
 using boost::is_void;
 using boost::is_volatile;
 using boost::make_signed;
