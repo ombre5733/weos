@@ -211,7 +211,7 @@ struct duration_values
 
     static constexpr RepT min()
     {
-        return std::numeric_limits<RepT>::lowest();
+        return std::numeric_limits<RepT>::min();
     }
 
     static constexpr RepT max()
